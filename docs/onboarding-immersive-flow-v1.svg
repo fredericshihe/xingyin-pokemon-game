@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">新手流程沉浸式重设计可视化图 V1.1</title>
+  <desc id="desc">展示动画序章、课堂练琴奖励闭环、启动页三幕、地图内新手任务、动画节奏和代码落点。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef7ff"/>
+      <stop offset="48%" stop-color="#f8fff1"/>
+      <stop offset="100%" stop-color="#fff7e8"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f5fbff"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d9f99d"/>
+      <stop offset="100%" stop-color="#86efac"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bae6fd"/>
+      <stop offset="100%" stop-color="#67e8f9"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .title { font-size: 38px; font-weight: 900; }
+      .subtitle { font-size: 18px; font-weight: 700; fill: #475569; }
+      .section-title { font-size: 24px; font-weight: 900; }
+      .card-title { font-size: 22px; font-weight: 900; }
+      .small { font-size: 15px; font-weight: 700; fill: #475569; }
+      .tiny { font-size: 13px; font-weight: 700; fill: #64748b; }
+      .label { font-size: 15px; font-weight: 900; fill: #0f766e; }
+      .chip { fill: #ecfeff; stroke: #99f6e4; stroke-width: 1.4; }
+      .panel { fill: url(#panel); stroke: rgba(15, 23, 42, 0.12); stroke-width: 1.5; filter: url(#softShadow); }
+      .node { fill: #ffffff; stroke: #99f6e4; stroke-width: 2; filter: url(#softShadow); }
+      .flow { fill: none; stroke: #0f766e; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+      .muted-flow { fill: none; stroke: #94a3b8; stroke-width: 3; stroke-dasharray: 8 9; stroke-linecap: round; }
+      .accent { fill: #fbbf24; }
+      .grass { fill: #22c55e; }
+      .road { fill: none; stroke: #c08436; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; }
+      .road-edge { fill: none; stroke: #fde68a; stroke-width: 30; stroke-linecap: round; stroke-linejoin: round; opacity: 0.5; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1040" fill="url(#bg)"/>
+
+  <text x="80" y="72" class="title">新手流程沉浸式重设计 V1.1</text>
+  <text x="82" y="108" class="subtitle">动画短片式序章 + 课堂练琴奖励闭环 + 3 幕进入世界，让学生看懂努力如何点亮冒险。</text>
+
+  <g transform="translate(1030 38)">
+    <rect x="0" y="0" width="420" height="86" rx="22" fill="#ffffff" opacity="0.88" stroke="#bae6fd" filter="url(#softShadow)"/>
+    <text x="20" y="29" class="label">教育激励闭环</text>
+    <text x="20" y="57" class="tiny">课堂表现 / 日常练琴 → 老师奖励 → 能量、金币、补给、惊喜 → 冒险成长</text>
+    <circle cx="330" cy="27" r="13" fill="#fbbf24"/>
+    <path d="M323 27 L337 27 M330 20 L330 34" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="366" cy="27" r="13" fill="#22c55e"/>
+    <path d="M360 30 C364 23 371 22 374 31" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="402" cy="27" r="13" fill="#38bdf8"/>
+    <path d="M396 32 L402 20 L408 32" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <rect x="80" y="150" width="1440" height="355" rx="28" class="panel"/>
+  <text x="110" y="195" class="section-title">启动页：动画序章先讲清现实努力，再进入 3 幕剧情</text>
+
+  <g transform="translate(116 230)">
+    <rect x="0" y="0" width="385" height="220" rx="24" fill="#ffffff" stroke="#bae6fd" stroke-width="2"/>
+    <rect x="26" y="24" width="108" height="30" rx="15" class="chip"/>
+    <text x="44" y="45" class="label">序章 + 第一幕</text>
+    <text x="26" y="86" class="card-title">练琴回声与信标</text>
+    <text x="26" y="121" class="small">音符变星光，研究所呼叫</text>
+    <text x="26" y="150" class="tiny">课堂表现 / 日常练琴</text>
+    <text x="26" y="174" class="tiny">老师奖励：能量、金币、补给、惊喜</text>
+    <circle cx="298" cy="76" r="42" fill="#e0f2fe" stroke="#38bdf8" stroke-width="4"/>
+    <path d="M298 40 L310 72 L346 72 L317 91 L328 124 L298 103 L268 124 L279 91 L250 72 L286 72 Z" fill="#0ea5e9" opacity="0.9"/>
+    <text x="244" y="174" class="tiny">动画：钢琴音符</text>
+    <text x="244" y="198" class="tiny">奖励光轨</text>
+  </g>
+
+  <path d="M520 340 C560 318 596 318 634 340" class="flow"/>
+
+  <g transform="translate(640 230)">
+    <rect x="0" y="0" width="385" height="220" rx="24" fill="#ffffff" stroke="#bbf7d0" stroke-width="2"/>
+    <rect x="26" y="24" width="108" height="30" rx="15" class="chip"/>
+    <text x="44" y="45" class="label">第二幕</text>
+    <text x="26" y="86" class="card-title">伙伴共鸣</text>
+    <text x="26" y="121" class="small">五只伙伴以不同动作回应</text>
+    <text x="26" y="150" class="tiny">每只伙伴有专属短台词</text>
+    <text x="26" y="174" class="tiny">显示属性、定位、三条能力条</text>
+    <circle cx="290" cy="78" r="44" fill="#fef3c7" stroke="#f59e0b" stroke-width="4"/>
+    <circle cx="290" cy="71" r="24" fill="#f97316"/>
+    <path d="M265 110 C280 132 306 132 320 110" fill="#fb923c"/>
+    <g transform="translate(220 150)">
+      <circle cx="0" cy="0" r="14" fill="#f97316"/>
+      <circle cx="38" cy="0" r="14" fill="#22c55e"/>
+      <circle cx="76" cy="0" r="14" fill="#38bdf8"/>
+      <circle cx="114" cy="0" r="14" fill="#facc15"/>
+      <circle cx="152" cy="0" r="14" fill="#a16207"/>
+    </g>
+    <text x="220" y="198" class="tiny">动画：呼吸、轻跳、残影</text>
+  </g>
+
+  <path d="M1044 340 C1084 318 1120 318 1158 340" class="flow"/>
+
+  <g transform="translate(1164 230)">
+    <rect x="0" y="0" width="310" height="220" rx="24" fill="#ffffff" stroke="#fde68a" stroke-width="2"/>
+    <rect x="26" y="24" width="108" height="30" rx="15" class="chip"/>
+    <text x="44" y="45" class="label">第三幕</text>
+    <text x="26" y="86" class="card-title">山谷启程</text>
+    <text x="26" y="121" class="small">老师奖励补给入包</text>
+    <text x="26" y="150" class="tiny">能量挑战 / 金币 / 补给箱</text>
+    <text x="26" y="174" class="tiny">营地 → 路牌 → 草丛</text>
+    <path d="M210 62 C234 82 228 112 252 132 C268 146 272 166 260 188" fill="none" stroke="#d97706" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="205" cy="60" r="14" fill="#ef4444"/>
+    <circle cx="252" cy="132" r="14" fill="#a16207"/>
+    <circle cx="260" cy="188" r="14" fill="#22c55e"/>
+  </g>
+
+  <rect x="80" y="545" width="930" height="410" rx="28" class="panel"/>
+  <text x="110" y="590" class="section-title">进入地图：山谷的第一束回声</text>
+  <text x="112" y="620" class="small">只使用当前已有营地、路牌、草丛作为任务锚点，后续 100×100 扩图时可平滑迁移。</text>
+
+  <g transform="translate(125 655)">
+    <rect x="0" y="0" width="820" height="250" rx="26" fill="#e8f7df" stroke="#bbf7d0" stroke-width="2"/>
+    <path d="M76 198 C176 188 212 128 300 128 C410 128 470 74 572 82 C668 90 704 138 760 132" class="road-edge"/>
+    <path d="M76 198 C176 188 212 128 300 128 C410 128 470 74 572 82 C668 90 704 138 760 132" class="road"/>
+    <ellipse cx="650" cy="62" rx="95" ry="42" fill="url(#water)" opacity="0.82"/>
+    <ellipse cx="285" cy="62" rx="86" ry="40" fill="url(#green)" opacity="0.9"/>
+    <ellipse cx="512" cy="168" rx="105" ry="52" fill="url(#green)" opacity="0.9"/>
+    <g opacity="0.85">
+      <circle cx="34" cy="42" r="18" class="grass"/>
+      <circle cx="76" cy="50" r="22" class="grass"/>
+      <circle cx="106" cy="30" r="17" class="grass"/>
+      <circle cx="740" cy="36" r="22" class="grass"/>
+      <circle cx="786" cy="42" r="18" class="grass"/>
+      <circle cx="790" cy="214" r="20" class="grass"/>
+    </g>
+
+    <g transform="translate(55 168)">
+      <circle cx="0" cy="0" r="34" class="node"/>
+      <path d="M-16 10 L0 -18 L16 10 Z" fill="#ef4444"/>
+      <rect x="-22" y="10" width="44" height="22" rx="5" fill="#dc2626"/>
+      <text x="-36" y="64" class="label">1 营地降落</text>
+      <text x="-42" y="88" class="tiny">目标条出现</text>
+    </g>
+
+    <path d="M100 170 C142 160 168 136 198 122" class="flow"/>
+
+    <g transform="translate(224 112)">
+      <circle cx="0" cy="0" r="34" class="node"/>
+      <rect x="-15" y="-22" width="30" height="44" rx="5" fill="#a16207"/>
+      <path d="M-22 -10 L22 -10 L14 10 L-14 10 Z" fill="#facc15"/>
+      <text x="-36" y="64" class="label">2 查看路牌</text>
+      <text x="-50" y="88" class="tiny">更新草丛目标</text>
+    </g>
+
+    <path d="M258 112 C322 104 366 78 428 82" class="flow"/>
+
+    <g transform="translate(460 82)">
+      <circle cx="0" cy="0" r="34" class="node"/>
+      <path d="M-22 20 C-18 -10 -8 -24 0 14 C8 -24 18 -10 22 20 Z" fill="#16a34a"/>
+      <text x="-42" y="64" class="label">3 第一草丛</text>
+      <text x="-62" y="88" class="tiny">草丛晃动，低压遭遇</text>
+    </g>
+
+    <path d="M494 88 C548 96 570 130 616 138" class="flow"/>
+
+    <g transform="translate(650 138)">
+      <circle cx="0" cy="0" r="34" class="node"/>
+      <circle cx="-10" cy="-2" r="17" fill="#ef4444"/>
+      <circle cx="10" cy="2" r="17" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+      <path d="M-26 0 L26 0" stroke="#0f172a" stroke-width="3"/>
+      <text x="-58" y="64" class="label">4 首次遭遇</text>
+      <text x="-70" y="88" class="tiny">捕捉/击败/逃跑均闭环</text>
+    </g>
+  </g>
+
+  <rect x="1050" y="545" width="470" height="410" rx="28" class="panel"/>
+  <text x="1080" y="590" class="section-title">实现标记与风险</text>
+
+  <g transform="translate(1080 630)">
+    <rect x="0" y="0" width="410" height="54" rx="16" fill="#ecfeff" stroke="#99f6e4"/>
+    <text x="18" y="23" class="label">OriginalGame.jsx / LaunchStoryIntro</text>
+    <text x="18" y="43" class="tiny">课堂练琴动画序章；可跳过，可复看</text>
+
+    <rect x="0" y="72" width="410" height="54" rx="16" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="18" y="95" class="label">index.css / .launch-*</text>
+    <text x="18" y="115" class="tiny">音符、奖励光轨、伙伴呼吸、路径点亮</text>
+
+    <rect x="0" y="144" width="410" height="54" rx="16" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="18" y="167" class="label">老师奖励说明</text>
+    <text x="18" y="187" class="tiny">课堂表现/日常练琴 → 能量、金币、补给、惊喜</text>
+
+    <rect x="0" y="216" width="410" height="54" rx="16" fill="#fefce8" stroke="#fde68a"/>
+    <text x="18" y="239" class="label">world.flags 持久化风险</text>
+    <text x="18" y="259" class="tiny">当前快照未传 world，需要先补 React state 链路</text>
+
+    <rect x="0" y="288" width="410" height="54" rx="16" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="18" y="311" class="label">地图事件</text>
+    <text x="18" y="331" class="tiny">路牌推进；首次草丛；完成后星音导师通讯</text>
+  </g>
+
+  <g transform="translate(90 986)">
+    <rect x="0" y="-28" width="1400" height="44" rx="16" fill="#ffffff" opacity="0.78" stroke="#e2e8f0"/>
+    <text x="18" y="0" class="small">验收目标：像动画短片一样讲清课堂/练琴/老师奖励；3 次主点击进入地图；第一次草丛闭环；旧存档不重复触发。</text>
+  </g>
+</svg>

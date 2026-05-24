@@ -1,0 +1,2 @@
+-- Historical remote migration placeholder.
+-- Already applied on the linked Supabase project before this repo snapshot.

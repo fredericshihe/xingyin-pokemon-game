@@ -1,0 +1,399 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1240" viewBox="0 0 1800 1240" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 新手山谷扩展规划图 V3</title>
+  <desc id="desc">强化地图边缘、遇敌区、素材摆放密度和物理因果关系的 100x100 地图扩展规划图。</desc>
+  <defs>
+    <style>
+      .page { fill: #f6f7ef; }
+      .title { font: 800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map-base { fill: #dceec6; stroke: #172033; stroke-width: 3; }
+      .minor-grid { stroke: rgba(30, 41, 59, .055); stroke-width: .6; }
+      .major-grid { stroke: rgba(30, 41, 59, .18); stroke-width: 1; }
+      .old { fill: #95d67a; stroke: #064e3b; stroke-width: 3; }
+      .edge-buffer { fill: none; stroke: rgba(15, 23, 42, .46); stroke-width: 6; stroke-dasharray: 12 7; }
+      .edge-label { font: 800 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #111827; letter-spacing: 0; }
+      .zone-stroke { stroke: rgba(15, 23, 42, .28); stroke-width: 1.2; }
+      .ridge { fill: #aeb8a3; }
+      .flower { fill: #cfe98b; }
+      .wetland { fill: #9ddfc2; }
+      .coast { fill: #c5e8dc; }
+      .outpost { fill: #dac47f; }
+      .pine { fill: #80ba71; }
+      .mushroom { fill: #609861; }
+      .farm { fill: #d9e88b; }
+      .delta { fill: #b7ddbc; }
+      .quarry { fill: #d1a36c; }
+      .water { fill: none; stroke: #64cfe0; stroke-width: 32; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .water-core { fill: none; stroke: #1d96bc; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
+      .pond { fill: #70d2e3; stroke: #1d91b6; stroke-width: 1.6; opacity: .92; }
+      .marsh { fill: #61c99c; stroke: #2f9f82; stroke-width: 1; opacity: .42; }
+      .cliff { fill: none; stroke: #6b7280; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+      .cliff-dash { fill: none; stroke: #374151; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 6; opacity: .65; }
+      .main-edge { fill: none; stroke: #9b7047; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; opacity: .56; }
+      .main-road { fill: none; stroke: #e5bf76; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .sub-edge { fill: none; stroke: #8f7049; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; opacity: .36; }
+      .sub-road { fill: none; stroke: #d7b574; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #2f8f54; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9; opacity: .94; }
+      .boardwalk { fill: none; stroke: #8b5a2b; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 12 6; }
+      .bridge { stroke: #74451f; stroke-width: 14; stroke-linecap: round; }
+      .bridge-line { stroke: #eac58b; stroke-width: 2; stroke-linecap: round; }
+      .encounter { fill: url(#encounterPattern); stroke: #166534; stroke-width: 1.4; opacity: .78; }
+      .encounter-soft { fill: url(#encounterPatternSoft); stroke: #166534; stroke-width: 1.2; opacity: .68; }
+      .encounter-label { font: 900 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #064e3b; text-anchor: middle; dominant-baseline: middle; }
+      .safe { fill: rgba(255, 255, 255, .26); stroke: #f59e0b; stroke-width: 1.5; stroke-dasharray: 7 4; }
+      .label { font: 800 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .tiny { font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; letter-spacing: 0; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; letter-spacing: 0; }
+      .pin { fill: #ffffff; stroke: #0f172a; stroke-width: 1.35; }
+      .pin-text { font: 800 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-soft { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .panel-blue { fill: #eaf8fb; stroke: #7fc7d7; stroke-width: 1.2; }
+      .panel-warn { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .head { font: 800 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .mono { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; letter-spacing: 0; }
+    </style>
+
+    <pattern id="gridMinor" width="9" height="9" patternUnits="userSpaceOnUse">
+      <path class="minor-grid" d="M9 0H0V9" fill="none"/>
+    </pattern>
+    <pattern id="gridMajor" width="90" height="90" patternUnits="userSpaceOnUse">
+      <path class="major-grid" d="M90 0H0V90" fill="none"/>
+    </pattern>
+    <pattern id="encounterPattern" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="rgba(187, 247, 208, .55)"/>
+      <rect width="4" height="10" fill="rgba(22, 101, 52, .25)"/>
+    </pattern>
+    <pattern id="encounterPatternSoft" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="rgba(220, 252, 231, .45)"/>
+      <rect width="3" height="10" fill="rgba(22, 101, 52, .18)"/>
+    </pattern>
+
+    <symbol id="tree" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="-2" r="9" fill="#2f7d46"/>
+      <circle cx="-5" cy="1" r="5.8" fill="#3d9654"/>
+      <rect x="-2" y="5" width="4" height="7" rx="1" fill="#7a4b2a"/>
+    </symbol>
+    <symbol id="pine-icon" viewBox="-12 -12 24 24">
+      <path d="M0-12 8 1H4l6 10H-10l6-10h-4z" fill="#1f6f45"/>
+      <rect x="-2" y="5" width="4" height="6" fill="#6b4424"/>
+    </symbol>
+    <symbol id="palm" viewBox="-12 -12 24 24">
+      <path d="M-1 10C2 1 2-5 0-11" stroke="#7a4b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M0-10C-8-10-11-6-11-6C-5-6-2-5 0-10Z" fill="#2f855a"/>
+      <path d="M0-10C8-10 11-6 11-6C5-6 2-5 0-10Z" fill="#38a169"/>
+      <path d="M0-10C-4-3-4 0-4 0C-1-3 1-5 0-10Z" fill="#276749"/>
+    </symbol>
+    <symbol id="rock" viewBox="-12 -12 24 24">
+      <path d="M-10 5-5-8 5-9 11 1 5 8-6 9z" fill="#7c8794"/>
+      <path d="M-4-5 2-7 6-1" fill="none" stroke="#b7c0ca" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="flower-icon" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="0" r="2.4" fill="#facc15"/>
+      <circle cx="-5" cy="0" r="3.5" fill="#ef4444"/>
+      <circle cx="5" cy="0" r="3.5" fill="#a855f7"/>
+      <circle cx="0" cy="-5" r="3.5" fill="#fde047"/>
+      <circle cx="0" cy="5" r="3.5" fill="#fb7185"/>
+    </symbol>
+    <symbol id="mushroom-icon" viewBox="-12 -12 24 24">
+      <path d="M-10 1a10 8 0 0 1 20 0z" fill="#dc2626"/>
+      <circle cx="-4" cy="-3" r="1.8" fill="#fee2e2"/>
+      <circle cx="4" cy="-4" r="1.6" fill="#fee2e2"/>
+      <rect x="-3" y="1" width="6" height="9" rx="2" fill="#f4e1c2"/>
+    </symbol>
+    <symbol id="tent" viewBox="-12 -12 24 24">
+      <path d="M-10 8 0-10 10 8z" fill="#eab308" stroke="#7c4a03" stroke-width="1.5"/>
+      <path d="M0-10 0 8" stroke="#7c4a03" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="crate" viewBox="-12 -12 24 24">
+      <rect x="-9" y="-8" width="18" height="16" rx="2" fill="#a16207" stroke="#713f12" stroke-width="1.6"/>
+      <path d="M-8-7 8 7M8-7-8 7M-9 0H9" stroke="#facc15" stroke-width="1.2" opacity=".75"/>
+    </symbol>
+    <symbol id="barrel" viewBox="-12 -12 24 24">
+      <ellipse cx="0" cy="-7" rx="8" ry="3" fill="#b45309"/>
+      <path d="M-8-7v14c0 2 16 2 16 0V-7" fill="#92400e"/>
+      <ellipse cx="0" cy="7" rx="8" ry="3" fill="#78350f"/>
+      <path d="M-8-2H8M-8 4H8" stroke="#fbbf24" stroke-width="1.1"/>
+    </symbol>
+    <symbol id="campfire" viewBox="-12 -12 24 24">
+      <path d="M-9 7 9-3M-9-3 9 7" stroke="#7c2d12" stroke-width="3" stroke-linecap="round"/>
+      <path d="M0 6C-6 1-1-3 0-9C5-3 6 2 0 6Z" fill="#f97316"/>
+      <path d="M0 4C-3 1 0-2 1-5C3-2 3 2 0 4Z" fill="#fde047"/>
+    </symbol>
+    <symbol id="crop" viewBox="-12 -12 24 24">
+      <path d="M0 9V-9M0-1C-6-6-9-5-10-5C-7 0-3 2 0 0M0 3C6-2 9-1 10-1C7 4 3 6 0 4" fill="none" stroke="#2f855a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="-4" cy="-4" r="2" fill="#f97316"/>
+      <circle cx="4" cy="0" r="2" fill="#facc15"/>
+    </symbol>
+    <symbol id="log" viewBox="-12 -12 24 24">
+      <rect x="-10" y="-4" width="20" height="8" rx="4" fill="#8b5a2b"/>
+      <circle cx="-8" cy="0" r="4" fill="#d59b5b" stroke="#7c4a24" stroke-width="1"/>
+      <path d="M-2-4V4M4-4V4" stroke="#5f3b1b" stroke-width="1"/>
+    </symbol>
+    <symbol id="tool" viewBox="-12 -12 24 24">
+      <path d="M-7 9 7-9" stroke="#6b4424" stroke-width="3" stroke-linecap="round"/>
+      <path d="M5-11 11-5 8-2 2-8z" fill="#94a3b8" stroke="#475569" stroke-width="1"/>
+    </symbol>
+    <symbol id="metal" viewBox="-12 -12 24 24">
+      <rect x="-9" y="-7" width="18" height="14" rx="1" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+      <path d="M-7-5 7 5M7-5-7 5" stroke="#cbd5e1" stroke-width="1"/>
+      <circle cx="-6" cy="-4" r="1" fill="#475569"/>
+      <circle cx="6" cy="4" r="1" fill="#475569"/>
+    </symbol>
+    <symbol id="fish" viewBox="-12 -12 24 24">
+      <path d="M-9 0C-3-7 7-5 10 0C7 5-3 7-9 0Z" fill="#38bdf8" stroke="#0369a1" stroke-width="1.2"/>
+      <path d="M-9 0-12-5-12 5z" fill="#0284c7"/>
+      <circle cx="6" cy="-1" r="1.1" fill="#0f172a"/>
+    </symbol>
+    <symbol id="canoe" viewBox="-12 -12 24 24">
+      <path d="M-11 1C-5-7 6-7 11 1C6 7-5 7-11 1Z" fill="#92400e" stroke="#78350f" stroke-width="1.2"/>
+      <path d="M-7 1H7" stroke="#fbbf24" stroke-width="1.2"/>
+    </symbol>
+    <symbol id="lily" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="0" r="8" fill="#5ecf81"/>
+      <path d="M0 0 8-5" stroke="#e9fdf0" stroke-width="2"/>
+      <circle cx="2" cy="-1" r="2" fill="#f9a8d4"/>
+    </symbol>
+    <symbol id="sign" viewBox="-12 -12 24 24">
+      <rect x="-8" y="-8" width="16" height="8" rx="1.5" fill="#b45309" stroke="#78350f" stroke-width="1.4"/>
+      <rect x="-1.5" y="0" width="3" height="10" fill="#78350f"/>
+    </symbol>
+    <symbol id="chest" viewBox="-12 -12 24 24">
+      <path d="M-9-2C-9-8 9-8 9-2V8H-9z" fill="#a16207" stroke="#713f12" stroke-width="1.4"/>
+      <path d="M-9-2H9M0-7V8" stroke="#facc15" stroke-width="1.3"/>
+      <rect x="-2" y="-1" width="4" height="4" fill="#facc15"/>
+    </symbol>
+    <symbol id="fence" viewBox="-12 -12 24 24">
+      <path d="M-10-5H10M-10 4H10" stroke="#8b5a2b" stroke-width="3" stroke-linecap="round"/>
+      <path d="M-7-9V9M0-9V9M7-9V9" stroke="#a16207" stroke-width="3" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+
+  <rect class="page" width="1800" height="1240"/>
+  <text class="title" x="48" y="40">新手山谷 100x100 扩展规划 V3：边缘、遇敌区、素材密度与物理因果加强版</text>
+  <text class="subtitle" x="48" y="66">这版仍然只做设计稿：旧图不移动、不改实际游戏数据。绿色斜纹代表可随机遇到野生宝可梦的草丛/芦草/灌木带；虚线边框代表地图边缘自然阻挡缓冲。</text>
+
+  <g id="map" transform="translate(48 106)">
+    <rect class="map-base" x="0" y="0" width="900" height="900" rx="7"/>
+    <rect x="0" y="0" width="900" height="900" fill="url(#gridMinor)"/>
+    <rect x="0" y="0" width="900" height="900" fill="url(#gridMajor)"/>
+
+    <g id="biomes">
+      <rect class="old" x="0" y="0" width="396" height="324" rx="4"/>
+      <path class="ridge zone-stroke" d="M396 0H900V172C840 190 760 180 676 194C616 204 562 190 510 174C470 162 430 158 396 176Z"/>
+      <path class="flower zone-stroke" d="M396 150C446 132 508 146 578 184C612 202 636 224 648 256C618 296 544 312 470 292C430 280 406 252 396 228Z"/>
+      <path class="wetland zone-stroke" d="M396 230C460 258 520 276 594 270C660 264 730 300 764 356C792 404 778 478 724 526C662 580 540 548 468 486C418 444 396 362 396 230Z"/>
+      <path class="coast zone-stroke" d="M758 170C826 188 882 220 900 260V594C838 586 780 538 766 466C756 414 776 358 756 308C738 260 724 204 758 170Z"/>
+      <path class="pine zone-stroke" d="M0 324H320C336 380 314 448 258 520C198 594 84 608 0 550Z"/>
+      <path class="outpost zone-stroke" d="M320 324C390 340 466 376 520 430C522 494 490 544 436 568C378 594 306 548 280 500C262 430 274 360 320 324Z"/>
+      <path class="mushroom zone-stroke" d="M0 550C112 598 204 586 270 520C306 596 306 720 252 812C206 884 100 906 0 900Z"/>
+      <path class="farm zone-stroke" d="M270 520C346 558 424 562 498 536C574 596 584 686 552 766C506 856 380 896 252 812C300 724 310 612 270 520Z"/>
+      <path class="delta zone-stroke" d="M552 766C586 690 582 624 548 568C622 536 704 566 762 634C792 724 752 832 686 900H480C522 870 542 824 552 766Z"/>
+      <path class="quarry zone-stroke" d="M762 520C816 566 860 590 900 594V900H686C756 820 790 690 762 520Z"/>
+    </g>
+
+    <g id="edge-treatment">
+      <path class="edge-buffer" d="M14 14H886V886H14Z"/>
+      <path class="cliff" d="M430 60C500 34 590 40 666 62C734 82 820 66 890 96"/>
+      <path class="cliff-dash" d="M436 86C506 58 586 66 662 88C734 108 812 92 886 122"/>
+      <path class="cliff" d="M0 552C88 604 190 594 270 520"/>
+      <path class="cliff-dash" d="M0 580C96 628 202 616 286 544"/>
+      <path class="cliff" d="M650 500C710 488 756 516 806 560C846 596 874 604 900 610"/>
+      <path class="cliff-dash" d="M658 524C714 510 758 536 800 580C842 622 874 636 900 642"/>
+      <text class="edge-label" x="20" y="874">南边缘：密林 + 河口 + 岩壁收边，不让玩家看到硬切空白</text>
+      <text class="edge-label" x="602" y="30">北边缘：山脊/瀑布源/碎石坡阻挡</text>
+      <text class="edge-label" x="724" y="872">东南边缘：岩壁和废弃金属场封边</text>
+      <text class="edge-label" x="720" y="254">东边缘：海湾/河岸/棕榈线收边</text>
+    </g>
+
+    <g id="water">
+      <path class="water" d="M548 68C540 118 522 148 514 184C504 224 514 252 550 286C596 330 668 326 724 356C780 386 796 448 776 508C754 578 790 648 828 724C854 776 840 838 804 892"/>
+      <path class="water-core" d="M548 68C540 118 522 148 514 184C504 224 514 252 550 286C596 330 668 326 724 356C780 386 796 448 776 508C754 578 790 648 828 724C854 776 840 838 804 892"/>
+      <path class="water" stroke-width="21" d="M288 180C354 184 418 216 486 260C512 276 536 286 562 294"/>
+      <path class="water-core" stroke-width="7" d="M288 180C354 184 418 216 486 260C512 276 536 286 562 294"/>
+      <ellipse class="pond" cx="281" cy="180" rx="59" ry="38"/>
+      <ellipse class="pond" cx="182" cy="254" rx="28" ry="21"/>
+      <ellipse class="pond" cx="340" cy="108" rx="25" ry="18"/>
+      <ellipse class="pond" cx="606" cy="396" rx="68" ry="50"/>
+      <ellipse class="pond" cx="704" cy="704" rx="66" ry="46"/>
+      <ellipse class="marsh" cx="548" cy="356" rx="90" ry="55"/>
+      <ellipse class="marsh" cx="652" cy="420" rx="82" ry="58"/>
+      <path class="boardwalk" d="M526 344C582 354 622 382 666 420"/>
+      <path class="boardwalk" d="M690 686C718 708 748 724 784 732"/>
+    </g>
+
+    <g id="encounter-zones">
+      <ellipse class="encounter" cx="124" cy="76" rx="72" ry="38"/><text class="encounter-label" x="124" y="76">Z01</text>
+      <ellipse class="encounter-soft" cx="248" cy="112" rx="40" ry="24"/><text class="encounter-label" x="248" y="112">Z02</text>
+      <ellipse class="encounter" cx="490" cy="220" rx="90" ry="42"/><text class="encounter-label" x="490" y="220">Z03</text>
+      <ellipse class="encounter-soft" cx="598" cy="162" rx="70" ry="32"/><text class="encounter-label" x="598" y="162">Z04</text>
+      <path class="encounter" d="M444 292C514 316 588 306 660 330C694 342 718 372 728 412C690 448 624 466 552 448C486 432 448 376 444 292Z"/><text class="encounter-label" x="582" y="386">Z05</text>
+      <ellipse class="encounter-soft" cx="812" cy="376" rx="58" ry="76"/><text class="encounter-label" x="812" y="376">Z06</text>
+      <ellipse class="encounter" cx="132" cy="456" rx="86" ry="56"/><text class="encounter-label" x="132" y="456">Z07</text>
+      <ellipse class="encounter-soft" cx="260" cy="508" rx="64" ry="42"/><text class="encounter-label" x="260" y="508">Z08</text>
+      <path class="encounter" d="M52 616C132 640 206 624 254 578C286 652 270 772 210 830C156 874 84 874 34 842C42 760 28 686 52 616Z"/><text class="encounter-label" x="154" y="724">Z09</text>
+      <path class="encounter-soft" d="M342 590C408 606 466 598 520 568C562 630 558 706 522 762C466 782 398 768 342 724C330 676 326 628 342 590Z"/><text class="encounter-label" x="442" y="674">Z10</text>
+      <path class="encounter" d="M614 612C684 608 742 646 768 710C770 790 732 844 676 868C628 838 604 790 612 728C616 686 598 648 614 612Z"/><text class="encounter-label" x="690" y="744">Z11</text>
+      <ellipse class="encounter" cx="812" cy="616" rx="62" ry="50"/><text class="encounter-label" x="812" y="616">Z12</text>
+      <path class="encounter-soft" d="M774 712C828 708 870 740 890 788V878H746C762 826 758 760 774 712Z"/><text class="encounter-label" x="828" y="810">Z13</text>
+      <ellipse class="encounter-soft" cx="820" cy="236" rx="56" ry="38"/><text class="encounter-label" x="820" y="236">Z14</text>
+    </g>
+
+    <g id="roads">
+      <path class="main-edge" d="M45 270C96 270 130 256 162 242C212 220 238 186 264 164C300 134 348 130 387 137C430 142 472 160 504 190C518 206 518 230 512 276C520 330 496 374 459 389C410 412 392 477 405 562C420 666 498 732 608 696C694 670 740 610 765 550C794 486 796 405 768 337C738 274 680 246 616 234C574 226 538 244 512 276"/>
+      <path class="main-road" d="M45 270C96 270 130 256 162 242C212 220 238 186 264 164C300 134 348 130 387 137C430 142 472 160 504 190C518 206 518 230 512 276C520 330 496 374 459 389C410 412 392 477 405 562C420 666 498 732 608 696C694 670 740 610 765 550C794 486 796 405 768 337C738 274 680 246 616 234C574 226 538 244 512 276"/>
+
+      <path class="sub-edge" d="M278 304C250 360 214 408 168 446C118 490 94 564 112 668C134 770 198 822 280 826C366 816 402 750 405 562"/>
+      <path class="sub-road" d="M278 304C250 360 214 408 168 446C118 490 94 564 112 668C134 770 198 822 280 826C366 816 402 750 405 562"/>
+
+      <path class="sub-edge" d="M459 389C534 426 598 428 666 406C710 392 744 382 776 398"/>
+      <path class="sub-road" d="M459 389C534 426 598 428 666 406C710 392 744 382 776 398"/>
+      <path class="sub-edge" d="M608 696C668 742 732 746 802 714"/>
+      <path class="sub-road" d="M608 696C668 742 732 746 802 714"/>
+      <path class="trail" d="M488 188C512 132 536 94 548 68"/>
+      <path class="trail" d="M504 190C458 202 420 224 396 262"/>
+      <path class="trail" d="M168 446C222 486 284 488 342 458"/>
+      <path class="trail" d="M112 668C74 730 64 800 88 872"/>
+      <path class="trail" d="M405 562C354 622 338 682 362 748"/>
+      <path class="trail" d="M695 680C660 736 606 800 532 858"/>
+      <path class="trail" d="M768 337C826 322 866 348 890 396"/>
+      <path class="trail" d="M765 550C816 580 856 620 888 680"/>
+
+      <line class="bridge" x1="494" y1="262" x2="532" y2="292"/>
+      <line class="bridge-line" x1="498" y1="270" x2="520" y2="250"/>
+      <line class="bridge-line" x1="510" y1="278" x2="532" y2="258"/>
+      <line class="bridge" x1="760" y1="536" x2="808" y2="570"/>
+      <line class="bridge-line" x1="770" y1="542" x2="790" y2="520"/>
+      <line class="bridge-line" x1="784" y1="554" x2="804" y2="532"/>
+      <line class="bridge" x1="670" y1="688" x2="730" y2="718"/>
+      <line class="bridge-line" x1="682" y1="692" x2="696" y2="672"/>
+      <line class="bridge-line" x1="702" y1="702" x2="716" y2="682"/>
+    </g>
+
+    <g id="safe-clearings">
+      <ellipse class="safe" cx="45" cy="270" rx="38" ry="24"/>
+      <ellipse class="safe" cx="459" cy="389" rx="52" ry="42"/>
+      <ellipse class="safe" cx="608" cy="696" rx="44" ry="32"/>
+    </g>
+
+    <g id="asset-clusters">
+      <!-- Old map hints -->
+      <use href="#tent" x="30" y="284" width="26" height="26"/><use href="#campfire" x="60" y="286" width="22" height="22"/><use href="#sign" x="86" y="260" width="20" height="20"/>
+      <use href="#tree" x="64" y="58" width="23" height="23"/><use href="#mushroom-icon" x="118" y="156" width="22" height="22"/><use href="#rock" x="184" y="218" width="23" height="23"/>
+
+      <!-- North ridge: cliffs, stones, pines around source -->
+      <use href="#pine-icon" x="436" y="78" width="28" height="28"/><use href="#rock" x="482" y="96" width="25" height="25"/><use href="#pine-icon" x="592" y="92" width="28" height="28"/><use href="#rock" x="652" y="112" width="26" height="26"/><use href="#pine-icon" x="724" y="94" width="28" height="28"/><use href="#rock" x="812" y="116" width="26" height="26"/>
+
+      <!-- Flower slope: dense but off-road -->
+      <use href="#flower-icon" x="426" y="198" width="22" height="22"/><use href="#flower-icon" x="468" y="170" width="22" height="22"/><use href="#flower-icon" x="522" y="220" width="22" height="22"/><use href="#flower-icon" x="566" y="196" width="22" height="22"/><use href="#rock" x="610" y="248" width="24" height="24"/><use href="#sign" x="454" y="146" width="18" height="18"/>
+
+      <!-- Wetland and shore: reeds/lily/canoe/fish/buckets implied -->
+      <use href="#lily" x="508" y="340" width="22" height="22"/><use href="#lily" x="560" y="384" width="22" height="22"/><use href="#lily" x="636" y="430" width="22" height="22"/><use href="#canoe" x="626" y="366" width="27" height="27"/><use href="#fish" x="700" y="444" width="22" height="22"/><use href="#barrel" x="744" y="454" width="22" height="22"/>
+
+      <!-- Coast line: palm/fish/canoe/camp supplies -->
+      <use href="#palm" x="796" y="214" width="28" height="28"/><use href="#palm" x="846" y="322" width="28" height="28"/><use href="#palm" x="860" y="458" width="28" height="28"/><use href="#canoe" x="820" y="400" width="27" height="27"/><use href="#fish" x="830" y="682" width="22" height="22"/><use href="#barrel" x="806" y="480" width="22" height="22"/><use href="#crate" x="850" y="520" width="23" height="23"/>
+
+      <!-- Outpost: organized blocks around safe clearing -->
+      <use href="#tent" x="384" y="404" width="32" height="32"/><use href="#campfire" x="424" y="420" width="24" height="24"/><use href="#crate" x="466" y="402" width="24" height="24"/><use href="#barrel" x="442" y="464" width="23" height="23"/><use href="#sign" x="496" y="444" width="22" height="22"/><use href="#tool" x="364" y="470" width="24" height="24"/><use href="#fence" x="510" y="412" width="24" height="24"/>
+
+      <!-- Pine/logging terrace -->
+      <use href="#pine-icon" x="58" y="386" width="31" height="31"/><use href="#pine-icon" x="118" y="438" width="31" height="31"/><use href="#pine-icon" x="206" y="370" width="31" height="31"/><use href="#pine-icon" x="264" y="414" width="31" height="31"/><use href="#log" x="158" y="496" width="29" height="29"/><use href="#log" x="250" y="462" width="29" height="29"/><use href="#tool" x="224" y="522" width="24" height="24"/><use href="#crate" x="304" y="486" width="22" height="22"/>
+
+      <!-- Mushroom forest: denser visual rhythm -->
+      <use href="#mushroom-icon" x="58" y="650" width="28" height="28"/><use href="#mushroom-icon" x="118" y="712" width="28" height="28"/><use href="#mushroom-icon" x="178" y="782" width="28" height="28"/><use href="#tree" x="206" y="626" width="28" height="28"/><use href="#tree" x="86" y="802" width="28" height="28"/><use href="#chest" x="94" y="854" width="24" height="24"/><use href="#rock" x="230" y="700" width="24" height="24"/>
+
+      <!-- Farm belt: rowed assets, fence boundaries -->
+      <use href="#fence" x="330" y="578" width="23" height="23"/><use href="#fence" x="392" y="590" width="23" height="23"/><use href="#crop" x="356" y="624" width="26" height="26"/><use href="#crop" x="420" y="642" width="26" height="26"/><use href="#crop" x="488" y="686" width="26" height="26"/><use href="#crop" x="384" y="724" width="26" height="26"/><use href="#tool" x="360" y="760" width="24" height="24"/><use href="#barrel" x="522" y="696" width="22" height="22"/>
+
+      <!-- Delta camp -->
+      <use href="#lily" x="690" y="744" width="22" height="22"/><use href="#fish" x="742" y="786" width="22" height="22"/><use href="#campfire" x="642" y="808" width="24" height="24"/><use href="#crate" x="704" y="838" width="24" height="24"/><use href="#canoe" x="764" y="758" width="26" height="26"/>
+
+      <!-- Quarry and metal yard -->
+      <use href="#rock" x="770" y="608" width="28" height="28"/><use href="#rock" x="826" y="636" width="28" height="28"/><use href="#metal" x="812" y="688" width="26" height="26"/><use href="#tool" x="858" y="724" width="24" height="24"/><use href="#metal" x="788" y="774" width="26" height="26"/><use href="#crate" x="842" y="828" width="24" height="24"/><use href="#chest" x="876" y="760" width="24" height="24"/>
+    </g>
+
+    <g id="pins">
+      <circle class="pin" cx="45" cy="270" r="12"/><text class="pin-text" x="45" y="270">S</text>
+      <circle class="pin" cx="387" cy="137" r="12"/><text class="pin-text" x="387" y="137">E1</text>
+      <circle class="pin" cx="278" cy="304" r="12"/><text class="pin-text" x="278" y="304">S1</text>
+      <circle class="pin" cx="512" cy="276" r="12"/><text class="pin-text" x="512" y="276">B1</text>
+      <circle class="pin" cx="459" cy="389" r="12"/><text class="pin-text" x="459" y="389">O</text>
+      <circle class="pin" cx="760" cy="536" r="12"/><text class="pin-text" x="760" y="536">B2</text>
+      <circle class="pin" cx="670" cy="688" r="12"/><text class="pin-text" x="670" y="688">B3</text>
+      <circle class="pin" cx="548" cy="68" r="12"/><text class="pin-text" x="548" y="68">W</text>
+      <circle class="pin" cx="765" cy="550" r="12"/><text class="pin-text" x="765" y="550">Q</text>
+      <circle class="pin" cx="608" cy="696" r="12"/><text class="pin-text" x="608" y="696">D</text>
+    </g>
+
+    <g id="zone-labels">
+      <text class="label" x="14" y="27">A 旧图保留</text><text class="tiny" x="14" y="48">44x36 原坐标保留</text>
+      <text class="label" x="416" y="34">B 山脊瀑布源</text><text class="tiny" x="416" y="55">北边界自然阻挡</text>
+      <text class="label" x="414" y="205">C 石花坡</text><text class="tiny" x="414" y="226">旧东口安全过渡</text>
+      <text class="label" x="442" y="338">D 月镜湿地</text><text class="tiny" x="442" y="359">芦草/栈道/水生遭遇</text>
+      <text class="label" x="764" y="198">E 东岸海湾</text><text class="tiny" x="764" y="219">码头/鱼/棕榈封边</text>
+      <text class="label" x="288" y="356">F 补给前哨</text><text class="tiny" x="288" y="377">安全空地，有功能素材</text>
+      <text class="label" x="18" y="358">G 采木高地</text><text class="tiny" x="18" y="379">木料和斧头因果成立</text>
+      <text class="label" x="20" y="628">H 蘑菇幽林</text><text class="tiny" x="20" y="649">密林支线，不留大片空地</text>
+      <text class="label" x="306" y="616">I 南部农田</text><text class="tiny" x="306" y="637">作物按田垄排布</text>
+      <text class="label" x="588" y="812">J 河口钓营</text><text class="tiny" x="588" y="833">河流终点和休息点</text>
+      <text class="label" x="776" y="610">K 岩场训练</text><text class="tiny" x="776" y="631">矿洞/金属/高压探索</text>
+    </g>
+
+    <g id="axes">
+      <text class="axis" x="-2" y="-8">0</text><text class="axis" x="86" y="-8">10</text><text class="axis" x="176" y="-8">20</text><text class="axis" x="266" y="-8">30</text><text class="axis" x="356" y="-8">40</text><text class="axis" x="446" y="-8">50</text><text class="axis" x="536" y="-8">60</text><text class="axis" x="626" y="-8">70</text><text class="axis" x="716" y="-8">80</text><text class="axis" x="806" y="-8">90</text><text class="axis" x="886" y="-8">99</text>
+      <text class="axis" x="-24" y="4">0</text><text class="axis" x="-28" y="94">10</text><text class="axis" x="-28" y="184">20</text><text class="axis" x="-28" y="274">30</text><text class="axis" x="-28" y="364">40</text><text class="axis" x="-28" y="454">50</text><text class="axis" x="-28" y="544">60</text><text class="axis" x="-28" y="634">70</text><text class="axis" x="-28" y="724">80</text><text class="axis" x="-28" y="814">90</text><text class="axis" x="-28" y="900">99</text>
+    </g>
+  </g>
+
+  <g id="panel" transform="translate(990 106)">
+    <rect class="panel" x="0" y="0" width="760" height="900" rx="10"/>
+    <text class="head" x="22" y="32">V3 补强点</text>
+
+    <rect class="panel-warn" x="22" y="52" width="716" height="122" rx="8"/>
+    <text class="subhead" x="42" y="78">边缘处理规则</text>
+    <text class="txt" x="42" y="102">北边：山脊、瀑布源、碎石坡封边；东边：海湾水面、棕榈线和码头；南边：蘑菇密林、河口和岩壁。</text>
+    <text class="txt" x="42" y="124">所有边缘至少 3-5 格视觉缓冲，不把主路直接贴到地图边；只有景观点或支线尽头接近边缘。</text>
+    <text class="txt" x="42" y="146">未来实现时，边缘缓冲带可转成 wall/tree/cliff/water，避免玩家走到一片硬切空白边界。</text>
+
+    <rect class="panel-soft" x="22" y="190" width="716" height="170" rx="8"/>
+    <text class="subhead" x="42" y="216">野生宝可梦遇敌区设计</text>
+    <text class="txt" x="42" y="240">Z01-Z02 旧图草坡和花丘：保留早期低压遇敌，不改旧体验。</text>
+    <text class="txt" x="42" y="262">Z03-Z06 石花坡/山脊草/湿地芦草/东岸草带：进入新区域后连续有遇敌，不只是通道。</text>
+    <text class="txt" x="42" y="284">Z07-Z09 采木高地和蘑菇幽林：南部支线主打高密度草丛与隐藏探索。</text>
+    <text class="txt" x="42" y="306">Z10-Z11 农田边和河口芦草：围栏外、河岸边可遇敌，田垄主路仍清晰。</text>
+    <text class="txt" x="42" y="328">Z12-Z14 岩场灌木、洞口碎草、东岸沙草：后段区域有不同生态，不是一整片荒地。</text>
+    <text class="txt" x="42" y="350">原则：主路、桥、前哨安全空地不触发；遇敌区贴着支路和小径，让玩家主动选择探索。</text>
+
+    <rect class="panel-blue" x="22" y="376" width="716" height="176" rx="8"/>
+    <text class="subhead" x="42" y="402">物理因果和素材摆放</text>
+    <text class="txt" x="42" y="426">水边：ground_river*, lily_small/large, canoe, canoe_paddle, fish, bucket, bottle, campfire-fishing-stand。</text>
+    <text class="txt" x="42" y="448">山脚：cliff_*, rock_large*, stone_tall*, hanging_moss，碎石从山体边缘向路边递减。</text>
+    <text class="txt" x="42" y="470">采木：tree_pine*, stump_*, log_stackLarge, resource-wood, resource-planks, tool-axe，木料只出现在树线旁。</text>
+    <text class="txt" x="42" y="492">营地：tent, bedroll, campfire-pit, box, barrel, chest, workbench, signpost，围绕安全空地成组摆放。</text>
+    <text class="txt" x="42" y="514">农田：crops_dirtRow/DoubleRow/Corner, crop_carrot/pumpkin/melon/turnip, wheat/corn/bamboo stages, fence_gate。</text>
+    <text class="txt" x="42" y="536">岩场：cliff_cave_rock, resource-stone-large, tool-pickaxe, tool-hammer, metal-panel*, structure-metal*, fence-fortified。</text>
+    <text class="txt" x="42" y="560">素材分工：kenney_nature-kit 负责生态/地形层，kenney_survival-kit 负责营地/工具/资源/废场功能层。</text>
+
+    <text class="head" x="22" y="592">空旷区域控制</text>
+    <text class="txt" x="22" y="620">允许空旷：S 出生营地、O 补给前哨、D 河口营地、主桥前后 2-3 格、主要道路转弯视线区。</text>
+    <text class="txt" x="22" y="644">不允许空旷：大于约 12x12 的无水、无草、无装饰、无道路区域。每个生态区至少有 2-4 个素材簇或遇敌区。</text>
+    <text class="txt" x="22" y="668">装饰不贴主路中心线；大型树/帐篷/岩石必须落在碰撞格或道路外侧，避免模型遮挡玩家路径。</text>
+
+    <text class="head" x="22" y="718">落地时建议分层</text>
+    <text class="txt" x="22" y="746">1. 先生成 100x100 基础地形和边缘阻挡，再复制旧 44x36 原图到左上角。</text>
+    <text class="txt" x="22" y="770">2. 先画水体和悬崖，再画桥和道路，保证桥覆盖水面、道路不被草覆盖。</text>
+    <text class="txt" x="22" y="794">3. 再画 Z01-Z14 遇敌区，清除道路/桥/营地安全区上的高草。</text>
+    <text class="txt" x="22" y="818">4. 最后按素材簇放装饰，并把大模型占用格转为 wall 或专用 collision mask。</text>
+    <text class="txt" x="22" y="842">5. 检查任意 20x20 区块：应至少包含道路/水体/遇敌区/素材簇中的两类，除非是明确的安全广场。</text>
+  </g>
+
+  <g id="bottom" transform="translate(48 1038)">
+    <rect class="panel" x="0" y="0" width="1702" height="136" rx="10"/>
+    <text class="head" x="22" y="34">关键坐标和连通复核</text>
+    <text class="txt" x="22" y="62">S=(5,30) 旧出生点；E1=(43,15) 旧东口；S1=(31,33) 旧南口；O=(51,43) 前哨作为旧东口、旧南口、湿地、农田四向交通交汇。</text>
+    <text class="txt" x="22" y="86">B1=(57,31) 接旧东口和湿地，B2=(84,60) 接岩场，B3=(74,76) 接农田与河口；桥位均放在河道变窄、路径需求最高的位置。</text>
+    <text class="txt" x="22" y="110">这版比 v2 多了 14 个遇敌区、边缘缓冲带、素材簇密度规则和安全空地限制，后续执行时可直接映射到 encounterZones/decorativeObjects/forestDecorations。</text>
+  </g>
+</svg>

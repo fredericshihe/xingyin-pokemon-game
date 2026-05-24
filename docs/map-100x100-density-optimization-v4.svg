@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1720" height="1120" viewBox="0 0 1720 1120" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 地图资源密度优化审查 V4</title>
+  <desc id="desc">基于 V3 继续审查地图设计和资源摆放密度，标出需要增加微装饰、过渡带、遇敌区和素材簇的位置。</desc>
+  <defs>
+    <style>
+      .page { fill: #f6f7ef; }
+      .title { font: 800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #dceec6; stroke: #162033; stroke-width: 3; }
+      .grid { stroke: rgba(15,23,42,.13); stroke-width: 1; }
+      .major { stroke: rgba(15,23,42,.28); stroke-width: 1.4; }
+      .old { fill: #95d67a; stroke: #064e3b; stroke-width: 2.2; }
+      .ridge { fill: #aeb8a3; }
+      .flower { fill: #cfe98b; }
+      .wetland { fill: #9ddfc2; }
+      .coast { fill: #c5e8dc; }
+      .pine { fill: #80ba71; }
+      .outpost { fill: #dac47f; }
+      .mushroom { fill: #609861; }
+      .farm { fill: #d9e88b; }
+      .delta { fill: #b7ddbc; }
+      .quarry { fill: #d1a36c; }
+      .water { fill: none; stroke: #64cfe0; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .road { fill: none; stroke: #e6bd72; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #2f8f54; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 8; }
+      .edge { fill: none; stroke: rgba(17,24,39,.55); stroke-width: 5; stroke-dasharray: 11 7; }
+      .keep { fill: rgba(255,255,255,.32); stroke: #f59e0b; stroke-width: 2; stroke-dasharray: 7 5; }
+      .heat-hi { fill: rgba(22, 101, 52, .30); stroke: rgba(22, 101, 52, .55); }
+      .heat-mid { fill: rgba(132, 204, 22, .22); stroke: rgba(77, 124, 15, .48); }
+      .heat-low { fill: rgba(245, 158, 11, .18); stroke: rgba(180, 83, 9, .46); }
+      .density { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .d-stone { stroke: #64748b; }
+      .d-plant { stroke: #15803d; }
+      .d-camp { stroke: #a16207; }
+      .d-water { stroke: #0284c7; }
+      .d-metal { stroke: #475569; }
+      .enc { fill: rgba(187,247,208,.55); stroke: #166534; stroke-width: 1.2; stroke-dasharray: 4 3; }
+      .label { font: 800 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .tiny { font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .tag { fill: #fff; stroke: #0f172a; stroke-width: 1.2; }
+      .tag-text { font: 800 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-green { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .panel-blue { fill: #eaf8fb; stroke: #7fc7d7; stroke-width: 1.2; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .head { font: 800 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .mono { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; letter-spacing: 0; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <rect class="page" width="1720" height="1120"/>
+  <text class="title" x="48" y="40">100x100 扩展地图资源密度优化 V4：在 V3 基础上补“微装饰”和生态过渡</text>
+  <text class="subtitle" x="48" y="66">结论：V3 已经可用，但落地前建议再加一层小素材密度和过渡带。此图不是改实际地图，只是把仍可优化的位置标出来。</text>
+
+  <g id="map" transform="translate(48 104)">
+    <rect class="map" x="0" y="0" width="820" height="820" rx="7"/>
+    <path class="grid" d="M82 0V820M164 0V820M246 0V820M328 0V820M410 0V820M492 0V820M574 0V820M656 0V820M738 0V820"/>
+    <path class="grid" d="M0 82H820M0 164H820M0 246H820M0 328H820M0 410H820M0 492H820M0 574H820M0 656H820M0 738H820"/>
+    <path class="major" d="M164 0V820M328 0V820M492 0V820M656 0V820M0 164H820M0 328H820M0 492H820M0 656H820"/>
+
+    <rect class="old" x="0" y="0" width="360" height="295" rx="4"/>
+    <path class="ridge" d="M360 0H820V156C764 174 690 162 614 176C560 186 508 174 464 158C426 146 394 144 360 160Z"/>
+    <path class="flower" d="M360 136C408 120 462 134 526 168C558 186 580 204 590 234C560 270 496 284 428 266C390 254 368 232 360 208Z"/>
+    <path class="wetland" d="M360 210C420 236 474 252 542 246C604 240 668 274 696 324C724 368 710 436 660 480C602 528 492 500 426 444C380 404 360 328 360 210Z"/>
+    <path class="coast" d="M690 156C752 172 804 202 820 238V542C764 534 710 492 698 426C690 378 708 326 690 282C672 238 660 188 690 156Z"/>
+    <path class="pine" d="M0 295H292C306 346 286 408 236 474C180 540 76 554 0 502Z"/>
+    <path class="outpost" d="M292 295C356 310 424 344 474 392C476 450 446 496 398 518C344 542 280 500 254 456C238 392 250 328 292 295Z"/>
+    <path class="mushroom" d="M0 502C102 544 186 534 246 474C280 544 278 656 230 740C188 806 92 826 0 820Z"/>
+    <path class="farm" d="M246 474C316 508 386 512 454 488C524 544 532 624 504 698C462 780 346 816 230 740C274 660 282 558 246 474Z"/>
+    <path class="delta" d="M504 698C536 628 530 568 500 518C568 488 642 516 694 578C722 660 684 756 626 820H438C476 792 496 750 504 698Z"/>
+    <path class="quarry" d="M694 474C742 514 784 538 820 542V820H626C690 746 720 628 694 474Z"/>
+
+    <path class="edge" d="M14 14H806V806H14Z"/>
+    <path class="water" d="M498 62C490 108 474 136 468 168C458 204 468 230 500 260C542 300 608 298 660 326C710 354 726 408 708 464C688 528 720 590 756 660C780 710 768 766 732 812"/>
+    <path class="water" stroke-width="16" d="M262 164C322 168 382 198 444 238C468 254 490 262 512 268"/>
+    <path class="road" d="M42 246C96 246 142 226 190 184C228 146 282 116 352 125C414 134 470 168 466 252C474 302 452 340 418 354C374 376 358 436 370 512C384 606 454 666 554 634C632 612 674 556 696 500C724 438 724 368 700 308C674 250 620 224 562 214C524 206 488 226 466 252"/>
+    <path class="road" stroke-width="5" d="M254 278C226 328 194 372 152 406C108 446 86 512 102 608C122 702 180 750 256 752C334 744 366 684 370 512"/>
+    <path class="trail" d="M444 172C468 120 488 82 498 62"/>
+    <path class="trail" d="M150 406C206 446 260 444 312 418"/>
+    <path class="trail" d="M370 512C324 568 310 622 330 682"/>
+    <path class="trail" d="M632 620C598 674 552 730 484 782"/>
+
+    <g id="heatmap">
+      <rect class="heat-mid" x="360" y="0" width="164" height="164"/><rect class="heat-low" x="524" y="0" width="164" height="164"/><rect class="heat-mid" x="688" y="0" width="132" height="164"/>
+      <rect class="heat-hi" x="360" y="164" width="164" height="164"/><rect class="heat-mid" x="524" y="164" width="164" height="164"/><rect class="heat-low" x="688" y="164" width="132" height="164"/>
+      <rect class="heat-mid" x="0" y="328" width="164" height="164"/><rect class="heat-low" x="164" y="328" width="164" height="164"/><rect class="heat-mid" x="328" y="328" width="164" height="164"/><rect class="heat-hi" x="492" y="328" width="164" height="164"/><rect class="heat-low" x="656" y="328" width="164" height="164"/>
+      <rect class="heat-hi" x="0" y="492" width="164" height="164"/><rect class="heat-mid" x="164" y="492" width="164" height="164"/><rect class="heat-low" x="328" y="492" width="164" height="164"/><rect class="heat-mid" x="492" y="492" width="164" height="164"/><rect class="heat-mid" x="656" y="492" width="164" height="164"/>
+      <rect class="heat-hi" x="0" y="656" width="164" height="164"/><rect class="heat-mid" x="164" y="656" width="164" height="164"/><rect class="heat-low" x="328" y="656" width="164" height="164"/><rect class="heat-mid" x="492" y="656" width="164" height="164"/><rect class="heat-hi" x="656" y="656" width="164" height="164"/>
+    </g>
+
+    <g id="encounter-additions">
+      <ellipse class="enc" cx="622" cy="118" rx="66" ry="28"/><text class="tag-text" x="622" y="118">+Z15</text>
+      <ellipse class="enc" cx="724" cy="296" rx="52" ry="32"/><text class="tag-text" x="724" y="296">+Z16</text>
+      <ellipse class="enc" cx="388" cy="604" rx="58" ry="34"/><text class="tag-text" x="388" y="604">+Z17</text>
+      <ellipse class="enc" cx="722" cy="726" rx="60" ry="42"/><text class="tag-text" x="722" y="726">+Z18</text>
+    </g>
+
+    <g id="density-bands">
+      <path class="density d-stone" d="M420 86C500 58 590 64 692 90"/>
+      <path class="density d-stone" d="M466 148C520 170 576 176 644 160"/>
+      <path class="density d-plant" d="M420 264C486 294 560 292 638 318"/>
+      <path class="density d-water" d="M520 338C586 352 630 386 674 430"/>
+      <path class="density d-water" d="M700 206C752 226 790 268 804 326"/>
+      <path class="density d-plant" d="M60 378C130 350 220 358 290 398"/>
+      <path class="density d-camp" d="M300 388C360 360 430 368 480 420"/>
+      <path class="density d-plant" d="M50 610C122 660 200 640 260 586"/>
+      <path class="density d-camp" d="M322 556C392 548 456 566 500 618"/>
+      <path class="density d-water" d="M566 690C620 714 670 714 738 680"/>
+      <path class="density d-metal" d="M708 548C762 596 792 672 792 768"/>
+      <path class="density d-stone" d="M690 496C746 500 790 520 820 552"/>
+    </g>
+
+    <g id="safe-open">
+      <ellipse class="keep" cx="42" cy="246" rx="38" ry="24"/>
+      <ellipse class="keep" cx="418" cy="354" rx="54" ry="40"/>
+      <ellipse class="keep" cx="554" cy="634" rx="46" ry="34"/>
+    </g>
+
+    <g id="tags">
+      <circle class="tag" cx="622" cy="62" r="14"/><text class="tag-text" x="622" y="62">D1</text>
+      <circle class="tag" cx="524" cy="310" r="14"/><text class="tag-text" x="524" y="310">D2</text>
+      <circle class="tag" cx="738" cy="260" r="14"/><text class="tag-text" x="738" y="260">D3</text>
+      <circle class="tag" cx="220" cy="380" r="14"/><text class="tag-text" x="220" y="380">D4</text>
+      <circle class="tag" cx="400" cy="390" r="14"/><text class="tag-text" x="400" y="390">D5</text>
+      <circle class="tag" cx="150" cy="706" r="14"/><text class="tag-text" x="150" y="706">D6</text>
+      <circle class="tag" cx="405" cy="610" r="14"/><text class="tag-text" x="405" y="610">D7</text>
+      <circle class="tag" cx="646" cy="720" r="14"/><text class="tag-text" x="646" y="720">D8</text>
+      <circle class="tag" cx="776" cy="658" r="14"/><text class="tag-text" x="776" y="658">D9</text>
+      <circle class="tag" cx="790" cy="510" r="14"/><text class="tag-text" x="790" y="510">D10</text>
+    </g>
+
+    <text class="label" x="12" y="26">旧图保留</text>
+    <text class="tiny" x="12" y="46">不为密度强改旧体验</text>
+    <text class="axis" x="0" y="-8">0</text><text class="axis" x="160" y="-8">20</text><text class="axis" x="324" y="-8">40</text><text class="axis" x="488" y="-8">60</text><text class="axis" x="652" y="-8">80</text><text class="axis" x="804" y="-8">99</text>
+    <text class="axis" x="-24" y="4">0</text><text class="axis" x="-30" y="168">20</text><text class="axis" x="-30" y="332">40</text><text class="axis" x="-30" y="496">60</text><text class="axis" x="-30" y="660">80</text><text class="axis" x="-30" y="820">99</text>
+  </g>
+
+  <g id="panel" transform="translate(920 104)">
+    <rect class="panel" x="0" y="0" width="750" height="820" rx="10"/>
+    <text class="head" x="22" y="34">密度审查结论</text>
+
+    <rect class="panel-orange" x="22" y="56" width="706" height="122" rx="8"/>
+    <text class="subhead" x="42" y="82">V3 还能优化的地方</text>
+    <text class="txt" x="42" y="106">1. 地标素材够了，但“中小型填充素材”还偏少，落地时容易出现一团装饰后中间空。</text>
+    <text class="txt" x="42" y="128">2. 湿地 -> 农田、花坡 -> 湿地、岩场 -> 河口这些生态交界还需要 2-3 格过渡带。</text>
+    <text class="txt" x="42" y="150">3. 东岸和岩场有较长边界，应该多用棕榈、沙石、破木板、金属板做节奏点。</text>
+
+    <rect class="panel-green" x="22" y="196" width="706" height="236" rx="8"/>
+    <text class="subhead" x="42" y="222">D1-D10 建议新增密度带</text>
+    <text class="txt" x="42" y="246">D1 北部山脊：碎石带 + 松树幼株 + hanging_moss，遮住山脚直线感。</text>
+    <text class="txt" x="42" y="268">D2 湿地入口：芦草、睡莲、浅水石、木栈道碎段，让 B1 后不是大片空绿地。</text>
+    <text class="txt" x="42" y="290">D3 东岸：棕榈、小沙石、独木舟、桶瓶和鱼架，海湾边缘形成连续生活痕迹。</text>
+    <text class="txt" x="42" y="312">D4 采木高地：木桩、原木堆、树干、斧头，按树线外侧排列，不堵次路。</text>
+    <text class="txt" x="42" y="334">D5 前哨周边：箱桶和围栏呈半环，中心保留安全空地，外圈连接道路。</text>
+    <text class="txt" x="42" y="356">D6 蘑菇幽林：蘑菇组、暗色树、苔藓和隐藏箱，密度高但留一条清晰小径。</text>
+    <text class="txt" x="42" y="378">D7 农田边界：田垄、破栅栏、水桶、工具和草丛，避免农田看成纯色矩形。</text>
+    <text class="txt" x="42" y="400">D8 河口钓营：鱼、鱼架、瓶、箱、睡袋、营火，围绕水边和小营地摆。</text>
+    <text class="txt" x="42" y="422">D9 岩场废场：矿石、镐锤、金属板、旧地板，按“矿洞外堆料场”排列。</text>
+
+    <rect class="panel-blue" x="22" y="450" width="706" height="172" rx="8"/>
+    <text class="subhead" x="42" y="476">遇敌区继续优化</text>
+    <text class="txt" x="42" y="500">保留 V3 的 Z01-Z14，再建议新增四个小型过渡遇敌区：</text>
+    <text class="txt" x="42" y="522">+Z15 山脊草窝：岩石缝和松树幼株之间，低概率。</text>
+    <text class="txt" x="42" y="544">+Z16 东岸沙草：码头外侧和棕榈线之间，低到中概率。</text>
+    <text class="txt" x="42" y="566">+Z17 农田外缘：围栏外草丛，不进入田垄主路。</text>
+    <text class="txt" x="42" y="588">+Z18 岩场洞口草：矿洞/废场交界，作为后段探索区。</text>
+    <text class="txt" x="42" y="610">这样总遇敌区从 14 个变成 18 个，密度更稳，但主路仍然安全。</text>
+
+    <text class="head" x="22" y="664">落地密度目标</text>
+    <text class="txt" x="22" y="692">代表性大/中素材：V3 约 73 个，执行版建议 110-130 个，其中 30-40 个为小型填充素材。</text>
+    <text class="txt" x="22" y="716">每个 20x20 区块至少满足两项：道路/水体/遇敌区/素材簇/边界地形。安全空地例外。</text>
+    <text class="txt" x="22" y="740">小素材不要随机撒，按“水边线、坡脚线、道路外缘、营地外圈、农田边界、矿洞外堆料场”成线或半环摆放。</text>
+    <text class="txt" x="22" y="764">避免过密：主路中心 1-2 格、桥头 2 格、玩家出生和前哨中心保持清爽，保证移动和读图。</text>
+  </g>
+
+  <g id="legend" transform="translate(48 960)">
+    <rect class="panel" x="0" y="0" width="1622" height="104" rx="10"/>
+    <text class="head" x="22" y="32">图例</text>
+    <rect class="heat-hi" x="90" y="18" width="28" height="20"/><text class="txt" x="128" y="33">高密度：林下、湿地、岩场，可多放小素材和遇敌草</text>
+    <rect class="heat-mid" x="90" y="50" width="28" height="20"/><text class="txt" x="128" y="65">中密度：路边、农田外缘、山脚，需要规律素材簇</text>
+    <rect class="heat-low" x="560" y="18" width="28" height="20"/><text class="txt" x="598" y="33">低密度：安全空地、视线开阔区、桥头缓冲，允许留白</text>
+    <path class="density d-stone" d="M560 64H610"/><text class="txt" x="622" y="68">灰线：碎石/岩壁密度带</text>
+    <path class="density d-plant" d="M790 64H840"/><text class="txt" x="852" y="68">绿线：灌木/花/蘑菇/草密度带</text>
+    <path class="density d-water" d="M1040 64H1090"/><text class="txt" x="1102" y="68">蓝线：水边生活/湿地素材带</text>
+    <path class="density d-camp" d="M1260 64H1310"/><text class="txt" x="1322" y="68">棕线：营地/农田/采木资源带</text>
+  </g>
+</svg>

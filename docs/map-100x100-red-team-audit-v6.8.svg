@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1320" viewBox="0 0 2100 1320" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 地图 V6.8 全量红队审计图</title>
+  <desc id="desc">从全量内容一致性、执行返工风险、玩家路径误读、遇敌进度、奖励经济和素材加载角度审计 V6.7 地图方案，标出 A01-A16 风险和优化动作。</desc>
+  <defs>
+    <style>
+      .page { fill: #f7f8f1; }
+      .title { font: 800 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .sub { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #dceec6; stroke: #111827; stroke-width: 3; }
+      .grid { stroke: rgba(15,23,42,.12); stroke-width: 1; }
+      .old { fill: #99d77e; stroke: #166534; stroke-width: 2; }
+      .ridge { fill: #b7bfae; }
+      .wetland { fill: #9fe0c7; }
+      .coast { fill: #bfe6dd; }
+      .wood { fill: #83bc74; }
+      .outpost { fill: #dfc97a; }
+      .mushroom { fill: #659a67; }
+      .farm { fill: #dfe98d; }
+      .delta { fill: #b8dfbc; }
+      .quarry { fill: #d5a16f; }
+      .water { fill: none; stroke: #67d4e5; stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .main { fill: none; stroke: #f59e0b; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+      .loop { fill: none; stroke: #2563eb; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 12 7; opacity: .9; }
+      .risk { fill: #111827; stroke: #ffffff; stroke-width: 2.4; }
+      .risk-hi { fill: #dc2626; stroke: #ffffff; stroke-width: 2.4; }
+      .risk-mid { fill: #f97316; stroke: #ffffff; stroke-width: 2.4; }
+      .risk-low { fill: #2563eb; stroke: #ffffff; stroke-width: 2.4; }
+      .risk-text { font: 800 8px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .area { font: 900 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .small { font: 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-red { fill: #fef2f2; stroke: #fca5a5; stroke-width: 1.2; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .panel-blue { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.2; }
+      .panel-green { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .head { font: 800 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 10.4px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .strong { font: 800 10.4px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .legend-line { stroke-linecap: round; stroke-width: 5; }
+    </style>
+  </defs>
+
+  <rect class="page" width="2100" height="1320"/>
+  <text class="title" x="48" y="44">100x100 地图 V6.8 全量红队审计图：找会导致返工、迷路、失衡和实现冲突的问题</text>
+  <text class="sub" x="48" y="70">A01-A16 是审计动作，不是新增玩法。红色必须先修，橙色第一版必须约束，蓝色可在实现时验证。</text>
+
+  <g id="map" transform="translate(48 110)">
+    <rect class="map" x="0" y="0" width="900" height="900" rx="7"/>
+    <path class="grid" d="M90 0V900M180 0V900M270 0V900M360 0V900M450 0V900M540 0V900M630 0V900M720 0V900M810 0V900M0 90H900M0 180H900M0 270H900M0 360H900M0 450H900M0 540H900M0 630H900M0 720H900M0 810H900"/>
+    <rect class="old" x="0" y="0" width="396" height="324" rx="4"/>
+    <path class="ridge" d="M396 0H900V171C835 190 756 176 679 192C613 205 560 190 506 171C455 155 424 155 396 174Z"/>
+    <path class="wetland" d="M396 234C461 259 525 278 595 272C664 266 734 302 767 358C792 407 776 482 722 528C655 580 535 552 464 490C416 448 394 360 396 234Z"/>
+    <path class="coast" d="M758 171C825 190 878 222 900 262V596C836 588 779 536 767 466C754 412 774 356 754 308C736 262 722 209 758 171Z"/>
+    <path class="wood" d="M0 324H320C333 382 314 450 260 520C198 596 86 608 0 552Z"/>
+    <path class="outpost" d="M320 324C392 340 466 378 520 430C522 496 491 544 437 569C376 594 306 544 278 496C262 430 272 360 320 324Z"/>
+    <path class="mushroom" d="M0 552C112 602 206 588 270 520C304 596 304 720 250 812C204 883 100 900 0 900Z"/>
+    <path class="farm" d="M270 520C345 557 424 562 498 534C574 594 584 682 552 764C506 852 380 887 250 812C299 725 306 608 270 520Z"/>
+    <path class="delta" d="M552 764C586 686 582 620 548 569C622 540 705 569 764 638C792 725 754 830 688 900H479C522 869 544 816 552 764Z"/>
+    <path class="quarry" d="M764 520C818 562 859 590 900 596V900H688C758 818 794 690 764 520Z"/>
+    <path class="water" d="M546 70C538 120 522 151 514 184C506 222 516 250 552 284C598 328 668 326 724 358C779 390 796 451 774 514C752 584 787 648 825 722C852 778 837 837 800 890"/>
+    <path class="main" d="M46 270C130 263 203 221 282 159C347 113 419 144 468 193C516 241 547 263 550 293C556 347 531 388 430 404C416 482 422 536 440 581C468 662 546 724 646 713C690 739 717 776 720 810C740 729 767 637 803 565C789 594 783 619 790 648"/>
+    <path class="loop" d="M450 176C500 112 546 70 612 88C678 104 725 128 796 210C812 244 781 294 658 318"/>
+    <path class="loop" d="M180 324C121 380 104 462 164 517C226 572 310 548 372 455C392 428 414 410 430 404"/>
+    <path class="loop" d="M150 542C86 610 72 704 118 791C164 860 258 828 333 724C365 680 392 648 424 628"/>
+    <path class="loop" d="M574 654C650 694 708 738 720 810C698 863 626 864 586 818C558 786 579 744 646 713"/>
+    <path class="loop" d="M803 565C865 604 889 692 852 779C820 858 742 837 732 746C725 690 755 632 803 565"/>
+
+    <text class="area" x="28" y="32">A 旧图</text>
+    <text class="area" x="520" y="35">B 北山脊</text>
+    <text class="area" x="425" y="222">C 石花坡</text>
+    <text class="area" x="560" y="370">D 湿地</text>
+    <text class="area" x="790" y="250">E 东岸</text>
+    <text class="area" x="355" y="408">F 前哨</text>
+    <text class="area" x="94" y="430">G 采木</text>
+    <text class="area" x="54" y="650">H 幽林</text>
+    <text class="area" x="400" y="640">I 农田</text>
+    <text class="area" x="610" y="780">J 河口</text>
+    <text class="area" x="780" y="650">K 废场</text>
+
+    <circle class="risk-hi" cx="184" cy="360" r="14"/><text class="risk-text" x="184" y="360">A01</text>
+    <circle class="risk-hi" cx="640" cy="255" r="14"/><text class="risk-text" x="640" y="255">A02</text>
+    <circle class="risk-hi" cx="165" cy="696" r="14"/><text class="risk-text" x="165" y="696">A03</text>
+    <circle class="risk-hi" cx="430" cy="404" r="14"/><text class="risk-text" x="430" y="404">A04</text>
+    <circle class="risk-mid" cx="550" cy="293" r="14"/><text class="risk-text" x="550" y="293">A05</text>
+    <circle class="risk-mid" cx="646" cy="713" r="14"/><text class="risk-text" x="646" y="713">A06</text>
+    <circle class="risk-mid" cx="610" cy="780" r="14"/><text class="risk-text" x="610" y="780">A07</text>
+    <circle class="risk-mid" cx="803" cy="565" r="14"/><text class="risk-text" x="803" y="565">A08</text>
+    <circle class="risk-mid" cx="790" cy="390" r="14"/><text class="risk-text" x="790" y="390">A09</text>
+    <circle class="risk-mid" cx="520" cy="222" r="14"/><text class="risk-text" x="520" y="222">A10</text>
+    <circle class="risk-low" cx="720" cy="810" r="14"/><text class="risk-text" x="720" y="810">A11</text>
+    <circle class="risk-low" cx="850" cy="855" r="14"/><text class="risk-text" x="850" y="855">A12</text>
+    <circle class="risk-low" cx="546" cy="70" r="14"/><text class="risk-text" x="546" y="70">A13</text>
+    <circle class="risk-low" cx="360" cy="324" r="14"/><text class="risk-text" x="360" y="324">A14</text>
+    <circle class="risk-low" cx="500" cy="585" r="14"/><text class="risk-text" x="500" y="585">A15</text>
+    <circle class="risk-low" cx="830" cy="702" r="14"/><text class="risk-text" x="830" y="702">A16</text>
+  </g>
+
+  <g id="panel1" transform="translate(990 110)">
+    <rect class="panel-red" x="0" y="0" width="520" height="358" rx="8"/>
+    <text class="head" x="18" y="30">必须先修的结构矛盾</text>
+    <text class="strong" x="22" y="64">A01 旧南口绕行：</text><text class="txt" x="142" y="64">可能跳过 B1/O 的进入节奏；旧南口只接低压采木回环。</text>
+    <text class="strong" x="22" y="94">A02 G1 与 Z04 解锁：</text><text class="txt" x="166" y="94">G1 可走安全路，Z04 稀有草再 tier_1 开。</text>
+    <text class="strong" x="22" y="124">A03 G2 与 Z09 tier_2：</text><text class="txt" x="172" y="124">G2 不能放在只有 tier_2 才开放的压力区。</text>
+    <text class="strong" x="22" y="154">A04 前哨过载：</text><text class="txt" x="132" y="154">四向出口、NPC、补给、任务需要外圈分层。</text>
+    <text class="strong" x="22" y="184">A05 桥头生态覆盖：</text><text class="txt" x="154" y="184">Z05 必须扣除 B1 桥头和隐藏入口。</text>
+    <text class="strong" x="22" y="214">A06 H/C/B3 三点过近：</text><text class="txt" x="176" y="214">恢复、挑战、桥位必须各自有对话空间。</text>
+    <text class="strong" x="22" y="244">A07 Z11 与 H：</text><text class="txt" x="112" y="244">河口营地可早到，但高压遇敌必须 tier_2 后增强。</text>
+    <text class="strong" x="22" y="274">A08 B2 门槛：</text><text class="txt" x="126" y="274">需要明确挑战门和失败回退点。</text>
+    <text class="txt" x="22" y="318">结论：这些不是美术问题，是执行前必须锁定的数据和路线规则。</text>
+
+    <rect class="panel-orange" x="0" y="386" width="520" height="314" rx="8"/>
+    <text class="head" x="18" y="416">第一版范围再收敛</text>
+    <text class="strong" x="22" y="452">必须做：</text><text class="txt" x="84" y="452">黄金主路、三部下、Boss、tier_0/tier_1/tier_2、8 隐藏。</text>
+    <text class="strong" x="22" y="482">暂缓做：</text><text class="txt" x="84" y="482">tier_3 完整稀有层、连战、探索面板、Boss 后再战。</text>
+    <text class="strong" x="22" y="512">奖励预算：</text><text class="txt" x="96" y="512">经验药水数量要封顶，避免再出现经验爆表但不升级的体验。</text>
+    <text class="strong" x="22" y="542">素材预算：</text><text class="txt" x="96" y="542">第一批 60-90 个别名即可，完整密度不能提前铺。</text>
+    <text class="strong" x="22" y="572">遇敌预算：</text><text class="txt" x="96" y="572">主路安全旅行带优先于草丛密度。</text>
+    <text class="strong" x="22" y="602">事件预算：</text><text class="txt" x="96" y="602">G1/G2/G3、Boss、8 道具、8 隐藏先闭环。</text>
+    <text class="txt" x="22" y="646">第一版要像完整章节的骨架，不像完整大地图的未完成版本。</text>
+  </g>
+
+  <g id="panel2" transform="translate(1540 110)">
+    <rect class="panel-blue" x="0" y="0" width="510" height="404" rx="8"/>
+    <text class="head" x="18" y="30">可执行性审计</text>
+    <text class="strong" x="22" y="64">A09 东岸主题边界：</text><text class="txt" x="168" y="64">PR 只做水岸可选探索，不进入主路判断。</text>
+    <text class="strong" x="22" y="94">A10 第一隐藏教学：</text><text class="txt" x="168" y="94">HS03 要明确教“视觉异常可调查”。</text>
+    <text class="strong" x="22" y="124">A11 B3 命名冲突：</text><text class="txt" x="154" y="124">B3 是桥，不是 Boss；图例和 UI 要避免误读。</text>
+    <text class="strong" x="22" y="154">A12 边界空白：</text><text class="txt" x="142" y="154">东南角需要斜切、废结构、岩壁遮挡。</text>
+    <text class="strong" x="22" y="184">A13 W 入口：</text><text class="txt" x="106" y="184">只做远景伏笔，不触发未完成传送。</text>
+    <text class="strong" x="22" y="214">A14 旧存档：</text><text class="txt" x="118" y="214">若旧坐标落入新增阻挡物，要重定位到最近安全格。</text>
+    <text class="strong" x="22" y="244">A15 农田到河口：</text><text class="txt" x="154" y="244">需要视线和路标，不让玩家误进幽林深处。</text>
+    <text class="strong" x="22" y="274">A16 T5/Boss：</text><text class="txt" x="130" y="274">T5 不应挡 Boss 唯一路；放到侧场预热。</text>
+    <text class="txt" x="22" y="318">每一项都要转成验收用例：能走、不会误触发、不会误读、能保存。</text>
+    <text class="txt" x="22" y="350">V6.8 的价值不是更多玩法，而是提前消掉会返工的设计债。</text>
+
+    <rect class="panel-green" x="0" y="432" width="510" height="268" rx="8"/>
+    <text class="head" x="18" y="462">新的第一版验收口径</text>
+    <line class="legend-line" x1="24" y1="494" x2="80" y2="494" stroke="#f59e0b"/><text class="txt" x="96" y="498">黄金主路全程不被随机遇敌、装饰和 NPC 打断。</text>
+    <line class="legend-line" x1="24" y1="526" x2="80" y2="526" stroke="#2563eb" stroke-dasharray="12 7"/><text class="txt" x="96" y="530">可选环线能回主路，且不比主路更亮更宽。</text>
+    <circle class="risk-hi" cx="52" cy="560" r="11"/><text class="risk-text" x="52" y="560">A</text><text class="txt" x="96" y="564">红色问题修完才进入素材铺设。</text>
+    <circle class="risk-mid" cx="52" cy="592" r="11"/><text class="risk-text" x="52" y="592">A</text><text class="txt" x="96" y="596">橙色问题必须在第一版验收表中检查。</text>
+    <circle class="risk-low" cx="52" cy="624" r="11"/><text class="risk-text" x="52" y="624">A</text><text class="txt" x="96" y="628">蓝色问题可以随实现逐步验证，但不能遗忘。</text>
+    <text class="txt" x="22" y="666">一句话：先把地图变成“不会误导玩家”的系统，再让它变漂亮。</text>
+  </g>
+
+  <g id="bottom" transform="translate(48 1048)">
+    <rect class="panel" x="0" y="0" width="2002" height="188" rx="8"/>
+    <text class="head" x="18" y="32">V6.8 追加结论</text>
+    <text class="txt" x="22" y="66">V6.7 的方向正确，但文档中仍有跨章节遗留矛盾：G2 与 Z09 的 tier 解锁、G1 与 Z04 的稀有草解锁、第一版范围缺 tier_1、旧南口可能绕过前哨，以及 H/C/B3 功能过近。</text>
+    <text class="txt" x="22" y="96">V6.8 不是推翻 V6.7，而是把 V6.7 的“导演手”落实为数据约束：哪些路能走、哪些草什么时候触发、哪些内容第一版必须做，哪些只做伏笔。</text>
+    <text class="txt" x="22" y="126">最终执行时，先做红色 A01-A08，再做橙色第一版预算，再做蓝色可执行性检查。这样地图不会因为美术丰富而在逻辑上返工。</text>
+    <text class="txt" x="22" y="156">重点修订：Z09 改为外圈 tier_1、深处 tier_2；Z04 改为安全通路 tier_0、稀有草 tier_1；第一版纳入 tier_1，暂缓完整 tier_3。</text>
+  </g>
+</svg>

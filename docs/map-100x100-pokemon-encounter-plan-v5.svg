@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1060" viewBox="0 0 1680 1060" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 宝可梦生态遇敌规划 V5</title>
+  <desc id="desc">基于当前 144 只图鉴，把随机野生、隐藏奖励和进化专属宝可梦分配到 100x100 地图生态区。</desc>
+  <defs>
+    <style>
+      .page { fill: #f6f7ef; }
+      .title { font: 800 27px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #dceec6; stroke: #172033; stroke-width: 3; }
+      .grid { stroke: rgba(15,23,42,.12); stroke-width: 1; }
+      .old { fill: #96d67b; stroke: #064e3b; stroke-width: 2.4; }
+      .ridge { fill: #aeb8a3; }
+      .flower { fill: #cfe98b; }
+      .wetland { fill: #9ddfc2; }
+      .coast { fill: #c5e8dc; }
+      .pine { fill: #80ba71; }
+      .outpost { fill: #dac47f; }
+      .mushroom { fill: #609861; }
+      .farm { fill: #d9e88b; }
+      .delta { fill: #b7ddbc; }
+      .quarry { fill: #d1a36c; }
+      .water { fill: none; stroke: #64cfe0; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .road { fill: none; stroke: #e5bf76; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #2f8f54; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 8; }
+      .zone { fill: rgba(255,255,255,.76); stroke: #0f172a; stroke-width: 1; }
+      .zone-hot { fill: rgba(220,252,231,.82); stroke: #166534; stroke-width: 1.2; }
+      .zone-rare { fill: rgba(255,247,237,.86); stroke: #c2410c; stroke-width: 1.2; }
+      .label { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .small { font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .tiny { font: 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; letter-spacing: 0; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-green { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .panel-blue { fill: #eaf8fb; stroke: #7fc7d7; stroke-width: 1.2; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .head { font: 800 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .metric { font: 800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect class="page" width="1680" height="1060"/>
+  <text class="title" x="48" y="40">100x100 宝可梦生态遇敌规划 V5：144 只图鉴全覆盖</text>
+  <text class="subtitle" x="48" y="66">绿色区为随机野生生态；橙色说明为隐藏/奖励/进化专属。普通主路、桥头、前哨中心仍保持安全，不触发随机遇敌。</text>
+
+  <g id="map" transform="translate(48 104)">
+    <rect class="map" x="0" y="0" width="860" height="860" rx="7"/>
+    <path class="grid" d="M86 0V860M172 0V860M258 0V860M344 0V860M430 0V860M516 0V860M602 0V860M688 0V860M774 0V860"/>
+    <path class="grid" d="M0 86H860M0 172H860M0 258H860M0 344H860M0 430H860M0 516H860M0 602H860M0 688H860M0 774H860"/>
+
+    <rect class="old" x="0" y="0" width="378" height="310" rx="4"/>
+    <path class="ridge" d="M378 0H860V164C802 182 722 170 646 184C590 194 532 180 486 164C444 150 410 148 378 166Z"/>
+    <path class="flower" d="M378 142C426 126 486 140 552 176C586 194 606 214 618 246C586 284 516 300 448 280C410 268 386 238 378 216Z"/>
+    <path class="wetland" d="M378 224C440 250 500 266 568 260C632 254 700 288 732 342C758 388 744 456 692 504C632 554 516 526 446 468C400 426 378 346 378 224Z"/>
+    <path class="coast" d="M724 164C790 182 842 214 860 250V568C800 560 744 512 730 446C720 396 740 342 722 294C704 250 692 198 724 164Z"/>
+    <path class="pine" d="M0 310H306C320 364 300 430 248 498C190 568 82 580 0 528Z"/>
+    <path class="outpost" d="M306 310C374 326 444 362 496 412C498 474 468 520 416 544C360 568 292 522 266 476C250 410 260 346 306 310Z"/>
+    <path class="mushroom" d="M0 528C108 574 196 562 258 498C292 570 292 690 240 778C196 846 96 864 0 860Z"/>
+    <path class="farm" d="M258 498C330 534 404 538 476 512C548 568 558 654 528 730C484 814 364 852 240 778C286 696 294 584 258 498Z"/>
+    <path class="delta" d="M528 730C560 656 556 594 524 544C594 516 672 544 728 610C756 694 718 794 656 860H458C498 832 520 782 528 730Z"/>
+    <path class="quarry" d="M728 498C780 540 820 564 860 568V860H656C724 782 756 660 728 498Z"/>
+
+    <path class="water" d="M522 66C514 114 498 142 490 176C482 212 492 240 526 272C570 314 638 312 690 342C744 372 758 430 738 488C718 554 752 618 788 690C814 742 800 800 764 850"/>
+    <path class="water" stroke-width="16" d="M274 172C338 176 400 206 464 248C490 264 512 274 536 280"/>
+    <path class="road" d="M44 258C96 258 132 244 164 230C214 208 240 174 268 152C304 124 354 120 390 128C438 136 486 160 518 192C532 208 530 234 524 278C532 330 508 370 472 386C424 408 406 472 420 554C436 654 510 716 616 680C698 656 742 598 766 540C794 478 796 402 768 334C740 274 684 248 622 238C582 230 548 250 524 278"/>
+    <path class="road" stroke-width="5" d="M282 292C254 346 218 392 174 430C126 472 102 544 118 642C138 742 200 792 282 794C360 786 416 712 420 554"/>
+    <path class="trail" d="M468 190C492 134 512 96 522 66"/>
+    <path class="trail" d="M174 430C230 470 288 470 344 442"/>
+    <path class="trail" d="M420 554C372 612 356 672 380 736"/>
+
+    <g id="zones">
+      <rect class="zone-hot" x="44" y="38" width="154" height="56" rx="6"/><text class="label" x="56" y="58">Z01 阳光草坡</text><text class="small" x="56" y="76">宝宝丁/喵喵/尼多朗</text>
+      <rect class="zone-hot" x="206" y="88" width="150" height="54" rx="6"/><text class="label" x="218" y="108">Z02 花丘</text><text class="small" x="218" y="126">魔尼尼/蛋蛋/凯西</text>
+      <rect class="zone-hot" x="400" y="182" width="168" height="60" rx="6"/><text class="label" x="412" y="202">Z03 石花坡</text><text class="small" x="412" y="220">盆才怪/小拳石/飞天螳螂</text>
+      <rect class="zone-hot" x="548" y="90" width="164" height="56" rx="6"/><text class="label" x="560" y="110">Z04/Z15 山脊</text><text class="small" x="560" y="128">独角犀牛/大岩蛇/幼基拉斯</text>
+      <rect class="zone-hot" x="500" y="356" width="170" height="60" rx="6"/><text class="label" x="512" y="376">Z05 湿地</text><text class="small" x="512" y="394">可达鸭/呆呆兽/墨海马</text>
+      <rect class="zone-hot" x="710" y="302" width="136" height="62" rx="6"/><text class="label" x="722" y="322">Z06/Z16 东岸</text><text class="small" x="722" y="340">大钳蟹/大舌贝/海星星</text>
+      <rect class="zone-hot" x="68" y="390" width="172" height="58" rx="6"/><text class="label" x="80" y="410">Z07 采木高地</text><text class="small" x="80" y="428">腕力/猴怪/卡蒂狗</text>
+      <rect class="zone-hot" x="210" y="474" width="162" height="58" rx="6"/><text class="label" x="222" y="494">Z08 虫林边缘</text><text class="small" x="222" y="512">飞天螳螂/大甲/无畏小子</text>
+      <rect class="zone-hot" x="54" y="654" width="164" height="60" rx="6"/><text class="label" x="66" y="674">Z09 蘑菇幽林</text><text class="small" x="66" y="692">鬼斯/催眠貘/臭泥</text>
+      <rect class="zone-hot" x="334" y="604" width="166" height="60" rx="6"/><text class="label" x="346" y="624">Z10/Z17 农田</text><text class="small" x="346" y="642">喵喵/嘟嘟/吉利蛋</text>
+      <rect class="zone-hot" x="596" y="700" width="156" height="58" rx="6"/><text class="label" x="608" y="720">Z11 河口</text><text class="small" x="608" y="738">鲤鱼王/海刺龙/哥达鸭</text>
+      <rect class="zone-hot" x="704" y="604" width="138" height="62" rx="6"/><text class="label" x="716" y="624">Z12/Z18 岩洞</text><text class="small" x="716" y="642">隆隆石/豪力/沙基拉斯</text>
+      <rect class="zone-hot" x="692" y="512" width="150" height="58" rx="6"/><text class="label" x="704" y="532">Z13 金属场</text><text class="small" x="704" y="550">小磁怪/霹雳电球/瓦斯弹</text>
+      <rect class="zone-hot" x="704" y="208" width="142" height="58" rx="6"/><text class="label" x="716" y="228">Z14 背风草带</text><text class="small" x="716" y="246">肯泰罗/小火马/袋兽</text>
+      <rect class="zone-rare" x="304" y="360" width="170" height="58" rx="6"/><text class="label" x="316" y="380">F 前哨安全区</text><text class="small" x="316" y="398">无随机遇敌，可放任务奖励</text>
+    </g>
+  </g>
+
+  <g id="panel" transform="translate(950 104)">
+    <rect class="panel" x="0" y="0" width="680" height="860" rx="10"/>
+    <text class="head" x="22" y="34">图鉴覆盖结果</text>
+
+    <rect class="panel-green" x="22" y="56" width="636" height="94" rx="8"/>
+    <text class="metric" x="42" y="92">67</text><text class="subhead" x="92" y="86">随机野生候选</text>
+    <text class="txt" x="92" y="110">基础形态、低中阶段、生态合理的独立种。</text>
+    <text class="txt" x="92" y="132">每区只选 5-8 个核心物种，保留区域记忆。</text>
+
+    <rect class="panel-orange" x="22" y="170" width="636" height="94" rx="8"/>
+    <text class="metric" x="42" y="206">18</text><text class="subhead" x="92" y="200">固定隐藏 / 奖励 / 任务</text>
+    <text class="txt" x="92" y="224">三御家、传说、化石初始、拉普拉斯、卡比兽、3D龙、迷你龙等。</text>
+    <text class="txt" x="92" y="246">不进入普通随机表，用事件保证稀有感。</text>
+
+    <rect class="panel-blue" x="22" y="284" width="636" height="94" rx="8"/>
+    <text class="metric" x="42" y="320">59</text><text class="subhead" x="92" y="314">进化 / 分支进化专属</text>
+    <text class="txt" x="92" y="338">最终形态、伊布分支、高阶交易/道具进化、准神最终等。</text>
+    <text class="txt" x="92" y="360">主要靠成长、道具、训练或支线解锁。</text>
+
+    <text class="head" x="22" y="428">保留为隐藏或奖励的重点</text>
+    <text class="txt" x="22" y="456">开局/老师：#1 妙蛙种子、#2 小火龙、#3 杰尼龟。</text>
+    <text class="txt" x="22" y="480">剧情/道路：#9 拉普拉斯、#10 卡比兽、#33 蚊香泳士、#40 白海狮。</text>
+    <text class="txt" x="22" y="504">化石/研究：#24 化石翼龙、#65 3D龙、#81 菊石兽、#82 化石盔。</text>
+    <text class="txt" x="22" y="528">隐藏终局：#25 火焰鸟、#26 急冻鸟、#27 闪电鸟、#68 超梦、#69 梦幻。</text>
+    <text class="txt" x="22" y="552">龙潭：#128 迷你龙，后续进化为 #129 哈克龙、#12 快龙。</text>
+
+    <text class="head" x="22" y="616">落地注意</text>
+    <text class="txt" x="22" y="644">1. 先修 `getSpeciesLevelBounds()` 的 `null -> 0` 过滤问题，否则独立种和最终形态会被误判为 max=-1。</text>
+    <text class="txt" x="22" y="668">2. 新增 11 张区域表，不再让全部区域共用 `route102_grass`。</text>
+    <text class="txt" x="22" y="692">3. 强生态种如幼基拉斯、沙基拉斯、吉利蛋、袋兽，总权重控制在 3-5。</text>
+    <text class="txt" x="22" y="716">4. 三御家、传说、伊布进化、化石复原和 3D龙线不要普通随机野生。</text>
+    <text class="txt" x="22" y="740">5. 固定 Boss 如暴鲤龙可以是水面事件，不放进普通草丛抽取。</text>
+
+    <text class="head" x="22" y="804">完整明细</text>
+    <text class="txt" x="22" y="832">详见 Markdown：docs/map-100x100-pokemon-encounter-plan-v5.md</text>
+  </g>
+</svg>

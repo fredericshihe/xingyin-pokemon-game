@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { withViteAuditServer } from './load-vite-module.mjs'
+
+const POKEAPI_ROOT = 'https://pokeapi.co/api/v2'
+const EXPERIENCE_OUTPUT_PATH = 'src/utils/officialExperience.js'
+const MOVE_META_OUTPUT_PATH = 'src/utils/officialMoveMeta.js'
+const MOVE_KEY_TO_API = {
+  quickattack: 'quick-attack',
+  bodyslam: 'body-slam',
+  horn_attack: 'horn-attack',
+  fury_attack: 'fury-attack',
+  extremespeed: 'extreme-speed',
+  fire_blast: 'fire-blast',
+  watergun: 'water-gun',
+  hydropump: 'hydro-pump',
+  vinewhip: 'vine-whip',
+  razorleaf: 'razor-leaf',
+  thundershock: 'thunder-shock',
+  zap_cannon: 'zap-cannon',
+  icebeam: 'ice-beam',
+  karate_chop: 'karate-chop',
+  double_kick: 'double-kick',
+  low_kick: 'low-kick',
+  poison_sting: 'poison-sting',
+  poison_jab: 'poison-jab',
+  wing_attack: 'wing-attack',
+  peck: 'peck',
+  drill_peck: 'drill-peck',
+  sky_attack: 'sky-attack',
+  dream_eater: 'dream-eater',
+  fury_cutter: 'fury-cutter',
+  rock_throw: 'rock-throw',
+  rock_slide: 'rock-slide',
+  shadowball: 'shadow-ball',
+  rage_fist: 'rage-fist',
+  dragonclaw: 'dragon-claw',
+}
+
+const apiMoveName = (moveKey) => MOVE_KEY_TO_API[moveKey] || moveKey.replaceAll('_', '-')
+
+const fetchJson = async (url) => {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
+  }
+  return response.json()
+}
+
+const mapLimit = async (items, limit, mapper) => {
+  const results = new Array(items.length)
+  let nextIndex = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex
+      nextIndex += 1
+      results[index] = await mapper(items[index], index)
+    }
+  })
+  await Promise.all(workers)
+  return results
+}
+
+const renderObject = (object, indent = 0) => {
+  const pad = ' '.repeat(indent)
+  const innerPad = ' '.repeat(indent + 2)
+  const entries = Object.entries(object)
+  if (entries.length === 0) return '{}'
+  return `{\n${entries.map(([key, value]) => {
+    const renderedKey = /^[a-zA-Z_$][\w$]*$/.test(key) ? key : JSON.stringify(key)
+    const renderedValue = value && typeof value === 'object' && !Array.isArray(value)
+      ? renderObject(value, indent + 2)
+      : JSON.stringify(value)
+    return `${innerPad}${renderedKey}: ${renderedValue},`
+  }).join('\n')}\n${pad}}`
+}
+
+await withViteAuditServer(async ({ rootDir, loadModule }) => {
+  const { MONSTERS, MOVES } = await loadModule('/src/utils/gameData.js')
+  const uniqueDexNos = [...new Set(MONSTERS.map((monster) => Number(monster.dexNo)))]
+    .filter((dexNo) => Number.isInteger(dexNo) && dexNo > 0)
+    .sort((a, b) => a - b)
+  const moveKeys = Object.keys(MOVES).sort()
+
+  const [pokemonRows, moveRows, growthRateList] = await Promise.all([
+    mapLimit(uniqueDexNos, 12, async (dexNo) => {
+      const [pokemon, species] = await Promise.all([
+        fetchJson(`${POKEAPI_ROOT}/pokemon/${dexNo}`),
+        fetchJson(`${POKEAPI_ROOT}/pokemon-species/${dexNo}`),
+      ])
+      return {
+        dexNo,
+        baseExperience: pokemon.base_experience,
+        growthRate: species.growth_rate?.name || null,
+      }
+    }),
+    mapLimit(moveKeys, 12, async (moveKey) => {
+      const move = await fetchJson(`${POKEAPI_ROOT}/move/${apiMoveName(moveKey)}`)
+      return {
+        moveKey,
+        meta: {
+          pp: move.pp,
+          power: move.power,
+          accuracy: move.accuracy,
+          priority: move.priority,
+          type: move.type?.name,
+          category: move.damage_class?.name,
+        },
+      }
+    }),
+    fetchJson(`${POKEAPI_ROOT}/growth-rate?limit=100`),
+  ])
+
+  const growthRateRows = await mapLimit(growthRateList.results, 6, async (row) => {
+    const growthRate = await fetchJson(row.url)
+    return {
+      name: growthRate.name,
+      formula: growthRate.formula,
+      levels: Object.fromEntries(
+        growthRate.levels
+          .slice()
+          .sort((a, b) => a.level - b.level)
+          .map((entry) => [entry.level, entry.experience])
+      ),
+    }
+  })
+
+  const growthRates = Object.fromEntries(
+    growthRateRows
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((row) => [row.name, row.levels])
+  )
+  const growthRateFormulae = Object.fromEntries(
+    growthRateRows
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((row) => [row.name, row.formula])
+  )
+  const baseExperienceByDexNo = Object.fromEntries(
+    pokemonRows.map((row) => [row.dexNo, row.baseExperience])
+  )
+  const growthRateByDexNo = Object.fromEntries(
+    pokemonRows.map((row) => [row.dexNo, row.growthRate])
+  )
+  const moveMetaByKey = Object.fromEntries(
+    moveRows.map((row) => [row.moveKey, row.meta])
+  )
+
+  const generatedAt = new Date().toISOString()
+  const experienceOutput = `// Generated by scripts/generate-official-economy-data.mjs\n` +
+    `// Source: PokeAPI pokemon/species/growth-rate data (${generatedAt})\n\n` +
+    `export const OFFICIAL_BASE_EXPERIENCE_BY_DEX_NO = ${renderObject(baseExperienceByDexNo)}\n\n` +
+    `export const OFFICIAL_GROWTH_RATE_BY_DEX_NO = ${renderObject(growthRateByDexNo)}\n\n` +
+    `export const OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE = ${renderObject(growthRates)}\n\n` +
+    `export const OFFICIAL_GROWTH_RATE_FORMULAE = ${renderObject(growthRateFormulae)}\n\n` +
+    `export const getOfficialPokemonDexNo = (pokemon) => Number(pokemon?.dexNo ?? pokemon?.pokedexId)\n\n` +
+    `export const getOfficialBaseExperience = (pokemon) => {\n` +
+    `  const dexNo = getOfficialPokemonDexNo(pokemon)\n` +
+    `  return OFFICIAL_BASE_EXPERIENCE_BY_DEX_NO[dexNo] ?? null\n` +
+    `}\n\n` +
+    `export const getOfficialGrowthRate = (pokemon) => {\n` +
+    `  const dexNo = getOfficialPokemonDexNo(pokemon)\n` +
+    `  return OFFICIAL_GROWTH_RATE_BY_DEX_NO[dexNo] || 'medium-fast'\n` +
+    `}\n\n` +
+    `export const getOfficialTotalExpForLevel = (level, pokemon) => {\n` +
+    `  const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))\n` +
+    `  const growthRate = getOfficialGrowthRate(pokemon)\n` +
+    `  return OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE[growthRate]?.[safeLevel] ?? OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE['medium-fast'][safeLevel]\n` +
+    `}\n\n` +
+    `export const getOfficialExpToNextLevel = (level, pokemon) => {\n` +
+    `  const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))\n` +
+    `  if (safeLevel >= 100) return 0\n` +
+    `  return getOfficialTotalExpForLevel(safeLevel + 1, pokemon) - getOfficialTotalExpForLevel(safeLevel, pokemon)\n` +
+    `}\n`
+
+  const moveMetaOutput = `// Generated by scripts/generate-official-economy-data.mjs\n` +
+    `// Source: PokeAPI move data (${generatedAt})\n\n` +
+    `export const OFFICIAL_MOVE_META_BY_KEY = ${renderObject(moveMetaByKey)}\n\n` +
+    `export const getOfficialMoveMeta = (moveKey) => OFFICIAL_MOVE_META_BY_KEY[moveKey] || null\n`
+
+  const experienceOutputPath = path.join(rootDir, EXPERIENCE_OUTPUT_PATH)
+  const moveMetaOutputPath = path.join(rootDir, MOVE_META_OUTPUT_PATH)
+  await Promise.all([
+    fs.writeFile(experienceOutputPath, experienceOutput),
+    fs.writeFile(moveMetaOutputPath, moveMetaOutput),
+  ])
+
+  console.log(JSON.stringify({
+    experienceOutputPath,
+    moveMetaOutputPath,
+    dexNoCount: pokemonRows.length,
+    moveCount: moveRows.length,
+    growthRateCount: growthRateRows.length,
+  }, null, 2))
+})

@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1160" viewBox="0 0 1760 1160" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 地图素材层设计稿 V6.3</title>
+  <desc id="desc">展示 Kenney 扩展素材包在 100x100 地图各区域的使用位置、密度带和摆放逻辑。</desc>
+  <defs>
+    <style>
+      .page { fill: #f8faf7; }
+      .title { font: 800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #111827; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #deefca; stroke: #111827; stroke-width: 3; }
+      .grid { stroke: rgba(15, 23, 42, .16); stroke-width: 1; }
+      .grid-strong { stroke: rgba(15, 23, 42, .34); stroke-width: 1.5; }
+      .old { fill: #9ad982; stroke: #166534; stroke-width: 2; }
+      .ridge { fill: #b8bfb1; stroke: rgba(15,23,42,.24); }
+      .slope { fill: #d7ec96; stroke: rgba(15,23,42,.24); }
+      .wetland { fill: #9be0c9; stroke: rgba(15,23,42,.24); }
+      .coast { fill: #bfe6df; stroke: rgba(15,23,42,.24); }
+      .wood { fill: #84bd73; stroke: rgba(15,23,42,.24); }
+      .outpost { fill: #dfc87b; stroke: rgba(15,23,42,.24); }
+      .gravewood { fill: #649967; stroke: rgba(15,23,42,.24); }
+      .farm { fill: #dce98c; stroke: rgba(15,23,42,.24); }
+      .delta { fill: #b8ddb8; stroke: rgba(15,23,42,.24); }
+      .quarry { fill: #d4a06f; stroke: rgba(15,23,42,.24); }
+      .water { fill: none; stroke: #5ac7df; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .water-core { fill: none; stroke: #0e7490; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; opacity: .34; }
+      .road-edge { fill: none; stroke: #8b5e34; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+      .road { fill: none; stroke: #e5bd6f; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #2f855a; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 8; }
+      .area-label { font: 800 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .tiny { font: 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .small { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .marker { fill: #fff; stroke: #0f172a; stroke-width: 1.2; }
+      .marker-text { font: 800 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .asset { stroke: #0f172a; stroke-width: 1; opacity: .94; }
+      .asset-text { font: 800 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .ft { fill: #f7c948; }
+      .gy { fill: #b08ac2; }
+      .pf { fill: #f97316; }
+      .bc { fill: #60a5fa; }
+      .pr { fill: #38bdf8; }
+      .hx { fill: #94a3b8; }
+      .nt { fill: #22c55e; }
+      .sv { fill: #a16207; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-head { font: 800 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .panel-subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .panel-text { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .swatch-label { font: 800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .rule { stroke: #e2e8f0; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect class="page" width="1760" height="1160"/>
+  <text class="title" x="48" y="42">100x100 地图素材层设计稿 V6.3：扩展 Kenney 资源摆放规划</text>
+  <text class="subtitle" x="48" y="68">已核实下载目录 6 个新增素材包：fantasy town、graveyard、platformer、blocky characters、pirate、hexagon。此图只做规划，不代表已接入实际地图代码。</text>
+
+  <g id="map" transform="translate(48 104)">
+    <rect class="map" x="0" y="0" width="900" height="900" rx="7"/>
+    <path class="grid" d="M90 0V900M180 0V900M270 0V900M360 0V900M450 0V900M540 0V900M630 0V900M720 0V900M810 0V900"/>
+    <path class="grid" d="M0 90H900M0 180H900M0 270H900M0 360H900M0 450H900M0 540H900M0 630H900M0 720H900M0 810H900"/>
+    <path class="grid-strong" d="M180 0V900M360 0V900M540 0V900M720 0V900M0 180H900M0 360H900M0 540H900M0 720H900"/>
+
+    <rect class="old" x="0" y="0" width="396" height="324" rx="4"/>
+    <path class="ridge" d="M396 0H900V172C836 190 754 176 678 192C614 206 560 190 506 172C456 156 424 156 396 174Z"/>
+    <path class="slope" d="M396 150C448 134 508 148 580 186C616 208 638 230 648 258C616 298 540 314 468 292C424 278 400 246 396 226Z"/>
+    <path class="wetland" d="M396 234C460 260 524 278 594 272C664 266 734 302 766 358C792 408 776 480 722 528C656 580 536 552 464 490C416 448 394 360 396 234Z"/>
+    <path class="coast" d="M758 172C826 190 878 222 900 262V596C836 588 780 536 766 466C754 412 774 356 754 308C736 262 722 208 758 172Z"/>
+    <path class="wood" d="M0 324H320C334 382 314 450 260 520C198 596 86 608 0 552Z"/>
+    <path class="outpost" d="M320 324C392 340 466 378 520 430C522 496 490 544 436 568C376 594 306 544 278 496C262 430 272 360 320 324Z"/>
+    <path class="gravewood" d="M0 552C112 602 206 588 270 520C304 596 304 720 250 812C204 884 100 904 0 900Z"/>
+    <path class="farm" d="M270 520C344 556 424 562 498 534C574 594 584 682 552 764C506 852 380 888 250 812C298 726 306 608 270 520Z"/>
+    <path class="delta" d="M552 764C586 686 582 620 548 568C622 540 704 568 764 638C792 726 754 830 688 900H480C522 870 544 816 552 764Z"/>
+    <path class="quarry" d="M764 520C818 562 858 590 900 596V900H688C758 818 794 690 764 520Z"/>
+
+    <path class="water" d="M546 70C538 120 522 150 514 184C506 222 516 250 552 284C598 328 668 326 724 358C780 390 796 452 774 514C752 584 788 648 826 722C852 778 838 838 800 890"/>
+    <path class="water-core" d="M546 70C538 120 522 150 514 184C506 222 516 250 552 284C598 328 668 326 724 358C780 390 796 452 774 514C752 584 788 648 826 722C852 778 838 838 800 890"/>
+    <path class="water" stroke-width="16" d="M286 180C354 184 420 216 486 260C514 276 536 286 562 292"/>
+    <path class="water-core" stroke-width="6" d="M286 180C354 184 420 216 486 260C514 276 536 286 562 292"/>
+
+    <path class="road-edge" d="M46 270C100 270 138 256 172 240C224 218 252 182 282 160C320 130 370 126 408 134C458 142 510 168 544 202C558 218 556 246 550 292C558 346 532 388 494 404C444 428 424 494 440 580C456 684 534 750 646 712C732 688 778 626 802 566C832 500 832 420 804 350C774 286 716 260 650 250C608 242 574 264 550 292"/>
+    <path class="road" d="M46 270C100 270 138 256 172 240C224 218 252 182 282 160C320 130 370 126 408 134C458 142 510 168 544 202C558 218 556 246 550 292C558 346 532 388 494 404C444 428 424 494 440 580C456 684 534 750 646 712C732 688 778 626 802 566C832 500 832 420 804 350C774 286 716 260 650 250C608 242 574 264 550 292"/>
+    <path class="trail" d="M294 306C264 362 228 410 182 450C132 494 106 570 124 672C144 776 210 828 294 830C376 822 434 744 440 580"/>
+    <path class="trail" d="M494 404C570 446 648 446 724 424C764 412 798 412 832 434"/>
+    <path class="trail" d="M492 198C516 140 536 100 546 70"/>
+
+    <g id="asset-clusters">
+      <circle class="asset nt" cx="110" cy="74" r="14"/><text class="asset-text" x="110" y="74">NT</text>
+      <circle class="asset nt" cx="270" cy="116" r="14"/><text class="asset-text" x="270" y="116">NT</text>
+      <circle class="asset ft" cx="356" cy="276" r="14"/><text class="asset-text" x="356" y="276">FT</text>
+      <circle class="asset ft" cx="488" cy="228" r="14"/><text class="asset-text" x="488" y="228">FT</text>
+      <circle class="asset hx" cx="548" cy="84" r="14"/><text class="asset-text" x="548" y="84">HX</text>
+      <circle class="asset pf" cx="650" cy="124" r="14"/><text class="asset-text" x="650" y="124">PF</text>
+      <circle class="asset hx" cx="720" cy="146" r="14"/><text class="asset-text" x="720" y="146">HX</text>
+      <circle class="asset sv" cx="586" cy="374" r="14"/><text class="asset-text" x="586" y="374">SV</text>
+      <circle class="asset pr" cx="818" cy="246" r="14"/><text class="asset-text" x="818" y="246">PR</text>
+      <circle class="asset pr" cx="824" cy="390" r="14"/><text class="asset-text" x="824" y="390">PR</text>
+      <circle class="asset pr" cx="802" cy="520" r="14"/><text class="asset-text" x="802" y="520">PR</text>
+      <circle class="asset sv" cx="150" cy="430" r="14"/><text class="asset-text" x="150" y="430">SV</text>
+      <circle class="asset pf" cx="230" cy="520" r="14"/><text class="asset-text" x="230" y="520">PF</text>
+      <circle class="asset sv" cx="420" cy="430" r="14"/><text class="asset-text" x="420" y="430">SV</text>
+      <circle class="asset ft" cx="454" cy="456" r="14"/><text class="asset-text" x="454" y="456">FT</text>
+      <circle class="asset bc" cx="400" cy="398" r="14"/><text class="asset-text" x="400" y="398">BC</text>
+      <circle class="asset gy" cx="120" cy="696" r="14"/><text class="asset-text" x="120" y="696">GY</text>
+      <circle class="asset gy" cx="212" cy="730" r="14"/><text class="asset-text" x="212" y="730">GY</text>
+      <circle class="asset ft" cx="418" cy="670" r="14"/><text class="asset-text" x="418" y="670">FT</text>
+      <circle class="asset hx" cx="488" cy="720" r="14"/><text class="asset-text" x="488" y="720">HX</text>
+      <circle class="asset pr" cx="650" cy="730" r="14"/><text class="asset-text" x="650" y="730">PR</text>
+      <circle class="asset sv" cx="612" cy="760" r="14"/><text class="asset-text" x="612" y="760">SV</text>
+      <circle class="asset pf" cx="802" cy="652" r="14"/><text class="asset-text" x="802" y="652">PF</text>
+      <circle class="asset hx" cx="792" cy="812" r="14"/><text class="asset-text" x="792" y="812">HX</text>
+      <circle class="asset pf" cx="840" cy="826" r="14"/><text class="asset-text" x="840" y="826">PF</text>
+      <circle class="asset bc" cx="738" cy="608" r="14"/><text class="asset-text" x="738" y="608">BC</text>
+    </g>
+
+    <g id="markers">
+      <circle class="marker" cx="46" cy="270" r="12"/><text class="marker-text" x="46" y="270">S</text>
+      <circle class="marker" cx="430" cy="422" r="13"/><text class="marker-text" x="430" y="422">O</text>
+      <circle class="marker" cx="548" cy="300" r="12"/><text class="marker-text" x="548" y="300">B1</text>
+      <circle class="marker" cx="794" cy="558" r="12"/><text class="marker-text" x="794" y="558">B2</text>
+      <circle class="marker" cx="714" cy="738" r="12"/><text class="marker-text" x="714" y="738">B3</text>
+      <circle class="marker" cx="798" cy="650" r="15"/><text class="marker-text" x="798" y="650">B</text>
+    </g>
+
+    <text class="area-label" x="14" y="28">A 旧图保留区</text>
+    <text class="area-label" x="414" y="34">B 山脊瀑布源</text>
+    <text class="area-label" x="414" y="214">C 石花坡</text>
+    <text class="area-label" x="466" y="360">D 月镜湿地</text>
+    <text class="area-label" x="772" y="202">E 东岸海湾</text>
+    <text class="area-label" x="304" y="368">F 生存前哨</text>
+    <text class="area-label" x="22" y="368">G 采木高地</text>
+    <text class="area-label" x="22" y="648">H 蘑菇幽林</text>
+    <text class="area-label" x="320" y="624">I 南部农田</text>
+    <text class="area-label" x="594" y="848">J 河口钓营</text>
+    <text class="area-label" x="762" y="624">K 岩场废场</text>
+
+    <text class="axis" x="-2" y="-8">0</text><text class="axis" x="176" y="-8">20</text><text class="axis" x="356" y="-8">40</text><text class="axis" x="536" y="-8">60</text><text class="axis" x="716" y="-8">80</text><text class="axis" x="884" y="-8">99</text>
+    <text class="axis" x="-24" y="4">0</text><text class="axis" x="-30" y="184">20</text><text class="axis" x="-30" y="364">40</text><text class="axis" x="-30" y="544">60</text><text class="axis" x="-30" y="724">80</text><text class="axis" x="-30" y="900">99</text>
+  </g>
+
+  <g id="panel" transform="translate(1000 104)">
+    <rect class="panel" x="0" y="0" width="710" height="900" rx="10"/>
+    <text class="panel-head" x="24" y="36">图例与执行说明</text>
+
+    <g transform="translate(24 64)">
+      <circle class="asset ft" cx="12" cy="12" r="10"/><text class="swatch-label" x="30" y="16">FT fantasy town：前哨、农田、石路、水车</text>
+      <circle class="asset gy" cx="12" cy="42" r="10"/><text class="swatch-label" x="30" y="46">GY graveyard：幽林旧遗迹、灯笼、铁栅、少量墓碑</text>
+      <circle class="asset pf" cx="12" cy="72" r="10"/><text class="swatch-label" x="30" y="76">PF platformer：山脊高差、废场箱桶、岩台、视觉机关</text>
+      <circle class="asset bc" cx="12" cy="102" r="10"/><text class="swatch-label" x="30" y="106">BC blocky characters：训练师、商人、钓手、研究员</text>
+      <circle class="asset pr" cx="12" cy="132" r="10"/><text class="swatch-label" x="30" y="136">PR pirate：码头、船、桶瓶、棕榈、海岸生活带</text>
+      <circle class="asset hx" cx="12" cy="162" r="10"/><text class="swatch-label" x="30" y="166">HX hexagon：桥、矿场、农场、港口、远景地标</text>
+      <circle class="asset nt" cx="12" cy="192" r="10"/><text class="swatch-label" x="30" y="196">NT nature：树、花、草、蘑菇、水边自然基底</text>
+      <circle class="asset sv" cx="12" cy="222" r="10"/><text class="swatch-label" x="30" y="226">SV survival：营火、帐篷、工具、木料、箱桶</text>
+    </g>
+
+    <line class="rule" x1="24" y1="322" x2="686" y2="322"/>
+    <text class="panel-subhead" x="24" y="352">密度策略</text>
+    <text class="panel-text" x="24" y="378">第一版建议 240-300 个实例，完整视觉版 320-420 个实例。</text>
+    <text class="panel-text" x="24" y="402">每个 20x20 区块至少有两类内容；安全空地只留在 S、O、H、桥头和转弯视线区。</text>
+    <text class="panel-text" x="24" y="426">主路每 6-10 格有小变化，每 18-25 格有一个可记忆地标。</text>
+
+    <text class="panel-subhead" x="24" y="474">摆放逻辑</text>
+    <text class="panel-text" x="24" y="500">B 区：岩台、瀑布、水车和断梯沿坡脚成层，不在山顶随机撒点。</text>
+    <text class="panel-text" x="24" y="524">E/J 区：船、码头、桶瓶、船桨都贴水岸，方向顺水流和靠岸线。</text>
+    <text class="panel-text" x="24" y="548">F/I 区：摊位、围栏、车和 NPC 面向道路，中心保持可读和可通行。</text>
+    <text class="panel-text" x="24" y="572">H 区：只做旧遗迹被森林吞没的感觉，不把全区变成墓园。</text>
+    <text class="panel-text" x="24" y="596">K 区：越靠 Boss 越密，危险物只做视觉边界，未接机关前不伤害玩家。</text>
+
+    <text class="panel-subhead" x="24" y="644">当前项目接入风险</text>
+    <text class="panel-text" x="24" y="670">当前 `ThreeLowPolyMap.jsx` 只加载少量 `kenney-nature` 模型别名。</text>
+    <text class="panel-text" x="24" y="694">新增资源必须先进入 `public/assets/3d/kenney-*`，再注册模型 URL、别名和 footprint。</text>
+    <text class="panel-text" x="24" y="718">不要在地图数据中直接引用 `/Users/shihe/Downloads/...`，浏览器无法稳定加载。</text>
+    <text class="panel-text" x="24" y="742">大型模型必须检查遮挡、碰撞、缩放、桥头净空和移动端性能。</text>
+
+    <text class="panel-subhead" x="24" y="790">暂缓使用</text>
+    <text class="panel-text" x="24" y="816">`coin/heart/star/jewel` 不作为地图奖励。</text>
+    <text class="panel-text" x="24" y="840">`crypt/coffin/ship-ghost/tower-complete` 只留给后续支线或 Boss 后伏笔。</text>
+    <text class="panel-text" x="24" y="864">六边形整片地表不直接铺进方格地图，只做地标或规划参考。</text>
+  </g>
+</svg>

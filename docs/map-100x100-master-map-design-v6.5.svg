@@ -1,0 +1,312 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1500" viewBox="0 0 2200 1500" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 专业游戏地图总控设计稿 V6.5</title>
+  <desc id="desc">整合 100x100 地形、道路、支路、隐藏区域、素材包、玩法点、遇敌生态、阶段解锁和专业地图设计审查风险点的总控图。</desc>
+  <defs>
+    <style>
+      .page { fill: #f7f8f1; }
+      .title { font: 800 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #111827; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #dceec6; stroke: #172033; stroke-width: 3; }
+      .grid { stroke: rgba(15,23,42,.12); stroke-width: 1; }
+      .grid-strong { stroke: rgba(15,23,42,.28); stroke-width: 1.4; }
+      .old { fill: #99d77e; stroke: #166534; stroke-width: 2.4; }
+      .ridge { fill: #b7bfae; stroke: rgba(15,23,42,.2); }
+      .flower { fill: #d7ec95; stroke: rgba(15,23,42,.2); }
+      .wetland { fill: #9fe0c7; stroke: rgba(15,23,42,.2); }
+      .coast { fill: #bfe6dd; stroke: rgba(15,23,42,.2); }
+      .wood { fill: #83bc74; stroke: rgba(15,23,42,.2); }
+      .outpost { fill: #dfc97a; stroke: rgba(15,23,42,.2); }
+      .mushroom { fill: #659a67; stroke: rgba(15,23,42,.2); }
+      .farm { fill: #dfe98d; stroke: rgba(15,23,42,.2); }
+      .delta { fill: #b8dfbc; stroke: rgba(15,23,42,.2); }
+      .quarry { fill: #d5a16f; stroke: rgba(15,23,42,.2); }
+      .water { fill: none; stroke: #64cfe1; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .water-core { fill: none; stroke: #0e7490; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
+      .main-edge { fill: none; stroke: #7c4a22; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+      .main-road { fill: none; stroke: #f2c670; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .loop { fill: none; stroke: #2563eb; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 13 8; }
+      .branch { fill: none; stroke: #9333ea; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 7; }
+      .reward { fill: none; stroke: #f97316; stroke-width: 4.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 9 6; }
+      .future { fill: none; stroke: #64748b; stroke-width: 3.8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 8; }
+      .enc { fill: rgba(187,247,208,.26); stroke: #166534; stroke-width: 1.15; stroke-dasharray: 5 5; }
+      .hidden-zone { fill: rgba(250,204,21,.22); stroke: #a16207; stroke-width: 1.25; stroke-dasharray: 5 4; }
+      .safe { fill: rgba(255,255,255,.38); stroke: #f59e0b; stroke-width: 1.4; stroke-dasharray: 7 5; }
+      .area-label { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .tiny { font: 8.6px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .marker { fill: #fff; stroke: #0f172a; stroke-width: 1.2; }
+      .guard { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 1.4; }
+      .boss { fill: #fee2e2; stroke: #991b1b; stroke-width: 1.7; }
+      .item { fill: #fef3c7; stroke: #92400e; stroke-width: 1.25; }
+      .secret { fill: #f5d0fe; stroke: #86198f; stroke-width: 1.25; }
+      .risk { fill: #fecaca; stroke: #b91c1c; stroke-width: 1.35; }
+      .marker-text { font: 800 8.8px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .asset { stroke: #0f172a; stroke-width: 1; opacity: .95; }
+      .asset-text { font: 800 8.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .nt { fill: #22c55e; }
+      .sv { fill: #a16207; }
+      .ft { fill: #facc15; }
+      .gy { fill: #c084fc; }
+      .pf { fill: #fb923c; }
+      .bc { fill: #60a5fa; }
+      .pr { fill: #38bdf8; }
+      .hx { fill: #94a3b8; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-green { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .panel-blue { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.2; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .panel-red { fill: #fef2f2; stroke: #fca5a5; stroke-width: 1.2; }
+      .panel-purple { fill: #faf5ff; stroke: #d8b4fe; stroke-width: 1.2; }
+      .head { font: 800 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .legend-line { stroke-linecap: round; stroke-width: 5; }
+      .callout { fill: #fff7ed; stroke: #f97316; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect class="page" width="2200" height="1500"/>
+  <text class="title" x="48" y="42">100x100 专业游戏地图总控设计稿 V6.5：地形、素材、生态、玩法、风险合并审稿版</text>
+  <text class="subtitle" x="48" y="68">这是执行前的总控白盒图：主线、区域环线、隐藏支路、Z01-Z18 遇敌、A-K 分区、素材包落点、训练师/Boss/道具和风险点都在同一张图中。</text>
+
+  <g id="map" transform="translate(48 104)">
+    <rect class="map" x="0" y="0" width="980" height="980" rx="7"/>
+    <path class="grid" d="M98 0V980M196 0V980M294 0V980M392 0V980M490 0V980M588 0V980M686 0V980M784 0V980M882 0V980"/>
+    <path class="grid" d="M0 98H980M0 196H980M0 294H980M0 392H980M0 490H980M0 588H980M0 686H980M0 784H980M0 882H980"/>
+    <path class="grid-strong" d="M196 0V980M392 0V980M588 0V980M784 0V980M0 196H980M0 392H980M0 588H980M0 784H980"/>
+
+    <rect class="old" x="0" y="0" width="431" height="353" rx="4"/>
+    <path class="ridge" d="M431 0H980V187C910 207 822 191 738 209C668 224 610 207 551 187C496 170 462 170 431 189Z"/>
+    <path class="flower" d="M431 164C488 146 553 161 632 203C671 227 695 251 706 281C671 325 588 342 510 318C462 303 436 268 431 246Z"/>
+    <path class="wetland" d="M431 255C501 283 571 303 647 296C723 290 799 329 834 390C863 444 845 523 786 575C714 632 583 601 505 534C453 488 429 392 431 255Z"/>
+    <path class="coast" d="M825 187C899 207 956 242 980 285V649C910 640 849 584 834 508C821 449 843 388 821 335C801 285 786 227 825 187Z"/>
+    <path class="wood" d="M0 353H348C363 416 342 490 283 566C216 649 94 662 0 601Z"/>
+    <path class="outpost" d="M348 353C427 370 507 412 566 468C568 540 534 592 475 619C409 647 333 592 303 540C285 468 296 392 348 353Z"/>
+    <path class="mushroom" d="M0 601C122 656 224 640 294 566C331 649 331 784 272 884C222 962 109 984 0 980Z"/>
+    <path class="farm" d="M294 566C375 606 462 612 542 581C625 647 636 743 601 832C551 928 414 967 272 884C325 790 333 662 294 566Z"/>
+    <path class="delta" d="M601 832C638 747 634 675 597 619C677 588 767 619 832 695C863 790 821 904 749 980H522C568 947 592 889 601 832Z"/>
+    <path class="quarry" d="M832 566C891 612 935 642 980 649V980H749C825 891 864 751 832 566Z"/>
+
+    <path class="water" d="M595 76C586 131 569 164 560 200C551 242 562 272 601 309C651 357 727 355 788 390C849 425 867 492 843 560C819 636 858 706 899 786C928 847 912 912 871 969"/>
+    <path class="water-core" d="M595 76C586 131 569 164 560 200C551 242 562 272 601 309C651 357 727 355 788 390C849 425 867 492 843 560C819 636 858 706 899 786C928 847 912 912 871 969"/>
+    <path class="water" stroke-width="16" d="M311 196C386 200 457 235 529 283C560 300 584 311 612 318"/>
+    <path class="water-core" stroke-width="6" d="M311 196C386 200 457 235 529 283C560 300 584 311 612 318"/>
+
+    <g id="encounters">
+      <ellipse class="enc" cx="135" cy="72" rx="80" ry="34"/><text class="tiny" x="108" y="76">Z01</text>
+      <ellipse class="enc" cx="292" cy="122" rx="62" ry="30"/><text class="tiny" x="270" y="126">Z02</text>
+      <ellipse class="enc" cx="558" cy="235" rx="88" ry="38"/><text class="tiny" x="528" y="239">Z03</text>
+      <ellipse class="enc" cx="690" cy="132" rx="82" ry="32"/><text class="tiny" x="660" y="136">Z04/15</text>
+      <path class="enc" d="M496 330C574 356 656 342 737 374C777 390 801 425 808 468C760 506 684 520 609 496C543 477 502 414 496 330Z"/><text class="tiny" x="638" y="424">Z05</text>
+      <ellipse class="enc" cx="872" cy="372" rx="60" ry="78"/><text class="tiny" x="846" y="376">Z06/16</text>
+      <ellipse class="enc" cx="146" cy="478" rx="86" ry="50"/><text class="tiny" x="118" y="482">Z07</text>
+      <ellipse class="enc" cx="285" cy="558" rx="68" ry="42"/><text class="tiny" x="260" y="562">Z08</text>
+      <path class="enc" d="M54 680C138 710 222 684 274 631C306 716 286 840 226 902C163 943 89 941 39 910C46 825 31 750 54 680Z"/><text class="tiny" x="142" y="792">Z09</text>
+      <path class="enc" d="M380 650C452 670 520 662 572 629C616 694 612 776 570 835C510 862 438 842 380 790C366 736 364 688 380 650Z"/><text class="tiny" x="470" y="730">Z10/17</text>
+      <path class="enc" d="M670 680C746 678 807 719 833 792C837 876 796 929 737 951C686 918 660 868 670 802C676 758 657 716 670 680Z"/><text class="tiny" x="744" y="812">Z11</text>
+      <ellipse class="enc" cx="856" cy="680" rx="68" ry="54"/><text class="tiny" x="826" y="684">Z12/18</text>
+      <path class="enc" d="M834 786C889 784 926 819 935 872V958H766C788 916 801 861 834 786Z"/><text class="tiny" x="866" y="876">Z13</text>
+      <ellipse class="enc" cx="872" cy="258" rx="60" ry="38"/><text class="tiny" x="846" y="262">Z14</text>
+    </g>
+
+    <g id="hiddenZones">
+      <ellipse class="hidden-zone" cx="595" cy="76" rx="34" ry="22"/><text class="tiny" x="576" y="80">HS01</text>
+      <ellipse class="hidden-zone" cx="774" cy="132" rx="42" ry="24"/><text class="tiny" x="754" y="136">HS02</text>
+      <ellipse class="hidden-zone" cx="529" cy="235" rx="36" ry="24"/><text class="tiny" x="510" y="239">HS03</text>
+      <ellipse class="hidden-zone" cx="648" cy="470" rx="40" ry="26"/><text class="tiny" x="628" y="474">HS04</text>
+      <ellipse class="hidden-zone" cx="726" cy="421" rx="36" ry="26"/><text class="tiny" x="706" y="425">HS05</text>
+      <ellipse class="hidden-zone" cx="941" cy="510" rx="36" ry="30"/><text class="tiny" x="922" y="514">HS06</text>
+      <ellipse class="hidden-zone" cx="872" cy="578" rx="40" ry="24"/><text class="tiny" x="852" y="582">HS07</text>
+      <ellipse class="hidden-zone" cx="265" cy="540" rx="42" ry="28"/><text class="tiny" x="246" y="544">HS08</text>
+      <ellipse class="hidden-zone" cx="118" cy="764" rx="44" ry="30"/><text class="tiny" x="98" y="768">HS09</text>
+      <ellipse class="hidden-zone" cx="198" cy="814" rx="40" ry="28"/><text class="tiny" x="178" y="818">HS10</text>
+      <ellipse class="hidden-zone" cx="480" cy="804" rx="38" ry="26"/><text class="tiny" x="460" y="808">HS11</text>
+      <ellipse class="hidden-zone" cx="686" cy="920" rx="44" ry="28"/><text class="tiny" x="666" y="924">HS12</text>
+      <ellipse class="hidden-zone" cx="921" cy="842" rx="42" ry="28"/><text class="tiny" x="902" y="846">HS13</text>
+      <ellipse class="hidden-zone" cx="823" cy="892" rx="42" ry="28"/><text class="tiny" x="804" y="896">HS14</text>
+    </g>
+
+    <g id="routes">
+      <path class="main-edge" d="M50 294C109 294 150 279 187 261C244 237 274 198 307 174C348 142 403 137 444 146C499 155 555 183 592 220C607 237 605 268 599 318C607 377 579 422 538 440C483 466 462 538 479 632C496 746 581 817 704 776C798 750 848 682 874 616C906 544 906 457 876 381C843 311 780 283 708 272C662 263 625 287 599 318"/>
+      <path class="main-road" d="M50 294C109 294 150 279 187 261C244 237 274 198 307 174C348 142 403 137 444 146C499 155 555 183 592 220C607 237 605 268 599 318C607 377 579 422 538 440C483 466 462 538 479 632C496 746 581 817 704 776C798 750 848 682 874 616C906 544 906 457 876 381C843 311 780 283 708 272C662 263 625 287 599 318"/>
+      <path class="loop" d="M490 192C544 122 595 76 666 96C738 113 790 139 866 228C884 266 850 320 716 346"/>
+      <path class="loop" d="M599 318C682 355 763 368 767 429C771 484 704 538 610 514C562 503 536 472 538 440"/>
+      <path class="loop" d="M767 429C846 386 921 386 950 466C972 529 932 590 874 616"/>
+      <path class="loop" d="M196 353C131 414 113 503 178 562C246 623 337 596 405 496C427 466 451 446 468 440"/>
+      <path class="loop" d="M164 590C94 665 78 767 128 861C178 937 281 902 363 788C398 740 427 706 462 684"/>
+      <path class="loop" d="M479 632C551 603 612 636 625 712C638 790 586 858 496 823C453 806 433 751 462 684"/>
+      <path class="loop" d="M625 712C708 756 771 804 784 882C760 939 682 941 638 891C608 856 630 810 704 776"/>
+      <path class="loop" d="M874 616C942 658 968 754 928 849C893 934 808 912 797 813C790 751 822 688 874 616"/>
+      <path class="branch" d="M599 318C650 294 702 298 752 326"/>
+      <path class="branch" d="M767 429C798 464 830 500 872 578"/>
+      <path class="branch" d="M178 562C137 588 113 636 102 699"/>
+      <path class="branch" d="M363 788C331 838 285 884 233 899"/>
+      <path class="branch" d="M625 712C575 742 527 768 480 804"/>
+      <path class="branch" d="M784 882C828 902 860 900 893 878"/>
+      <path class="reward" d="M666 96C642 80 618 76 595 76"/>
+      <path class="reward" d="M490 192C510 205 520 221 529 235"/>
+      <path class="reward" d="M767 429C749 420 735 418 726 421"/>
+      <path class="reward" d="M950 466C948 484 945 500 941 510"/>
+      <path class="reward" d="M178 562C207 551 235 542 265 540"/>
+      <path class="reward" d="M128 861C114 831 113 795 118 764"/>
+      <path class="reward" d="M496 823C491 814 486 808 480 804"/>
+      <path class="reward" d="M638 891C653 908 669 917 686 920"/>
+      <path class="reward" d="M928 849C926 846 924 844 921 842"/>
+      <path class="future" d="M872 578C900 607 935 625 972 636"/>
+      <path class="future" d="M797 813C823 784 854 763 891 752"/>
+    </g>
+
+    <g id="assetClusters">
+      <circle class="asset nt" cx="130" cy="82" r="13"/><text class="asset-text" x="130" y="82">NT</text>
+      <circle class="asset ft" cx="388" cy="300" r="13"/><text class="asset-text" x="388" y="300">FT</text>
+      <circle class="asset hx" cx="600" cy="96" r="13"/><text class="asset-text" x="600" y="96">HX</text>
+      <circle class="asset pf" cx="715" cy="136" r="13"/><text class="asset-text" x="715" y="136">PF</text>
+      <circle class="asset sv" cx="638" cy="408" r="13"/><text class="asset-text" x="638" y="408">SV</text>
+      <circle class="asset pr" cx="905" cy="270" r="13"/><text class="asset-text" x="905" y="270">PR</text>
+      <circle class="asset pr" cx="900" cy="438" r="13"/><text class="asset-text" x="900" y="438">PR</text>
+      <circle class="asset sv" cx="164" cy="468" r="13"/><text class="asset-text" x="164" y="468">SV</text>
+      <circle class="asset pf" cx="265" cy="566" r="13"/><text class="asset-text" x="265" y="566">PF</text>
+      <circle class="asset ft" cx="494" cy="496" r="13"/><text class="asset-text" x="494" y="496">FT</text>
+      <circle class="asset bc" cx="430" cy="434" r="13"/><text class="asset-text" x="430" y="434">BC</text>
+      <circle class="asset gy" cx="132" cy="768" r="13"/><text class="asset-text" x="132" y="768">GY</text>
+      <circle class="asset gy" cx="230" cy="818" r="13"/><text class="asset-text" x="230" y="818">GY</text>
+      <circle class="asset ft" cx="458" cy="720" r="13"/><text class="asset-text" x="458" y="720">FT</text>
+      <circle class="asset pr" cx="704" cy="846" r="13"/><text class="asset-text" x="704" y="846">PR</text>
+      <circle class="asset pf" cx="876" cy="716" r="13"/><text class="asset-text" x="876" y="716">PF</text>
+      <circle class="asset hx" cx="858" cy="892" r="13"/><text class="asset-text" x="858" y="892">HX</text>
+      <circle class="asset bc" cx="804" cy="662" r="13"/><text class="asset-text" x="804" y="662">BC</text>
+    </g>
+
+    <g id="markers">
+      <circle class="marker" cx="50" cy="294" r="12"/><text class="marker-text" x="50" y="294">S</text>
+      <circle class="marker" cx="468" cy="440" r="13"/><text class="marker-text" x="468" y="440">O</text>
+      <circle class="guard" cx="206" cy="128" r="13"/><text class="marker-text" x="206" y="128">G1</text>
+      <circle class="guard" cx="165" cy="758" r="13"/><text class="marker-text" x="165" y="758">G2</text>
+      <circle class="guard" cx="714" cy="446" r="13"/><text class="marker-text" x="714" y="446">G3</text>
+      <circle class="boss" cx="862" cy="706" r="15"/><text class="marker-text" x="862" y="706">B</text>
+      <circle class="marker" cx="704" cy="776" r="13"/><text class="marker-text" x="704" y="776">H</text>
+      <circle class="marker" cx="595" cy="76" r="12"/><text class="marker-text" x="595" y="76">W</text>
+      <circle class="marker" cx="599" cy="318" r="12"/><text class="marker-text" x="599" y="318">B1</text>
+      <circle class="marker" cx="874" cy="616" r="12"/><text class="marker-text" x="874" y="616">B2</text>
+      <circle class="marker" cx="784" cy="882" r="12"/><text class="marker-text" x="784" y="882">B3</text>
+      <circle class="marker" cx="582" cy="828" r="12"/><text class="marker-text" x="582" y="828">C</text>
+      <circle class="marker" cx="135" cy="456" r="10"/><text class="marker-text" x="135" y="456">T1</text>
+      <circle class="marker" cx="306" cy="566" r="10"/><text class="marker-text" x="306" y="566">T2</text>
+      <circle class="marker" cx="860" cy="420" r="10"/><text class="marker-text" x="860" y="420">T3</text>
+      <circle class="marker" cx="434" cy="700" r="10"/><text class="marker-text" x="434" y="700">T4</text>
+      <circle class="marker" cx="880" cy="808" r="10"/><text class="marker-text" x="880" y="808">T5</text>
+      <circle class="marker" cx="782" cy="224" r="10"/><text class="marker-text" x="782" y="224">T6</text>
+
+      <circle class="item" cx="102" cy="318" r="8"/><text class="marker-text" x="102" y="318">I</text>
+      <circle class="item" cx="512" cy="182" r="8"/><text class="marker-text" x="512" y="182">I</text>
+      <circle class="item" cx="646" cy="394" r="8"/><text class="marker-text" x="646" y="394">I</text>
+      <circle class="item" cx="238" cy="832" r="8"/><text class="marker-text" x="238" y="832">I</text>
+      <circle class="item" cx="820" cy="868" r="8"/><text class="marker-text" x="820" y="868">I</text>
+      <circle class="item" cx="686" cy="920" r="8"/><text class="marker-text" x="686" y="920">I</text>
+      <circle class="item" cx="941" cy="510" r="8"/><text class="marker-text" x="941" y="510">I</text>
+      <circle class="item" cx="265" cy="540" r="8"/><text class="marker-text" x="265" y="540">I</text>
+
+      <circle class="secret" cx="529" cy="235" r="8"/><text class="marker-text" x="529" y="235">?</text>
+      <circle class="secret" cx="726" cy="421" r="8"/><text class="marker-text" x="726" y="421">?</text>
+      <circle class="secret" cx="118" cy="764" r="8"/><text class="marker-text" x="118" y="764">?</text>
+      <circle class="secret" cx="480" cy="804" r="8"/><text class="marker-text" x="480" y="804">?</text>
+      <circle class="secret" cx="921" cy="842" r="8"/><text class="marker-text" x="921" y="842">?</text>
+
+      <circle class="risk" cx="468" cy="440" r="10"/><text class="marker-text" x="468" y="440">R1</text>
+      <circle class="risk" cx="599" cy="318" r="10"/><text class="marker-text" x="599" y="318">R2</text>
+      <circle class="risk" cx="874" cy="616" r="10"/><text class="marker-text" x="874" y="616">R3</text>
+      <circle class="risk" cx="431" cy="320" r="10"/><text class="marker-text" x="431" y="320">R4</text>
+      <circle class="risk" cx="905" cy="420" r="10"/><text class="marker-text" x="905" y="420">R5</text>
+      <circle class="risk" cx="704" cy="776" r="10"/><text class="marker-text" x="704" y="776">R6</text>
+    </g>
+
+    <text class="area-label" x="14" y="28">A 旧图保留</text>
+    <text class="area-label" x="450" y="34">B 山脊瀑布源</text>
+    <text class="area-label" x="450" y="230">C 石花坡</text>
+    <text class="area-label" x="506" y="394">D 月镜湿地</text>
+    <text class="area-label" x="840" y="220">E 东岸海湾</text>
+    <text class="area-label" x="330" y="402">F 生存前哨</text>
+    <text class="area-label" x="24" y="402">G 采木高地</text>
+    <text class="area-label" x="24" y="704">H 蘑菇幽林</text>
+    <text class="area-label" x="348" y="680">I 南部农田</text>
+    <text class="area-label" x="646" y="924">J 河口钓营</text>
+    <text class="area-label" x="830" y="680">K 岩场废场</text>
+
+    <text class="axis" x="-2" y="-8">0</text><text class="axis" x="192" y="-8">20</text><text class="axis" x="388" y="-8">40</text><text class="axis" x="584" y="-8">60</text><text class="axis" x="780" y="-8">80</text><text class="axis" x="964" y="-8">99</text>
+    <text class="axis" x="-24" y="4">0</text><text class="axis" x="-30" y="200">20</text><text class="axis" x="-30" y="396">40</text><text class="axis" x="-30" y="592">60</text><text class="axis" x="-30" y="788">80</text><text class="axis" x="-30" y="980">99</text>
+  </g>
+
+  <g id="rightPanels" transform="translate(1070 104)">
+    <rect class="panel" x="0" y="0" width="1058" height="980" rx="10"/>
+    <text class="head" x="24" y="34">总控图图例与玩法说明</text>
+
+    <rect class="panel-blue" x="24" y="56" width="496" height="178" rx="8"/>
+    <text class="subhead" x="44" y="82">路线层</text>
+    <line class="legend-line" x1="44" y1="108" x2="104" y2="108" stroke="#f2c670"/><text class="txt" x="118" y="112">章节主线：S -> B1 -> O -> B3/B2 -> Boss。</text>
+    <line class="legend-line" x1="44" y1="134" x2="104" y2="134" stroke="#2563eb" stroke-dasharray="13 8"/><text class="txt" x="118" y="138">BR01-BR08：区域环线，减少原路折返。</text>
+    <line class="legend-line" x1="44" y1="160" x2="104" y2="160" stroke="#9333ea" stroke-dasharray="3 7"/><text class="txt" x="118" y="164">隐藏支路：通过缺口、灯光、断栈道提示。</text>
+    <line class="legend-line" x1="44" y1="186" x2="104" y2="186" stroke="#f97316" stroke-dasharray="9 6"/><text class="txt" x="118" y="190">奖励盲端：短支路，尽头必须有奖励或伏笔。</text>
+    <text class="txt" x="44" y="214">黄色虚线：HS01-HS14 隐藏微区域。</text>
+
+    <rect class="panel-green" x="544" y="56" width="490" height="178" rx="8"/>
+    <text class="subhead" x="564" y="82">生态与进度层</text>
+    <text class="txt" x="564" y="108">Z01-Z18 覆盖草坡、花坡、湿地、东岸、采木、幽林、农田、河口、岩洞、金属废场。</text>
+    <text class="txt" x="564" y="132">tier_0 默认；tier_1 击败 1 名部下；tier_2 击败 3 名部下；tier_3 击败 Boss。</text>
+    <text class="txt" x="564" y="156">道路、桥、前哨、恢复点和 Boss 点必须从遇敌区中扣除。</text>
+    <text class="txt" x="564" y="180">普通随机不投放三御家、传说、化石、伊布进化、3D龙线、迷你龙线。</text>
+    <text class="txt" x="564" y="204">Boss 后只提升稀有层，不把旧图和教学区变高压区。</text>
+
+    <rect class="panel-orange" x="24" y="258" width="496" height="248" rx="8"/>
+    <text class="subhead" x="44" y="284">玩法点</text>
+    <text class="txt" x="44" y="310">S：出生营地；O：补给前哨和章节目标中心；W：瀑布源/未来入口。</text>
+    <text class="txt" x="44" y="334">G1/G2/G3：三名部下，击败 3/3 后解锁 Boss。</text>
+    <text class="txt" x="44" y="358">T1-T6：普通训练师，负责引导支路探索，不参与 Boss 解锁。</text>
+    <text class="txt" x="44" y="382">B：迷雾首领 Boss；H：限制恢复点；C：河口连战挑战。</text>
+    <text class="txt" x="44" y="406">I：可见道具；?：隐藏点；HS06/HS07/HS13/HS14 可作为后续支线伏笔。</text>
+    <text class="txt" x="44" y="430">第一版优先落地 8 个隐藏点：HS01/03/04/05/08/09/11/12。</text>
+    <text class="txt" x="44" y="454">所有可领取、击败、发现、使用次数受限内容必须写入 mapProgress。</text>
+    <text class="txt" x="44" y="478">战斗触发必须有文字停留和 interactionLock，避免玩家看不清提示。</text>
+
+    <rect class="panel-purple" x="544" y="258" width="490" height="248" rx="8"/>
+    <text class="subhead" x="564" y="284">素材包落点</text>
+    <circle class="asset nt" cx="576" cy="310" r="10"/><text class="txt" x="594" y="314">NT nature：旧图、草坡、水边、基础自然层。</text>
+    <circle class="asset sv" cx="576" cy="336" r="10"/><text class="txt" x="594" y="340">SV survival：前哨、采木、河口营地、工具和箱桶。</text>
+    <circle class="asset ft" cx="576" cy="362" r="10"/><text class="txt" x="594" y="366">FT fantasy town：前哨摊位、农田围栏、水车、路缘。</text>
+    <circle class="asset gy" cx="576" cy="388" r="10"/><text class="txt" x="594" y="392">GY graveyard：幽林旧遗迹、铁栅、灯笼、少量墓碑。</text>
+    <circle class="asset pf" cx="576" cy="414" r="10"/><text class="txt" x="594" y="418">PF platformer：山脊高差、岩场、废场箱桶和视觉机关。</text>
+    <circle class="asset bc" cx="576" cy="440" r="10"/><text class="txt" x="594" y="444">BC blocky characters：训练师、商人、钓手、研究员。</text>
+    <circle class="asset pr" cx="576" cy="466" r="10"/><text class="txt" x="594" y="470">PR pirate：东岸船只、码头、桶瓶、棕榈、船骸。</text>
+    <circle class="asset hx" cx="576" cy="492" r="10"/><text class="txt" x="594" y="496">HX hexagon：远景桥、矿场、农场、水车、港口地标。</text>
+
+    <rect class="panel-red" x="24" y="530" width="1010" height="254" rx="8"/>
+    <text class="subhead" x="44" y="556">专业地图设计审查：当前漏洞与优化方向</text>
+    <text class="txt" x="44" y="582">R1 前哨过载：O 是四向交通、NPC、补给、任务聚合点，需做 8x8 安全广场，NPC 外移到边缘。</text>
+    <text class="txt" x="44" y="606">R2 湿地桥头拥堵：B1 周围同时有主路、Z05、HS05 和栈道环，需扣除桥头 3 格遇敌和大型素材。</text>
+    <text class="txt" x="44" y="630">R3 Boss 入口识别：B2、T5、Z12/18、矿洞和 Boss 侧门信息密集，必须用岩门/废轨形成清晰门槛。</text>
+    <text class="txt" x="44" y="654">R4 旧图接缝：A 到 C/G 的出口要有“离开新手谷”的视觉仪式，否则扩图像外挂拼接。</text>
+    <text class="txt" x="44" y="678">R5 东岸主题抢戏：pirate 素材丰富但容易变海盗图，船、炮、旗必须限制在水岸，不入内陆主路。</text>
+    <text class="txt" x="44" y="702">R6 河口补给和挑战冲突：H、C、B3、Z11 靠近，恢复点中心必须安全，连战点前后留阅读空间。</text>
+    <text class="txt" x="44" y="726">R7 生态合法性：Z01-Z18 的等级、进化上限、隐藏池隔离必须自动审计，避免“有草丛但抽不到”。</text>
+    <text class="txt" x="44" y="750">R8 性能风险：完整视觉版 320-420 实例需要 instancing/批量注册，不能把下载目录模型直接全量加载。</text>
+
+    <rect class="panel" x="24" y="808" width="1010" height="136" rx="8"/>
+    <text class="subhead" x="44" y="834">落地优先级</text>
+    <text class="txt" x="44" y="860">1. 先落地地形、水系、主路、BR01-BR08 白盒，不放复杂装饰。</text>
+    <text class="txt" x="44" y="884">2. 做可达性、桥头净空、遇敌扣除、旧存档坐标和镜头边界测试。</text>
+    <text class="txt" x="44" y="908">3. 接入第一批 60-90 个素材别名，优先给前哨、湿地、幽林、东岸、岩场建立身份感。</text>
+    <text class="txt" x="44" y="932">4. 再放 G/T/B/H/C/I/? 事件，并把全部状态写入 mapProgress。</text>
+  </g>
+
+  <g id="bottomPanels" transform="translate(48 1122)">
+    <rect class="panel" x="0" y="0" width="2080" height="296" rx="10"/>
+    <text class="head" x="24" y="36">分区设计意图与执行检查</text>
+    <text class="txt" x="24" y="66">A 旧图：只修出口，不破坏新手记忆。B 山脊：高差、瀑布、未来入口。C 石花坡：旧区到湿地的低压缓冲。D 湿地：栈道与水系探索。E 东岸：码头、船骸和水边生活。</text>
+    <text class="txt" x="24" y="92">F 前哨：章节中心但要防止拥堵。G 采木：工具与格斗生态。H 幽林：幽暗遗迹和状态战。I 农田：规整田垄和普通生态。J 河口：恢复、连战和水系练级。K 岩场废场：Boss 压迫和高阶生态。</text>
+    <text class="txt" x="24" y="124">白盒验收：任意 20x20 区块至少两类内容；主路最窄 3 格；桥面可 2 格但桥头 3 格清空；从任意主路节点走 12-18 格能看到支路入口或地标。</text>
+    <text class="txt" x="24" y="150">玩法验收：三名部下都不堵路；Boss 未解锁只提示不开战；连战失败可重试；恢复点不会被清掉；隐藏奖励只领一次；战斗返回后 1-2 秒不立刻遇敌。</text>
+    <text class="txt" x="24" y="176">素材验收：下载目录资源必须复制到 public/assets/3d/kenney-* 后注册；大型素材有 footprint；小填充默认不挡路；同一区域同模型连续超过 5 个要旋转/缩放/替换打散。</text>
+    <text class="txt" x="24" y="202">生态验收：普通随机约 65 只，强生态 2 只，隐藏奖励约 18 只，进化专属约 59 只；三御家、传说、化石、3D龙、迷你龙线不进普通草丛。</text>
+    <text class="txt" x="24" y="228">第一版建议范围：100x100 扩图、wildEncounterRules 修复、Z01-Z18、BR01-BR08 白盒、8 个隐藏点、8 个可见道具、三部下、一个 Boss、tier_0/tier_2。</text>
+    <text class="txt" x="24" y="254">设计师判断：当前方向已经从线性地图变成有探索密度的章节地图；下一步最大风险不是“内容少”，而是信息过载、桥头拥堵和视觉主题失控。</text>
+  </g>
+</svg>

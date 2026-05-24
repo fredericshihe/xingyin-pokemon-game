@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1160" viewBox="0 0 1760 1160" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 道路分支与隐藏区域设计稿 V6.4</title>
+  <desc id="desc">展示 100x100 地图的主路、区域环线、奖励盲端和隐藏微区域，解决地图只有一条主路的问题。</desc>
+  <defs>
+    <style>
+      .page { fill: #f7f8f1; }
+      .title { font: 800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .map { fill: #dcefc9; stroke: #172033; stroke-width: 3; }
+      .grid { stroke: rgba(15,23,42,.13); stroke-width: 1; }
+      .grid-strong { stroke: rgba(15,23,42,.28); stroke-width: 1.4; }
+      .old { fill: #98d982; stroke: #166534; stroke-width: 2.4; }
+      .ridge { fill: #b7beb0; }
+      .flower { fill: #d6ec95; }
+      .wetland { fill: #9ee0c6; }
+      .coast { fill: #bfe7de; }
+      .wood { fill: #82bb73; }
+      .outpost { fill: #dec779; }
+      .mushroom { fill: #649966; }
+      .farm { fill: #dde98c; }
+      .delta { fill: #b8dfbb; }
+      .quarry { fill: #d4a16e; }
+      .water { fill: none; stroke: #65cfe2; stroke-width: 24; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .water-core { fill: none; stroke: #1588a8; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; opacity: .36; }
+      .main-edge { fill: none; stroke: #7c4a22; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; opacity: .5; }
+      .main-road { fill: none; stroke: #f2c670; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .loop { fill: none; stroke: #2563eb; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 13 8; }
+      .branch { fill: none; stroke: #9333ea; stroke-width: 4.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 7; }
+      .reward { fill: none; stroke: #f97316; stroke-width: 4.8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 9 6; }
+      .future { fill: none; stroke: #64748b; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 8; }
+      .hidden-zone { fill: rgba(250, 204, 21, .22); stroke: #a16207; stroke-width: 1.4; stroke-dasharray: 5 4; }
+      .enc-lite { fill: rgba(187,247,208,.28); stroke: #166534; stroke-width: 1; stroke-dasharray: 5 5; }
+      .safe { fill: rgba(255,255,255,.35); stroke: #f59e0b; stroke-width: 1.4; stroke-dasharray: 7 5; }
+      .label { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .tiny { font: 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .marker { fill: #ffffff; stroke: #0f172a; stroke-width: 1.2; }
+      .boss { fill: #fee2e2; stroke: #991b1b; stroke-width: 1.7; }
+      .hidden { fill: #fef3c7; stroke: #92400e; stroke-width: 1.4; }
+      .marker-text { font: 800 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; letter-spacing: 0; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .panel-green { fill: #eef8e8; stroke: #9acb8c; stroke-width: 1.2; }
+      .panel-blue { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.2; }
+      .panel-purple { fill: #faf5ff; stroke: #d8b4fe; stroke-width: 1.2; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 1.2; }
+      .head { font: 800 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subhead { font: 800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .txt { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .legend-line { stroke-linecap: round; stroke-width: 5; }
+    </style>
+  </defs>
+
+  <rect class="page" width="1760" height="1160"/>
+  <text class="title" x="48" y="42">100x100 道路分支与隐藏区域设计稿 V6.4：主路之外的探索路网</text>
+  <text class="subtitle" x="48" y="68">主线负责推进，蓝色为区域环线，紫色为隐藏支路，橙色为奖励盲端，黄色虚线区为隐藏微区域。目标是让玩家始终能看到可探索的岔路。</text>
+
+  <g id="map" transform="translate(48 104)">
+    <rect class="map" x="0" y="0" width="900" height="900" rx="7"/>
+    <path class="grid" d="M90 0V900M180 0V900M270 0V900M360 0V900M450 0V900M540 0V900M630 0V900M720 0V900M810 0V900"/>
+    <path class="grid" d="M0 90H900M0 180H900M0 270H900M0 360H900M0 450H900M0 540H900M0 630H900M0 720H900M0 810H900"/>
+    <path class="grid-strong" d="M180 0V900M360 0V900M540 0V900M720 0V900M0 180H900M0 360H900M0 540H900M0 720H900"/>
+
+    <rect class="old" x="0" y="0" width="396" height="324" rx="4"/>
+    <path class="ridge" d="M396 0H900V172C836 190 754 176 678 192C614 206 560 190 506 172C456 156 424 156 396 174Z"/>
+    <path class="flower" d="M396 150C448 134 508 148 580 186C616 208 638 230 648 258C616 298 540 314 468 292C424 278 400 246 396 226Z"/>
+    <path class="wetland" d="M396 234C460 260 524 278 594 272C664 266 734 302 766 358C792 408 776 480 722 528C656 580 536 552 464 490C416 448 394 360 396 234Z"/>
+    <path class="coast" d="M758 172C826 190 878 222 900 262V596C836 588 780 536 766 466C754 412 774 356 754 308C736 262 722 208 758 172Z"/>
+    <path class="wood" d="M0 324H320C334 382 314 450 260 520C198 596 86 608 0 552Z"/>
+    <path class="outpost" d="M320 324C392 340 466 378 520 430C522 496 490 544 436 568C376 594 306 544 278 496C262 430 272 360 320 324Z"/>
+    <path class="mushroom" d="M0 552C112 602 206 588 270 520C304 596 304 720 250 812C204 884 100 904 0 900Z"/>
+    <path class="farm" d="M270 520C344 556 424 562 498 534C574 594 584 682 552 764C506 852 380 888 250 812C298 726 306 608 270 520Z"/>
+    <path class="delta" d="M552 764C586 686 582 620 548 568C622 540 704 568 764 638C792 726 754 830 688 900H480C522 870 544 816 552 764Z"/>
+    <path class="quarry" d="M764 520C818 562 858 590 900 596V900H688C758 818 794 690 764 520Z"/>
+
+    <path class="water" d="M546 70C538 120 522 150 514 184C506 222 516 250 552 284C598 328 668 326 724 358C780 390 796 452 774 514C752 584 788 648 826 722C852 778 838 838 800 890"/>
+    <path class="water-core" d="M546 70C538 120 522 150 514 184C506 222 516 250 552 284C598 328 668 326 724 358C780 390 796 452 774 514C752 584 788 648 826 722C852 778 838 838 800 890"/>
+    <path class="water" stroke-width="16" d="M286 180C354 184 420 216 486 260C514 276 536 286 562 292"/>
+    <path class="water-core" stroke-width="6" d="M286 180C354 184 420 216 486 260C514 276 536 286 562 292"/>
+
+    <g id="hidden-zones">
+      <ellipse class="hidden-zone" cx="550" cy="78" rx="34" ry="22"/><text class="tiny" x="532" y="82">HS01</text>
+      <ellipse class="hidden-zone" cx="712" cy="122" rx="42" ry="24"/><text class="tiny" x="694" y="126">HS02</text>
+      <ellipse class="hidden-zone" cx="486" cy="218" rx="36" ry="24"/><text class="tiny" x="468" y="222">HS03</text>
+      <ellipse class="hidden-zone" cx="596" cy="432" rx="38" ry="26"/><text class="tiny" x="578" y="436">HS04</text>
+      <ellipse class="hidden-zone" cx="670" cy="388" rx="36" ry="26"/><text class="tiny" x="652" y="392">HS05</text>
+      <ellipse class="hidden-zone" cx="864" cy="468" rx="36" ry="30"/><text class="tiny" x="846" y="472">HS06</text>
+      <ellipse class="hidden-zone" cx="802" cy="532" rx="40" ry="24"/><text class="tiny" x="784" y="536">HS07</text>
+      <ellipse class="hidden-zone" cx="244" cy="496" rx="42" ry="28"/><text class="tiny" x="226" y="500">HS08</text>
+      <ellipse class="hidden-zone" cx="108" cy="702" rx="44" ry="30"/><text class="tiny" x="90" y="706">HS09</text>
+      <ellipse class="hidden-zone" cx="182" cy="748" rx="40" ry="28"/><text class="tiny" x="164" y="752">HS10</text>
+      <ellipse class="hidden-zone" cx="442" cy="738" rx="38" ry="26"/><text class="tiny" x="424" y="742">HS11</text>
+      <ellipse class="hidden-zone" cx="630" cy="846" rx="44" ry="28"/><text class="tiny" x="612" y="850">HS12</text>
+      <ellipse class="hidden-zone" cx="846" cy="774" rx="42" ry="28"/><text class="tiny" x="828" y="778">HS13</text>
+      <ellipse class="hidden-zone" cx="756" cy="818" rx="42" ry="28"/><text class="tiny" x="738" y="822">HS14</text>
+    </g>
+
+    <g id="routes">
+      <path class="main-edge" d="M46 270C100 270 138 256 172 240C224 218 252 182 282 160C320 130 370 126 408 134C458 142 510 168 544 202C558 218 556 246 550 292C558 346 532 388 494 404C444 428 424 494 440 580C456 684 534 750 646 712C732 688 778 626 802 566C832 500 832 420 804 350C774 286 716 260 650 250C608 242 574 264 550 292"/>
+      <path class="main-road" d="M46 270C100 270 138 256 172 240C224 218 252 182 282 160C320 130 370 126 408 134C458 142 510 168 544 202C558 218 556 246 550 292C558 346 532 388 494 404C444 428 424 494 440 580C456 684 534 750 646 712C732 688 778 626 802 566C832 500 832 420 804 350C774 286 716 260 650 250C608 242 574 264 550 292"/>
+
+      <path class="loop" d="M450 176C500 112 546 70 612 88C678 104 726 128 796 210C812 244 782 294 658 318"/>
+      <text class="tiny" x="644" y="82">BR01 北山脊环</text>
+      <path class="loop" d="M550 292C626 326 700 338 704 394C708 444 646 494 560 472C516 462 492 434 494 404"/>
+      <text class="tiny" x="620" y="354">BR02 湿地栈道环</text>
+      <path class="loop" d="M704 394C776 354 846 354 872 428C892 486 856 542 802 566"/>
+      <text class="tiny" x="800" y="382">BR03 船骸环</text>
+      <path class="loop" d="M180 324C120 380 104 462 164 516C226 572 310 548 372 456C392 428 414 410 430 404"/>
+      <text class="tiny" x="124" y="438">BR04 采木高地环</text>
+      <path class="loop" d="M150 542C86 610 72 704 118 790C164 860 258 828 334 724C366 680 392 648 424 628"/>
+      <text class="tiny" x="84" y="640">BR05 幽林遗迹环</text>
+      <path class="loop" d="M440 580C506 554 562 584 574 654C586 726 538 788 456 756C416 740 398 690 424 628"/>
+      <text class="tiny" x="484" y="636">BR06 农田水渠环</text>
+      <path class="loop" d="M574 654C650 694 708 738 720 810C698 862 626 864 586 818C558 786 578 744 646 712"/>
+      <text class="tiny" x="644" y="782">BR07 河口沙洲环</text>
+      <path class="loop" d="M802 566C864 604 888 692 852 780C820 858 742 838 732 746C726 690 754 632 802 566"/>
+      <text class="tiny" x="812" y="698">BR08 岩场废场回环</text>
+
+      <path class="branch" d="M550 292C598 270 646 274 692 300"/>
+      <path class="branch" d="M704 394C732 426 762 460 802 532"/>
+      <path class="branch" d="M164 516C126 540 104 584 94 642"/>
+      <path class="branch" d="M334 724C304 770 262 812 214 826"/>
+      <path class="branch" d="M574 654C528 682 484 706 442 738"/>
+      <path class="branch" d="M720 810C760 828 790 826 820 806"/>
+
+      <path class="reward" d="M612 88C590 74 568 70 550 78"/>
+      <path class="reward" d="M450 176C468 188 478 202 486 218"/>
+      <path class="reward" d="M704 394C688 386 676 384 670 388"/>
+      <path class="reward" d="M872 428C870 444 868 458 864 468"/>
+      <path class="reward" d="M164 516C190 506 216 498 244 496"/>
+      <path class="reward" d="M118 790C106 762 104 730 108 702"/>
+      <path class="reward" d="M456 756C452 748 448 742 442 738"/>
+      <path class="reward" d="M586 818C600 834 614 842 630 846"/>
+      <path class="reward" d="M852 780C850 778 848 776 846 774"/>
+      <path class="future" d="M802 532C828 558 860 574 894 584"/>
+      <path class="future" d="M732 746C756 720 784 700 818 690"/>
+    </g>
+
+    <g id="safe">
+      <ellipse class="safe" cx="46" cy="270" rx="42" ry="27"/>
+      <ellipse class="safe" cx="430" cy="404" rx="62" ry="46"/>
+      <ellipse class="safe" cx="646" cy="712" rx="50" ry="36"/>
+    </g>
+
+    <g id="markers">
+      <circle class="marker" cx="46" cy="270" r="12"/><text class="marker-text" x="46" y="270">S</text>
+      <circle class="marker" cx="430" cy="404" r="13"/><text class="marker-text" x="430" y="404">O</text>
+      <circle class="marker" cx="550" cy="292" r="12"/><text class="marker-text" x="550" y="292">B1</text>
+      <circle class="marker" cx="802" cy="566" r="12"/><text class="marker-text" x="802" y="566">B2</text>
+      <circle class="marker" cx="720" cy="810" r="12"/><text class="marker-text" x="720" y="810">B3</text>
+      <circle class="boss" cx="792" cy="648" r="15"/><text class="marker-text" x="792" y="648">B</text>
+      <circle class="marker" cx="646" cy="712" r="13"/><text class="marker-text" x="646" y="712">H</text>
+      <circle class="marker" cx="546" cy="70" r="12"/><text class="marker-text" x="546" y="70">W</text>
+      <circle class="hidden" cx="486" cy="218" r="9"/><text class="marker-text" x="486" y="218">?</text>
+      <circle class="hidden" cx="670" cy="388" r="9"/><text class="marker-text" x="670" y="388">?</text>
+      <circle class="hidden" cx="244" cy="496" r="9"/><text class="marker-text" x="244" y="496">?</text>
+      <circle class="hidden" cx="182" cy="748" r="9"/><text class="marker-text" x="182" y="748">?</text>
+      <circle class="hidden" cx="442" cy="738" r="9"/><text class="marker-text" x="442" y="738">?</text>
+      <circle class="hidden" cx="846" cy="774" r="9"/><text class="marker-text" x="846" y="774">?</text>
+    </g>
+
+    <text class="label" x="14" y="28">A 旧图</text>
+    <text class="label" x="414" y="34">B 北山脊</text>
+    <text class="label" x="414" y="214">C 石花坡</text>
+    <text class="label" x="466" y="360">D 湿地</text>
+    <text class="label" x="772" y="202">E 东岸</text>
+    <text class="label" x="304" y="368">F 前哨</text>
+    <text class="label" x="22" y="368">G 采木</text>
+    <text class="label" x="22" y="648">H 幽林</text>
+    <text class="label" x="320" y="624">I 农田</text>
+    <text class="label" x="594" y="848">J 河口</text>
+    <text class="label" x="762" y="624">K 岩场</text>
+
+    <text class="axis" x="-2" y="-8">0</text><text class="axis" x="176" y="-8">20</text><text class="axis" x="356" y="-8">40</text><text class="axis" x="536" y="-8">60</text><text class="axis" x="716" y="-8">80</text><text class="axis" x="884" y="-8">99</text>
+    <text class="axis" x="-24" y="4">0</text><text class="axis" x="-30" y="184">20</text><text class="axis" x="-30" y="364">40</text><text class="axis" x="-30" y="544">60</text><text class="axis" x="-30" y="724">80</text><text class="axis" x="-30" y="900">99</text>
+  </g>
+
+  <g id="panel" transform="translate(1000 104)">
+    <rect class="panel" x="0" y="0" width="710" height="900" rx="10"/>
+    <text class="head" x="24" y="36">V6.4 路网设计说明</text>
+
+    <rect class="panel-green" x="24" y="60" width="662" height="116" rx="8"/>
+    <text class="subhead" x="44" y="86">核心修正</text>
+    <text class="txt" x="44" y="110">上一版视觉上接近单主路推进。V6.4 改为 1 条章节主线、8 条区域环线、14 个隐藏微区域。</text>
+    <text class="txt" x="44" y="132">环线负责探索后回到熟悉位置，奖励盲端负责短距离发现，未来入口只做伏笔不强行开放。</text>
+    <text class="txt" x="44" y="154">每个大区至少有一个可识别支路入口，避免玩家只沿一条路从出生点走到 Boss。</text>
+
+    <rect class="panel-blue" x="24" y="198" width="662" height="168" rx="8"/>
+    <text class="subhead" x="44" y="224">图例</text>
+    <line class="legend-line" x1="44" y1="250" x2="104" y2="250" stroke="#f2c670"/><text class="txt" x="118" y="254">主线：推进路线，宽、清晰、低迷路风险。</text>
+    <line class="legend-line" x1="44" y1="278" x2="104" y2="278" stroke="#2563eb" stroke-dasharray="13 8"/><text class="txt" x="118" y="282">蓝色：区域环线，探索后能回到主路或前哨。</text>
+    <line class="legend-line" x1="44" y1="306" x2="104" y2="306" stroke="#9333ea" stroke-dasharray="3 7"/><text class="txt" x="118" y="310">紫色：隐藏支路，通过素材异常和缺口提示。</text>
+    <line class="legend-line" x1="44" y1="334" x2="104" y2="334" stroke="#f97316" stroke-dasharray="9 6"/><text class="txt" x="118" y="338">橙色：奖励盲端，长度短，尽头必须有内容。</text>
+
+    <rect class="panel-purple" x="24" y="388" width="662" height="192" rx="8"/>
+    <text class="subhead" x="44" y="414">8 条环线</text>
+    <text class="txt" x="44" y="438">BR01 北山脊环：瀑布源、瞭望台、背风草带。</text>
+    <text class="txt" x="44" y="460">BR02 湿地栈道环：芦苇迷径、月镜小岛、旧木桩道。</text>
+    <text class="txt" x="44" y="482">BR03 东岸船骸环：码头、船骸湾、潮汐洞口。</text>
+    <text class="txt" x="44" y="504">BR04 采木高地环：伐木场、树桩迷径、高地瞭望点。</text>
+    <text class="txt" x="44" y="526">BR05 幽林遗迹环：灯笼小径、铁栅遗迹、蘑菇隐径。</text>
+    <text class="txt" x="44" y="548">BR06-BR08：农田水渠、河口沙洲、岩场废场回环。</text>
+
+    <rect class="panel-orange" x="24" y="602" width="662" height="164" rx="8"/>
+    <text class="subhead" x="44" y="628">隐藏区规则</text>
+    <text class="txt" x="44" y="652">第一版至少落地 8 个隐藏微区域，完整设计保留 14 个。</text>
+    <text class="txt" x="44" y="674">隐藏入口不靠穿墙，必须通过灯笼、断栈道、石阶、船骸、花环、铁栅缺口等视觉提示。</text>
+    <text class="txt" x="44" y="696">盲端长度控制在 5-14 格，超过 14 格就改成环线或增加中途景观点。</text>
+    <text class="txt" x="44" y="718">隐藏支路不能覆盖桥面、前哨中心、恢复点中心和 Boss 开战点。</text>
+    <text class="txt" x="44" y="740">Boss 后应至少新增 2 个回访理由：潮汐洞口、冶炼残址后门或废场控制台。</text>
+
+    <text class="head" x="24" y="814">执行口径</text>
+    <text class="txt" x="24" y="842">落地时先画主线，再画蓝色环线，最后放紫色隐藏支路和橙色盲端。</text>
+    <text class="txt" x="24" y="866">每次加装饰后都要重跑可达性检查，确保支路入口没有被树、箱子、围栏或 NPC 堵住。</text>
+  </g>
+</svg>

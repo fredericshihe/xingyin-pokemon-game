@@ -1,0 +1,403 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1120" viewBox="0 0 1680 1120" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 新手山谷扩展规划图 V2</title>
+  <desc id="desc">更重视地形、水系、道路层级和 Kenney nature-kit / survival-kit 素材分区落点的 100x100 地图扩展规划。</desc>
+  <defs>
+    <style>
+      .page { fill: #f5f7ef; }
+      .map-bg { fill: #dcefc7; stroke: #1f2937; stroke-width: 3; }
+      .major-grid { stroke: rgba(30, 41, 59, .16); stroke-width: .9; }
+      .minor-grid { stroke: rgba(30, 41, 59, .055); stroke-width: .5; }
+      .axis { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .title { font: 800 26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .subtitle { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .label { font: 800 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .small { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .tiny { font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; letter-spacing: 0; }
+      .note { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #1f2937; letter-spacing: 0; }
+      .chip { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #0f172a; letter-spacing: 0; }
+      .old-zone { fill: #98d87d; stroke: #064e3b; stroke-width: 3; }
+      .zone-stroke { stroke: rgba(15, 23, 42, .32); stroke-width: 1.3; }
+      .north-ridge { fill: #a9b7a2; }
+      .flower-slope { fill: #cfe98a; }
+      .wetland { fill: #9edec3; }
+      .coast { fill: #c4e6dc; }
+      .outpost { fill: #d7c17e; }
+      .pine-terrace { fill: #83bd72; }
+      .mushroom-wood { fill: #5f985f; }
+      .farm-belt { fill: #d7e88a; }
+      .delta { fill: #b9dfbe; }
+      .quarry { fill: #cfa36b; }
+      .water-fill { fill: none; stroke: #65cddd; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+      .water-core { fill: none; stroke: #2398bf; stroke-linecap: round; stroke-linejoin: round; opacity: .36; }
+      .pond { fill: #74d2e3; stroke: #2094ba; stroke-width: 1.5; opacity: .9; }
+      .marsh { fill: #7fcfb1; stroke: #2f9f82; stroke-width: 1; opacity: .45; }
+      .cliff-line { fill: none; stroke: #6b7280; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; opacity: .72; }
+      .cliff-shadow { fill: none; stroke: #374151; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 5; opacity: .58; }
+      .road-edge { fill: none; stroke: #9f7043; stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; opacity: .58; }
+      .main-road { fill: none; stroke: #e5be72; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .secondary-edge { fill: none; stroke: #927149; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; opacity: .34; }
+      .secondary-road { fill: none; stroke: #d9b674; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #2f8f54; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9; opacity: .92; }
+      .boardwalk { fill: none; stroke: #8b5a2b; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 12 6; }
+      .bridge { stroke: #7c4a24; stroke-width: 14; stroke-linecap: round; }
+      .bridge-plank { stroke: #e9c58d; stroke-width: 2; stroke-linecap: round; }
+      .callout { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .callout-green { fill: #eef8e8; stroke: #91c783; stroke-width: 1.2; }
+      .callout-blue { fill: #e9f8fb; stroke: #7dc7d8; stroke-width: 1.2; }
+      .pin { fill: #ffffff; stroke: #0f172a; stroke-width: 1.4; }
+      .pin-text { font: 800 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .asset-dot { fill: #0f172a; opacity: .68; }
+      .legend-head { font: 800 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .legend-sub { font: 700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; letter-spacing: 0; }
+      .legend-text { font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; letter-spacing: 0; }
+      .mono { font: 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; letter-spacing: 0; }
+    </style>
+
+    <symbol id="tree-round" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="-2" r="9" fill="#2f7d46"/>
+      <circle cx="-5" cy="0" r="6" fill="#3f9554"/>
+      <rect x="-2" y="5" width="4" height="7" rx="1" fill="#7a4b2a"/>
+    </symbol>
+    <symbol id="pine" viewBox="-12 -12 24 24">
+      <path d="M0-12 8 2H4l6 9H-10l6-9h-4z" fill="#1f6f45"/>
+      <rect x="-2" y="5" width="4" height="6" fill="#6b4424"/>
+    </symbol>
+    <symbol id="palm" viewBox="-12 -12 24 24">
+      <path d="M-2 10 C1 2 2-4 0-11" stroke="#7a4b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M0-10 C-8-10-11-6-11-6 C-5-6-2-5 0-10Z" fill="#2f855a"/>
+      <path d="M0-10 C8-10 11-6 11-6 C5-6 2-5 0-10Z" fill="#38a169"/>
+      <path d="M0-10 C-5-3-4 0-4 0 C-1-3 1-5 0-10Z" fill="#276749"/>
+    </symbol>
+    <symbol id="rock" viewBox="-12 -12 24 24">
+      <path d="M-10 5 -5-8 5-9 11 1 5 8 -6 9z" fill="#7c8794"/>
+      <path d="M-4-5 2-7 6-1" fill="none" stroke="#b7c0ca" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="flower" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="0" r="2.4" fill="#facc15"/>
+      <circle cx="-5" cy="0" r="3.6" fill="#ef4444"/>
+      <circle cx="5" cy="0" r="3.6" fill="#a855f7"/>
+      <circle cx="0" cy="-5" r="3.6" fill="#fde047"/>
+      <circle cx="0" cy="5" r="3.6" fill="#fb7185"/>
+    </symbol>
+    <symbol id="mushroom" viewBox="-12 -12 24 24">
+      <path d="M-10 1a10 8 0 0 1 20 0z" fill="#dc2626"/>
+      <circle cx="-4" cy="-3" r="1.8" fill="#fee2e2"/>
+      <circle cx="4" cy="-4" r="1.6" fill="#fee2e2"/>
+      <rect x="-3" y="1" width="6" height="9" rx="2" fill="#f4e1c2"/>
+    </symbol>
+    <symbol id="tent" viewBox="-12 -12 24 24">
+      <path d="M-10 8 0-10 10 8z" fill="#eab308" stroke="#7c4a03" stroke-width="1.5"/>
+      <path d="M0-10 0 8" stroke="#7c4a03" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="crate" viewBox="-12 -12 24 24">
+      <rect x="-9" y="-8" width="18" height="16" rx="2" fill="#a16207" stroke="#713f12" stroke-width="1.6"/>
+      <path d="M-8-7 8 7M8-7-8 7M-9 0H9" stroke="#facc15" stroke-width="1.2" opacity=".75"/>
+    </symbol>
+    <symbol id="barrel" viewBox="-12 -12 24 24">
+      <ellipse cx="0" cy="-7" rx="8" ry="3" fill="#b45309"/>
+      <path d="M-8-7v14c0 2 16 2 16 0V-7" fill="#92400e"/>
+      <ellipse cx="0" cy="7" rx="8" ry="3" fill="#78350f"/>
+      <path d="M-8-2H8M-8 4H8" stroke="#fbbf24" stroke-width="1.1"/>
+    </symbol>
+    <symbol id="campfire" viewBox="-12 -12 24 24">
+      <path d="M-9 7 9-3M-9-3 9 7" stroke="#7c2d12" stroke-width="3" stroke-linecap="round"/>
+      <path d="M0 6 C-6 1-1-3 0-9 C5-3 6 2 0 6Z" fill="#f97316"/>
+      <path d="M0 4 C-3 1 0-2 1-5 C3-2 3 2 0 4Z" fill="#fde047"/>
+    </symbol>
+    <symbol id="crop" viewBox="-12 -12 24 24">
+      <path d="M0 9V-9M0-1C-6-6-9-5-10-5C-7 0-3 2 0 0M0 3C6-2 9-1 10-1C7 4 3 6 0 4" fill="none" stroke="#2f855a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="-4" cy="-4" r="2" fill="#f97316"/>
+      <circle cx="4" cy="0" r="2" fill="#facc15"/>
+    </symbol>
+    <symbol id="log" viewBox="-12 -12 24 24">
+      <rect x="-10" y="-4" width="20" height="8" rx="4" fill="#8b5a2b"/>
+      <circle cx="-8" cy="0" r="4" fill="#d59b5b" stroke="#7c4a24" stroke-width="1"/>
+      <path d="M-2-4V4M4-4V4" stroke="#5f3b1b" stroke-width="1"/>
+    </symbol>
+    <symbol id="tool" viewBox="-12 -12 24 24">
+      <path d="M-7 9 7-9" stroke="#6b4424" stroke-width="3" stroke-linecap="round"/>
+      <path d="M5-11 11-5 8-2 2-8z" fill="#94a3b8" stroke="#475569" stroke-width="1"/>
+    </symbol>
+    <symbol id="metal" viewBox="-12 -12 24 24">
+      <rect x="-9" y="-7" width="18" height="14" rx="1" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+      <path d="M-7-5 7 5M7-5-7 5" stroke="#cbd5e1" stroke-width="1"/>
+      <circle cx="-6" cy="-4" r="1" fill="#475569"/>
+      <circle cx="6" cy="4" r="1" fill="#475569"/>
+    </symbol>
+    <symbol id="fish" viewBox="-12 -12 24 24">
+      <path d="M-9 0 C-3-7 7-5 10 0 C7 5-3 7-9 0Z" fill="#38bdf8" stroke="#0369a1" stroke-width="1.2"/>
+      <path d="M-9 0 -12-5 -12 5z" fill="#0284c7"/>
+      <circle cx="6" cy="-1" r="1.1" fill="#0f172a"/>
+    </symbol>
+    <symbol id="canoe" viewBox="-12 -12 24 24">
+      <path d="M-11 1 C-5-7 6-7 11 1 C6 7-5 7-11 1Z" fill="#92400e" stroke="#78350f" stroke-width="1.2"/>
+      <path d="M-7 1H7" stroke="#fbbf24" stroke-width="1.2"/>
+    </symbol>
+    <symbol id="lily" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="0" r="8" fill="#5ecf81"/>
+      <path d="M0 0 8-5" stroke="#e9fdf0" stroke-width="2"/>
+      <circle cx="2" cy="-1" r="2" fill="#f9a8d4"/>
+    </symbol>
+    <symbol id="sign" viewBox="-12 -12 24 24">
+      <rect x="-8" y="-8" width="16" height="8" rx="1.5" fill="#b45309" stroke="#78350f" stroke-width="1.4"/>
+      <rect x="-1.5" y="0" width="3" height="10" fill="#78350f"/>
+    </symbol>
+    <symbol id="chest" viewBox="-12 -12 24 24">
+      <path d="M-9-2 C-9-8 9-8 9-2V8H-9z" fill="#a16207" stroke="#713f12" stroke-width="1.4"/>
+      <path d="M-9-2H9M0-7V8" stroke="#facc15" stroke-width="1.3"/>
+      <rect x="-2" y="-1" width="4" height="4" fill="#facc15"/>
+    </symbol>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <rect class="page" width="1680" height="1120"/>
+  <text class="title" x="48" y="38">新手山谷 100x100 扩展规划 V2：先定地形逻辑，再落道路和素材</text>
+  <text class="subtitle" x="48" y="64">旧 44x36 地图保持原坐标与原貌；新增区域只向东、向南生长。设计重点：水从北部山脊来，路沿坡脚和安全干地走，营地放在交通与资源交汇处。</text>
+
+  <g id="map" transform="translate(48 96)">
+    <rect class="map-bg" x="0" y="0" width="800" height="800" rx="6"/>
+
+    <g id="minor-grid">
+      <path class="minor-grid" d="M8 0V800M16 0V800M24 0V800M32 0V800M40 0V800M48 0V800M56 0V800M64 0V800M72 0V800M80 0V800M88 0V800M96 0V800M104 0V800M112 0V800M120 0V800M128 0V800M136 0V800M144 0V800M152 0V800M160 0V800M168 0V800M176 0V800M184 0V800M192 0V800M200 0V800M208 0V800M216 0V800M224 0V800M232 0V800M240 0V800M248 0V800M256 0V800M264 0V800M272 0V800M280 0V800M288 0V800M296 0V800M304 0V800M312 0V800M320 0V800M328 0V800M336 0V800M344 0V800M352 0V800M360 0V800M368 0V800M376 0V800M384 0V800M392 0V800M400 0V800M408 0V800M416 0V800M424 0V800M432 0V800M440 0V800M448 0V800M456 0V800M464 0V800M472 0V800M480 0V800M488 0V800M496 0V800M504 0V800M512 0V800M520 0V800M528 0V800M536 0V800M544 0V800M552 0V800M560 0V800M568 0V800M576 0V800M584 0V800M592 0V800M600 0V800M608 0V800M616 0V800M624 0V800M632 0V800M640 0V800M648 0V800M656 0V800M664 0V800M672 0V800M680 0V800M688 0V800M696 0V800M704 0V800M712 0V800M720 0V800M728 0V800M736 0V800M744 0V800M752 0V800M760 0V800M768 0V800M776 0V800M784 0V800M792 0V800"/>
+      <path class="minor-grid" d="M0 8H800M0 16H800M0 24H800M0 32H800M0 40H800M0 48H800M0 56H800M0 64H800M0 72H800M0 80H800M0 88H800M0 96H800M0 104H800M0 112H800M0 120H800M0 128H800M0 136H800M0 144H800M0 152H800M0 160H800M0 168H800M0 176H800M0 184H800M0 192H800M0 200H800M0 208H800M0 216H800M0 224H800M0 232H800M0 240H800M0 248H800M0 256H800M0 264H800M0 272H800M0 280H800M0 288H800M0 296H800M0 304H800M0 312H800M0 320H800M0 328H800M0 336H800M0 344H800M0 352H800M0 360H800M0 368H800M0 376H800M0 384H800M0 392H800M0 400H800M0 408H800M0 416H800M0 424H800M0 432H800M0 440H800M0 448H800M0 456H800M0 464H800M0 472H800M0 480H800M0 488H800M0 496H800M0 504H800M0 512H800M0 520H800M0 528H800M0 536H800M0 544H800M0 552H800M0 560H800M0 568H800M0 576H800M0 584H800M0 592H800M0 600H800M0 608H800M0 616H800M0 624H800M0 632H800M0 640H800M0 648H800M0 656H800M0 664H800M0 672H800M0 680H800M0 688H800M0 696H800M0 704H800M0 712H800M0 720H800M0 728H800M0 736H800M0 744H800M0 752H800M0 760H800M0 768H800M0 776H800M0 784H800M0 792H800"/>
+    </g>
+    <g id="major-grid">
+      <path class="major-grid" d="M80 0V800M160 0V800M240 0V800M320 0V800M400 0V800M480 0V800M560 0V800M640 0V800M720 0V800"/>
+      <path class="major-grid" d="M0 80H800M0 160H800M0 240H800M0 320H800M0 400H800M0 480H800M0 560H800M0 640H800M0 720H800"/>
+    </g>
+
+    <g id="zones">
+      <rect class="old-zone" x="0" y="0" width="352" height="288" rx="4"/>
+      <path class="north-ridge zone-stroke" d="M352 0H800V152C742 170 662 156 596 176C538 194 472 178 424 160C394 150 374 148 352 158Z"/>
+      <path class="flower-slope zone-stroke" d="M352 128C396 116 446 130 512 158C536 168 552 184 568 212C536 252 474 270 416 254C390 246 368 230 352 208Z"/>
+      <path class="wetland zone-stroke" d="M352 210C408 236 448 250 502 242C570 234 630 250 672 300C700 336 696 384 660 432C610 500 486 476 424 426C378 388 352 324 352 210Z"/>
+      <path class="coast zone-stroke" d="M672 150C728 164 790 196 800 232V520C754 508 708 472 686 416C672 374 688 320 670 276C654 236 648 194 672 150Z"/>
+      <path class="pine-terrace zone-stroke" d="M0 288H284C296 334 282 396 232 456C180 518 82 534 0 486Z"/>
+      <path class="outpost zone-stroke" d="M284 288C348 306 404 328 456 374C456 424 430 464 384 490C342 514 288 494 248 454C232 392 242 332 284 288Z"/>
+      <path class="mushroom-wood zone-stroke" d="M0 486C96 526 178 520 238 468C276 532 270 648 224 724C180 792 90 808 0 800Z"/>
+      <path class="farm-belt zone-stroke" d="M238 468C306 496 374 500 444 472C508 520 520 604 496 674C454 760 344 792 224 724C264 648 276 548 238 468Z"/>
+      <path class="delta zone-stroke" d="M496 674C528 602 522 548 492 500C560 474 628 500 680 558C704 638 670 738 610 800H430C468 772 488 724 496 674Z"/>
+      <path class="quarry zone-stroke" d="M680 456C724 496 766 520 800 520V800H610C680 724 704 608 680 456Z"/>
+    </g>
+
+    <g id="terrain-logic">
+      <path class="cliff-line" d="M384 58C448 34 518 38 586 58C654 76 728 58 792 86"/>
+      <path class="cliff-shadow" d="M392 78C454 54 520 58 582 78C650 98 724 82 790 108"/>
+      <path class="cliff-line" d="M574 442C630 426 678 444 718 488C744 516 770 528 800 536"/>
+      <path class="cliff-shadow" d="M584 464C636 448 678 464 710 502C740 540 770 552 800 560"/>
+      <path class="water-fill" stroke-width="30" d="M486 60C480 100 466 128 456 162C446 196 450 226 478 252C516 288 582 286 636 310C690 334 710 382 696 430C678 490 704 540 736 604C760 652 750 720 714 794"/>
+      <path class="water-core" stroke-width="11" d="M486 60C480 100 466 128 456 162C446 196 450 226 478 252C516 288 582 286 636 310C690 334 710 382 696 430C678 490 704 540 736 604C760 652 750 720 714 794"/>
+      <path class="water-fill" stroke-width="18" d="M296 158C340 164 382 184 426 220C450 238 466 248 488 256"/>
+      <path class="water-core" stroke-width="7" d="M296 158C340 164 382 184 426 220C450 238 466 248 488 256"/>
+      <ellipse class="pond" cx="250" cy="160" rx="52" ry="34"/>
+      <ellipse class="pond" cx="162" cy="226" rx="24" ry="18"/>
+      <ellipse class="pond" cx="302" cy="96" rx="22" ry="15"/>
+      <ellipse class="pond" cx="536" cy="352" rx="58" ry="42"/>
+      <ellipse class="pond" cx="624" cy="626" rx="58" ry="40"/>
+      <ellipse class="marsh" cx="484" cy="310" rx="76" ry="46"/>
+      <ellipse class="marsh" cx="588" cy="366" rx="72" ry="50"/>
+      <path class="boardwalk" d="M474 310C520 320 554 342 590 372"/>
+    </g>
+
+    <g id="roads">
+      <path class="road-edge" d="M40 240C86 240 116 228 144 216C188 196 210 166 234 146C268 118 310 116 344 122"/>
+      <path class="main-road" d="M40 240C86 240 116 228 144 216C188 196 210 166 234 146C268 118 310 116 344 122"/>
+
+      <path class="road-edge" d="M344 122C388 126 420 142 448 168C462 184 460 210 456 246C462 292 440 326 408 344C364 368 348 424 360 500C376 594 444 648 540 620C616 598 656 542 680 488C706 428 708 356 682 300C656 246 606 218 548 206C510 198 478 214 456 246"/>
+      <path class="main-road" d="M344 122C388 126 420 142 448 168C462 184 460 210 456 246C462 292 440 326 408 344C364 368 348 424 360 500C376 594 444 648 540 620C616 598 656 542 680 488C706 428 708 356 682 300C656 246 606 218 548 206C510 198 478 214 456 246"/>
+
+      <path class="secondary-edge" d="M246 270C218 320 190 360 150 396C108 434 86 502 100 594C118 688 174 738 248 734C324 728 356 672 360 500"/>
+      <path class="secondary-road" d="M246 270C218 320 190 360 150 396C108 434 86 502 100 594C118 688 174 738 248 734C324 728 356 672 360 500"/>
+
+      <path class="secondary-edge" d="M408 344C476 376 532 380 592 360C630 346 662 338 688 352"/>
+      <path class="secondary-road" d="M408 344C476 376 532 380 592 360C630 346 662 338 688 352"/>
+      <path class="secondary-edge" d="M540 620C594 662 650 666 714 636"/>
+      <path class="secondary-road" d="M540 620C594 662 650 666 714 636"/>
+
+      <path class="trail" d="M434 166C454 120 474 86 486 60"/>
+      <path class="trail" d="M448 168C410 178 376 198 352 232"/>
+      <path class="trail" d="M150 396C196 430 248 432 304 408"/>
+      <path class="trail" d="M102 594C68 650 58 716 78 776"/>
+      <path class="trail" d="M360 500C314 552 300 606 322 666"/>
+      <path class="trail" d="M616 598C584 646 540 700 474 760"/>
+      <path class="trail" d="M682 300C736 286 770 306 792 350"/>
+      <path class="trail" d="M680 488C724 514 758 548 786 606"/>
+
+      <g id="bridges">
+        <line class="bridge" x1="438" y1="232" x2="474" y2="260"/>
+        <line class="bridge-plank" x1="440" y1="240" x2="460" y2="222"/>
+        <line class="bridge-plank" x1="450" y1="248" x2="470" y2="230"/>
+        <line class="bridge" x1="676" y1="476" x2="718" y2="506"/>
+        <line class="bridge-plank" x1="684" y1="482" x2="704" y2="462"/>
+        <line class="bridge-plank" x1="696" y1="492" x2="716" y2="472"/>
+        <line class="bridge" x1="594" y1="612" x2="650" y2="638"/>
+        <line class="bridge-plank" x1="604" y1="616" x2="618" y2="596"/>
+        <line class="bridge-plank" x1="622" y1="624" x2="636" y2="604"/>
+      </g>
+    </g>
+
+    <g id="asset-placement">
+      <!-- Existing old map hints -->
+      <use href="#tent" x="28" y="252" width="25" height="25"/>
+      <use href="#sign" x="66" y="232" width="20" height="20"/>
+      <use href="#tree-round" x="66" y="58" width="24" height="24"/>
+      <use href="#mushroom" x="112" y="156" width="22" height="22"/>
+      <use href="#rock" x="184" y="214" width="22" height="22"/>
+
+      <!-- North ridge and flower slope -->
+      <use href="#pine" x="396" y="66" width="28" height="28"/>
+      <use href="#pine" x="536" y="82" width="28" height="28"/>
+      <use href="#rock" x="620" y="98" width="26" height="26"/>
+      <use href="#rock" x="724" y="104" width="26" height="26"/>
+      <use href="#flower" x="384" y="190" width="22" height="22"/>
+      <use href="#flower" x="420" y="150" width="22" height="22"/>
+      <use href="#flower" x="516" y="196" width="22" height="22"/>
+      <use href="#sign" x="412" y="132" width="18" height="18"/>
+
+      <!-- Wetland and coast -->
+      <use href="#lily" x="504" y="318" width="22" height="22"/>
+      <use href="#lily" x="570" y="370" width="22" height="22"/>
+      <use href="#canoe" x="600" y="332" width="26" height="26"/>
+      <use href="#fish" x="650" y="398" width="22" height="22"/>
+      <use href="#palm" x="728" y="248" width="28" height="28"/>
+      <use href="#palm" x="764" y="384" width="28" height="28"/>
+      <use href="#canoe" x="742" y="356" width="26" height="26"/>
+      <use href="#barrel" x="716" y="426" width="22" height="22"/>
+      <use href="#fish" x="728" y="606" width="22" height="22"/>
+
+      <!-- Outpost -->
+      <use href="#tent" x="344" y="360" width="32" height="32"/>
+      <use href="#campfire" x="382" y="374" width="24" height="24"/>
+      <use href="#crate" x="414" y="364" width="24" height="24"/>
+      <use href="#barrel" x="390" y="414" width="23" height="23"/>
+      <use href="#sign" x="438" y="398" width="21" height="21"/>
+      <use href="#tool" x="324" y="416" width="24" height="24"/>
+
+      <!-- Logging terrace -->
+      <use href="#pine" x="56" y="366" width="30" height="30"/>
+      <use href="#pine" x="118" y="430" width="30" height="30"/>
+      <use href="#pine" x="202" y="350" width="30" height="30"/>
+      <use href="#log" x="154" y="458" width="28" height="28"/>
+      <use href="#log" x="236" y="412" width="28" height="28"/>
+      <use href="#tool" x="206" y="470" width="24" height="24"/>
+
+      <!-- Mushroom wood -->
+      <use href="#mushroom" x="62" y="638" width="28" height="28"/>
+      <use href="#mushroom" x="138" y="712" width="28" height="28"/>
+      <use href="#tree-round" x="188" y="612" width="28" height="28"/>
+      <use href="#chest" x="80" y="758" width="24" height="24"/>
+
+      <!-- Farm belt and delta -->
+      <use href="#crop" x="318" y="558" width="26" height="26"/>
+      <use href="#crop" x="374" y="604" width="26" height="26"/>
+      <use href="#crop" x="424" y="650" width="26" height="26"/>
+      <use href="#tool" x="334" y="676" width="24" height="24"/>
+      <use href="#barrel" x="474" y="618" width="22" height="22"/>
+      <use href="#lily" x="616" y="658" width="22" height="22"/>
+      <use href="#fish" x="660" y="708" width="22" height="22"/>
+      <use href="#campfire" x="578" y="720" width="24" height="24"/>
+      <use href="#crate" x="626" y="746" width="24" height="24"/>
+
+      <!-- Quarry / metal yard -->
+      <use href="#rock" x="682" y="546" width="28" height="28"/>
+      <use href="#metal" x="724" y="586" width="26" height="26"/>
+      <use href="#tool" x="760" y="636" width="24" height="24"/>
+      <use href="#metal" x="704" y="686" width="26" height="26"/>
+      <use href="#crate" x="744" y="734" width="24" height="24"/>
+      <use href="#chest" x="780" y="668" width="24" height="24"/>
+    </g>
+
+    <g id="pins">
+      <circle class="pin" cx="40" cy="240" r="12"/><text class="pin-text" x="40" y="240">S</text>
+      <circle class="pin" cx="344" cy="122" r="12"/><text class="pin-text" x="344" y="122">E1</text>
+      <circle class="pin" cx="246" cy="270" r="12"/><text class="pin-text" x="246" y="270">S1</text>
+      <circle class="pin" cx="456" cy="246" r="12"/><text class="pin-text" x="456" y="246">B1</text>
+      <circle class="pin" cx="408" cy="344" r="12"/><text class="pin-text" x="408" y="344">O</text>
+      <circle class="pin" cx="676" cy="476" r="12"/><text class="pin-text" x="676" y="476">B2</text>
+      <circle class="pin" cx="616" cy="598" r="12"/><text class="pin-text" x="616" y="598">B3</text>
+      <circle class="pin" cx="486" cy="60" r="12"/><text class="pin-text" x="486" y="60">W</text>
+      <circle class="pin" cx="680" cy="488" r="12"/><text class="pin-text" x="680" y="488">Q</text>
+      <circle class="pin" cx="540" cy="620" r="12"/><text class="pin-text" x="540" y="620">D</text>
+    </g>
+
+    <g id="zone-labels">
+      <text class="label" x="14" y="26">A 旧图保留区</text>
+      <text class="tiny" x="14" y="47">0..43 / 0..35 原样保留</text>
+      <text class="label" x="370" y="28">B 北部山脊与瀑布源</text>
+      <text class="tiny" x="370" y="49">高差边界，解释水从哪里来</text>
+      <text class="label" x="370" y="180">C 石花坡</text>
+      <text class="tiny" x="370" y="201">旧东口出门后的安全过渡</text>
+      <text class="label" x="386" y="302">D 月镜湿地</text>
+      <text class="tiny" x="386" y="323">水道、芦草、栈桥、第一座桥</text>
+      <text class="label" x="686" y="208">E 东岸与码头</text>
+      <text class="tiny" x="686" y="229">钓鱼点、棕榈、轻探索</text>
+      <text class="label" x="260" y="330">F 补给前哨</text>
+      <text class="tiny" x="260" y="351">旧东/旧南/湿地/农田的交通结点</text>
+      <text class="label" x="16" y="324">G 松木采伐高地</text>
+      <text class="tiny" x="16" y="345">木材、斧头、工作台素材合理落点</text>
+      <text class="label" x="18" y="556">H 蘑菇幽林</text>
+      <text class="tiny" x="18" y="577">密林支路、隐藏箱、稀有遭遇区</text>
+      <text class="label" x="270" y="548">I 南部农田带</text>
+      <text class="tiny" x="270" y="569">靠水但不淹，适合围栏和作物</text>
+      <text class="label" x="522" y="700">J 河口钓营</text>
+      <text class="tiny" x="522" y="721">河流终点与休息小营地</text>
+      <text class="label" x="690" y="560">K 岩场训练区</text>
+      <text class="tiny" x="690" y="581">矿洞、金属废料、后段挑战</text>
+    </g>
+
+    <g id="axes-labels">
+      <text class="axis" x="-4" y="-10">x</text>
+      <text class="axis" x="-28" y="4">y</text>
+      <text class="axis" x="-4" y="-2">0</text><text class="axis" x="76" y="-2">10</text><text class="axis" x="156" y="-2">20</text><text class="axis" x="236" y="-2">30</text><text class="axis" x="316" y="-2">40</text><text class="axis" x="396" y="-2">50</text><text class="axis" x="476" y="-2">60</text><text class="axis" x="556" y="-2">70</text><text class="axis" x="636" y="-2">80</text><text class="axis" x="716" y="-2">90</text><text class="axis" x="786" y="-2">99</text>
+      <text class="axis" x="-23" y="4">0</text><text class="axis" x="-28" y="84">10</text><text class="axis" x="-28" y="164">20</text><text class="axis" x="-28" y="244">30</text><text class="axis" x="-28" y="324">40</text><text class="axis" x="-28" y="404">50</text><text class="axis" x="-28" y="484">60</text><text class="axis" x="-28" y="564">70</text><text class="axis" x="-28" y="644">80</text><text class="axis" x="-28" y="724">90</text><text class="axis" x="-28" y="800">99</text>
+    </g>
+  </g>
+
+  <g id="right-panel" transform="translate(900 96)">
+    <rect class="callout" x="0" y="0" width="720" height="800" rx="10"/>
+    <text class="legend-head" x="22" y="32">这版的道路和景观逻辑</text>
+
+    <rect class="callout-green" x="22" y="52" width="676" height="114" rx="8"/>
+    <text class="legend-sub" x="42" y="78">1. 水系先行</text>
+    <text class="legend-text" x="42" y="102">北部山脊 W 是最高点，瀑布流入旧图东湖，再向东南形成月镜湿地，最后到河口钓营。</text>
+    <text class="legend-text" x="42" y="124">桥只放在三处最窄、最有通行需求的位置：B1 接旧东口，B2 接岩场，B3 接河口/农田。</text>
+    <text class="legend-text" x="42" y="146">湿地内部用栈道，不让主路硬穿水域；这会让地貌和玩家动线都更可信。</text>
+
+    <rect class="callout-blue" x="22" y="184" width="676" height="132" rx="8"/>
+    <text class="legend-sub" x="42" y="210">2. 道路分三级</text>
+    <text class="legend-text" x="42" y="234">主路：S 出生营地 -> 旧东口 E1 -> B1 -> 前哨 O -> 农田 -> B3/B2 -> 岩场与东岸。</text>
+    <text class="legend-text" x="42" y="256">次路：旧南口 S1 -> 采木高地 -> 蘑菇幽林 -> 农田，形成低等级练级回环。</text>
+    <text class="legend-text" x="42" y="278">小径：瀑布观景、湿地栈道、隐藏箱、河口钓点、矿洞入口，提供探索但不干扰主流程。</text>
+    <text class="legend-text" x="42" y="300">路不贴边、不直线贯穿，而是沿坡脚和干地绕行，避免“格子铺路”的机械感。</text>
+
+    <text class="legend-head" x="22" y="354">分区素材落点，按实际包内模型名规划</text>
+    <text class="legend-text" x="22" y="380">A 旧图保留：暂不强塞新素材，只在外延处衔接道路，避免破坏旧存档体验。</text>
+    <text class="legend-text" x="22" y="404">B 北部山脊：cliff_waterfallTop_rock, cliff_waterfall_rock, cliff_large_stone, cliff_steps_stone, rock_tall*, stone_tall*, tree_pineTall*。</text>
+    <text class="legend-text" x="22" y="428">C 石花坡：flower_redA/B/C, flower_yellowA/B/C, flower_purpleA/B/C, plant_bush*, ground_pathBend/Side/Open, sign。</text>
+    <text class="legend-text" x="22" y="452">D 月镜湿地：ground_riverStraight/Bend/Corner/Split/Cross/Rocks, lily_small/large, canoe, canoe_paddle, bridge_woodNarrow, hanging_moss。</text>
+    <text class="legend-text" x="22" y="476">E 东岸码头：tree_palm*, platform_beach, bridge_side_wood, campfire-fishing-stand, fish/fish-large, bucket, bottle/bottle-large, barrel-open。</text>
+    <text class="legend-text" x="22" y="500">F 补给前哨：tent, tent-canvas, bedroll, campfire-pit, box/box-open/box-large, barrel, chest, signpost, fence-doorway, workbench。</text>
+    <text class="legend-text" x="22" y="524">G 松木采伐：tree_pine*, stump_round/stump_old, log/log_large/log_stackLarge, resource-wood, resource-planks, tool-axe, tool-axe-upgraded。</text>
+    <text class="legend-text" x="22" y="548">H 蘑菇幽林：tree_default_dark, tree_oak_dark, mushroom_red/tan/group/tall, hanging_moss, grass_leafsLarge, chest。</text>
+    <text class="legend-text" x="22" y="572">I 南部农田：crops_dirtRow/DoubleRow/Corner/End, crop_carrot/pumpkin/melon/turnip, crops_corn/wheat/bamboo stages, fence_gate, fence_planks, tool-hoe, bucket。</text>
+    <text class="legend-text" x="22" y="596">J 河口钓营：lily, canoe, fish-large, campfire-fishing-stand, bedroll-packed, bottle, box-large-open, dock-like wood bridge pieces。</text>
+    <text class="legend-text" x="22" y="620">K 岩场训练：cliff_cave_rock, cliff_blockCave_stone, rock_large*, rock_sand*, resource-stone-large, tool-pickaxe, tool-hammer, workbench-anvil。</text>
+    <text class="legend-text" x="22" y="644">K 金属废场补充：metal-panel*, structure-metal*, structure-metal-doorway, fence-fortified, floor-old, floor-hole, workbench-grind。</text>
+
+    <text class="legend-head" x="22" y="690">执行时的落地规则</text>
+    <text class="legend-text" x="22" y="716">1. 保持原 44x36 网格数据不重写；新增坐标从现有边界向外生成。</text>
+    <text class="legend-text" x="22" y="740">2. 先铺主路和桥，再铺水体阻挡，最后放可碰撞装饰，避免树/石头挡住路。</text>
+    <text class="legend-text" x="22" y="764">3. 高草区放在道路外侧和小径末端，不覆盖主路、桥、前哨和码头。</text>
+    <text class="legend-text" x="22" y="788">4. survival-kit 主要承担“营地功能感”，nature-kit 主要承担地形和生态层次。</text>
+  </g>
+
+  <g id="bottom-panel" transform="translate(48 930)">
+    <rect class="callout" x="0" y="0" width="1572" height="136" rx="10"/>
+    <text class="legend-head" x="22" y="34">关键坐标与连通说明</text>
+    <text class="note" x="22" y="62">S=(5,30) 旧出生营地；E1=(43,15) 附近接旧东口；S1=(31,33) 附近接旧南口；O=(51,43) 前哨是四路交汇，不再是随便放在地图中心。</text>
+    <text class="note" x="22" y="86">B1=(57,31) 是旧东口到湿地的第一座桥；B2=(85,60) 接岩场训练区；B3=(77,76) 接河口钓营和农田，三座桥都有明确通行理由。</text>
+    <text class="note" x="22" y="110">100x100 后的玩家节奏：旧图熟悉区 -> 石花坡/湿地过渡 -> 前哨补给 -> 农田低压环线或岩场高压路线；南部幽林作为奖励探索支线。</text>
+  </g>
+</svg>

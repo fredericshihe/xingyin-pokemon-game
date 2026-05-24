@@ -1,0 +1,160 @@
+{
+  "id": "GodotMapV2",
+  "version": 1,
+  "displayName": "迷雾森林试炼",
+  "dimensions": { "width": 100, "height": 100 },
+  "preserveRegion": { "id": "old_newbie_valley", "x": 0, "y": 0, "width": 44, "height": 36 },
+  "defaultStart": { "x": 5, "y": 30, "direction": "right" },
+  "areas": [
+    { "id": "A", "name": "旧图保留区", "bounds": { "x": 0, "y": 0, "width": 44, "height": 36 }, "themeTags": ["tutorial", "old_map", "nature"], "densityBudget": { "min": 8, "max": 12 } },
+    { "id": "B", "name": "北部山脊与瀑布源", "bounds": { "x": 44, "y": 0, "width": 56, "height": 23 }, "themeTags": ["ridge", "water_source", "rock"], "densityBudget": { "min": 44, "max": 66 } },
+    { "id": "C", "name": "石花坡", "bounds": { "x": 44, "y": 17, "width": 29, "height": 18 }, "themeTags": ["transition", "flower", "stone"], "densityBudget": { "min": 30, "max": 46 } },
+    { "id": "D", "name": "月镜湿地", "bounds": { "x": 50, "y": 28, "width": 36, "height": 32 }, "themeTags": ["wetland", "water", "reeds"], "densityBudget": { "min": 48, "max": 72 } },
+    { "id": "E", "name": "东岸海湾", "bounds": { "x": 82, "y": 18, "width": 18, "height": 50 }, "themeTags": ["shore", "dock", "water"], "densityBudget": { "min": 56, "max": 82 } },
+    { "id": "F", "name": "生存补给前哨", "bounds": { "x": 31, "y": 36, "width": 28, "height": 28 }, "themeTags": ["outpost", "safe", "survival"], "densityBudget": { "min": 64, "max": 112 } },
+    { "id": "G", "name": "采木高地", "bounds": { "x": 0, "y": 36, "width": 37, "height": 26 }, "themeTags": ["logging", "wood", "highland"], "densityBudget": { "min": 48, "max": 72 } },
+    { "id": "H", "name": "蘑菇幽林", "bounds": { "x": 0, "y": 61, "width": 35, "height": 39 }, "themeTags": ["mushroom", "dark_forest", "ruin"], "densityBudget": { "min": 72, "max": 145 } },
+    { "id": "I", "name": "南部农田", "bounds": { "x": 35, "y": 58, "width": 29, "height": 29 }, "themeTags": ["farm", "fence", "field"], "densityBudget": { "min": 62, "max": 112 } },
+    { "id": "J", "name": "河口钓营", "bounds": { "x": 55, "y": 70, "width": 28, "height": 30 }, "themeTags": ["river_delta", "camp", "fishing"], "densityBudget": { "min": 58, "max": 84 } },
+    { "id": "K", "name": "岩场与金属废场", "bounds": { "x": 80, "y": 58, "width": 20, "height": 42 }, "themeTags": ["mine", "metal", "boss"], "densityBudget": { "min": 70, "max": 104 } }
+  ],
+  "routes": [
+    { "id": "golden_main_route", "role": "main", "width": 3, "anchors": [
+      { "id": "S", "x": 5, "y": 30 },
+      { "id": "old_east_gate", "x": 39, "y": 15 },
+      { "id": "new_world_gate", "x": 44, "y": 18 },
+      { "id": "stone_flower_slope", "x": 50, "y": 18 },
+      { "id": "B1", "x": 61, "y": 33 },
+      { "id": "O", "x": 48, "y": 47 },
+      { "id": "farm_gate", "x": 49, "y": 64 },
+      { "id": "B3", "x": 79, "y": 82 },
+      { "id": "B2", "x": 88, "y": 62 },
+      { "id": "Boss", "x": 88, "y": 72 }
+    ] },
+    { "id": "BR01_ridge_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 50, "y": 18 }, { "x": 61, "y": 8 }, { "x": 79, "y": 13 }, { "x": 91, "y": 25 }, { "x": 73, "y": 35 }
+    ] },
+    { "id": "BR02_wetland_boardwalk_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 61, "y": 33 }, { "x": 72, "y": 39 }, { "x": 66, "y": 48 }, { "x": 56, "y": 52 }, { "x": 48, "y": 47 }
+    ] },
+    { "id": "BR03_shore_wreck_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 72, "y": 39 }, { "x": 93, "y": 38 }, { "x": 96, "y": 52 }, { "x": 89, "y": 59 }, { "x": 84, "y": 61 }
+    ] },
+    { "id": "BR04_logging_highland_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 20, "y": 36 }, { "x": 13, "y": 50 }, { "x": 27, "y": 55 }, { "x": 35, "y": 44 }, { "x": 42, "y": 45 }
+    ] },
+    { "id": "BR05_mushroom_ruin_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 15, "y": 60 }, { "x": 8, "y": 72 }, { "x": 20, "y": 83 }, { "x": 30, "y": 91 }, { "x": 38, "y": 76 }
+    ] },
+    { "id": "BR06_farm_canal_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 48, "y": 47 }, { "x": 55, "y": 61 }, { "x": 61, "y": 73 }, { "x": 49, "y": 82 }, { "x": 62, "y": 78 }
+    ] },
+    { "id": "BR07_delta_sandbar_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 62, "y": 78 }, { "x": 72, "y": 82 }, { "x": 70, "y": 94 }, { "x": 82, "y": 92 }, { "x": 79, "y": 82 }
+    ] },
+    { "id": "BR08_mine_yard_loop", "role": "loop", "width": 2, "anchors": [
+      { "x": 88, "y": 62 }, { "x": 94, "y": 68 }, { "x": 94, "y": 86 }, { "x": 84, "y": 91 }, { "x": 88, "y": 72 }
+    ] }
+  ],
+  "waterBodies": [
+    { "id": "north_source", "type": "ellipse", "areaId": "B", "x": 61, "y": 8, "rx": 6, "ry": 4 },
+    { "id": "wetland_moon_mirror", "type": "ellipse", "areaId": "D", "x": 67, "y": 44, "rx": 14, "ry": 10 },
+    { "id": "east_shore", "type": "rect", "areaId": "E", "x": 91, "y": 18, "width": 9, "height": 50 },
+    { "id": "river_delta", "type": "ellipse", "areaId": "J", "x": 73, "y": 88, "rx": 12, "ry": 9 }
+  ],
+  "bridges": [
+    { "id": "B1_wetland_crossing", "x": 55.75, "y": 38.65, "length": 6.8, "width": 1.12, "rotation": 2.319, "clearanceRadius": 1.45 },
+    { "id": "B3_delta_crossing", "x": 76.9, "y": 79.95, "length": 6.9, "width": 1.12, "rotation": 0.272, "clearanceRadius": 1.45 }
+  ],
+  "safeClearings": [
+    { "id": "spawn_camp", "areaId": "A", "x": 5, "y": 30, "radius": 5, "blockingClearanceRadius": 2 },
+    { "id": "outpost_core", "areaId": "F", "x": 48, "y": 47, "radius": 6, "blockingClearanceRadius": 3 },
+    { "id": "delta_heal_camp", "areaId": "J", "x": 72, "y": 78, "radius": 4, "blockingClearanceRadius": 2 },
+    { "id": "boss_gate_reading_space", "areaId": "K", "x": 88, "y": 62, "radius": 4, "blockingClearanceRadius": 3 },
+    { "id": "boss_arena", "areaId": "K", "x": 88, "y": 72, "radius": 4, "blockingClearanceRadius": 3 }
+  ],
+  "encounterZones": [
+    { "id": "Z01", "areaId": "C", "name": "石花坡浅草", "bounds": { "x": 50, "y": 22, "width": 13, "height": 8 }, "encounterTableId": "mist_slope_grass", "tallGrassRate": 0.16 },
+    { "id": "Z02", "areaId": "B", "name": "瀑布源花草", "bounds": { "x": 53, "y": 10, "width": 12, "height": 8 }, "encounterTableId": "mist_ridge_meadow", "tallGrassRate": 0.18 },
+    { "id": "Z03", "areaId": "B", "name": "山脊岩草", "bounds": { "x": 72, "y": 12, "width": 14, "height": 8 }, "encounterTableId": "mist_ridge_rock", "tallGrassRate": 0.2 },
+    { "id": "Z04", "areaId": "B", "name": "北坡碎石", "bounds": { "x": 88, "y": 8, "width": 9, "height": 14 }, "encounterTableId": "mist_ridge_rock", "tallGrassRate": 0.22 },
+    { "id": "Z05", "areaId": "D", "name": "湿地芦苇西", "bounds": { "x": 50, "y": 28, "width": 8, "height": 9 }, "encounterTableId": "mist_wetland_water", "tallGrassRate": 0.22 },
+    { "id": "Z06", "areaId": "D", "name": "月镜东岸浅滩", "bounds": { "x": 76, "y": 44, "width": 9, "height": 12 }, "encounterTableId": "mist_wetland_water", "tallGrassRate": 0.24 },
+    { "id": "Z07", "areaId": "G", "name": "采木高地草带", "bounds": { "x": 9, "y": 43, "width": 18, "height": 13 }, "encounterTableId": "mist_logging_highland", "tallGrassRate": 0.24 },
+    { "id": "Z08", "areaId": "G", "name": "树桩迷径", "bounds": { "x": 24, "y": 50, "width": 12, "height": 9 }, "encounterTableId": "mist_logging_highland", "tallGrassRate": 0.24 },
+    { "id": "Z09", "areaId": "H", "name": "幽林灯笼径", "bounds": { "x": 5, "y": 70, "width": 18, "height": 17 }, "encounterTableId": "mist_mushroom_ruin", "tallGrassRate": 0.28 },
+    { "id": "Z10", "areaId": "I", "name": "农田边草", "bounds": { "x": 40, "y": 65, "width": 14, "height": 14 }, "encounterTableId": "mist_farm_edge", "tallGrassRate": 0.18 },
+    { "id": "Z11", "areaId": "J", "name": "河口西岸水草", "bounds": { "x": 55, "y": 90, "width": 10, "height": 9 }, "encounterTableId": "mist_delta_water", "tallGrassRate": 0.24 },
+    { "id": "Z12", "areaId": "K", "name": "岩场训练带", "bounds": { "x": 80, "y": 60, "width": 7, "height": 9 }, "encounterTableId": "mist_mine_rock", "tallGrassRate": 0.26, "minEncounterTier": "tier_1" },
+    { "id": "Z13", "areaId": "K", "name": "金属废场", "bounds": { "x": 83, "y": 74, "width": 10, "height": 12 }, "encounterTableId": "mist_mine_metal", "tallGrassRate": 0.26, "minEncounterTier": "tier_2" },
+    { "id": "Z14", "areaId": "I", "name": "南田野化边", "bounds": { "x": 50, "y": 78, "width": 11, "height": 8 }, "encounterTableId": "mist_farm_edge", "tallGrassRate": 0.2 },
+    { "id": "Z15", "areaId": "B", "name": "山脊稀有草窝", "bounds": { "x": 74, "y": 8, "width": 8, "height": 6 }, "encounterTableId": "mist_ridge_rare", "tallGrassRate": 0.18, "minEncounterTier": "tier_2" },
+    { "id": "Z16", "areaId": "E", "name": "东岸潮草", "bounds": { "x": 87, "y": 43, "width": 9, "height": 15 }, "encounterTableId": "mist_shore_water", "tallGrassRate": 0.22 },
+    { "id": "Z17", "areaId": "I", "name": "田边稀有层", "bounds": { "x": 44, "y": 80, "width": 9, "height": 7 }, "encounterTableId": "mist_farm_rare", "tallGrassRate": 0.18, "minEncounterTier": "tier_2" },
+    { "id": "Z18", "areaId": "K", "name": "Boss 后废场稀有层", "bounds": { "x": 83, "y": 91, "width": 8, "height": 8 }, "encounterTableId": "mist_mine_rare", "tallGrassRate": 0.18, "minEncounterTier": "tier_3" }
+  ],
+  "events": [
+    { "id": "trainer_ridge_lieutenant", "type": "trainer", "role": "lieutenant", "areaId": "B", "position": { "x": 64, "y": 20 }, "requiredForBoss": true },
+    { "id": "trainer_grove_lieutenant", "type": "trainer", "role": "lieutenant", "areaId": "H", "position": { "x": 20, "y": 83 }, "requiredForBoss": true },
+    { "id": "trainer_lake_lieutenant", "type": "trainer", "role": "lieutenant", "areaId": "D", "position": { "x": 79, "y": 37 }, "requiredForBoss": true },
+    { "id": "trainer_logging_route_a", "type": "trainer", "role": "normal", "areaId": "G", "position": { "x": 13, "y": 50 } },
+    { "id": "trainer_logging_route_b", "type": "trainer", "role": "normal", "areaId": "G", "position": { "x": 28, "y": 45 } },
+    { "id": "trainer_shore_deck", "type": "trainer", "role": "normal", "areaId": "E", "position": { "x": 90, "y": 38 } },
+    { "id": "trainer_farm_canal", "type": "trainer", "role": "normal", "areaId": "I", "position": { "x": 58, "y": 69 } },
+    { "id": "trainer_mine_gate", "type": "trainer", "role": "normal", "areaId": "K", "position": { "x": 94, "y": 68 } },
+    { "id": "trainer_ridge_overlook", "type": "trainer", "role": "normal", "areaId": "B", "position": { "x": 79, "y": 13 } },
+    { "id": "boss_mist_forest_leader", "type": "boss", "areaId": "K", "position": { "x": 88, "y": 72 }, "unlock": { "defeatedRequiredTrainerIds": ["trainer_ridge_lieutenant", "trainer_grove_lieutenant", "trainer_lake_lieutenant"] } },
+    { "id": "heal_delta_camp", "type": "heal", "areaId": "J", "position": { "x": 72, "y": 78 }, "properties": { "usesPerMapEntry": 1 } },
+    { "id": "challenge_delta_three_chain", "type": "challenge", "areaId": "J", "position": { "x": 82, "y": 97 } },
+    { "id": "pickup_wetland_super_potion", "type": "pickup", "areaId": "D", "position": { "x": 56, "y": 53 }, "properties": { "itemKey": "super_potion", "quantity": 1 } },
+    { "id": "pickup_farm_exp_potion", "type": "pickup", "areaId": "I", "position": { "x": 49, "y": 82 }, "properties": { "itemKey": "exp_potion_small", "quantity": 1 } },
+    { "id": "pickup_shore_super_ball", "type": "pickup", "areaId": "E", "position": { "x": 90, "y": 52 }, "properties": { "itemKey": "super_ball", "quantity": 1 } },
+    { "id": "secret_ridge_stone_cache", "type": "secret", "areaId": "B", "position": { "x": 68, "y": 8 } },
+    { "id": "secret_reed_hidden_ball", "type": "secret", "areaId": "D", "position": { "x": 75, "y": 34 } },
+    { "id": "secret_stump_toolbox", "type": "secret", "areaId": "G", "position": { "x": 27, "y": 55 } },
+    { "id": "secret_mushroom_lantern_path", "type": "secret", "areaId": "H", "position": { "x": 12, "y": 78 } },
+    { "id": "secret_sandbar_cache", "type": "secret", "areaId": "J", "position": { "x": 65, "y": 97 } },
+    { "id": "secret_mine_control_panel", "type": "secret", "areaId": "K", "position": { "x": 94, "y": 84 }, "minEncounterTier": "tier_2" }
+  ],
+  "assetPlacements": [
+    { "id": "A_camp_tent", "assetId": "camp_tent_open", "areaId": "A", "x": 2.4, "y": 33.2, "scale": 2.45, "rotation": 0.35 },
+    { "id": "A_camp_fire", "assetId": "campfire_stone_ring", "areaId": "A", "x": 5.7, "y": 33.4, "scale": 1.75 },
+    { "id": "A_tutorial_sign", "assetId": "trail_sign", "areaId": "A", "x": 8, "y": 32.5, "scale": 2.35 },
+    { "id": "C_new_world_sign", "assetId": "trail_sign", "areaId": "C", "x": 44, "y": 21, "scale": 2 },
+    { "id": "B_waterfall_edge_rock", "assetId": "nature_rock_large", "areaId": "B", "x": 56, "y": 7, "scale": 1.1 },
+    { "id": "B_ridge_height_block", "assetId": "ridge_block_grass_edge", "areaId": "B", "x": 78, "y": 8, "scale": 1 },
+    { "id": "D_bridge_reed_hint", "assetId": "wetland_reed_clump", "areaId": "D", "x": 59, "y": 36, "scale": 1 },
+    { "id": "E_dock_landmark", "assetId": "shore_dock_small", "areaId": "E", "x": 96, "y": 40, "scale": 1 },
+    { "id": "E_rowboat_landmark", "assetId": "shore_rowboat", "areaId": "E", "x": 98, "y": 55, "scale": 1 },
+    { "id": "F_outpost_stall", "assetId": "town_stall_green", "areaId": "F", "x": 57, "y": 59, "scale": 1 },
+    { "id": "F_outpost_fence_west", "assetId": "town_fence_low", "areaId": "F", "x": 40, "y": 50, "scale": 1 },
+    { "id": "G_logging_tree_line", "assetId": "nature_tree_pine", "areaId": "G", "x": 11, "y": 47, "scale": 1.4 },
+    { "id": "H_ruin_lantern", "assetId": "grave_lantern_glass", "areaId": "H", "x": 12, "y": 78, "scale": 1 },
+    { "id": "H_broken_fence", "assetId": "grave_iron_fence_broken", "areaId": "H", "x": 17, "y": 86, "scale": 1 },
+    { "id": "I_farm_cart", "assetId": "farm_cart_high", "areaId": "I", "x": 50, "y": 78, "scale": 1 },
+    { "id": "J_delta_tent", "assetId": "camp_tent_open", "areaId": "J", "x": 68, "y": 86, "scale": 1.8 },
+    { "id": "K_boss_gate_crate", "assetId": "mine_crate_strong", "areaId": "K", "x": 95, "y": 66, "scale": 1 },
+    { "id": "K_control_lever", "assetId": "mine_control_lever", "areaId": "K", "x": 94, "y": 84, "scale": 1 }
+  ],
+  "decorationRules": [
+    { "id": "ridge_stone_line", "areaIds": ["B"], "assetIds": ["nature_rock_large", "nature_stone_large", "ridge_block_grass_edge", "nature_rock_tall_h", "platformer_rocks", "hex_stone_hill"], "placement": "along_slope_foot", "countRange": [30, 44], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "slope_flower_transition", "areaIds": ["C"], "assetIds": ["nature_flower_yellow", "nature_flower_red", "nature_flower_yellow_b", "nature_flower_red_b", "platformer_flowers", "nature_stone_flat_a"], "placement": "road_outer_edge", "countRange": [20, 32], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "wetland_reed_waterline", "areaIds": ["D"], "assetIds": ["nature_grass_large", "wetland_reed_clump", "nature_lily_large", "survival_patch_grass_large", "survival_rock_a", "nature_canoe"], "placement": "waterline_clusters", "countRange": [34, 50], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "shore_life_band", "areaIds": ["E"], "assetIds": ["shore_dock_small", "shore_rowboat", "nature_stone_large", "pirate_boat_row_large", "pirate_ship_wreck", "pirate_rocks_sand_a", "pirate_patch_sand"], "placement": "shoreline_story_band", "countRange": [34, 52], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "outpost_outer_ring", "areaIds": ["F"], "assetIds": ["town_fence_low", "town_stall_green", "town_stall_red", "town_hedge", "camp_tent_open", "survival_tent", "trail_sign", "survival_signpost"], "placement": "safe_clearing_outer_ring", "countRange": [36, 54], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "logging_work_line", "areaIds": ["G"], "assetIds": ["nature_tree_pine", "nature_bush_large", "nature_rock_large", "nature_stump_old", "nature_log", "nature_log_stack", "survival_tree_log"], "placement": "tree_line_to_worksite", "countRange": [30, 46], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "mushroom_ruin_hint_line", "areaIds": ["H"], "assetIds": ["nature_mushroom_red", "nature_mushroom_red_tall", "grave_lantern_glass", "grave_iron_fence_broken", "platformer_mushrooms", "grave_rocks"], "placement": "hidden_path_hint_line", "countRange": [34, 50], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "farm_boundary_order", "areaIds": ["I"], "assetIds": ["town_fence_low", "nature_fence_simple", "nature_fence_planks", "farm_cart_high", "town_cart", "nature_flower_yellow", "town_hedge"], "placement": "field_boundary_grid", "countRange": [32, 50], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "delta_camp_water_edge", "areaIds": ["J"], "assetIds": ["shore_rowboat", "pirate_boat_row_large", "nature_canoe", "camp_tent_open", "survival_campfire_fishing", "campfire_stone_ring", "nature_stone_large", "hex_water_rocks"], "placement": "camp_outer_water_edge", "countRange": [32, 48], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "mine_pressure_gradient", "areaIds": ["K"], "assetIds": ["mine_crate_strong", "mine_control_lever", "nature_rock_large", "ridge_block_grass_edge", "platformer_rocks", "platformer_stones", "survival_metal_panel", "hex_stone_rocks"], "placement": "toward_boss_density_gradient", "countRange": [42, 64], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "open_grass_micro_detail", "areaIds": ["B", "C", "D", "G", "H", "I"], "assetIds": ["nature_path_stone", "nature_grass_leafs", "nature_plant_bush", "nature_plant_bush_detailed", "nature_stone_flat_a", "nature_stone_flat_b", "nature_stone_flat_c"], "placement": "open_field_detail", "countRange": [96, 136], "minDistanceFromRoute": 3, "avoidSafeClearings": true },
+    { "id": "outpost_work_supplies", "areaIds": ["F"], "assetIds": ["survival_box", "survival_barrel", "survival_resource_wood", "survival_resource_planks", "survival_bedroll_packed", "survival_workbench", "town_stall_bench", "town_lantern", "blocky_character_a", "blocky_character_b"], "placement": "camp_work_scatter", "countRange": [36, 52], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "shore_pirate_detail", "areaIds": ["E", "J"], "assetIds": ["pirate_barrel", "pirate_crate", "pirate_chest", "pirate_flag", "pirate_flag_pennant", "pirate_mast", "pirate_rocks_sand_b", "pirate_rocks_sand_c", "pirate_patch_sand_foliage", "pirate_bottle", "pirate_palm_detailed_straight", "pirate_structure_fence"], "placement": "shore_cargo_scatter", "countRange": [54, 78], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "farm_village_detail", "areaIds": ["I"], "assetIds": ["nature_wheat_stage_a", "nature_wheat_stage_b", "nature_crop_carrot", "nature_crop_pumpkin", "town_stall_stool", "town_cart", "town_lantern", "town_windmill", "hex_building_farm"], "placement": "farm_rows_detail", "countRange": [36, 54], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "graveyard_ruin_detail", "areaIds": ["H"], "assetIds": ["grave_gravestone_round", "grave_gravestone_broken", "grave_gravestone_cross", "grave_cross_wood", "grave_pumpkin", "grave_pumpkin_carved", "grave_candle", "grave_candle_multiple", "grave_urn_round", "grave_bench_damaged", "grave_coffin_old", "grave_character_ghost"], "placement": "ruin_detail_scatter", "countRange": [48, 70], "minDistanceFromRoute": 1, "avoidSafeClearings": true },
+    { "id": "mine_platformer_detail", "areaIds": ["K"], "assetIds": ["platformer_rocks", "platformer_stones", "platformer_crate", "platformer_barrel", "platformer_chest", "platformer_fence_low_straight", "platformer_platform_overhang", "survival_tool_pickaxe", "survival_workbench", "hex_building_mine", "pirate_cannon"], "placement": "toward_boss_density_gradient", "countRange": [40, 66], "minDistanceFromRoute": 2, "avoidSafeClearings": true },
+    { "id": "hex_outpost_landmarks", "areaIds": ["F"], "assetIds": ["hex_building_cabin", "hex_building_market"], "placement": "camp_work_scatter", "countRange": [4, 6], "minDistanceFromRoute": 3, "avoidSafeClearings": true },
+    { "id": "hex_shore_landmarks", "areaIds": ["E", "J"], "assetIds": ["hex_building_dock", "hex_water_rocks", "hex_bridge"], "placement": "shore_cargo_scatter", "countRange": [8, 12], "minDistanceFromRoute": 3, "avoidSafeClearings": true },
+    { "id": "blocky_npc_marks", "areaIds": ["F"], "assetIds": ["blocky_character_a", "blocky_character_b", "blocky_character_c", "blocky_character_d"], "placement": "life_near_route", "countRange": [6, 10], "minDistanceFromRoute": 2, "avoidSafeClearings": true }
+  ]
+}

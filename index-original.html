@@ -1,0 +1,2778 @@
+<!DOCTYPE html>
+<!--
+================================================================
+  🛡️ SparkVertex Certified
+
+  This content was generated/verified on SparkVertex.
+  Platform: SparkVertex (Local-First Geek Tools)
+  Date: 2025-12-07
+  ID: garqlj6xkjs1vkiwrqxywk
+
+  Philosophy: Single File, Local First, No Cloud.
+================================================================
+-->
+<html lang="zh-CN">
+<head>
+    <meta name="spark-vertex-id" content="garqlj6xkjs1vkiwrqxywk">
+    <meta name="generator" content="SparkVertex">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pixel Battle Monsters</title>
+<script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css"><script src="https://cdn.staticfile.org/react/18.2.0/umd/react.production.min.js"></script><script src="https://cdn.staticfile.org/react-dom/18.2.0/umd/react-dom.production.min.js"></script><script src="https://cdn.staticfile.org/babel-standalone/7.23.5/babel.min.js"></script><script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    retro: {
+                        bg: '#202020',
+                        panel: '#f0f0d0', // Gameboy style greenish-white or paper white
+                        dark: '#2d2d2d',
+                        accent: '#e63946',
+                        blue: '#457b9d',
+                        green: '#2a9d8f'
+                    },
+                    type: {
+                        fire: '#f08030',
+                        water: '#6890f0',
+                        grass: '#78c850',
+                        electric: '#f8d030',
+                        normal: '#a8a878',
+                        psychic: '#f85888',
+                        ice: '#98d8d8',
+                        dragon: '#7038f8'
+                    }
+                },
+                fontFamily: {
+                    mono: ['"Courier New"', 'Courier', 'monospace'], // Pixel-ish fallback
+                },
+                boxShadow: {
+                    'pixel': '4px 4px 0px 0px rgba(0,0,0,0.5)',
+                    'pixel-sm': '2px 2px 0px 0px rgba(0,0,0,0.3)',
+                    'pixel-inset': 'inset 4px 4px 0px 0px rgba(0,0,0,0.2)',
+                },
+                animation: {
+                    'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                    'flash': 'flash 0.2s ease-in-out 3',
+                    'bounce-in': 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    'attack-player': 'attackPlayer 0.5s ease-in-out',
+                    'attack-enemy': 'attackEnemy 0.5s ease-in-out',
+                    'throw-pokeball': 'throw-pokeball 1.2s ease-in-out forwards', // New animation
+                },
+                keyframes: {
+                    shake: {
+                        '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                        '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                        '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                        '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                    },
+                    flash: {
+                        '0%, 100%': { opacity: '1' },
+                        '50%': { opacity: '0' }
+                    },
+                    bounceIn: {
+                        '0%': { opacity: '0', transform: 'scale(0.3)' },
+                        '50%': { opacity: '1', transform: 'scale(1.05)' },
+                        '70%': { transform: 'scale(0.9)' },
+                        '100%': { transform: 'scale(1)' }
+                    },
+                    attackPlayer: {
+                        '0%, 100%': { transform: 'translate(0, 0)' },
+                        '50%': { transform: 'translate(40px, -20px) scale(1.1)' }
+                    },
+                    attackEnemy: {
+                        '0%, 100%': { transform: 'translate(0, 0)' },
+                        '50%': { transform: 'translate(-40px, 20px) scale(1.1)' }
+                    },
+                    // New keyframe for pokeball throw animation
+                    'throw-pokeball': {
+                        '0%': { bottom: '10%', left: '20%', transform: 'scale(1) rotate(0deg)', opacity: '1' },
+                        '25%': { bottom: '40%', left: '35%', transform: 'scale(1.2) rotate(90deg)' },
+                        '50%': { top: '30%', right: '35%', transform: 'scale(1.2) rotate(180deg)' },
+                        '75%': { top: '15%', right: '15%', transform: 'scale(1) rotate(270deg)' },
+                        '100%': { top: '20%', right: '20%', transform: 'scale(0.8) rotate(360deg)', opacity: '0' },
+                    }
+                }
+            }
+        }
+    }
+</script>
+<style>
+    html, body, #root {
+        height: 100%;
+    }
+    /* Global Reset & Retro Feel */
+    body {
+        background-color: #202020;
+        font-family: 'Courier New', Courier, monospace;
+        -webkit-font-smoothing: none;
+        image-rendering: pixelated;
+        color: #1a1a1a;
+    }
+
+    /* Custom Scrollbar */ /* 防止在地图和启动页面出现滚动条 */
+        color: #1a1a1a;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #2d2d2d; }
+    ::-webkit-scrollbar-thumb { background: #a8a878; border-radius: 2px; }
+
+    /* Pixel Border Utility Class */
+    .pixel-border {
+        box-shadow:
+            -4px 0 0 0 black,
+            4px 0 0 0 black,
+            0 -4px 0 0 black,
+            0 4px 0 0 black;
+        margin: 4px;
+    }
+
+    .pixel-text-shadow {
+        text-shadow: 2px 2px 0px #a0a0a0;
+    }
+
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .pt-safe {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    /* CRT Scanline Effect Overlay */
+    .scanlines {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background: linear-gradient(
+            to bottom,
+            rgba(255,255,255,0),
+            rgba(255,255,255,0) 50%,
+            rgba(0,0,0,0.1) 50%,
+            rgba(0,0,0,0.1)
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+        z-index: 9999;
+        /* 降低透明度以提高内容可见性 */
+        opacity: 0.15;
+    }
+
+    /* Map Tile Patterns - Procedural Pixel Art (Redesigned) */
+    /* Map Tile Patterns - Procedural Pixel Art (High Detail Version) */
+    .bg-pattern-grass {
+        background-color: #91d058; /* Classic GBA Green */
+        background-image:
+            /* Small grass blades */
+            linear-gradient(0deg, #74b72e 1px, transparent 1px),
+            linear-gradient(90deg, #74b72e 1px, transparent 1px),
+            /* Random dark patches for texture */
+            radial-gradient(circle at 4px 4px, #a2da6f 1.5px, transparent 0),
+            radial-gradient(circle at 14px 10px, #7dbf3a 1px, transparent 0);
+        background-size: 16px 16px;
+    }
+
+    .bg-pattern-tree {
+        background-color: #2d5a27; /* Deep Forest Green */
+        background-image:
+            /* Canopy highlights */
+            radial-gradient(circle at 8px 8px, #4a8c3d 6px, transparent 0),
+            radial-gradient(circle at 24px 8px, #4a8c3d 5px, transparent 0),
+            radial-gradient(circle at 16px 20px, #4a8c3d 7px, transparent 0),
+            /* Leaf detail */
+            radial-gradient(circle at 12px 12px, #6ab04c 2px, transparent 0),
+            radial-gradient(circle at 20px 16px, #6ab04c 2.5px, transparent 0);
+        background-size: 32px 32px;
+        box-shadow: inset 0 0 16px rgba(0,0,0,0.5), 2px 2px 0 rgba(0,0,0,0.1);
+        border: 1px solid #1a3a1a;
+    }
+
+    .bg-pattern-flower {
+        background-color: #91d058;
+        background-image:
+            /* Red flower with yellow core */
+            radial-gradient(circle at 8px 8px, #ffde59 1px, #e63946 3px, transparent 4px),
+            /* White flower with yellow core */
+            radial-gradient(circle at 22px 20px, #ffde59 1px, #ffffff 3px, transparent 4px),
+            /* Yellow flower */
+            radial-gradient(circle at 10px 24px, #ffffff 1px, #ffde59 3px, transparent 4px),
+            /* Ground shadows */
+            radial-gradient(circle at 16px 16px, rgba(0,0,0,0.05) 12px, transparent 0);
+        background-size: 32px 32px;
+    }
+
+    .bg-pattern-water {
+        background-color: #4facf7;
+        background-image:
+            /* Surface reflections */
+            linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 10%, transparent 20%),
+            /* Sub-surface depth */
+            radial-gradient(circle at 12px 12px, #3a91d8 4px, transparent 0),
+            radial-gradient(circle at 28px 24px, #3a91d8 5px, transparent 0);
+        background-size: 32px 32px;
+        box-shadow: inset 2px 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .bg-pattern-tall-grass {
+        background-color: #5d9b3d;
+        background-image:
+            /* Vertical grass lines */
+            repeating-linear-gradient(0deg, #3d6a2a 0px, #3d6a2a 1px, transparent 1px, transparent 4px),
+            /* Texture clumps */
+            radial-gradient(circle at 4px 4px, #74b72e 2px, transparent 0),
+            radial-gradient(circle at 12px 12px, #3d6a2a 2px, transparent 0);
+        background-size: 16px 16px;
+    }
+
+    .bg-pattern-sand {
+        background-color: #f4d03f;
+        background-image:
+            /* Sand grains */
+            radial-gradient(#d4ac0d 0.5px, transparent 0.5px),
+            radial-gradient(#f7dc6f 0.8px, transparent 0.8px);
+        background-size: 4px 4px;
+        box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+    }
+</style>
+
+    <style>
+      body { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<div class="scanlines"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo, useCallback, Component } = React;
+
+// --- Data Definitions ---
+
+const TYPES = {
+  NORMAL: 'normal', FIRE: 'fire', WATER: 'water', GRASS: 'grass', ELECTRIC: 'electric',
+  ICE: 'ice', FIGHTING: 'fighting', POISON: 'poison', GROUND: 'ground',
+  FLYING: 'flying', PSYCHIC: 'psychic', BUG: 'bug', ROCK: 'rock',
+  GHOST: 'ghost', DRAGON: 'dragon'
+};
+
+const TYPE_NAMES_CN = {
+  normal: '普通', fire: '火', water: '水', grass: '草', electric: '电',
+  ice: '冰', fighting: '格斗', poison: '毒', ground: '地面',
+  flying: '飞行', psychic: '超能', bug: '虫', rock: '岩石',
+  ghost: '幽灵', dragon: '龙'
+};
+
+const TYPE_CHART = {
+  [TYPES.NORMAL]: { [TYPES.ROCK]: 0.5, [TYPES.GHOST]: 0 },
+  [TYPES.FIRE]: { [TYPES.FIRE]: 0.5, [TYPES.WATER]: 0.5, [TYPES.GRASS]: 2, [TYPES.ICE]: 2, [TYPES.BUG]: 2, [TYPES.ROCK]: 0.5, [TYPES.DRAGON]: 0.5 },
+  [TYPES.WATER]: { [TYPES.FIRE]: 2, [TYPES.WATER]: 0.5, [TYPES.GRASS]: 0.5, [TYPES.GROUND]: 2, [TYPES.ROCK]: 2, [TYPES.DRAGON]: 0.5 },
+  [TYPES.GRASS]: { [TYPES.FIRE]: 0.5, [TYPES.WATER]: 2, [TYPES.GRASS]: 0.5, [TYPES.POISON]: 0.5, [TYPES.GROUND]: 2, [TYPES.FLYING]: 0.5, [TYPES.BUG]: 0.5, [TYPES.ROCK]: 2, [TYPES.DRAGON]: 0.5 },
+  [TYPES.ELECTRIC]: { [TYPES.WATER]: 2, [TYPES.GRASS]: 0.5, [TYPES.ELECTRIC]: 0.5, [TYPES.GROUND]: 0, [TYPES.FLYING]: 2, [TYPES.DRAGON]: 0.5 },
+  [TYPES.ICE]: { [TYPES.FIRE]: 0.5, [TYPES.WATER]: 0.5, [TYPES.GRASS]: 2, [TYPES.ICE]: 0.5, [TYPES.GROUND]: 2, [TYPES.FLYING]: 2, [TYPES.DRAGON]: 2 },
+  [TYPES.PSYCHIC]: { [TYPES.FIGHTING]: 2, [TYPES.POISON]: 2, [TYPES.PSYCHIC]: 0.5, [TYPES.GHOST]: 0 },
+  [TYPES.DRAGON]: { [TYPES.DRAGON]: 2 },
+  // New type effectiveness additions
+  [TYPES.BUG]: { [TYPES.FIRE]: 0.5, [TYPES.GRASS]: 2, [TYPES.FIGHTING]: 0.5, [TYPES.FLYING]: 0.5, [TYPES.PSYCHIC]: 2, [TYPES.ROCK]: 0.5 },
+  [TYPES.ROCK]: { [TYPES.FIRE]: 2, [TYPES.ICE]: 2, [TYPES.FIGHTING]: 0.5, [TYPES.GROUND]: 0.5, [TYPES.FLYING]: 2, [TYPES.BUG]: 2 },
+  [TYPES.GROUND]: { [TYPES.FIRE]: 2, [TYPES.ELECTRIC]: 2, [TYPES.GRASS]: 0.5, [TYPES.POISON]: 2, [TYPES.FLYING]: 0, [TYPES.BUG]: 0.5, [TYPES.ROCK]: 2 },
+  [TYPES.FLYING]: { [TYPES.ELECTRIC]: 0.5, [TYPES.GRASS]: 2, [TYPES.FIGHTING]: 2, [TYPES.BUG]: 2, [TYPES.ROCK]: 0.5 }
+  // Simplified for this demo... defaults to 1
+};
+
+const getEffectiveness = (moveType, targetType) => {
+  if (!TYPE_CHART[moveType]) return 1;
+  return TYPE_CHART[moveType][targetType] !== undefined ? TYPE_CHART[moveType][targetType] : 1;
+};
+
+// Simplified Monster Database
+const MOVES = {
+  tackle: { name: '撞击', type: TYPES.NORMAL, power: 40, accuracy: 100, category: 'physical', cost: 0 },
+  scratch: { name: '抓', type: TYPES.NORMAL, power: 40, accuracy: 100, category: 'physical', cost: 0 },
+  ember: { name: '火花', type: TYPES.FIRE, power: 40, accuracy: 100, category: 'special', cost: 5 },
+  flamethrower: { name: '喷射火焰', type: TYPES.FIRE, power: 90, accuracy: 100, category: 'special', cost: 10 },
+  watergun: { name: '水枪', type: TYPES.WATER, power: 40, accuracy: 100, category: 'special', cost: 5 },
+  surf: { name: '冲浪', type: TYPES.WATER, power: 90, accuracy: 100, category: 'special', cost: 10 },
+  vinewhip: { name: '藤鞭', type: TYPES.GRASS, power: 45, accuracy: 100, category: 'physical', cost: 7 },
+  razorleaf: { name: '飞叶快刀', type: TYPES.GRASS, power: 55, accuracy: 95, category: 'physical', cost: 8 },
+  thundershock: { name: '电击', type: TYPES.ELECTRIC, power: 40, accuracy: 100, category: 'special', cost: 5 },
+  thunderbolt: { name: '十万伏特', type: TYPES.ELECTRIC, power: 90, accuracy: 100, category: 'special', cost: 10 },
+  quickattack: { name: '电光一闪', type: TYPES.NORMAL, power: 40, accuracy: 100, priority: 1, category: 'physical', cost: 0 },
+  bite: { name: '咬住', type: TYPES.NORMAL, power: 60, accuracy: 100, category: 'physical', cost: 5 },
+  hypnosis: { name: '催眠术', type: TYPES.PSYCHIC, power: 0, accuracy: 60, status: 'sleep', category: 'status', cost: 8 },
+  recover: { name: '自我再生', type: TYPES.NORMAL, power: 0, accuracy: 100, effect: 'heal', category: 'status', cost: 15 },
+  icebeam: { name: '冰冻光束', type: TYPES.ICE, power: 90, accuracy: 100, category: 'special', cost: 10 },
+  hydropump: { name: '水炮', type: TYPES.WATER, power: 110, accuracy: 80, category: 'special', cost: 18 },
+  psychic: { name: '精神强念', type: TYPES.PSYCHIC, power: 90, accuracy: 100, category: 'special', cost: 10 },
+  bodyslam: { name: '泰山压顶', type: TYPES.NORMAL, power: 85, accuracy: 100, category: 'physical', cost: 8 },
+  dragonclaw: { name: '龙爪', type: TYPES.DRAGON, power: 80, accuracy: 100, category: 'physical', cost: 10 },
+  extremespeed: { name: '神速', type: TYPES.NORMAL, power: 80, accuracy: 100, priority: 2, category: 'physical', cost: 10 },
+  // New moves for expanded monster roster
+  shadowball: { name: '暗影球', type: TYPES.GHOST, power: 80, accuracy: 100, category: 'special', cost: 8 },
+  dream_eater: { name: '食梦', type: TYPES.PSYCHIC, power: 100, accuracy: 100, category: 'special', effect: 'drain', cost: 12 },
+  rock_throw: { name: '落石', type: TYPES.ROCK, power: 50, accuracy: 90, category: 'physical', cost: 5 },
+  earthquake: { name: '地震', type: TYPES.GROUND, power: 100, accuracy: 100, category: 'physical', cost: 12 },
+  wing_attack: { name: '翅膀攻击', type: TYPES.FLYING, power: 60, accuracy: 100, category: 'physical', cost: 5 },
+  slash: { name: '劈开', type: TYPES.NORMAL, power: 70, accuracy: 100, category: 'physical', cost: 7 },
+  fury_cutter: { name: '连斩', type: TYPES.BUG, power: 40, accuracy: 95, category: 'physical', cost: 3 },
+  rock_slide: { name: '岩崩', type: TYPES.ROCK, power: 75, accuracy: 90, category: 'physical', cost: 8 },
+  fly: { name: '飞翔', type: TYPES.FLYING, power: 90, accuracy: 95, category: 'physical', cost: 10 },
+  fire_blast: { name: '大字爆炎', type: TYPES.FIRE, power: 110, accuracy: 85, category: 'special', cost: 15 },
+  sky_attack: { name: '神鸟猛击', type: TYPES.FLYING, power: 140, accuracy: 90, category: 'physical', cost: 18, charge: true },
+  blizzard: { name: '暴风雪', type: TYPES.ICE, power: 110, accuracy: 70, category: 'special', cost: 15 },
+  hurricane: { name: '暴风', type: TYPES.FLYING, power: 110, accuracy: 70, category: 'special', cost: 15 },
+  zap_cannon: { name: '电磁炮', type: TYPES.ELECTRIC, power: 120, accuracy: 50, category: 'special', cost: 15 },
+  drill_peck: { name: '钻孔啄', type: TYPES.FLYING, power: 80, accuracy: 100, category: 'physical', cost: 8 },
+  // Custom added moves
+  poison_jab: { name: '毒击', type: TYPES.POISON, power: 80, accuracy: 100, category: 'physical', cost: 8 },
+  low_kick: { name: '下踢', type: TYPES.FIGHTING, power: 60, accuracy: 100, category: 'physical', cost: 7 },
+  karate_chop: { name: '空手劈', type: TYPES.FIGHTING, power: 50, accuracy: 100, category: 'physical', cost: 5 },
+  lick: { name: '舔', type: TYPES.GHOST, power: 30, accuracy: 100, category: 'physical', cost: 3 }
+};
+
+const MONSTERS = [
+{ id: 1, name: '妙蛙种子', type: TYPES.GRASS, type2: TYPES.POISON, maxHp: 105, maxMp: 60, atk: 60, def: 60, spAtk: 75, spDef: 75, spd: 55, moves: ['tackle', 'vinewhip', 'razorleaf', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/1.png' }, { id: 2, name: '小火龙', type: TYPES.FIRE, maxHp: 98, maxMp: 65, atk: 72, def: 58, spAtk: 80, spDef: 65, spd: 85, moves: ['scratch', 'ember', 'flamethrower', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/4.png' }, { id: 3, name: '杰尼龟', type: TYPES.WATER, maxHp: 104, maxMp: 55, atk: 68, def: 85, spAtk: 70, spDef: 85, spd: 53, moves: ['tackle', 'watergun', 'surf', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/7.png' }, { id: 4, name: '皮卡丘', type: TYPES.ELECTRIC, maxHp: 85, maxMp: 70, atk: 75, def: 50, spAtk: 70, spDef: 60, spd: 110, moves: ['quickattack', 'thundershock', 'thunderbolt', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/25.png' }, { id: 5, name: '呆呆兽', type: TYPES.WATER, type2: TYPES.PSYCHIC, maxHp: 150, maxMp: 80, atk: 85, def: 85, spAtk: 50, spDef: 50, spd: 25, moves: ['tackle', 'watergun', 'hypnosis', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/79.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/79.png' }, { id: 6, name: '耿鬼', type: TYPES.GHOST, type2: TYPES.POISON, maxHp: 80, maxMp: 90, atk: 60, def: 60, spAtk: 120, spDef: 70, spd: 110, moves: ['hypnosis', 'shadowball', 'dream_eater', 'psychic'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/94.png' }, { id: 7, name: '风速狗', type: TYPES.FIRE, maxHp: 145, maxMp: 85, atk: 120, def: 90, spAtk: 110, spDef: 90, spd: 105, moves: ['extremespeed', 'flamethrower', 'bite', 'ember'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/59.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/59.png' }, { id: 8, name: '暴鲤龙', type: TYPES.WATER, type2: TYPES.FLYING, maxHp: 155, maxMp: 70, atk: 135, def: 89, spAtk: 80, spDef: 110, spd: 91, moves: ['hydropump', 'bite', 'dragonclaw', 'hurricane'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/130.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/130.png' }, { id: 9, name: '拉普拉斯', type: TYPES.WATER, type2: TYPES.ICE, maxHp: 190, maxMp: 100, atk: 95, def: 90, spAtk: 95, spDef: 105, spd: 70, moves: ['icebeam', 'surf', 'bodyslam', 'watergun'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/131.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/131.png' }, { id: 10, name: '卡比兽', type: TYPES.NORMAL, maxHp: 220, maxMp: 50, atk: 120, def: 75, spAtk: 75, spDef: 120, spd: 40, moves: ['bodyslam', 'tackle', 'bite', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/143.png' }, { id: 11, name: '胡地', type: TYPES.PSYCHIC, maxHp: 115, maxMp: 110, atk: 60, def: 55, spAtk: 145, spDef: 95, spd: 130, moves: ['psychic', 'recover', 'tackle', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/65.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/65.png' }, { id: 12, name: '快龙', type: TYPES.DRAGON, type2: TYPES.FLYING, maxHp: 151, maxMp: 95, atk: 144, def: 105, spAtk: 110, spDef: 110, spd: 90, moves: ['dragonclaw', 'extremespeed', 'flamethrower', 'hydropump'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/149.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/149.png' },
+// New monsters added below
+{ id: 13, name: '伊布', type: TYPES.NORMAL, maxHp: 110, maxMp: 60, atk: 70, def: 65, spAtk: 60, spDef: 75, spd: 70, moves: ['tackle', 'quickattack', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/133.png' }, { id: 14, name: '可达鸭', type: TYPES.WATER, maxHp: 120, maxMp: 70, atk: 62, def: 58, spAtk: 75, spDef: 60, spd: 65, moves: ['watergun', 'tackle', 'hypnosis'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/54.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/54.png' }, { id: 15, name: '胖丁', type: TYPES.NORMAL, maxHp: 160, maxMp: 70, atk: 45, def: 35, spAtk: 45, spDef: 50, spd: 20, moves: ['tackle', 'bodyslam', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/39.png' }, { id: 16, name: '鲤鱼王', type: TYPES.WATER, maxHp: 80, maxMp: 30, atk: 20, def: 50, spAtk: 15, spDef: 20, spd: 80, moves: ['tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/129.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/129.png' }, { id: 17, name: '尼多王', type: TYPES.POISON, type2: TYPES.GROUND, maxHp: 155, maxMp: 80, atk: 110, def: 90, spAtk: 85, spDef: 75, spd: 90, moves: ['earthquake', 'poison_jab', 'bodyslam', 'rock_slide'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/34.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/34.png' }, { id: 18, name: '豪力', type: TYPES.FIGHTING, maxHp: 130, maxMp: 70, atk: 100, def: 70, spAtk: 50, spDef: 60, spd: 55, moves: ['low_kick', 'karate_chop', 'bodyslam', 'slash'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/67.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/67.png' }, { id: 19, name: '嘟嘟利', type: TYPES.NORMAL, type2: TYPES.FLYING, maxHp: 120, maxMp: 70, atk: 110, def: 70, spAtk: 60, spDef: 60, spd: 110, moves: ['quickattack', 'tackle', 'bite', 'extremespeed'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/85.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/85.png' }, { id: 20, name: '鬼斯', type: TYPES.GHOST, type2: TYPES.POISON, maxHp: 75, maxMp: 100, atk: 50, def: 45, spAtk: 115, spDef: 55, spd: 95, moves: ['hypnosis', 'shadowball', 'lick', 'psychic'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/92.png' }, { id: 21, name: '鬼斯通', type: TYPES.GHOST, type2: TYPES.POISON, maxHp: 90, maxMp: 110, atk: 70, def: 65, spAtk: 115, spDef: 75, spd: 100, moves: ['hypnosis', 'shadowball', 'dream_eater', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/93.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/93.png' }, { id: 22, name: '大岩蛇', type: TYPES.ROCK, type2: TYPES.GROUND, maxHp: 115, maxMp: 50, atk: 75, def: 180, spAtk: 45, spDef: 60, spd: 70, moves: ['tackle', 'bodyslam', 'rock_throw', 'earthquake'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/95.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/95.png' }, { id: 23, name: '飞天螳螂', type: TYPES.BUG, type2: TYPES.FLYING, maxHp: 120, maxMp: 70, atk: 125, def: 85, spAtk: 55, spDef: 85, spd: 115, moves: ['quickattack', 'slash', 'wing_attack', 'fury_cutter'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/123.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/123.png' }, { id: 24, name: '化石翼龙', type: TYPES.ROCK, type2: TYPES.FLYING, maxHp: 130, maxMp: 70, atk: 105, def: 75, spAtk: 60, spDef: 75, spd: 130, moves: ['quickattack', 'bite', 'rock_slide', 'fly'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/142.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/142.png' }, { id: 25, name: '火焰鸟', type: TYPES.FIRE, type2: TYPES.FLYING, maxHp: 160, maxMp: 100, atk: 100, def: 90, spAtk: 125, spDef: 85, spd: 90, moves: ['flamethrower', 'fire_blast', 'sky_attack', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/146.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/146.png' }, { id: 26, name: '急冻鸟', type: TYPES.ICE, type2: TYPES.FLYING, maxHp: 160, maxMp: 100, atk: 95, def: 100, spAtk: 95, spDef: 125, spd: 85, moves: ['icebeam', 'blizzard', 'hurricane', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/144.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/144.png' }, { id: 27, name: '闪电鸟', type: TYPES.ELECTRIC, type2: TYPES.FLYING, maxHp: 160, maxMp: 100, atk: 90, def: 85, spAtk: 125, spDef: 90, spd: 100, moves: ['thunderbolt', 'zap_cannon', 'drill_peck', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/145.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/145.png' },
+// Expanded Roster
+{ id: 28, name: '雷丘', type: TYPES.ELECTRIC, maxHp: 120, maxMp: 90, atk: 90, def: 55, spAtk: 90, spDef: 80, spd: 110, moves: ['thunderbolt', 'quickattack', 'bodyslam', 'thundershock'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/26.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/26.png' },{ id: 29, name: '九尾', type: TYPES.FIRE, maxHp: 115, maxMp: 100, atk: 76, def: 75, spAtk: 81, spDef: 100, spd: 100, moves: ['flamethrower', 'fire_blast', 'hypnosis', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/38.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/38.png' },{ id: 30, name: '霸王花', type: TYPES.GRASS, type2: TYPES.POISON, maxHp: 115, maxMp: 90, atk: 80, def: 85, spAtk: 110, spDef: 90, spd: 50, moves: ['razorleaf', 'poison_jab', 'recover', 'bodyslam'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/45.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/45.png' },{ id: 31, name: '猫老大', type: TYPES.NORMAL, maxHp: 105, maxMp: 60, atk: 70, def: 60, spAtk: 65, spDef: 65, spd: 115, moves: ['slash', 'bite', 'quickattack', 'scratch'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/53.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/53.png' },{ id: 32, name: '火爆猴', type: TYPES.FIGHTING, maxHp: 105, maxMp: 60, atk: 105, def: 60, spAtk: 60, spDef: 70, spd: 95, moves: ['karate_chop', 'low_kick', 'bodyslam', 'scratch'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/57.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/57.png' },{ id: 33, name: '蚊香泳士', type: TYPES.WATER, type2: TYPES.FIGHTING, maxHp: 130, maxMp: 70, atk: 95, def: 95, spAtk: 70, spDef: 90, spd: 70, moves: ['hydropump', 'low_kick', 'bodyslam', 'hypnosis'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/62.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/62.png' },{ id: 34, name: '怪力', type: TYPES.FIGHTING, maxHp: 130, maxMp: 60, atk: 130, def: 80, spAtk: 65, spDef: 85, spd: 55, moves: ['karate_chop', 'low_kick', 'bodyslam', 'earthquake'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/68.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/68.png' },{ id: 35, name: '隆隆岩', type: TYPES.ROCK, type2: TYPES.GROUND, maxHp: 120, maxMp: 50, atk: 120, def: 130, spAtk: 55, spDef: 65, spd: 45, moves: ['rock_slide', 'earthquake', 'bodyslam', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/76.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/76.png' },{ id: 36, name: '烈焰马', type: TYPES.FIRE, maxHp: 105, maxMp: 70, atk: 100, def: 70, spAtk: 80, spDef: 80, spd: 105, moves: ['flamethrower', 'fire_blast', 'quickattack', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/78.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/78.png' },{ id: 37, name: '呆壳兽', type: TYPES.WATER, type2: TYPES.PSYCHIC, maxHp: 135, maxMp: 90, atk: 75, def: 110, spAtk: 100, spDef: 80, spd: 30, moves: ['watergun', 'psychic', 'surf', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/80.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/80.png' },{ id: 38, name: '三合一磁怪', type: TYPES.ELECTRIC, maxHp: 90, maxMp: 90, atk: 60, def: 95, spAtk: 120, spDef: 70, spd: 70, moves: ['thunderbolt', 'zap_cannon', 'tackle', 'thundershock'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/82.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/82.png' },{ id: 39, name: '大葱鸭', type: TYPES.NORMAL, type2: TYPES.FLYING, maxHp: 95, maxMp: 60, atk: 90, def: 55, spAtk: 58, spDef: 62, spd: 60, moves: ['slash', 'wing_attack', 'quickattack', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/83.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/83.png' },{ id: 40, name: '白海狮', type: TYPES.WATER, type2: TYPES.ICE, maxHp: 130, maxMp: 80, atk: 70, def: 80, spAtk: 70, spDef: 95, spd: 70, moves: ['icebeam', 'surf', 'bodyslam', 'watergun'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/87.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/87.png' },{ id: 41, name: '臭臭泥', type: TYPES.POISON, maxHp: 145, maxMp: 60, atk: 105, def: 75, spAtk: 65, spDef: 100, spd: 50, moves: ['poison_jab', 'bodyslam', 'tackle', 'lick'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/89.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/89.png' },{ id: 42, name: '刺甲贝', type: TYPES.WATER, type2: TYPES.ICE, maxHp: 90, maxMp: 70, atk: 95, def: 180, spAtk: 85, spDef: 45, spd: 70, moves: ['icebeam', 'blizzard', 'surf', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/91.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/91.png' },{ id: 43, name: '引梦貘人', type: TYPES.PSYCHIC, maxHp: 125, maxMp: 100, atk: 73, def: 70, spAtk: 73, spDef: 115, spd: 67, moves: ['hypnosis', 'dream_eater', 'psychic', 'bodyslam'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/97.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/97.png' },{ id: 44, name: '巨钳蟹', type: TYPES.WATER, maxHp: 95, maxMp: 50, atk: 130, def: 115, spAtk: 50, spDef: 50, spd: 75, moves: ['watergun', 'bodyslam', 'surf', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/99.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/99.png' },{ id: 45, name: '顽皮雷弹', type: TYPES.ELECTRIC, maxHp: 100, maxMp: 80, atk: 50, def: 70, spAtk: 80, spDef: 80, spd: 150, moves: ['thunderbolt', 'zap_cannon', 'quickattack', 'thundershock'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/101.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/101.png' },{ id: 46, name: '椰蛋树', type: TYPES.GRASS, type2: TYPES.PSYCHIC, maxHp: 135, maxMp: 110, atk: 95, def: 85, spAtk: 125, spDef: 75, spd: 55, moves: ['psychic', 'razorleaf', 'hypnosis', 'dream_eater'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/103.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/103.png' },{ id: 47, name: '嘎啦嘎啦', type: TYPES.GROUND, maxHp: 100, maxMp: 60, atk: 80, def: 110, spAtk: 50, spDef: 80, spd: 45, moves: ['earthquake', 'rock_slide', 'bodyslam', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/105.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/105.png' },{ id: 48, name: '飞腿郎', type: TYPES.FIGHTING, maxHp: 90, maxMp: 50, atk: 120, def: 53, spAtk: 35, spDef: 110, spd: 87, moves: ['low_kick', 'karate_chop', 'quickattack', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/106.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/106.png' },{ id: 49, name: '快拳郎', type: TYPES.FIGHTING, maxHp: 90, maxMp: 50, atk: 105, def: 79, spAtk: 35, spDef: 110, spd: 76, moves: ['karate_chop', 'quickattack', 'bodyslam', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/107.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/107.png' },{ id: 50, name: '双弹瓦斯', type: TYPES.POISON, maxHp: 105, maxMp: 70, atk: 90, def: 120, spAtk: 85, spDef: 70, spd: 60, moves: ['poison_jab', 'bodyslam', 'tackle', 'lick'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/110.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/110.png' },{ id: 51, name: '钻角犀兽', type: TYPES.GROUND, type2: TYPES.ROCK, maxHp: 145, maxMp: 50, atk: 130, def: 120, spAtk: 45, spDef: 45, spd: 40, moves: ['earthquake', 'rock_slide', 'bodyslam', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/112.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/112.png' },{ id: 52, name: '吉利蛋', type: TYPES.NORMAL, maxHp: 250, maxMp: 100, atk: 5, def: 5, spAtk: 35, spDef: 105, spd: 50, moves: ['recover', 'bodyslam', 'tackle', 'psychic'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/113.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/113.png' },{ id: 53, name: '袋兽', type: TYPES.NORMAL, maxHp: 145, maxMp: 60, atk: 95, def: 80, spAtk: 40, spDef: 80, spd: 90, moves: ['bite', 'bodyslam', 'earthquake', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/115.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/115.png' },{ id: 54, name: '海刺龙', type: TYPES.WATER, maxHp: 95, maxMp: 80, atk: 65, def: 95, spAtk: 95, spDef: 45, spd: 85, moves: ['hydropump', 'icebeam', 'watergun', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/117.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/117.png' },{ id: 55, name: '宝石海星', type: TYPES.WATER, type2: TYPES.PSYCHIC, maxHp: 100, maxMp: 90, atk: 75, def: 85, spAtk: 100, spDef: 85, spd: 115, moves: ['surf', 'psychic', 'thunderbolt', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/121.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/121.png' },{ id: 56, name: '魔墙人偶', type: TYPES.PSYCHIC, maxHp: 80, maxMp: 90, atk: 45, def: 65, spAtk: 100, spDef: 120, spd: 90, moves: ['psychic', 'hypnosis', 'recover', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/122.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/122.png' },{ id: 57, name: '迷唇姐', type: TYPES.ICE, type2: TYPES.PSYCHIC, maxHp: 105, maxMp: 95, atk: 50, def: 35, spAtk: 115, spDef: 95, spd: 95, moves: ['icebeam', 'psychic', 'hypnosis', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/124.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/124.png' },{ id: 58, name: '电击兽', type: TYPES.ELECTRIC, maxHp: 105, maxMp: 80, atk: 83, def: 57, spAtk: 95, spDef: 85, spd: 105, moves: ['thunderbolt', 'quickattack', 'karate_chop', 'thundershock'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/125.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/125.png' },{ id: 59, name: '鸭嘴火兽', type: TYPES.FIRE, maxHp: 105, maxMp: 80, atk: 95, def: 57, spAtk: 100, spDef: 85, spd: 93, moves: ['flamethrower', 'karate_chop', 'ember', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/126.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/126.png' },{ id: 60, name: '大甲', type: TYPES.BUG, maxHp: 105, maxMp: 50, atk: 125, def: 100, spAtk: 55, spDef: 70, spd: 85, moves: ['slash', 'bodyslam', 'tackle', 'low_kick'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/127.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/127.png' },{ id: 61, name: '肯泰罗', type: TYPES.NORMAL, maxHp: 115, maxMp: 60, atk: 100, def: 95, spAtk: 40, spDef: 70, spd: 110, moves: ['bodyslam', 'earthquake', 'tackle', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/128.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/128.png' },{ id: 62, name: '水伊布', type: TYPES.WATER, maxHp: 170, maxMp: 90, atk: 65, def: 60, spAtk: 110, spDef: 95, spd: 65, moves: ['hydropump', 'surf', 'icebeam', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/134.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/134.png' },{ id: 63, name: '雷伊布', type: TYPES.ELECTRIC, maxHp: 105, maxMp: 90, atk: 65, def: 60, spAtk: 110, spDef: 95, spd: 130, moves: ['thunderbolt', 'thundershock', 'quickattack', 'bite'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/135.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/135.png' },{ id: 64, name: '火伊布', type: TYPES.FIRE, maxHp: 105, maxMp: 80, atk: 130, def: 60, spAtk: 95, spDef: 110, spd: 65, moves: ['flamethrower', 'ember', 'bite', 'quickattack'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/136.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/136.png' },{ id: 65, name: '3D龙', type: TYPES.NORMAL, maxHp: 105, maxMp: 80, atk: 60, def: 70, spAtk: 85, spDef: 75, spd: 40, moves: ['psychic', 'thunderbolt', 'recover', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/137.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/137.png' },{ id: 66, name: '多刺菊石兽', type: TYPES.ROCK, type2: TYPES.WATER, maxHp: 110, maxMp: 90, atk: 60, def: 125, spAtk: 115, spDef: 70, spd: 55, moves: ['hydropump', 'rock_slide', 'icebeam', 'watergun'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/139.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/139.png' },{ id: 67, name: '镰刀盔', type: TYPES.ROCK, type2: TYPES.WATER, maxHp: 100, maxMp: 60, atk: 115, def: 105, spAtk: 65, spDef: 70, spd: 80, moves: ['slash', 'rock_slide', 'surf', 'tackle'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/141.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/141.png' },{ id: 68, name: '超梦', type: TYPES.PSYCHIC, maxHp: 146, maxMp: 120, atk: 110, def: 90, spAtk: 154, spDef: 90, spd: 130, moves: ['psychic', 'recover', 'shadowball', 'thunderbolt'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/150.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/150.png' },{ id: 69, name: '梦幻', type: TYPES.PSYCHIC, maxHp: 140, maxMp: 110, atk: 100, def: 100, spAtk: 100, spDef: 100, spd: 100, moves: ['psychic', 'earthquake', 'flamethrower', 'recover'], sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/151.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/151.png' }];
+
+// Enhance MONSTERS to ensure each has at least one 0-cost move
+// Enhance MONSTERS to ensure each has at least one 0-cost move
+MONSTERS.forEach(mon => {
+  if (typeof MOVES === 'undefined') return; // Safety check
+  const hasZeroCostMove = mon.moves.some(moveKey => MOVES[moveKey] && MOVES[moveKey].cost === 0);
+  if (!hasZeroCostMove) {
+    // Add 'tackle' to the beginning if no zero-cost move is found
+    // Ensure 'tackle' is a valid move key
+    if (MOVES['tackle']) {
+      mon.moves.unshift('tackle');
+    } else {
+      console.warn(`Move 'tackle' not found in MOVES for monster: ${mon.name}. Cannot add 0-cost move.`);
+    }
+  }
+});
+
+
+const POKEBALLS = {
+  pokeball_basic: { name: '精灵球', price: 200, catchRateMultiplier: 1.0, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' }, pokeball_great: { name: '超级球', price: 600, catchRateMultiplier: 1.5, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' }, pokeball_ultra: { name: '高级球', price: 1200, catchRateMultiplier: 2.0, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' }
+};
+
+const POTIONS = {
+  super_potion: { name: '超级药剂', price: 300, healAmount: 60, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png' }, hyper_potion: { name: '高级药剂', price: 700, healAmount: 120, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hyper-potion.png' }
+};
+
+// --- Utilities ---
+const calculateDamage = (attacker, defender, move) => {
+  if (move.category === 'status') return 0;
+
+  // Simple Formula: ((2 * Level / 5 + 2) * Power * A / D) / 50 + 2
+  const level = attacker.level || 50; // Use monster's level, with a fallback
+  const a = move.category === 'physical' ? attacker.atk : attacker.spAtk;
+  const d = move.category === 'physical' ? defender.def : defender.spDef;
+
+  let damage = (2 * level / 5 + 2) * move.power * (a / d) / 50 + 2;
+
+  // Type Effectiveness
+  const effectiveness = getEffectiveness(move.type, defender.type);
+  damage *= effectiveness;
+
+  // STAB (Same Type Attack Bonus)
+  if (move.type === attacker.type) damage *= 1.5;
+
+  // Random variance 0.85 - 1.00
+  damage *= (Math.floor(Math.random() * 16) + 85) / 100;
+
+  return { damage: Math.floor(damage), effectiveness };
+};
+
+const getExpToNextLevel = (level) => {
+  if (level >= 100) return Infinity; // Cap level at 100
+  // Quadratic formula: XP = 10 * level^2
+  // Level 1: 10 XP, Level 2: 40 XP, Level 3: 90 XP, Level 4: 160 XP
+  // This formula ensures faster early leveling and then slows down.
+  return Math.floor(10 * Math.pow(level, 2));
+};
+
+const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initialCurrentMp, initialCurrentExp) => {
+  // Defensive check to prevent crash if baseMonster is not found (e.g., during level-up)
+  if (!baseMonster) {
+    console.error(`createMonsterInstance received an undefined 'baseMonster'. This likely means a monster lookup failed, possibly during level-up. ID passed: ${id}.`);
+    // Return a fallback monster to prevent a crash.
+    baseMonster = {
+      id: 0, name: '错误宝可梦', type: 'normal', moves: ['tackle'],
+      sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png',backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/0.png',
+      stats: { hp: 10, attack: 10, defense: 10, sp_attack: 10, sp_defense: 10, speed: 10 }
+    };
+  }
+
+  // Data normalization to handle different structures (MONSTERS vs BALANCED_MONSTERS)
+  const baseStats = baseMonster.stats ? { // From BALANCED_MONSTERS
+    maxHp: baseMonster.stats.hp,
+    maxMp: Math.floor((baseMonster.stats.sp_attack || 50) * 0.8) + 20, // Calculate MP
+    atk: baseMonster.stats.attack,
+    def: baseMonster.stats.defense,
+    spAtk: baseMonster.stats.sp_attack,
+    spDef: baseMonster.stats.sp_defense,
+    spd: baseMonster.stats.speed
+  } : { // From MONSTERS
+    maxHp: baseMonster.maxHp,
+    maxMp: baseMonster.maxMp,
+    atk: baseMonster.atk,
+    def: baseMonster.def,
+    spAtk: baseMonster.spAtk,
+    spDef: baseMonster.spDef,
+    spd: baseMonster.spd
+  };
+
+  // Fallback for any missing stat to prevent NaN
+  const safeStat = (val) => val || 0;
+
+  // Simplified stat calculation based on Pokemon formulas
+  const calculatedStats = {
+    maxHp: Math.floor(2 * safeStat(baseStats.maxHp) * level / 100 + level + 10),
+    maxMp: Math.floor(2 * safeStat(baseStats.maxMp) * level / 100 + 5),
+    atk: Math.floor(2 * safeStat(baseStats.atk) * level / 100 + 5),
+    def: Math.floor(2 * safeStat(baseStats.def) * level / 100 + 5),
+    spAtk: Math.floor(2 * safeStat(baseStats.spAtk) * level / 100 + 5),
+    spDef: Math.floor(2 * safeStat(baseStats.spDef) * level / 100 + 5),
+    spd: Math.floor(2 * safeStat(baseStats.spd) * level / 100 + 5)
+  };
+
+  // Ensure HP is at least 1
+  if (calculatedStats.maxHp <= 0) calculatedStats.maxHp = 1;
+
+  return {
+    ...baseMonster,
+    ...calculatedStats,
+    level,
+    id,
+    baseId: baseMonster.id, // Keep track of the original monster template ID
+    currentHp: initialCurrentHp ?? calculatedStats.maxHp,
+    currentMp: initialCurrentMp ?? calculatedStats.maxMp,
+    currentExp: initialCurrentExp ?? 0,
+    expToNextLevel: getExpToNextLevel(level)
+  };
+};
+
+// --- Error Boundary ---
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught:", error, errorInfo);
+    this.setState({ errorInfo });
+    // Send error to parent frame for debugging
+    window.parent.postMessage({
+      type: 'spark-app-error',
+      error: {
+        message: error.toString(),
+        stack: error.stack,
+        componentStack: errorInfo.componentStack
+      }
+    }, '*');
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen flex items-center justify-center p-4 bg-red-900/90 text-white font-mono">
+          <div className="max-w-2xl bg-black/50 p-6 rounded-xl border border-red-500/30">
+            <div className="flex items-center gap-3 mb-4 text-red-400">
+              <i className="fa-solid fa-triangle-exclamation text-2xl"></i>
+              <h2 className="text-xl font-bold">Runtime Error</h2>
+            </div>
+            <div className="text-sm space-y-2">
+              <p className="text-red-300 font-bold">{this.state.error?.toString()}</p>
+              {this.state.error?.stack &&
+              <pre className="text-xs text-slate-300 overflow-auto max-h-64 bg-black/30 p-3 rounded">
+                  {this.state.error.stack}
+                </pre>
+              }
+            </div>
+          </div>
+        </div>);
+
+    }
+    return this.props.children;
+  }
+}
+
+
+// --- Components ---
+
+const ProgressBar = ({ current, max, color = "bg-green-500" }) => {
+  const percent = Math.max(0, Math.min(100, current / max * 100));
+  let barColor = color;
+  // 仅对生命条应用危险色预警逻辑
+  if (color === "bg-green-500") {
+    if (percent < 50) barColor = "bg-yellow-500";
+    if (percent < 20) barColor = "bg-red-500";
+  }
+
+  return (
+    <div className="w-full bg-gray-700 h-2 rounded-sm border border-gray-600 relative overflow-hidden">
+            <div
+        className={`h-full ${barColor} transition-all duration-500 ease-out`}
+        style={{ width: `${percent}%` }}>
+      </div>
+            {/* Gloss effect */}
+            <div className="absolute top-0 left-0 w-full h-0.5 bg-white opacity-20"></div>
+        </div>);
+};
+
+/**
+ * 经验值专用进度条 - 独立设计，纤细且具有科技纹理
+ */
+const ExpBar = ({ current, max }) => {
+  const percent = Math.max(0, Math.min(100, (current / max) * 100));
+  return (
+    <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/5 relative">
+      <div
+        className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-1000 ease-out relative"
+        style={{ width: `${percent}%` }}>
+        {/* 条纹装饰层 */}
+        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(45deg,rgba(255,255,255,0.4)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.4)_50%,rgba(255,255,255,0.4)_75%,transparent_75%,transparent)] bg-[length:8px_8px]"></div>
+      </div>
+    </div>
+  );
+};
+
+const TypeBadge = ({ type }) => {
+  const colors = {
+    normal: 'bg-gray-400', fire: 'bg-orange-500', water: 'bg-blue-500',
+    grass: 'bg-green-500', electric: 'bg-yellow-400 text-black',
+    ghost: 'bg-purple-600', psychic: 'bg-pink-500', poison: 'bg-fuchsia-800',
+    ice: 'bg-cyan-300 text-black', dragon: 'bg-indigo-600', flying: 'bg-sky-400',
+    fighting: 'bg-red-700',
+    bug: 'bg-lime-600', rock: 'bg-yellow-800', ground: 'bg-amber-700'
+  };
+  return (
+    <span className={`${colors[type] || 'bg-gray-500'} text-xs text-white px-2 py-0.5 rounded font-bold border border-black/20 shadow-sm`}>
+            {TYPE_NAMES_CN[type] || type}
+        </span>);
+
+};
+
+const PixelCard = ({ children, className = "", onClick, active = false }) =>
+<div
+  onClick={onClick}
+  className={`
+            bg-retro-panel border-4 border-black p-2 relative
+            ${active ? 'ring-4 ring-yellow-400 z-10' : ''}
+            ${onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''}
+            ${className}
+        `}
+  style={{
+    boxShadow: '4px 4px 0px #000000'
+  }}>
+
+        {/* Inner Border */}
+        <div className="border border-black/10 h-full p-1 relative">
+            {children}
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-1 h-1 bg-black"></div>
+            <div className="absolute top-0 right-0 w-1 h-1 bg-black"></div>
+            <div className="absolute bottom-0 left-0 w-1 h-1 bg-black"></div>
+            <div className="absolute bottom-0 right-0 w-1 h-1 bg-black"></div>
+        </div>
+    </div>;
+
+
+const MonsterSprite = ({ monster, isBack = false, animate = false, sizeMultiplier = 1, isBattleContext = false }) => {
+  const spriteUrl = isBack ? monster.backSprite : monster.sprite;
+
+  // 定义基础单位尺寸。
+  // 战斗场景：基础约96-112px（根据反馈已显著增大）
+  // 启动页：基础64px
+  const IMAGE_BASE_UNIT_FOR_BATTLE = 96;
+  const CONTAINER_BASE_UNIT_FOR_BATTLE = 112;
+
+  const IMAGE_BASE_UNIT_FOR_LAUNCH = 64;
+  const CONTAINER_BASE_UNIT_FOR_LAUNCH = 68;
+
+  const baseImageUnit = isBattleContext ? IMAGE_BASE_UNIT_FOR_BATTLE : IMAGE_BASE_UNIT_FOR_LAUNCH;
+  const baseContainerUnit = isBattleContext ? CONTAINER_BASE_UNIT_FOR_BATTLE : CONTAINER_BASE_UNIT_FOR_LAUNCH;
+
+  // 使用内联样式而非动态类名，以确保任何倍数都能准确渲染像素
+  const containerPx = baseContainerUnit * sizeMultiplier;
+  const imagePx = baseImageUnit * sizeMultiplier;
+
+  return (
+    <div 
+      className={`relative flex items-center justify-center ${animate ? 'animate-bounce' : ''}`}
+      style={{ width: `${containerPx}px`, height: `${containerPx}px` }}
+    >
+      <img
+        src={spriteUrl}
+        alt={monster.name}
+        className="object-contain transition-transform duration-300"
+        style={{ 
+          width: `${imagePx}px`, 
+          height: `${imagePx}px`, 
+          imageRendering: 'pixelated' 
+        }} 
+      />
+      {/* 底部投影 */}
+      <div 
+        className="absolute bottom-2 h-3 bg-black/30 rounded-full blur-sm"
+        style={{ width: `${imagePx * 0.8}px` }}
+      ></div>
+    </div>
+  );
+};
+
+// New PokeballThrowAnimation component
+// New PokeballThrowAnimation component
+const PokeballThrowAnimation = ({ show, onAnimationEnd }) => {
+  useEffect(() => {
+    if (!show) return;
+    const timer = setTimeout(() => {
+      onAnimationEnd(); // This sets setIsThrowingPokeball(false)
+    }, 1200); // The animation duration from CSS
+    return () => clearTimeout(timer);
+  }, [show, onAnimationEnd]);
+
+  if (!show) return null;
+
+  return (
+    <div className="absolute z-40 w-full h-full flex items-center justify-center pointer-events-none">
+      <img
+        src={POKEBALLS.pokeball_basic.sprite}
+        alt="Pokeball"
+        className="absolute animate-throw-pokeball w-12 h-12 object-contain"
+        style={{ imageRendering: 'pixelated' }}
+      />
+    </div>
+  );
+};
+
+// Monsters to display on the launch screen carousel
+const BALANCED_MONSTERS = [
+{
+  id: 1, name: '妙蛙种子', type: 'grass',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/1.png',
+  stats: { hp: 45, attack: 49, defense: 49, sp_attack: 65, sp_defense: 65, speed: 45 },
+  moves: ['tackle', 'vinewhip', 'razorleaf', 'poison_jab']
+},
+{
+  id: 4, name: '小火龙', type: 'fire',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/4.png',
+  stats: { hp: 39, attack: 52, defense: 43, sp_attack: 60, sp_defense: 50, speed: 65 },
+  moves: ['scratch', 'ember', 'flamethrower', 'dragonclaw']
+},
+{
+  id: 7, name: '杰尼龟', type: 'water',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/7.png',
+  stats: { hp: 44, attack: 48, defense: 65, sp_attack: 50, sp_defense: 64, speed: 43 },
+  moves: ['tackle', 'watergun', 'bite', 'icebeam']
+},
+{
+  id: 25, name: '皮卡丘', type: 'electric',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/25.png',
+  stats: { hp: 35, attack: 55, defense: 40, sp_attack: 50, sp_defense: 50, speed: 90 },
+  moves: ['quickattack', 'thundershock', 'thunderbolt', 'bodyslam']
+},
+{
+  id: 59, name: '风速狗', type: 'fire',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/59.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/59.png',
+  stats: { hp: 90, attack: 110, defense: 80, sp_attack: 100, sp_defense: 80, speed: 95 },
+  moves: ['bite', 'flamethrower', 'extremespeed', 'fire_blast']
+},
+{
+  id: 131, name: '拉普拉斯', type: 'water',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/131.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/131.png',
+  stats: { hp: 130, attack: 85, defense: 80, sp_attack: 85, sp_defense: 95, speed: 60 },
+  moves: ['watergun', 'icebeam', 'surf', 'bodyslam']
+},
+{
+  id: 94, name: '耿鬼', type: 'ghost',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/94.png',
+  stats: { hp: 60, attack: 65, defense: 60, sp_attack: 130, sp_defense: 75, speed: 110 },
+  moves: ['lick', 'shadowball', 'hypnosis', 'dream_eater']
+},
+{
+  id: 65, name: '胡地', type: 'psychic',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/65.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/65.png',
+  stats: { hp: 55, attack: 50, defense: 45, sp_attack: 135, sp_defense: 95, speed: 120 },
+  moves: ['psychic', 'shadowball', 'hypnosis', 'dream_eater']
+},
+{
+  id: 149, name: '快龙', type: 'dragon',
+  sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/149.png', backSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/149.png',
+  stats: { hp: 91, attack: 134, defense: 95, sp_attack: 100, sp_defense: 100, speed: 80 },
+  moves: ['dragonclaw', 'wing_attack', 'thunderbolt', 'hurricane']
+}];
+
+
+const LAUNCH_SCREEN_MONSTERS = [
+BALANCED_MONSTERS.find((m) => m.name === '皮卡丘'),
+BALANCED_MONSTERS.find((m) => m.name === '小火龙'),
+BALANCED_MONSTERS.find((m) => m.name === '妙蛙种子'),
+BALANCED_MONSTERS.find((m) => m.name === '杰尼龟')].
+filter(Boolean);
+
+// --- New LaunchScreen component ---
+const LaunchScreen = ({ onStartGame }) => {
+  const [currentMonIndex, setCurrentMonIndex] = useState(0);
+
+  useEffect(() => {
+    if (LAUNCH_SCREEN_MONSTERS.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentMonIndex((prevIndex) => (prevIndex + 1) % LAUNCH_SCREEN_MONSTERS.length);
+    }, 2000); // Change monster every 2 seconds
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentMonster = LAUNCH_SCREEN_MONSTERS[currentMonIndex];
+
+  return (
+    <div className="fixed inset-0 bg-retro-dark flex flex-col items-center justify-between z-[100] pt-32 pb-12 px-4 overflow-hidden">
+            {/* Background Decorative Elements */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-retro-dark to-retro-dark"></div>
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-yellow-400/5 to-transparent pointer-events-none"></div>
+
+            {/* Top Section: Title */}
+            <div className="relative z-10 text-center transform transition-transform duration-1000">
+                <div className="inline-block relative">
+                    <h1 className="text-6xl md:text-7xl font-black text-yellow-400 tracking-tighter italic"
+                        style={{
+                            textShadow: '0 2px 0 #b45309, 0 4px 0 #92400e, 0 6px 0 #78350f, 0 8px 10px rgba(0,0,0,0.8)',
+                            WebkitTextStroke: '2px #1a1a1a'
+                        }}>
+                        PIXEL
+                    </h1>
+                    <div className="absolute -right-8 -top-4 bg-red-600 text-white text-xs px-2 py-1 rotate-12 font-bold border-2 border-white shadow-lg animate-pulse">
+                        BETA
+                    </div>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-[0.3em] mt-2 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)]">
+                    宝可梦大对战
+                </h2>
+                <div className="h-1 w-32 bg-yellow-400 mx-auto mt-4 rounded-full opacity-50 shadow-[0_0_15px_#facc15]"></div>
+            </div>
+
+            {/* Middle Section: Monster Showcase */}
+            <div className="relative z-10 flex flex-col items-center justify-center flex-1 w-full">
+                {/* Stage/Podium Effect - Adjusted for larger size */}
+                <div className="absolute w-64 h-16 bg-black/40 rounded-[100%] blur-2xl transform -translate-y-6"></div>
+                <div className="absolute w-56 h-12 border-t-4 border-white/20 rounded-[100%] transform translate-y-16"></div>
+
+                {currentMonster && (
+                    <div key={currentMonster.id} className="relative animate-bounce-in flex items-center justify-center">
+                        {/* Glow effect back of monster */}
+                        <div className="absolute inset-0 bg-white/10 blur-3xl rounded-full animate-pulse scale-[2.5]"></div>
+                        <MonsterSprite monster={currentMonster} animate={true} sizeMultiplier={4} />
+                    </div>
+                )}
+            </div>
+
+            {/* Bottom Section: Action & Info */}
+            <div className="relative z-10 flex flex-col items-center gap-8 w-full">
+                <div className="flex flex-col items-center gap-2">
+                    <button
+                        onClick={onStartGame}
+                        className="group relative bg-yellow-400 text-black px-8 py-3 rounded-sm font-black text-2xl border-x-4 border-t-4 border-black border-b-4 active:border-b-2 active:translate-y-0.5 hover:bg-yellow-300 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-4 shadow-xl"
+                    >
+                        <img
+                            src={POKEBALLS.pokeball_basic.sprite}
+                            alt="Pokeball"
+                            className="w-7 h-7 object-contain group-hover:rotate-180 transition-transform duration-500"
+                            style={{ imageRendering: 'pixelated' }}
+                        />
+                        <span className="tracking-widest">开始游戏</span>
+                    </button>
+                    <p className="text-white/60 font-bold tracking-widest animate-pulse text-xs mt-3">
+                        — 按任意键或点击开始 —
+                    </p>
+                </div>
+
+                <div className="flex justify-between w-full max-w-2xl px-8 text-[10px] font-mono text-white/30 tracking-tighter uppercase border-t border-white/10 pt-4">
+                    <span>v1.0.4 Release-Build</span>
+                    <span>© 2025 SPARKVERTEX DIGITAL ENTERTAINMENT</span>
+                    <span>STABLE CONNECTION</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Configuration for specific move effects
+const MOVE_EFFECT_CONFIG = {
+  // Fire moves
+  ember: { icon: 'fa-solid fa-fire text-orange-200 fa-shake', color: 'bg-orange-600/80' },
+  flamethrower: { icon: 'fa-solid fa-fire-flame-curved text-yellow-200 fa-beat', color: 'bg-red-600/90' },
+  fire_blast: { icon: 'fa-solid fa-explosion text-yellow-300 fa-beat-fade', color: 'bg-red-700/90' },
+  // Water moves
+  watergun: { icon: 'fa-solid fa-droplet text-blue-200 fa-bounce', color: 'bg-blue-500/80' },
+  surf: { icon: 'fa-solid fa-water text-blue-100 fa-shake', color: 'bg-blue-600/80' },
+  hydropump: { icon: 'fa-solid fa-faucet-drip text-blue-100 fa-beat', color: 'bg-blue-800/90' },
+  // Grass moves
+  vinewhip: { icon: 'fa-brands fa-pagelines text-green-200 fa-shake', color: 'bg-green-600/80' },
+  razorleaf: { icon: 'fa-solid fa-leaf text-green-100 fa-spin', color: 'bg-green-700/80' },
+  // Electric moves
+  thundershock: { icon: 'fa-solid fa-bolt text-yellow-100 fa-shake', color: 'bg-yellow-500/80' },
+  thunderbolt: { icon: 'fa-solid fa-bolt-lightning text-yellow-200 fa-beat-fade', color: 'bg-yellow-600/80' },
+  zap_cannon: { icon: 'fa-solid fa-bahai text-white fa-spin', color: 'bg-yellow-700/90' },
+  // Normal moves
+  tackle: { icon: 'fa-solid fa-star text-white fa-shake', color: 'bg-gray-500/80' },
+  scratch: { icon: 'fa-solid fa-grip-lines-vertical text-gray-200', color: 'bg-gray-600/80', shape: 'rounded-lg' },
+  quickattack: { icon: 'fa-solid fa-forward text-yellow-100 fa-fade', color: 'bg-gray-400/80' },
+  bite: { icon: 'fa-solid fa-teeth text-white fa-bounce', color: 'bg-stone-700/80' },
+  bodyslam: { icon: 'fa-solid fa-weight-hanging text-gray-200 fa-bounce', color: 'bg-stone-600/80' },
+  slash: { icon: 'fa-solid fa-slash text-gray-100 fa-shake', color: 'bg-gray-500/80', shape: 'rounded-none rotate-45' },
+  extremespeed: { icon: 'fa-solid fa-wind text-blue-100 fa-shake', color: 'bg-slate-500/80' },
+  recover: { icon: 'fa-solid fa-heart text-pink-200 fa-beat', color: 'bg-pink-500/80' },
+  // Psychic moves
+  hypnosis: { icon: 'fa-solid fa-compact-disc text-purple-200 fa-spin', color: 'bg-purple-600/80' },
+  psychic: { icon: 'fa-solid fa-brain text-pink-200 fa-pulse', color: 'bg-fuchsia-600/80' },
+  dream_eater: { icon: 'fa-solid fa-cloud-moon text-purple-100 fa-fade', color: 'bg-purple-800/80' },
+  // Ghost moves
+  shadowball: { icon: 'fa-solid fa-circle-dot text-purple-300 fa-beat', color: 'bg-indigo-900/90' },
+  lick: { icon: 'fa-solid fa-ghost text-purple-200 fa-bounce', color: 'bg-purple-500/80' },
+  // Ice moves
+  icebeam: { icon: 'fa-solid fa-icicles text-cyan-100 fa-shake', color: 'bg-cyan-600/80' },
+  blizzard: { icon: 'fa-solid fa-snowflake text-white fa-spin', color: 'bg-cyan-700/80' },
+  // Dragon moves
+  dragonclaw: { icon: 'fa-solid fa-hand-lizard text-red-100 fa-shake', color: 'bg-indigo-700/80', shape: 'rounded-xl' },
+  // Fighting moves
+  low_kick: { icon: 'fa-solid fa-shoe-prints text-red-200 fa-bounce', color: 'bg-red-700/80' },
+  karate_chop: { icon: 'fa-solid fa-hand-rock text-red-100 fa-shake', color: 'bg-red-800/80' },
+  // Bug moves
+  fury_cutter: { icon: 'fa-solid fa-scissors text-lime-200 fa-shake', color: 'bg-lime-700/80' },
+  // Rock moves
+  rock_throw: { icon: 'fa-solid fa-cubes text-stone-300 fa-bounce', color: 'bg-stone-700/80' },
+  rock_slide: { icon: 'fa-solid fa-hill-rockslide text-stone-200 fa-shake', color: 'bg-stone-800/80' },
+  // Ground moves
+  earthquake: { icon: 'fa-solid fa-house-crack text-amber-200 fa-shake', color: 'bg-amber-800/90' },
+  // Flying moves
+  wing_attack: { icon: 'fa-solid fa-feather-pointed text-sky-200 fa-shake', color: 'bg-sky-600/80' },
+  fly: { icon: 'fa-solid fa-plane-up text-sky-100 fa-fade', color: 'bg-sky-700/80' },
+  sky_attack: { icon: 'fa-solid fa-meteor text-orange-100 fa-beat-fade', color: 'bg-sky-800/90' },
+  hurricane: { icon: 'fa-solid fa-tornado text-gray-200 fa-spin', color: 'bg-slate-600/80' },
+  drill_peck: { icon: 'fa-solid fa-screw text-gray-200 fa-spin', color: 'bg-yellow-700/80' },
+  // Poison moves
+  poison_jab: { icon: 'fa-solid fa-syringe text-fuchsia-200 fa-shake', color: 'bg-fuchsia-800/80' }
+};
+
+const AttackEffect = ({ effect }) => {
+  if (!effect) return null;
+
+  const iconClasses = {
+    normal: 'fa-solid fa-star text-white',
+    fire: 'fa-solid fa-fire text-white',
+    water: 'fa-solid fa-droplet text-white',
+    grass: 'fa-solid fa-leaf text-white',
+    electric: 'fa-solid fa-bolt text-white',
+    ice: 'fa-solid fa-snowflake text-white',
+    fighting: 'fa-solid fa-hand-fist text-white', // Generic fighting icon
+    poison: 'fa-solid fa-skull-crossbones text-white',
+    ground: 'fa-solid fa-mountain text-white', // Generic ground icon
+    flying: 'fa-solid fa-feather-pointed text-white', // Generic flying icon
+    psychic: 'fa-solid fa-brain text-white',
+    bug: 'fa-solid fa-bug text-white', // Generic bug icon
+    rock: 'fa-solid fa-cubes text-white', // Generic rock icon
+    ghost: 'fa-solid fa-ghost text-white',
+    dragon: 'fa-solid fa-dragon text-white',
+    physical: 'fa-solid fa-hand-fist text-white',
+    special: 'fa-solid fa-burst text-white'
+  };
+
+  const typeColors = {
+    normal: 'bg-gray-400/80',
+    fire: 'bg-orange-500/80',
+    water: 'bg-blue-500/80',
+    grass: 'bg-green-500/80',
+    electric: 'bg-yellow-400/80',
+    ice: 'bg-cyan-400/80',
+    fighting: 'bg-red-700/80',
+    poison: 'bg-fuchsia-800/80',
+    ground: 'bg-amber-700/80',
+    flying: 'bg-sky-400/80',
+    psychic: 'bg-pink-500/80',
+    bug: 'bg-lime-600/80',
+    rock: 'bg-yellow-800/80',
+    ghost: 'bg-purple-600/80',
+    dragon: 'bg-indigo-600/80'
+  };
+
+  const position = effect.target === 'player' ?
+  'bottom-1/3 left-1/4 transform -translate-x-1/2' :
+  'top-1/3 right-1/4 transform translate-x-1/2';
+
+  // Prioritize move-specific config if available
+  const moveConfig = effect.moveKey ? MOVE_EFFECT_CONFIG[effect.moveKey] : null;
+
+  const icon = moveConfig?.icon || iconClasses[effect.type] || (effect.category === 'physical' ? iconClasses.physical : iconClasses.special);
+  const color = moveConfig?.color || typeColors[effect.type] || typeColors.normal;
+  const shape = moveConfig?.shape || 'rounded-full';
+
+  return (
+    <div className={`absolute ${position} z-30 animate-bounce-in w-24 h-24 flex items-center justify-center`}>
+            <div className={`w-16 h-16 ${color} ${shape} flex items-center justify-center shadow-pixel border-2 border-black/50`}>
+                <i className={`${icon} text-3xl`}></i>
+            </div>
+        </div>);
+
+};
+
+const BATTLE_BACKGROUNDS = [
+{ name: 'Forest', css: 'url("https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1632&auto=format&fit=crop") no-repeat center center / cover' },{ name: 'Mountain', css: 'url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1470&auto=format&fit=crop") no-repeat center center / cover' },{ name: 'Cave', css: 'url("https://images.unsplash.com/photo-1504194569228-56eb0f508a8e?q=80&w=1470&auto=format&fit=crop") no-repeat center center / cover' },{ name: 'Ocean', css: 'url("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1474&auto=format&fit=crop") no-repeat center center / cover' },{ name: 'Desert', css: 'url("https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=1470&auto=format&fit=crop") no-repeat center center / cover' },{ name: 'Dungeon', css: 'url("https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?q=80&w=1470&auto=format&fit=crop") no-repeat center center / cover' }];
+
+
+/**
+ * Generates a maze with a single exit using an iterative randomized DFS algorithm.
+ * @param {number} width - The width of the maze.
+ * @param {number} height - The height of the maze.
+ * @returns {Array<Array<number>>} A 2D array representing the maze (0=path, 1=wall, 2=exit).
+ */
+
+
+const TILE_CLASSES = {
+  0: 'bg-pattern-grass', // 普通草地
+  1: 'bg-pattern-tree shadow-inner', // 树木墙壁
+  2: 'bg-pattern-flower', // 出口花丛
+  3: 'bg-pattern-grass', // 道具地块
+  4: 'bg-pattern-grass', // 金币地块
+  5: 'bg-pattern-grass', // 治疗点
+  6: 'bg-pattern-grass', // 告示牌
+  7: 'bg-pattern-grass', // 训练家
+  8: 'bg-pattern-tall-grass', // 高草丛 (遇敌率高)
+  9: 'bg-pattern-grass', // 果树背景
+  10: 'bg-pattern-grass', // 商人背景
+  11: 'bg-pattern-water shadow-pixel-inset', // 水域 (不可通行)
+  12: 'bg-pattern-sand' // 沙地 (移动减速)
+};
+const TILE_SIZE = 32; // size of a tile in pixels // size of a tile in pixels
+const ENCOUNTER_RATE = 0.15; // 15% chance
+const PLAYER_SPRITE_URL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/132.png'; // 默认使用百变怪作为替身
+
+const LEVEL_MAPS = {}; // Cache for level maps
+
+const generateMaze = (width, height, levelId = 1) => {
+  // If we already have a map for this level, return it (Persistence)
+  if (LEVEL_MAPS[levelId]) {
+    return LEVEL_MAPS[levelId];
+  }
+
+  // 初始化全为普通草地(0)
+  const grid = Array.from({ length: height }, () => Array(width).fill(0));
+
+  // 1. 生成边界墙壁
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (x === 0 || x === width - 1 || y === 0 || y === height - 1) grid[y][x] = 1;
+    }
+  }
+
+  // 2. 团块地形生成逻辑 (使地形面积更大且合理)
+  const addTerrainCluster = (type, count, radius, density = 0.7) => {
+    for (let i = 0; i < count; i++) {
+      const cx = Math.floor(Math.random() * (width - 4)) + 2;
+      const cy = Math.floor(Math.random() * (height - 4)) + 2;
+      for (let y = Math.max(1, cy - radius); y <= Math.min(height - 2, cy + radius); y++) {
+        for (let x = Math.max(1, cx - radius); x <= Math.min(width - 2, cx + radius); x++) {
+          const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
+          if (dist <= radius && Math.random() < density) {
+            // 只有普通草地或同类型才能被覆盖，避免破坏边界
+            if (grid[y][x] === 0 || (type === 8 && grid[y][x] === 0)) grid[y][x] = type;
+          }
+        }
+      }
+    }
+  };
+
+  // 生成大面积地形：树林(1)、高草丛(8)、沙地(12)、水域(11)
+  addTerrainCluster(1, 2, 2, 0.6);   // 少量树林簇作为自然屏障
+  addTerrainCluster(8, 3, 3, 0.8);   // 3大块高草丛区域
+  addTerrainCluster(12, 1, 4, 0.7);  // 1块大面积沙地区域
+  addTerrainCluster(11, 1, 2, 0.9);  // 1个小型湖泊
+
+  // 3. 确保核心路径连通性
+  grid[1][1] = 0; grid[1][2] = 0; grid[2][1] = 0; // 起点安全
+  grid[height - 2][width - 2] = 2; // 终点出口
+
+  // 4. 放置交互点 (必须放置在普通草地 0 上)
+  const placeOnEmpty = (type, count) => {
+    let placed = 0;
+    let attempts = 0;
+    while (placed < count && attempts < 100) {
+      const ry = Math.floor(Math.random() * (height - 2)) + 1;
+      const rx = Math.floor(Math.random() * (width - 2)) + 1;
+      if (grid[ry][rx] === 0) {
+        grid[ry][rx] = type;
+        placed++;
+      }
+      attempts++;
+    }
+  };
+
+  // 随机放置道具(3)和金币(4)
+  placeOnEmpty(3, 3);
+  placeOnEmpty(4, 3);
+  // 随机放置治疗点(5)
+  placeOnEmpty(5, 1);
+  // 随机放置告示牌(6)
+  placeOnEmpty(6, 2);
+  // 随机放置训练家(7)
+  placeOnEmpty(7, 2);
+  // 随机放置果树(9)
+  placeOnEmpty(9, 2);
+  // 随机放置神秘商人(10)
+  placeOnEmpty(10, 1);
+
+  // Cache the generated grid
+  LEVEL_MAPS[levelId] = grid;
+  return grid;
+};
+
+let MAP_GRID = generateMaze(20, 15, 1);
+
+// --- Unified Bag Component ---
+const UnifiedBagScreen = ({
+  inventory = [],
+  onClose,
+  onUseItem, // For balls/battle items
+  onUsePotion, // For healing
+  team = [],
+  isBattle = false,
+  activeMonId,
+  addLog
+}) => {
+  const [selectedItemKey, setSelectedItemKey] = useState(null);
+  const [showTeamSelect, setShowTeamSelect] = useState(false);
+
+  // Group items
+  const items = inventory.map((slot) => {
+    // Try to find item details in POKEBALLS or POTIONS
+    const details = POKEBALLS[slot.itemKey] || POTIONS[slot.itemKey];
+    return { ...slot, ...details, type: POKEBALLS[slot.itemKey] ? 'ball' : 'potion' };
+  }).filter((item) => item.name); // Filter out unknown items
+
+  const handleItemClick = (item) => {
+    if (item.type === 'potion') {
+      setSelectedItemKey(item.itemKey);
+      setShowTeamSelect(true);
+    } else if (item.type === 'ball') {
+      if (isBattle) {
+        onUseItem(item.itemKey);
+        onClose();
+      } else {
+        // Cannot use balls outside battle
+      }}
+  };
+
+  const handlePotionUse = (monId) => {
+    if (selectedItemKey) {
+      onUsePotion(monId, selectedItemKey);
+      if (addLog) addLog(`使用了 ${POTIONS[selectedItemKey].name}`);
+      // Refresh inventory check
+      if (inventory.find((i) => i.itemKey === selectedItemKey)?.quantity <= 1) {
+        setSelectedItemKey(null);
+        setShowTeamSelect(false);
+      }
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 z-50 bg-retro-dark flex flex-col">
+      <div className="p-4 bg-retro-panel border-b-4 border-black flex justify-between items-center">
+        <h2 className="text-xl font-bold pixel-text-shadow">背包</h2>
+        <button onClick={onClose} className="bg-red-500 text-white px-3 py-1 rounded border-2 border-black font-bold">关闭</button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {items.length === 0 && <div className="text-white text-center mt-10">背包是空的</div>}
+        {items.map((item) =>
+        <PixelCard key={item.itemKey} className="!p-3">
+             <div className="flex items-center gap-3">
+               <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center border-2 border-gray-400">
+                  <img src={item.sprite} alt={item.name} className="w-8 h-8 object-contain" style={{ imageRendering: 'pixelated' }} />
+               </div>
+               <div className="flex-1">
+                 <div className="font-bold text-lg">{item.name}</div>
+                 <div className="text-xs text-gray-600">{item.type === 'ball' ? '用于捕捉宝可梦' : `恢复 HP +${item.healAmount || 0}`}</div>
+               </div>
+               <div className="flex flex-col items-end gap-2">
+                 <div className="font-bold text-sm">x{item.quantity}</div>
+                 <button
+                onClick={() => handleItemClick(item)}
+                disabled={item.type === 'ball' && !isBattle}
+                className={`px-3 py-1 rounded text-sm font-bold border-2 border-black shadow-pixel-sm active:translate-y-1 active:shadow-none transition-all
+                        ${item.type === 'ball' && !isBattle ?
+                'bg-gray-400 text-gray-600 cursor-not-allowed' :
+                'bg-yellow-400 hover:bg-yellow-300 text-black'}`
+                }>
+
+                    {item.type === 'ball' && !isBattle ? '仅战斗' : '使用'}
+                 </button>
+               </div>
+             </div>
+          </PixelCard>
+        )}
+      </div>
+
+      {/* Team Selector Modal Overlay for Potion */}
+      {showTeamSelect &&
+      <div className="absolute inset-0 bg-black/80 flex flex-col justify-center items-center p-4 z-[60]">
+           <div className="bg-retro-panel border-4 border-black p-4 w-full max-w-sm rounded shadow-pixel animate-bounce-in">
+              <h3 className="text-lg font-bold mb-3 text-center">选择目标</h3>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                 {(!team || team.length === 0) && <div className="text-center text-gray-500 py-4">没有可用的队伍信息</div>}
+                 {team.map((mon) => {
+              // Normalize stats for display
+              const maxHp = mon.maxHp || mon.stats?.hp || 100;
+              const currentHp = mon.currentHp ?? maxHp;
+              const hpPercent = currentHp / maxHp * 100;
+              const isFullHp = currentHp >= maxHp;
+
+              return (
+                <div
+                    key={mon.id}
+                    onClick={() => !isFullHp ? handlePotionUse(mon.id) : null}
+                    className={`border-2 border-black p-2 rounded flex items-center gap-3 transition-colors ${
+                        isFullHp
+                            ? 'bg-gray-200 opacity-70 cursor-not-allowed'
+                            : 'bg-white cursor-pointer hover:bg-blue-50 active:bg-blue-100'
+                    }`}
+                >
+                             <img src={mon.sprite} className="w-10 h-10 object-contain" style={{ imageRendering: 'pixelated' }} />
+                             <div className="flex-1">
+                                 <div className="flex justify-between items-center">
+                                     <span className="font-bold text-sm">{mon.name}</span>
+                                     {isFullHp && <span className="text-xs text-green-600 font-bold">HP已满</span>}
+                                 </div>
+                                 <div className="w-full bg-gray-300 h-2 rounded-full mt-1 overflow-hidden">
+                                     <div className={`${hpPercent < 20 ? 'bg-red-500' : hpPercent < 50 ? 'bg-yellow-500' : 'bg-green-500'} h-full`} style={{ width: `${hpPercent}%` }}></div>
+                                 </div>
+                                 <div className="text-xs text-right mt-0.5">{currentHp}/{maxHp}</div>
+                             </div>
+                         </div>);
+
+            })}
+              </div>
+              <button onClick={() => setShowTeamSelect(false)} className="w-full mt-4 bg-gray-500 text-white py-2 rounded border-2 border-black font-bold">取消</button>
+           </div>
+        </div>
+      }
+    </div>);
+
+};
+
+// --- Re-implemented MapScreen ---
+// [ActionButtons removed - unused]
+
+// --- This comment ensures the search for the next block is unique ---
+// The original MapScreen component is replaced by the version below.
+
+const BattleScene = ({
+  playerMon, enemyMon, logs, onMove, onSwitch, turn, onNavigate, playerGold,
+  isThrowingPokeball, onPokeballAnimationEnd, onGoToLaunchScreen, onRun,
+  // New props for modal screens
+  playerTeam, playerInventory, onUseItem, onUsePotion, addLog
+}) => {
+  const [playerAnim, setPlayerAnim] = useState('');
+  const [enemyAnim, setEnemyAnim] = useState('');
+  const [attackEffect, setAttackEffect] = useState(null);
+
+  // New states for modal screens
+  const [showBag, setShowBag] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
+  const [showControls, setShowControls] = useState('main'); // 'main' or 'moves'
+  const [isBusy, setIsBusy] = useState(false);
+
+  // Reset busy state when it's player's turn
+  useEffect(() => {
+    if (turn === 'player') setIsBusy(false);
+  }, [turn]);
+
+  const typeMatchup = useMemo(() => {
+    if (!playerMon || !enemyMon) return { playerAdv: 1, enemyAdv: 1 };
+
+    const pTypes = [playerMon.type, playerMon.type2].filter(Boolean);
+    const eTypes = [enemyMon.type, enemyMon.type2].filter(Boolean);
+
+    let maxPlayerAdv = 0;
+    pTypes.forEach(pType => {
+      eTypes.forEach(eType => {
+        maxPlayerAdv = Math.max(maxPlayerAdv, getEffectiveness(pType, eType));
+      });
+    });
+
+    let maxEnemyAdv = 0;
+    eTypes.forEach(eType => {
+      pTypes.forEach(pType => {
+        maxEnemyAdv = Math.max(maxEnemyAdv, getEffectiveness(eType, pType));
+      });
+    });
+
+    return { playerAdv: maxPlayerAdv, enemyAdv: maxEnemyAdv };
+  }, [playerMon, enemyMon]);
+
+  const getHintText = (myAdv, theirAdv) => {
+    const isSuper = myAdv > 1;
+    const isWeak = theirAdv > 1;
+    if (isSuper && isWeak) return { text: "相互克制", className: "text-orange-600" };
+    if (isSuper) return { text: "克制对方", className: "text-green-600" };
+    if (isWeak) return { text: "被对方克制", className: "text-red-600" };
+    return { text: "属性均衡", className: "text-gray-600" };
+  };
+
+  const playerHint = getHintText(typeMatchup.playerAdv, typeMatchup.enemyAdv);
+  const enemyHint = getHintText(typeMatchup.enemyAdv, typeMatchup.playerAdv);
+
+  // Close bag when throwing pokeball animation starts
+  useEffect(() => {
+    if (isThrowingPokeball) {
+      setShowBag(false);
+    }
+  }, [isThrowingPokeball]);
+
+  // --- Data Normalization ---
+  const normalizeStats = (mon) => {
+    if (!mon) return { currentHp: 0, maxHp: 0, currentMp: 0, maxMp: 0 };
+    const maxHp = mon.maxHp || mon.stats?.hp || 0;
+    const currentHp = mon.currentHp ?? maxHp;
+    const maxMp = mon.maxMp || (mon.stats ? Math.floor(mon.stats.sp_attack * 0.8) + 20 : 50);
+    const currentMp = mon.currentMp ?? maxMp;
+    return { currentHp, maxHp, currentMp, maxMp };
+  };
+
+  const playerStats = normalizeStats(playerMon);
+  const enemyStats = normalizeStats(enemyMon);
+  // --- End Data Normalization ---
+
+  const backgroundStyle = useMemo(() => {
+    let hash = 0;
+    const str = enemyMon.id.toString();
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % BATTLE_BACKGROUNDS.length;
+    return BATTLE_BACKGROUNDS[index].css;
+  }, [enemyMon.id]);
+
+  useEffect(() => {
+    if (logs.length === 0) return;
+    const lastLog = logs[logs.length - 1];
+    if (!lastLog.includes('使用了')) return;
+
+    if (isThrowingPokeball) return;
+
+    const parts = lastLog.split(' 使用了 ');
+    // Add a check to ensure parts[1] exists before trying to access it
+    if (parts.length < 2) {
+      console.warn("Unexpected log format encountered during move parsing (missing move name):", lastLog);
+      return; // Skip processing if format is not as expected
+    }
+    const moveName = parts[1].replace('!', '');
+    const moveKey = Object.keys(MOVES).find((k) => MOVES[k].name === moveName);
+    if (!moveKey) return;
+
+    const move = MOVES[moveKey];
+    const isEnemyAttack = parts[0].startsWith('敌方');
+
+    const timers = [];
+
+    if (isEnemyAttack) {
+      setEnemyAnim('animate-attack-enemy');
+      timers.push(setTimeout(() => {
+        setEnemyAnim('');
+        if (move.category !== 'status') {
+          setPlayerAnim('animate-shake');
+          setAttackEffect({ type: move.type, category: move.category, target: 'player', moveKey });
+        }
+      }, 500));
+      timers.push(setTimeout(() => {
+        setPlayerAnim('');
+        setAttackEffect(null);
+      }, 1000));
+    } else {
+      setPlayerAnim('animate-attack-player');
+      timers.push(setTimeout(() => {
+        setPlayerAnim('');
+        if (move.category !== 'status') {
+          setEnemyAnim('animate-shake');
+          setAttackEffect({ type: move.type, category: move.category, target: 'enemy', moveKey });
+        }
+      }, 500));
+      timers.push(setTimeout(() => {
+        setEnemyAnim('');
+        setAttackEffect(null);
+      }, 1000));
+    }
+
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [logs, isThrowingPokeball]);
+
+  // --- Modal Screen Rendering ---
+  if (showBag) {
+    return <UnifiedBagScreen
+      inventory={playerInventory}
+      onClose={() => setShowBag(false)}
+      onUseItem={(key) => {
+        setIsBusy(true);
+        onUseItem(key);
+      }}
+      onUsePotion={onUsePotion}
+      team={playerTeam && playerTeam.length > 0 ? playerTeam : [playerMon]}
+      isBattle={true}
+      addLog={addLog}
+      activeMonId={playerMon.id} />;
+
+  }
+
+  if (showTeam) {
+    return <TeamScreen
+      team={playerTeam}
+      onSelect={(id) => {
+        setIsBusy(true);
+        onSwitch(id);
+      }} // Pass onSwitch for potential switch logic
+      activeId={playerMon.id}
+      onBack={() => setShowTeam(false)}
+      playerInventory={playerInventory}
+      onUsePotion={onUsePotion} />;
+
+  }
+
+  // Dex is removed from battle screen for a cleaner UI
+  // --- End Modal Rendering ---
+
+  return (
+    <div className="h-full flex flex-col bg-retro-bg relative">
+                <div className="flex-1 relative bg-retro-dark p-4 pt-safe flex flex-col min-h-0 overflow-y-auto transition-all duration-700 ease-in-out bg-cover bg-center"
+      style={{ background: backgroundStyle }}>
+
+                <AttackEffect effect={attackEffect} />
+                <PokeballThrowAnimation show={isThrowingPokeball} onAnimationEnd={onPokeballAnimationEnd} />
+
+                <div className="flex justify-end mb-2 mt-4">
+                    <PixelCard className="w-full max-w-[200px] bg-retro-panel !p-1">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="font-bold text-lg">{enemyMon.name}</span>
+                                <span className="text-xs">Lv.{enemyMon.level}</span>
+                            </div>
+                            <div className="flex justify-end gap-1 mt-1">
+                                {enemyMon.type2 && <TypeBadge type={enemyMon.type2} />}
+                                <TypeBadge type={enemyMon.type} />
+                            </div>
+                            <ProgressBar current={enemyStats.currentHp} max={enemyStats.maxHp} />
+                            <ProgressBar current={enemyStats.currentMp} max={enemyStats.maxMp} color="bg-blue-500" />
+                            <div className="text-right text-xs mt-1">{enemyStats.currentHp}/{enemyStats.maxHp}</div>
+                             <div className={`text-right text-xs font-bold mt-1 ${enemyHint.className}`}>
+                                {enemyHint.text}
+                            </div>
+                        </div>
+                    </PixelCard>
+                </div>
+
+                <div className="flex justify-end pr-8 relative z-0">
+                    <div className={enemyAnim}>
+                         <MonsterSprite monster={enemyMon} isBattleContext={true} />
+                    </div>
+                </div>
+
+                <div className="flex justify-start pl-8 mt-auto relative z-10">
+                    <div className={playerAnim}>
+                        <MonsterSprite monster={playerMon} isBack={true} isBattleContext={true} />
+                    </div>
+                </div>
+
+                <div className="flex justify-start">
+                     <PixelCard className="w-full max-w-[200px] bg-retro-panel !p-1">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex justify-between items-baseline">
+                                <span className="font-bold text-lg">{playerMon.name}</span>
+                                <span className="text-xs">Lv.{playerMon.level}</span>
+                            </div>
+                             <div className="flex justify-end gap-1 mt-1">
+                                {playerMon.type2 && <TypeBadge type={playerMon.type2} />}
+                                <TypeBadge type={playerMon.type} />
+                            </div>
+                            <ProgressBar current={playerStats.currentHp} max={playerStats.maxHp} />
+<ProgressBar current={playerStats.currentMp} max={playerStats.maxMp} color="bg-blue-500" />
+                            <div className="flex justify-between text-xs mt-1 font-mono font-bold">
+                                <span>体力: {playerStats.currentHp}/{playerStats.maxHp}</span>
+                                <span>能量: {playerStats.currentMp}/{playerStats.maxMp}</span>
+                            </div>
+                            <ExpBar current={playerMon.currentExp} max={playerMon.expToNextLevel} />
+                            <div className="flex justify-between text-[10px] mt-0.5 font-mono font-bold text-blue-900/60 uppercase tracking-tighter">
+                                <span>Exp Points</span>
+                                <span>{playerMon.currentExp} / {playerMon.expToNextLevel}</span>
+                            </div>
+                            <div className="flex justify-start items-center gap-1 text-xs mt-1 font-mono font-bold text-yellow-700">
+                                <i className="fa-solid fa-coins text-yellow-600"></i>
+                                <span>金币: {playerGold}</span>
+                            </div>
+                            <div className={`text-right text-xs font-bold mt-1 ${playerHint.className}`}>
+                                {playerHint.text}
+                            </div>
+                        </div>
+                    </PixelCard>
+                </div>
+            </div>
+
+            <div className="bg-retro-panel border-t-4 border-black p-2 flex flex-col gap-2 shrink-0 pb-safe">
+                <div
+                    className="w-full bg-black rounded-sm border-2 border-gray-800 shadow-pixel-inset p-2 font-mono text-white text-sm leading-relaxed max-h-20 overflow-y-auto"
+                    id="battle-log">
+                    {logs.slice(-3).map((log, i) =>
+                        <div key={i} className="mb-0.5">> {log}</div>
+                    )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    {showControls === 'main' ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => setShowControls('moves')}
+                                disabled={turn !== 'player' || isBusy}
+                                className="bg-red-500 text-white border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded py-2 flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+                                <i className="fa-solid fa-hand-fist"></i>
+                                <span className="font-bold text-sm">战斗</span>
+                            </button>
+                            <button
+                                onClick={() => setShowBag(true)}
+                                disabled={turn !== 'player' || isBusy}
+                                className="bg-retro-blue text-white border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded py-2 flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+                                <i className="fa-solid fa-bag-shopping"></i>
+                                <span className="font-bold text-sm">背包</span>
+                            </button>
+                            <button
+                                onClick={() => setShowTeam(true)}
+                                disabled={turn !== 'player' || isBusy}
+                                className="bg-retro-green text-white border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded py-2 flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+                                <i className="fa-solid fa-people-group"></i>
+                                <span className="font-bold text-sm">队伍</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsBusy(true);
+                                    onRun();
+                                }}
+                                disabled={turn !== 'player' || isBusy}
+                                className="bg-gray-500 text-white border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded py-2 flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+                                <i className="fa-solid fa-person-running"></i>
+                                <span className="font-bold text-sm">逃跑</span>
+                            </button>
+                        </div>
+                    ) : ( /* showControls === 'moves' */
+                        <div className="flex flex-col gap-2">
+                            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-1">
+                                {playerMon.moves.map((moveKey) => {
+                                    const move = MOVES[moveKey];
+                                    const hasEnoughMp = playerStats.currentMp >= move.cost;
+                                    return (
+                                        <button
+                                            key={moveKey}
+                                            onClick={() => {
+                                                setIsBusy(true);
+                                                onMove(moveKey);
+                                            }}
+                                            disabled={!hasEnoughMp || turn !== 'player' || isBusy}
+                                            className="bg-white border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded px-2 py-2 flex flex-col justify-between items-start gap-1 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-left transition-all h-14 relative group">
+                                            <div className="flex justify-between w-full items-center">
+                                                <span className="font-bold text-sm text-gray-900 leading-none">{move.name}</span>
+                                                <div className="scale-75 origin-right">
+                                                    <TypeBadge type={move.type} />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between w-full items-center">
+                                                <span className={`text-xs font-bold ${hasEnoughMp ? 'text-blue-600' : 'text-red-500'}`}>
+                                                    MP {move.cost}
+                                                </span>
+                                                <span className="text-[10px] text-gray-500 font-bold">威力 {move.power || '-'}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                             <button
+                                onClick={() => setShowControls('main')}
+                                className="bg-gray-400 text-black border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 rounded py-2 flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+                                <i className="fa-solid fa-arrow-left"></i>
+                                <span className="font-bold text-sm">返回</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>);
+
+};
+
+const MapScreen = ({ playerTeam, onEncounter, onNavigate, onCollect, playerPos, onPlayerMove }) => {
+  const [isMoving, setIsMoving] = useState(false);
+  const [isTeleporting, setIsTeleporting] = useState(false);
+
+  const handleMove = useCallback((dx, dy) => {
+    if (isMoving) return;
+
+    // Safety check for MAP_GRID
+    if (!MAP_GRID || !MAP_GRID.length) return;
+
+    const newX = playerPos.x + dx;
+    const newY = playerPos.y + dy;
+
+    if (
+    newY >= 0 && newY < MAP_GRID.length &&
+    newX >= 0 && newX < MAP_GRID[0].length &&
+    MAP_GRID[newY][newX] !== 1 && // Not a wall
+    MAP_GRID[newY][newX] !== 11    // Not water
+    ) {
+      const tileType = MAP_GRID[newY][newX];
+
+      // Check for Items (3) or Gold (4)
+      if (tileType === 3 || tileType === 4) {
+        MAP_GRID[newY][newX] = 0; // Remove from map
+        if (onCollect) {
+          if (tileType === 3) {
+            onCollect('item', 1); // The value '1' is a placeholder for quantity
+          } else {
+            onCollect('gold', 50);
+          }
+        } else {
+          // Fallback for when onCollect is not provided
+          if (tileType === 3) {
+            alert("获得: 随机道具 (需完善App逻辑以保存)");
+          } else {
+            alert("获得: 50 金币 (需完善App逻辑以保存)");
+          }
+        }
+      }
+
+      // Check for Heal (5)
+      if (tileType === 5) {
+        if (onCollect) onCollect('heal');
+      }
+
+      // Check for Info (6)
+      if (tileType === 6) {
+        if (onCollect) onCollect('info');
+      }
+
+      // Check for Trainer (7)
+      if (tileType === 7) {
+        if (onCollect) onCollect('trainer');
+        MAP_GRID[newY][newX] = 0; // Remove trainer from map
+        return; // Bump interaction, do not move player onto tile
+      }
+
+      // Check for Berries (9)
+      if (tileType === 9) {
+        MAP_GRID[newY][newX] = 0;
+        if (onCollect) onCollect('berry');
+      }
+
+      // Check for Merchant (10)
+      if (tileType === 10) {
+        if (onCollect) onCollect('merchant');
+        MAP_GRID[newY][newX] = 0;
+        return;
+      }
+
+      // Check for exit (Tile type 2)
+      if (tileType === 2) {
+        onNavigate('levelSelect');
+        return;
+      }
+
+      setIsMoving(true);
+      onPlayerMove({ x: newX, y: newY });
+
+      // Trigger encounter check
+      const currentTile = MAP_GRID[newY][newX];
+      let currentEncounterRate = 0;
+      if (currentTile === 0) currentEncounterRate = ENCOUNTER_RATE;
+      if (currentTile === 8) currentEncounterRate = ENCOUNTER_RATE * 2.5; // Tall grass has much higher rate
+
+      if (currentEncounterRate > 0) {
+        if (Math.random() < currentEncounterRate) {
+          // Dynamic Level Scaling
+          const leadLevel = (playerTeam && playerTeam[0]) ? (playerTeam[0].level || 5) : 5;
+          const randomOffset = Math.floor(Math.random() * 5) - 1;
+          const suggestedWildLevel = Math.max(1, leadLevel + randomOffset);
+
+          setTimeout(() => onEncounter(suggestedWildLevel, currentTile), 300);
+        }
+      }
+
+      // Movement delay logic (Sand slows down)
+      const moveDelay = currentTile === 12 ? 400 : 200;
+      setTimeout(() => setIsMoving(false), moveDelay);
+    }
+  }, [playerPos, isMoving, onEncounter, onCollect, onPlayerMove]);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowUp') handleMove(0, -1);
+      else if (e.key === 'ArrowDown') handleMove(0, 1);
+      else if (e.key === 'ArrowLeft') handleMove(-1, 0);
+      else if (e.key === 'ArrowRight') handleMove(1, 0);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleMove]);
+
+  // Safe check for map grid
+  if (!MAP_GRID || !MAP_GRID.length) return <div className="text-white">Loading Map...</div>;
+
+  return (
+    <div className="h-full flex flex-col bg-black relative p-2 pt-safe pb-safe gap-2">
+            {/* Map View */}
+            <div className="flex-1 flex items-center justify-center overflow-hidden">
+                <div
+          className="relative border-4 border-gray-700 shadow-pixel overflow-hidden bg-black"
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: `calc((100vh - 180px) * ${MAP_GRID[0].length / MAP_GRID.length})`,
+            maxHeight: 'calc(100vh - 180px)',
+            aspectRatio: `${MAP_GRID[0].length}/${MAP_GRID.length}`
+          }}>
+
+                    <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${MAP_GRID[0].length}, 1fr)` }}>
+                        {MAP_GRID.flat().map((tile, index) =>
+            <div key={index} className={`w-full h-full ${TILE_CLASSES[tile] || TILE_CLASSES[0]} relative flex items-center justify-center overflow-visible`}>
+                                {tile === 3 && ( // Item
+                                    <div className="flex flex-col items-center justify-center scale-110">
+                                        <i className="fa-solid fa-gift text-red-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] animate-bounce" style={{ fontSize: '14px', transform: 'translateY(-2px)' }}></i>
+                                        <div className="w-3.5 h-1 bg-black/30 rounded-full blur-[1px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 4 && ( // Gold
+                                    <div className="flex flex-col items-center justify-center scale-110">
+                                        <i className="fa-solid fa-coins text-yellow-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] animate-pulse" style={{ fontSize: '14px', transform: 'translateY(-2px)' }}></i>
+                                        <div className="w-3.5 h-1 bg-black/30 rounded-full blur-[1px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 5 && ( // Heal
+                                    <div className="flex flex-col items-center justify-center scale-125">
+                                        <div className="absolute -top-1 right-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75"></div>
+                                        <i className="fa-solid fa-house-chimney-medical text-pink-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: '18px', transform: 'translateY(-3px)' }}></i>
+                                        <div className="w-5 h-1.5 bg-black/40 rounded-full blur-[2px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 6 && ( // Info
+                                    <div className="flex flex-col items-center justify-center">
+                                        <i className="fa-solid fa-signs-post text-amber-800 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]" style={{ fontSize: '18px', transform: 'translateY(-2px)' }}></i>
+                                        <div className="w-5 h-1 bg-black/30 rounded-full blur-[1px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 7 && ( // Trainer
+                                    <div className="flex flex-col items-center justify-center scale-110">
+                                        <i className="fa-solid fa-user-ninja text-red-600 drop-shadow-[0_3px_3px_rgba(0,0,0,0.6)] animate-bounce" style={{ fontSize: '18px', transform: 'translateY(-4px)' }}></i>
+                                        <div className="w-5 h-1.5 bg-black/50 rounded-full blur-[2px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 9 && ( // Berry
+                                    <div className="flex flex-col items-center justify-center scale-110">
+                                        <i className="fa-solid fa-apple-whole text-orange-500 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" style={{ fontSize: '16px', transform: 'translateY(-2px)' }}></i>
+                                        <div className="w-3.5 h-1 bg-black/20 rounded-full blur-[1px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                                {tile === 10 && ( // Merchant
+                                    <div className="flex flex-col items-center justify-center scale-110">
+                                        <div className="absolute -top-2 w-full text-[8px] text-blue-400 font-bold text-center animate-pulse">SHOP</div>
+                                        <i className="fa-solid fa-user-tie text-blue-500 drop-shadow-[0_3px_3px_rgba(0,0,0,0.6)]" style={{ fontSize: '18px', transform: 'translateY(-4px)' }}></i>
+                                        <div className="w-5 h-1.5 bg-black/50 rounded-full blur-[2px] -mt-0.5"></div>
+                                    </div>
+                                )}
+                            </div>
+            )}
+                    </div>
+                    <div
+            className={`absolute ${isTeleporting ? '' : 'transition-all duration-200'} z-10 flex items-center justify-center pointer-events-none`}
+            style={{
+              left: `${playerPos.x / MAP_GRID[0].length * 100}%`,
+              top: `${playerPos.y / MAP_GRID.length * 100}%`,
+              width: `${1 / MAP_GRID[0].length * 100}%`,
+              height: `${1 / MAP_GRID.length * 100}%`
+            }}>
+
+                        <div className="absolute bottom-[5%] w-[80%] h-[20%] bg-black/50 rounded-full blur-[2px]"></div>
+                        {playerTeam && playerTeam.length > 0 ?
+            <img
+              src={playerTeam[0].sprite}
+              className="relative z-20 w-[250%] h-[250%] max-w-none object-contain -mt-[100%] drop-shadow-md"
+              style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 4px 2px rgba(0,0,0,0.5))' }}
+              alt={playerTeam[0].name} /> :
+
+
+            <img
+              src={PLAYER_SPRITE_URL}
+              className="relative z-20 w-[200%] h-[200%] max-w-none object-contain -mt-[60%] drop-shadow-md"
+              style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 4px 2px rgba(0,0,0,0.5))' }}
+              alt="Player" />
+
+            }
+                    </div>
+                </div>
+            </div>
+
+            {/* UI Controls Area */}
+            <div className="shrink-0 h-[140px] flex items-end justify-between gap-2 p-1">
+                {/* D-Pad */}
+                <div className="relative w-32 h-32">
+                    <button onClick={() => handleMove(0, -1)} className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-12 bg-gray-700 rounded-t-lg border-2 border-b-0 border-black flex items-center justify-center active:bg-gray-600 shadow-md active:shadow-none active:translate-y-px"><i className="fas fa-arrow-up text-white text-xl"></i></button>
+                    <button onClick={() => handleMove(0, 1)} className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-12 bg-gray-700 rounded-b-lg border-2 border-t-0 border-black flex items-center justify-center active:bg-gray-600 shadow-md active:shadow-none active:translate-y-px"><i className="fas fa-arrow-down text-white text-xl"></i></button>
+                    <button onClick={() => handleMove(-1, 0)} className="absolute left-0 top-1/2 -translate-y-1/2 w-12 h-10 bg-gray-700 rounded-l-lg border-2 border-r-0 border-black flex items-center justify-center active:bg-gray-600 shadow-md active:shadow-none active:translate-y-px"><i className="fas fa-arrow-left text-white text-xl"></i></button>
+                    <button onClick={() => handleMove(1, 0)} className="absolute right-0 top-1/2 -translate-y-1/2 w-12 h-10 bg-gray-700 rounded-r-lg border-2 border-l-0 border-black flex items-center justify-center active:bg-gray-600 shadow-md active:shadow-none active:translate-y-px"><i className="fas fa-arrow-right text-white text-xl"></i></button>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-gray-800 border-2 border-black rounded-full shadow-inner"></div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => onNavigate('bag')} className="bg-retro-blue text-white w-24 h-12 rounded-lg flex items-center justify-center gap-1 font-bold text-xs border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 hover:opacity-90 transition-all shadow-lg"><i className="fa-solid fa-bag-shopping text-lg"></i><span>背包</span></button>
+                    <button onClick={() => onNavigate('team')} className="bg-retro-accent text-white w-24 h-12 rounded-lg flex items-center justify-center gap-1 font-bold text-xs border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 hover:opacity-90 transition-all shadow-lg"><i className="fa-solid fa-users text-lg"></i><span>队伍</span></button>
+                    <button onClick={() => onNavigate('dex')} className="bg-retro-dark text-white w-24 h-12 rounded-lg flex items-center justify-center gap-1 font-bold text-xs border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 hover:opacity-90 transition-all shadow-lg"><i className="fa-solid fa-book-open text-lg"></i><span>图鉴</span></button>
+                    <button onClick={() => onNavigate('shop')} className="bg-retro-green text-white w-24 h-12 rounded-lg flex items-center justify-center gap-1 font-bold text-xs border-2 border-black border-b-4 active:border-b-2 active:translate-y-1 hover:opacity-90 transition-all shadow-lg"><i className="fa-solid fa-store text-lg"></i><span>商店</span></button>
+                </div>
+            </div>
+        </div>);
+};
+
+const TeamScreen = ({ team = [], onSelect, activeId, onBack, playerInventory = [], onUsePotion, onReorderTeam }) => {
+  const [selectedMonsterForPotion, setSelectedMonsterForPotion] = useState(null);
+
+  const availablePotions = useMemo(() => {
+    return playerInventory.
+    filter((item) => item.itemType === 'potion' && item.quantity > 0).
+    map((item) => ({
+      itemKey: item.itemKey,
+      details: POTIONS[item.itemKey],
+      quantity: item.quantity
+    }));
+  }, [playerInventory]);
+
+  // --- Data Normalization (same as in BattleScene) ---
+  const normalizeStats = (mon) => {
+    if (!mon) return { currentHp: 0, maxHp: 0, currentMp: 0, maxMp: 0 };
+    const maxHp = mon.maxHp || mon.stats?.hp || 0;
+    const currentHp = mon.currentHp ?? maxHp;
+    const maxMp = mon.maxMp || (mon.stats ? Math.floor(mon.stats.sp_attack * 0.8) + 20 : 50);
+    const currentMp = mon.currentMp ?? maxMp;
+    return { currentHp, maxHp, currentMp, maxMp };
+  };
+
+  // Handle monster selection for potions
+  const handleMonsterSelect = (monId) => {
+    if (selectedMonsterForPotion === monId) {
+      setSelectedMonsterForPotion(null); // Deselect if already selected
+    } else {
+      setSelectedMonsterForPotion(monId);
+    }
+  };
+
+  // Handle potion use
+  const handlePotionSelection = (monsterId, potionKey) => {
+    onUsePotion(monsterId, potionKey);
+    setSelectedMonsterForPotion(null); // Deselect after using potion
+  };
+
+  const isSwitching = !!onSelect;
+
+  const handleMove = (e, index, direction) => {
+    e.stopPropagation(); // Prevent card click
+    if (!onReorderTeam) {
+      console.warn("onReorderTeam is not provided to TeamScreen.");
+      return;
+    }
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= team.length) {
+      console.log(`TeamScreen: Cannot move monster at index ${index} ${direction}. Target index ${targetIndex} is out of bounds.`);
+      return;
+    }
+
+    const newTeam = [...team];
+    // Simple swap
+    [newTeam[index], newTeam[targetIndex]] = [newTeam[targetIndex], newTeam[index]];
+
+    console.log(`TeamScreen: Swapped monster at index ${index} with ${targetIndex}. New team order:`, newTeam.map(m => m.name));
+    onReorderTeam(newTeam);
+  };
+
+  return (
+    <div className="flex-1 bg-retro-bg p-4 flex flex-col">
+            <div className="flex justify-between items-center mb-4 text-white">
+                <h2 className="text-xl font-bold pixel-text-shadow">{isSwitching ? '选择替换的宝可梦' : '我的队伍'}</h2>
+                <button onClick={onBack} className="text-sm border border-white px-2 py-1 hover:bg-white hover:text-black">返回</button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {team.map((mon, index) => {
+          const stats = normalizeStats(mon);
+          const isFainted = stats.currentHp === 0;
+          const isActive = activeId === mon.id;
+          const canSelect = !isFainted && !isActive;
+
+          const handleCardClick = () => {
+            if (isSwitching) {
+              if (canSelect) {
+                onSelect(mon.id);
+                onBack(); // Close TeamScreen after a successful switch
+              }
+              // Do nothing if cannot select in switch mode
+            } else {
+              handleMonsterSelect(mon.id);
+            }
+          };
+
+          return (
+            <PixelCard
+              key={mon.id}
+              onClick={handleCardClick}
+              active={isActive || !isSwitching && selectedMonsterForPotion === mon.id}
+              className={`${isFainted ? 'opacity-50 grayscale' : ''} ${isSwitching && !canSelect ? 'cursor-not-allowed' : ''}`}>
+
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 flex-shrink-0 bg-black/10 rounded-full flex items-center justify-center">
+                                    <img src={mon.sprite} alt={mon.name} className="w-10 h-10 object-contain" style={{ imageRendering: 'pixelated' }} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold">{mon.name}</span>
+                                        <div className="flex gap-1">
+                                            {mon.type2 && <TypeBadge type={mon.type2} />}
+                                            <TypeBadge type={mon.type} />
+                                        </div>
+                                    </div>
+                                    <div className="mt-1 space-y-1">
+                                        <ProgressBar current={stats.currentHp} max={stats.maxHp} />
+                                        <ProgressBar current={stats.currentMp} max={stats.maxMp} color="bg-blue-500" />
+                                    </div>
+                                    <div className="flex justify-between text-xs mt-1 text-gray-600">
+                                        <span>体力: {stats.currentHp}/{stats.maxHp}</span>
+                                        <span>能量: {stats.currentMp}/{stats.maxMp}</span>
+                                    </div>
+                                    <ProgressBar current={mon.currentExp} max={mon.expToNextLevel} color="bg-orange-500" />
+                                    <div className="flex justify-between text-xs mt-0.5 text-gray-600">
+                                        <span>经验: {mon.currentExp}/{mon.expToNextLevel}</span>
+                                        <span>Lv.{mon.level}</span>
+                                    </div>
+                                </div>
+                                {!isSwitching &&
+                <div className="flex flex-col gap-1.5 self-stretch">
+                                        <button onClick={(e) => handleMove(e, index, 'up')} disabled={index === 0} className="w-6 h-6 flex items-center justify-center bg-gray-600 text-white rounded border-b-2 border-black active:border-b-0 active:translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed">
+                                            <i className="fa-solid fa-arrow-up"></i>
+                                        </button>
+                                        <button onClick={(e) => handleMove(e, index, 'down')} disabled={index === team.length - 1} className="w-6 h-6 flex items-center justify-center bg-gray-600 text-white rounded border-b-2 border-black active:border-b-0 active:translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed">
+                                            <i className="fa-solid fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+                }
+                            </div>
+
+                            {/* Potion selection UI is hidden during switching */}
+                            {!isSwitching && selectedMonsterForPotion === mon.id && availablePotions.length > 0 &&
+              <div className="mt-2 pt-2 border-t border-black/10 flex flex-wrap gap-2 justify-end">
+                                    {availablePotions.map((potion) =>
+                <button
+                  key={potion.itemKey}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card from deselecting
+                    handlePotionSelection(mon.id, potion.itemKey);
+                  }}
+                  disabled={stats.currentHp === stats.maxHp}
+                  className="bg-green-500 text-white text-xs px-3 py-1 rounded font-bold hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black shadow-pixel-sm active:translate-y-1 active:shadow-none">
+
+                                            使用 {potion.details.name} (x{potion.quantity})
+                                        </button>
+                )}
+                                </div>
+              }
+                            {!isSwitching && selectedMonsterForPotion === mon.id && availablePotions.length === 0 &&
+              <div className="mt-2 pt-2 border-t border-black/10 text-center text-xs text-gray-600">
+                                    没有可用的药剂。
+                                </div>
+              }
+                        </PixelCard>);
+
+        })}
+            </div>
+        </div>);
+
+};
+
+const DexScreen = ({ onBack }) => {
+  const [selectedMon, setSelectedMon] = useState(null);
+
+  if (selectedMon) {
+    const moves = selectedMon.moves.map((moveKey) => MOVES[moveKey]);
+    return (
+      <div className="flex-1 bg-retro-bg p-4 flex flex-col">
+                <div className="flex justify-between items-center mb-4 text-white">
+                    <h2 className="text-xl font-bold pixel-text-shadow">{selectedMon.name}</h2>
+                    <button onClick={() => setSelectedMon(null)} className="text-sm border border-white px-2 py-1 hover:bg-white hover:text-black">返回列表</button>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-1">
+                    <PixelCard className="!p-3">
+                        <div className="flex flex-col items-center">
+                            <div className="w-24 h-24 bg-black/10 rounded-full mb-2">
+                                <img src={selectedMon.sprite} alt={selectedMon.name} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+                            </div>
+                            <div className="flex gap-2">
+                                {selectedMon.type2 && <TypeBadge type={selectedMon.type2} />}
+                                <TypeBadge type={selectedMon.type} />
+                            </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm font-mono">
+                            <div className="font-bold">生命值:</div> <div>{selectedMon.maxHp}</div>
+                            <div className="font-bold">能量值:</div> <div>{selectedMon.maxMp}</div>
+                            <div className="font-bold">攻击:</div> <div>{selectedMon.atk}</div>
+                            <div className="font-bold">防御:</div> <div>{selectedMon.def}</div>
+                            <div className="font-bold">特攻:</div> <div>{selectedMon.spAtk}</div>
+                            <div className="font-bold">特防:</div> <div>{selectedMon.spDef}</div>
+                            <div className="font-bold">速度:</div> <div>{selectedMon.spd}</div>
+                        </div>
+                        <h3 className="text-lg font-bold mt-4 mb-2 pixel-text-shadow">可学习技能</h3>
+                        <div className="space-y-2">
+                            {moves.map((move) =>
+              <div key={move.name} className="bg-black/5 p-2 rounded border border-black/10 text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold">{move.name}</span>
+                                        <TypeBadge type={move.type} />
+                                    </div>
+                                    <div className="text-xs text-gray-600 mt-1">
+                                        威力: {move.power || '--'} | 消耗: {move.cost}
+                                    </div>
+                                </div>
+              )}
+                        </div>
+                    </PixelCard>
+                </div>
+            </div>);
+
+  }
+
+  return (
+    <div className="flex-1 bg-retro-bg p-4 flex flex-col">
+            <div className="flex justify-between items-center mb-4 text-white">
+                <h2 className="text-xl font-bold pixel-text-shadow">图鉴</h2>
+                <button onClick={onBack} className="text-sm border border-white px-2 py-1 hover:bg-white hover:text-black">返回</button>
+            </div>
+            <div className="flex-1 grid grid-cols-3 gap-3 overflow-y-auto pr-1">
+                {MONSTERS.map((mon) =>
+        <div
+          key={mon.id}
+          onClick={() => setSelectedMon(mon)}
+          className="bg-gray-800 border-2 border-gray-600 p-2 rounded text-center flex flex-col items-center cursor-pointer hover:bg-gray-700 hover:border-yellow-400 transition-all">
+
+                        <img src={mon.sprite} alt={mon.name} className="w-16 h-16 object-contain mb-1" style={{ imageRendering: 'pixelated' }} />
+                        <div className="text-white text-[11px] font-bold">{mon.name}</div>
+                        <div className="flex gap-1 mt-1 transform scale-75">
+                            {mon.type2 && <TypeBadge type={mon.type2} />}
+                            <TypeBadge type={mon.type} />
+                        </div>
+                    </div>
+        )}
+            </div>
+        </div>);
+
+};
+
+const ShopScreen = ({ playerGold, playerInventory, onPurchase, onBack }) => {
+  const allItems = {
+    pokeball: POKEBALLS,
+    potion: POTIONS
+  };
+
+  return (
+    <div className="flex-1 bg-retro-bg p-4 flex flex-col">
+            <div className="flex justify-between items-center mb-4 text-white">
+                <h2 className="text-xl font-bold pixel-text-shadow">商店</h2>
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <i className="fa-solid fa-coins text-yellow-500"></i>
+                    <span>{playerGold}</span>
+                    <button onClick={onBack} className="text-sm border border-white px-2 py-1 hover:bg-white hover:text-black">返回</button>
+                </div>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {Object.entries(allItems).map(([itemType, itemsMap]) =>
+        <React.Fragment key={itemType}>
+                        {Object.entries(itemsMap).map(([key, item]) => {
+            const currentQuantity = playerInventory.find((i) => i.itemKey === key)?.quantity || 0;
+            return (
+              <PixelCard key={key} className="!p-3">
+                                    <div className="flex items-center gap-3">
+                                        <img src={item.sprite} alt={item.name} className="w-12 h-12 object-contain bg-yellow-500" style={{ imageRendering: 'pixelated' }} />
+                                        <div className="flex-1">
+                                            <div className="font-bold text-lg">{item.name}</div>
+                                            <div className="flex items-center gap-1 text-sm text-gray-700 mt-1">
+                                                <i className="fa-solid fa-coins text-yellow-600"></i>
+                                                <span>{item.price}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="text-sm text-gray-600">持有: {currentQuantity}</div>
+                                            <button
+                      onClick={() => onPurchase(itemType, key, 1)}
+                      disabled={playerGold < item.price}
+                      className="bg-yellow-500 text-black px-4 py-1 rounded font-bold hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-yellow-500 shadow-pixel-sm active:translate-y-1 active:shadow-none">
+
+                                                购买
+                                            </button>
+                                        </div>
+                                    </div>
+                                </PixelCard>);
+
+          })}
+                    </React.Fragment>
+        )}
+            </div>
+        </div>);
+
+};
+
+const BagScreen = ({ playerInventory = [], activePlayerMon, activeEnemyMon, onUseItem, onBack, addLog, turn, playerTeam = [], onUsePotion }) => {
+  // Determine if we are in battle context (activeEnemyMon exists)
+  const isBattle = !!activeEnemyMon;
+  // Fallback to active mon if team is missing
+  const effectiveTeam = playerTeam && playerTeam.length > 0 ? playerTeam : (activePlayerMon ? [activePlayerMon] : []);
+
+  return (
+    <UnifiedBagScreen
+      inventory={playerInventory}
+      onClose={onBack}
+      onUseItem={onUseItem}
+      onUsePotion={onUsePotion}
+      team={effectiveTeam}
+      isBattle={isBattle}
+      activeMonId={activePlayerMon?.id}
+      addLog={addLog}
+    />
+  );
+};
+
+
+// --- Main App Logic ---
+const SAVE_GAME_KEY = 'pixelmon_save_data';
+
+const loadGame = () => {
+  try {
+    const savedData = window.localStorage.getItem(SAVE_GAME_KEY);
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      // Basic validation to ensure we're loading a valid object
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.playerTeam)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load game data:", e);
+    window.localStorage.removeItem(SAVE_GAME_KEY); // Clear potentially corrupted data
+  }
+  return null;
+};
+
+const App = () => {
+  const isInitialMount = useRef(true);
+  const [savedGameData] = useState(loadGame);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  // --- State Initialization from Saved Data or Defaults ---
+  const [view, setView] = useState(() => savedGameData ? savedGameData.view : 'map');
+  const [turn, setTurn] = useState('player');
+  const [logs, setLogs] = useState(['在地图上探索吧！']);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(() => !savedGameData);
+  const [participatedMonIds, setParticipatedMonIds] = useState([]);
+
+  // Game State
+  const [playerTeam, setPlayerTeam] = useState(() => savedGameData ? savedGameData.playerTeam : []);
+  const [enemyTeam, setEnemyTeam] = useState([]);
+  const [activePlayerId, setActivePlayerId] = useState(() => savedGameData ? savedGameData.activePlayerId : null);
+  const [activeEnemyId, setActiveEnemyId] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
+  const [playerGold, setPlayerGold] = useState(() => savedGameData ? savedGameData.playerGold : 1000);
+  const [playerInventory, setPlayerInventory] = useState(() => savedGameData ? savedGameData.playerInventory : [
+    { itemType: 'pokeball', itemKey: 'pokeball_basic', quantity: 3 },
+    { itemType: 'potion', itemKey: 'super_potion', quantity: 1 }
+  ]);
+  const [nextPlayerMonsterId, setNextPlayerMonsterId] = useState(() => savedGameData ? savedGameData.nextPlayerMonsterId : 100);
+  const [nextEnemyMonsterId, setNextEnemyMonsterId] = useState(200);
+  const [isThrowingPokeball, setIsThrowingPokeball] = useState(false);
+  const [playerPos, setPlayerPos] = useState(() => savedGameData ? savedGameData.playerPos : { x: 1, y: 1 });
+
+  // Map Level State
+  const [mapLevel, setMapLevel] = useState(() => savedGameData ? (savedGameData.mapLevel || 1) : 1);
+  const [maxReachedLevel, setMaxReachedLevel] = useState(() => savedGameData ? (savedGameData.maxReachedLevel || 1) : 1);
+
+  const initialPlayerMonsters = useMemo(() => [
+    createMonsterInstance(MONSTERS.find((m) => m.name === '皮卡丘'), 1, 'p1')
+  ], []);
+
+  const [notifications, setNotifications] = useState([]);
+
+  // --- Core Game Logic Callbacks ---
+  const addLog = useCallback((msg) => {
+    setLogs((prev) => [...prev, msg]);
+    setTimeout(() => {
+      const el = document.getElementById('battle-log');
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 50);
+  }, []);
+
+  const getBaseMonsterDefinition = useCallback((monsterId) => {
+      const definition = MONSTERS.find(m => m.id === monsterId) || BALANCED_MONSTERS.find(m => m.id === monsterId);
+      if (!definition) console.error("Could not find base monster definition for ID:", monsterId);
+      return definition;
+  }, []);
+
+  // --- Game Save/Load and Initialization Effects ---
+  useEffect(() => {
+    // On mount, if there's no saved data, initialize a new game.
+    if (!savedGameData) {
+      const pTeam = initialPlayerMonsters; // It's already an array of instances
+      setPlayerTeam(pTeam);
+      setActivePlayerId(pTeam[0].id);
+    }
+  }, [savedGameData, initialPlayerMonsters]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+    }
+    if (showLaunchScreen || gameOver) return; // Don't save on launch screen or after game over
+
+    const gameStateToSave = {
+        playerTeam,
+        playerGold,
+        playerInventory,
+        nextPlayerMonsterId,
+        playerPos,
+        view,
+        activePlayerId
+    };
+    try {
+        window.localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameStateToSave));
+    } catch (e) {
+        console.error("Failed to save game data", e);
+    }
+  }, [playerTeam, playerGold, playerInventory, nextPlayerMonsterId, playerPos, view, activePlayerId, showLaunchScreen, gameOver]);
+
+  // --- Other Callbacks & Handlers ---
+  const addNotification = useCallback((message, type = 'info') => {
+    const id = Date.now();
+    setNotifications((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+    }, 3000);
+  }, []);
+
+  const handlePokeballAnimationEnd = useCallback(() => setIsThrowingPokeball(false), []);
+
+  const gainExpAndLevelUp = useCallback((monsterId, xpAmount) => {
+      setPlayerTeam(prevTeam => prevTeam.map(mon => {
+          if (mon.id !== monsterId || mon.level >= 100) return mon;
+          let updatedMon = { ...mon, currentExp: mon.currentExp + xpAmount };
+          while (updatedMon.currentExp >= updatedMon.expToNextLevel && updatedMon.level < 100) {
+              addLog(`${updatedMon.name} 升级了! (Lv.${updatedMon.level} -> Lv.${updatedMon.level + 1})`);
+              addNotification(`${updatedMon.name} 升到了 Lv.${updatedMon.level + 1}!`, 'info');
+              const originalBaseMonster = getBaseMonsterDefinition(mon.baseId);
+              if (!originalBaseMonster) break;
+              updatedMon = createMonsterInstance(
+                  originalBaseMonster, updatedMon.level + 1, updatedMon.id,
+                  null, null, updatedMon.currentExp - updatedMon.expToNextLevel
+              );
+          }
+          return updatedMon;
+      }));
+  }, [addLog, addNotification, getBaseMonsterDefinition]);
+
+  const handleGoToLaunchScreen = useCallback(() => {
+    if (window.confirm("确定要开始新游戏吗？当前进度将会丢失。")) {
+      window.localStorage.removeItem(SAVE_GAME_KEY);
+      window.location.reload();
+    }
+  }, []);
+
+  const activePlayerMon = useMemo(() => playerTeam.find((m) => m.id === activePlayerId), [playerTeam, activePlayerId]);
+  const activeEnemyMon = useMemo(() => enemyTeam.find((m) => m.id === activeEnemyId), [enemyTeam, activeEnemyId]);
+
+  // (All handlers like handleTurn, handleEncounter, etc. remain largely the same)
+  const handleTurn = async (moveKey) => {
+    if (turn !== 'player' || gameOver) return;
+
+    // 1. Player Move
+    const move = MOVES[moveKey];
+
+    if (activePlayerMon.currentMp < move.cost) {
+      addLog("能量不足！");
+      return;
+    }
+
+    // Deduct MP before showing log, feels more responsive
+    setPlayerTeam((prev) => prev.map((m) => m.id === activePlayerId ? { ...m, currentMp: m.currentMp - move.cost } : m));
+
+    addLog(`${activePlayerMon.name} 使用了 ${move.name}!`);
+
+    // Short delay for impact
+    await new Promise((r) => setTimeout(r, 600)); // Delay for log entry
+
+    // Calc Dmg
+    if (move.category !== 'status') {
+      const result = calculateDamage(activePlayerMon, activeEnemyMon, move);
+      const newHp = Math.max(0, activeEnemyMon.currentHp - result.damage);
+
+      // Update Enemy State
+      setEnemyTeam((prev) => prev.map((m) => m.id === activeEnemyId ? { ...m, currentHp: newHp } : m));
+
+      if (result.effectiveness > 1) addLog("效果绝佳！");
+      if (result.effectiveness < 1) addLog("效果不理想...");
+
+      await new Promise((r) => setTimeout(r, 500)); // Delay for attack effect to show
+
+      if (newHp === 0) {
+        addLog(`${activeEnemyMon.name} 倒下了！`);
+
+if (newHp === 0) {
+        addLog(`${activeEnemyMon.name} 倒下了！`);
+
+        const goldWon = Math.floor(Math.random() * activeEnemyMon.level * 2) + 10;
+        setPlayerGold((prev) => prev + goldWon);
+        addLog(`你获得了 ${goldWon} 金币!`);
+
+        const baseXp = Math.floor(activeEnemyMon.level * 15 + Math.random() * 10);
+        const uniqueParticipants = [...new Set([...participatedMonIds, activePlayerId])];
+        const winningParticipants = uniqueParticipants.filter(id => {
+             const mon = playerTeam.find(m => m.id === id);
+             return mon && mon.currentHp > 0;
+        });
+
+        if (winningParticipants.length > 0) {
+             const xpPerMon = Math.floor(baseXp / winningParticipants.length);
+             if (winningParticipants.length === 1) {
+                 addLog(`${playerTeam.find(m => m.id === winningParticipants[0]).name} 获得了 ${baseXp} 经验值!`);
+             } else {
+                 addLog(`队伍获得了 ${baseXp} 总经验 (由 ${winningParticipants.length} 只宝可梦平分)!`);
+             }
+             winningParticipants.forEach(pid => gainExpAndLevelUp(pid, xpPerMon));
+        }
+
+        // Check for remaining enemies
+        const remainingEnemies = enemyTeam.filter(m => m.id !== activeEnemyId && m.currentHp > 0);
+
+        if (remainingEnemies.length > 0) {
+            await new Promise((r) => setTimeout(r, 1500));
+            const nextEnemy = remainingEnemies[0];
+            setActiveEnemyId(nextEnemy.id);
+            addLog(`对手派出了 ${nextEnemy.name} (Lv.${nextEnemy.level})!`);
+            // Reset participated mons for the new enemy (optional, but keeping it simple usually means carrying over or resetting)
+            // Typically in pokemon, participants are per-enemy-kill. We keep the list accumulated?
+            // Actually my XP logic above runs ON KILL. So I should probably reset `participatedMonIds` for the NEXT kill calculation.
+            setParticipatedMonIds([activePlayerId]);
+            return;
+        }
+
+        await new Promise((r) => setTimeout(r, 2000));
+
+        setPlayerTeam(prev => prev.map(m => ({ ...m, currentHp: m.maxHp, currentMp: m.maxMp })));
+        addLog('队伍全员回复了体力与能量！');
+        addLog('赢得了训练家对战！');
+
+        setEnemyTeam([]);
+        setActiveEnemyId(null);
+        addLog('你回到了地图上。');
+        setView('map');
+        setTurn('player');
+        return;
+      }
+
+        const baseXp = Math.floor(activeEnemyMon.level * 15 + Math.random() * 10);
+        const uniqueParticipants = [...new Set([...participatedMonIds, activePlayerId])];
+        const winningParticipants = uniqueParticipants.filter(id => {
+             const mon = playerTeam.find(m => m.id === id);
+             return mon && mon.currentHp > 0;
+        });
+
+        if (winningParticipants.length > 0) {
+             const xpPerMon = Math.floor(baseXp / winningParticipants.length);
+             if (winningParticipants.length === 1) {
+                 addLog(`${playerTeam.find(m => m.id === winningParticipants[0]).name} 获得了 ${baseXp} 经验值!`);
+             } else {
+                 addLog(`队伍获得了 ${baseXp} 总经验 (由 ${winningParticipants.length} 只宝可梦平分)!`);
+             }
+             winningParticipants.forEach(pid => gainExpAndLevelUp(pid, xpPerMon));
+        }
+
+        await new Promise((r) => setTimeout(r, 2000));
+
+        setPlayerTeam(prev => prev.map(m => ({ ...m, currentHp: m.maxHp, currentMp: m.maxMp })));
+        addLog('队伍全员回复了体力与能量！');
+
+        setEnemyTeam([]);
+        setActiveEnemyId(null);
+        addLog('你回到了地图上。');
+        setView('map');
+        setTurn('player');
+        return;
+      }
+    } else {
+      if (move.effect === 'heal') {
+        const healAmount = Math.floor(activePlayerMon.maxHp / 2);
+        const newHp = Math.min(activePlayerMon.maxHp, activePlayerMon.currentHp + healAmount);
+        setPlayerTeam((prev) => prev.map((m) => m.id === activePlayerId ? { ...m, currentHp: newHp } : m));
+        addLog(`${activePlayerMon.name} 恢复了体力！`);
+      }
+    }
+    setTurn('enemy');
+  };
+
+const handleEncounter = useCallback((suggestedWildLevel, terrainType) => {
+    // 筛选池：随着层级提高，稀有度增加
+    // mapLevel 1-2: ID 1-30 (基础)
+    // mapLevel 3-5: ID 1-50 (中阶)
+    // mapLevel 6+: ID 1-69 (全图鉴/传说)
+    let filteredMonsters = MONSTERS;
+    if (mapLevel <= 2) {
+      filteredMonsters = MONSTERS.filter(m => m.id <= 30);
+    } else if (mapLevel <= 5) {
+      filteredMonsters = MONSTERS.filter(m => m.id <= 50);
+    }
+
+    const randomBaseMonster = filteredMonsters[Math.floor(Math.random() * filteredMonsters.length)];
+    const playerAvgLevel = playerTeam.reduce((sum, mon) => sum + mon.level, 0) / playerTeam.length;
+    
+    // 等级随层级提升：每层基础等级+2
+    const levelBonus = (mapLevel - 1) * 2;
+    const newEnemyLevel = Math.max(1, Math.floor(playerAvgLevel) - 1 + Math.floor(Math.random() * 3) + levelBonus);
+    const newEnemyInstance = createMonsterInstance(randomBaseMonster, newEnemyLevel, `e${nextEnemyMonsterId}`);
+
+    setEnemyTeam([newEnemyInstance]);
+    setActiveEnemyId(newEnemyInstance.id);
+    setNextEnemyMonsterId((prev) => prev + 1);
+    setParticipatedMonIds([activePlayerId]);
+
+    setLogs([`在 Lv.${mapLevel} 地图遇到了野生的 ${newEnemyInstance.name} (Lv.${newEnemyInstance.level}) !`]);
+    setView('battle');
+  }, [playerTeam, nextEnemyMonsterId, getBaseMonsterDefinition, activePlayerId, mapLevel]);
+
+  const handlePurchase = (itemType, itemKey, amount) => {
+    let itemDetails = itemType === 'pokeball' ? POKEBALLS[itemKey] : POTIONS[itemKey];
+    if (!itemDetails) { addLog("商店: 无效的物品。"); return; }
+    if (playerGold < itemDetails.price * amount) { addLog("商店: 金币不足。"); return; }
+    setPlayerGold((prev) => prev - itemDetails.price * amount);
+    setPlayerInventory((prev) => {
+      const existingItem = prev.find((i) => i.itemKey === itemKey && i.itemType === itemType);
+      if (existingItem) {
+        return prev.map((i) => i.itemKey === itemKey && i.itemType === itemType ? { ...i, quantity: i.quantity + amount } : i);
+      }
+      return [...prev, { itemType, itemKey, quantity: amount }];
+    });
+    addLog(`商店: 购买了 ${amount} 个 ${itemDetails.name}。`);
+  };
+
+const handleCollect = useCallback((type, amount) => {
+    if (type === 'gold') {
+      const goldAmount = amount || 50;
+      setPlayerGold((prev) => prev + goldAmount);
+      addNotification(`获得: ${goldAmount} 金币!`, 'gold');
+    } else if (type === 'item') {
+      const allItems = [...Object.keys(POKEBALLS), ...Object.keys(POTIONS)];
+      const randomKey = allItems[Math.floor(Math.random() * allItems.length)];
+      const isBall = !!POKEBALLS[randomKey];
+      const itemType = isBall ? 'pokeball' : 'potion';
+      const itemDetails = isBall ? POKEBALLS[randomKey] : POTIONS[randomKey];
+
+      setPlayerInventory((prev) => {
+        const existing = prev.find((i) => i.itemKey === randomKey && i.itemType === itemType);
+        if (existing) {
+          return prev.map((i) => i.itemKey === randomKey && i.itemType === itemType ? { ...i, quantity: i.quantity + 1 } : i);
+        }
+        return [...prev, { itemType, itemKey: randomKey, quantity: 1 }];
+      });
+      addNotification(`获得: ${itemDetails.name}!`, 'item');
+    } else if (type === 'heal') {
+      setPlayerTeam((prev) => prev.map(m => ({ ...m, currentHp: m.maxHp, currentMp: m.maxMp })));
+      addNotification("队伍全员体力已恢复!", 'info');
+} else if (type === 'info') {
+      const tips = [
+        "深色高草丛里的野生宝可梦更多且更强。",
+        "沙地走起来比较费劲，但可能有隐藏宝藏。",
+        "看到果树记得采集，果实可以恢复少量体力。",
+        "神秘商人有时会带着罕见的宝可梦出现。",
+        "属性克制是获胜的关键。",
+        "队伍首位的宝可梦会首先出战。"
+      ];
+      const tip = tips[Math.floor(Math.random() * tips.length)];
+      addNotification(`提示: ${tip}`, 'info');
+    } else if (type === 'berry') {
+      const healAmount = 20;
+      setPlayerTeam(prev => prev.map(m => ({ ...m, currentHp: Math.min(m.maxHp, m.currentHp + healAmount) })));
+      addNotification(`采集到甜甜蜜果: 全员恢复了 ${healAmount} 点体力!`, 'item');
+    } else if (type === 'merchant') {
+      const gifts = [
+        { name: '超级球', action: () => handlePurchase('pokeball', 'pokeball_great', 0) }, // 免费赠送逻辑
+        { name: '大量金币', action: () => setPlayerGold(prev => prev + 200) }
+      ];
+      const gift = gifts[Math.floor(Math.random() * gifts.length)];
+      gift.action();
+      addNotification(`神秘商人赠送了: ${gift.name}!`, 'gold');
+    } else if (type === 'trainer') {
+      const trainerTeamSize = Math.floor(Math.random() * 2) + 2; // 2 or 3 mons
+      const newTeam = [];
+      const playerAvgLevel = playerTeam.reduce((sum, mon) => sum + mon.level, 0) / playerTeam.length;
+
+      for(let i=0; i<trainerTeamSize; i++) {
+          const randomBase = MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
+          const level = Math.max(1, Math.floor(playerAvgLevel) + Math.floor(Math.random() * 3) - 1);
+          // Use a temporary ID generator for trainer mons
+          const id = `t${Date.now()}_${i}`;
+          newTeam.push(createMonsterInstance(randomBase, level, id));
+      }
+
+      setEnemyTeam(newTeam);
+      setActiveEnemyId(newTeam[0].id);
+      setParticipatedMonIds([activePlayerId]);
+      setLogs([`训练家向你发起了挑战!`, `对方派出了 ${newTeam[0].name} (Lv.${newTeam[0].level})!`]);
+      setView('battle');
+    }
+  }, [addNotification, playerTeam, activePlayerId]);
+
+  const handleUseItem = async (itemKey) => {
+    if (turn !== 'player' || gameOver) return;
+    const inventoryItem = playerInventory.find((i) => i.itemKey === itemKey && i.itemType === 'pokeball');
+    if (!inventoryItem || inventoryItem.quantity <= 0) { addLog("背包: 没有此精灵球。"); return; }
+    const pokeball = POKEBALLS[itemKey];
+    if (!pokeball) { addLog("背包: 无效的精灵球。"); return; }
+
+    setView('battle');
+    addLog(`${activePlayerMon.name} 使用了 ${pokeball.name}!`);
+    setIsThrowingPokeball(true);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    setPlayerInventory((prev) => prev.map((i) => i.itemKey === itemKey && i.itemType === 'pokeball' ? { ...i, quantity: i.quantity - 1 } : i).filter((i) => i.quantity > 0));
+
+    const baseCatchRate = 50;
+    const hpFactor = (activeEnemyMon.maxHp - activeEnemyMon.currentHp) / activeEnemyMon.maxHp;
+    const mpFactor = (activeEnemyMon.maxMp - activeEnemyMon.currentMp) / activeEnemyMon.maxMp;
+    let finalCatchRate = (baseCatchRate + hpFactor * 20 + mpFactor * 10) * pokeball.catchRateMultiplier;
+    finalCatchRate = Math.min(finalCatchRate, 95);
+
+    if (Math.random() * 100 < finalCatchRate) {
+      addLog(`成功捕捉到 ${activeEnemyMon.name}!`);
+      const caughtMonster = {
+        ...activeEnemyMon, id: `p${nextPlayerMonsterId}`, currentHp: activeEnemyMon.maxHp, currentMp: activeEnemyMon.maxMp,
+        currentExp: 0, expToNextLevel: getExpToNextLevel(activeEnemyMon.level)
+      };
+      setPlayerTeam((prev) => {
+          const healedOldTeam = prev.map(m => ({ ...m, currentHp: m.maxHp, currentMp: m.maxMp }));
+          return [...healedOldTeam, caughtMonster];
+      });
+      addLog('队伍全员回复了体力与能量！');
+      setNextPlayerMonsterId((prev) => prev + 1);
+      addLog(`${caughtMonster.name} 已被传送到你的队伍中!`);
+
+      const baseXp = Math.floor(activeEnemyMon.level * 15 + Math.random() * 10);
+      const uniqueParticipants = [...new Set([...participatedMonIds, activePlayerId])];
+      const winningParticipants = uniqueParticipants.filter(id => {
+           const mon = playerTeam.find(m => m.id === id);
+           return mon && mon.currentHp > 0;
+      });
+
+      if (winningParticipants.length > 0) {
+           const xpPerMon = Math.floor(baseXp / winningParticipants.length);
+           if (winningParticipants.length === 1) {
+               addLog(`${playerTeam.find(m => m.id === winningParticipants[0]).name} 获得了 ${baseXp} 经验值 (捕获)!`);
+           } else {
+               addLog(`队伍获得了 ${baseXp} 总经验 (捕获，由 ${winningParticipants.length} 只宝可梦平分)!`);
+           }
+           winningParticipants.forEach(pid => gainExpAndLevelUp(pid, xpPerMon));
+      }
+
+      await new Promise((r) => setTimeout(r, 2000));
+      setEnemyTeam([]);
+      setActiveEnemyId(null);
+      addLog('你回到了地图上。');
+      setView('map');
+      setTurn('player');
+    } else {
+      addLog(`哎呀！${activeEnemyMon.name} 挣脱了！`);
+      setTurn('enemy');
+    }
+  };
+
+  const handleRun = () => {
+    if (turn !== 'player') return;
+    addLog('你尝试逃跑...');
+    if (Math.random() < 0.75) {
+      addLog('成功逃跑了!');
+      setTimeout(() => {
+        setView('map');
+        setEnemyTeam([]);
+        setActiveEnemyId(null);
+        setLogs(['你回到了地图上。']);
+      }, 1500);
+    } else {
+      addLog('逃跑失败!');
+      setTimeout(() => setTurn('enemy'), 1000);
+    }
+  };
+
+  const handleUsePotion = useCallback((monsterId, potionKey) => {
+    const potion = POTIONS[potionKey];
+    if (!potion) { addLog("药剂: 无效的药剂。"); return; }
+    const inventoryItem = playerInventory.find((i) => i.itemType === 'potion' && i.itemKey === potionKey);
+    if (!inventoryItem || inventoryItem.quantity <= 0) { addLog("药剂: 没有此药剂。"); return; }
+
+    setPlayerTeam((prevTeam) => {
+      const targetMon = prevTeam.find((m) => m.id === monsterId);
+      if (!targetMon || targetMon.currentHp === targetMon.maxHp) {
+        if (targetMon) addLog(`${targetMon.name} 的体力已满。`);
+        return prevTeam;
+      }
+      const newHp = Math.min(targetMon.maxHp, targetMon.currentHp + potion.healAmount);
+      addLog(`${targetMon.name} 恢复了 ${newHp - targetMon.currentHp} 点体力！`);
+      setPlayerInventory((prevInv) => prevInv.map((i) => i.itemType === 'potion' && i.itemKey === potionKey ? { ...i, quantity: i.quantity - 1 } : i).filter((i) => i.quantity > 0));
+      return prevTeam.map((m) => m.id === monsterId ? { ...m, currentHp: newHp } : m);
+    });
+  }, [playerInventory, addLog]);
+
+const handleReorderTeam = useCallback((newTeam) => {
+    setPlayerTeam(newTeam);
+    if (newTeam.length > 0 && newTeam[0].id !== activePlayerId) {
+      setActivePlayerId(newTeam[0].id);
+      addLog(`首发宝可梦已切换为 ${newTeam[0].name}!`);
+    } else {
+      addLog("队伍顺序已调整。");
+    }
+  }, [addLog, activePlayerId]);
+
+  // Effect to control body scrolling based on current view
+  useEffect(() => {
+    const nonScrollingViews = ['map', 'battle'];
+    if (showLaunchScreen || nonScrollingViews.includes(view)) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+  }, [showLaunchScreen, view]);
+
+  useEffect(() => {
+    if (turn === 'enemy' && !gameOver && activeEnemyMon && activeEnemyMon.currentHp > 0 && !isThrowingPokeball) {
+      const timer = setTimeout(async () => {
+        const currentEnemyMon = enemyTeam.find(m => m.id === activeEnemyId);
+        const currentPlayerMon = playerTeam.find(m => m.id === activePlayerId);
+        if (!currentEnemyMon || !currentPlayerMon) { if (!gameOver) setTurn('player'); return; }
+
+        const affordableMoves = currentEnemyMon.moves.filter((mk) => MOVES[mk].cost <= currentEnemyMon.currentMp);
+        if (affordableMoves.length === 0) {
+          addLog(`敌方 ${currentEnemyMon.name} 能量不足，无法行动!`);
+          if (!gameOver) setTurn('player'); return;
+        }
+        const randomMoveKey = affordableMoves[Math.floor(Math.random() * affordableMoves.length)];
+        const move = MOVES[randomMoveKey];
+        setEnemyTeam((prev) => prev.map((m) => m.id === currentEnemyMon.id ? { ...m, currentMp: m.currentMp - move.cost } : m));
+        addLog(`敌方 ${currentEnemyMon.name} 使用了 ${move.name}!`);
+        await new Promise((r) => setTimeout(r, 600));
+
+        if (move.category !== 'status') {
+          const result = calculateDamage(currentEnemyMon, currentPlayerMon, move);
+          const newHp = Math.max(0, currentPlayerMon.currentHp - result.damage);
+          setPlayerTeam((prev) => prev.map((m) => m.id === currentPlayerMon.id ? { ...m, currentHp: newHp } : m));
+          if (result.effectiveness > 1) addLog("效果绝佳！");
+          if (result.effectiveness < 1) addLog("效果不理想...");
+          if (newHp === 0) {
+            addLog(`${currentPlayerMon.name} 倒下了！`);
+            const hasAlive = playerTeam.some((m) => m.id !== currentPlayerMon.id && m.currentHp > 0);
+            if (!hasAlive) { setGameOver(true); addLog("你输了... 眼前一黑。"); } else { setView('team'); }
+          }
+        } else if (move.effect === 'heal') {
+            const healAmount = Math.floor(currentEnemyMon.maxHp / 2);
+            const newHp = Math.min(currentEnemyMon.maxHp, currentEnemyMon.currentHp + healAmount);
+            setEnemyTeam((prev) => prev.map((m) => m.id === currentEnemyMon.id ? { ...m, currentHp: newHp } : m));
+            addLog(`${currentEnemyMon.name} 恢复了体力！`);
+        }
+        if (!gameOver) setTurn('player');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [turn, gameOver, playerTeam, enemyTeam, activePlayerId, activeEnemyId, isThrowingPokeball, addLog]);
+
+  const handleSwitch = (newId) => {
+    const isForced = activePlayerMon && activePlayerMon.currentHp <= 0;
+    const newMonster = playerTeam.find((m) => m.id === newId);
+    if (!newMonster || newMonster.currentHp <= 0 || newId === activePlayerId) { addLog("无法切换到该宝可梦。"); return; }
+    const oldMonName = activePlayerMon ? activePlayerMon.name : '宝可梦';
+    setParticipatedMonIds((prev) => [...prev, activePlayerId]);
+    setActivePlayerId(newId);
+    addLog(`回来吧 ${oldMonName}! 去吧 ${newMonster.name}!`);
+    if (!isForced) setTurn('enemy');
+  };
+
+const handleStartGame = useCallback(() => setShowLaunchScreen(false), []);
+
+  const handleSelectLevel = (level) => {
+    setMapLevel(level);
+    if (level > maxReachedLevel) {
+      setMaxReachedLevel(level);
+    }
+    // 修复：传入当前选中的层级 ID，以生成或从缓存加载对应的地图
+    MAP_GRID = generateMaze(20, 15, level);
+    setPlayerPos({ x: 1, y: 1 });
+    setView('map');
+    addNotification(`进入了层级 ${level}`, 'info');
+  };
+
+  if (showLaunchScreen) return <LaunchScreen onStartGame={handleStartGame} />;
+  if (!activePlayerMon) return <div className="text-white bg-retro-bg flex items-center justify-center h-full">加载中...</div>;
+  if (view === 'battle' && !activeEnemyMon) return <div className="text-white bg-retro-bg flex items-center justify-center h-full">遭遇战...</div>;
+
+  return (
+    <div className="h-full w-full max-w-md mx-auto flex flex-col bg-retro-bg shadow-2xl relative">
+      <NotificationToast notifications={notifications} />
+      <div className="flex-1 min-h-0 flex flex-col relative z-10">
+        {view === 'map' && <MapScreen playerTeam={playerTeam} onEncounter={handleEncounter} onNavigate={setView} onCollect={handleCollect} playerPos={playerPos} onPlayerMove={setPlayerPos} />}
+        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={setView} onRun={handleRun} playerTeam={playerTeam} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} addLog={addLog} isThrowingPokeball={isThrowingPokeball} onPokeballAnimationEnd={handlePokeballAnimationEnd} onGoToLaunchScreen={handleGoToLaunchScreen} />}
+        {view === 'team' && <TeamScreen team={playerTeam} activeId={activePlayerId} onSelect={activeEnemyMon ? handleSwitch : undefined} onBack={() => setView(activeEnemyMon ? 'battle' : 'map')} playerInventory={playerInventory} onUsePotion={handleUsePotion} onReorderTeam={handleReorderTeam} />}
+        {view === 'dex' && <DexScreen onBack={() => setView('map')} />}
+        {view === 'shop' && <ShopScreen playerGold={playerGold} playerInventory={playerInventory} onPurchase={handlePurchase} onBack={() => setView('map')} />}
+        {view === 'bag' && <BagScreen playerInventory={playerInventory} playerTeam={playerTeam} activePlayerMon={activePlayerMon} activeEnemyMon={activeEnemyMon} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onBack={() => setView(activeEnemyMon ? 'battle' : 'map')} addLog={addLog} turn={turn} />}
+        {view === 'levelSelect' && (
+          <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6">
+            <div className="bg-retro-panel pixel-border p-6 w-full max-w-xs text-center">
+              <h2 className="text-xl font-bold mb-4 text-black flex items-center justify-center gap-2">
+                <i className="fa-solid fa-stairs"></i> 选择地图层级
+              </h2>
+              <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto no-scrollbar mb-6 p-1">
+                {Array.from({ length: maxReachedLevel }, (_, i) => i + 1).map(lv => (
+                  <button
+                    key={lv}
+                    onClick={() => handleSelectLevel(lv)}
+                    className={`h-12 border-2 border-black rounded font-bold shadow-pixel-sm active:shadow-none active:translate-y-0.5 transition-all ${
+                      lv === mapLevel ? 'bg-retro-blue text-white' : 'bg-white hover:bg-gray-100'
+                    }`}
+                  >
+                    {lv}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleSelectLevel(maxReachedLevel + 1)}
+                  className="h-12 bg-retro-green text-white border-2 border-black rounded font-bold shadow-pixel-sm active:shadow-none active:translate-y-0.5 animate-pulse"
+                >
+                  新层级
+                </button>
+              </div>
+              <button
+                onClick={() => setView('map')}
+                className="w-full py-2 bg-gray-500 text-white rounded border-2 border-black shadow-pixel-sm active:translate-y-1"
+              >
+                返回
+              </button>
+            </div>
+          </div>
+        )}
+        {gameOver && <div className="absolute inset-0 bg-black/80 flex items-center justify-center flex-col z-50 animate-bounce-in">
+          <div className="bg-retro-panel p-6 border-4 border-white rounded text-center">
+            <h2 className="text-2xl font-bold mb-4">{playerTeam.some((m) => m.currentHp > 0) ? '胜利!' : '失败'}</h2>
+            <button onClick={handleGoToLaunchScreen} className="bg-retro-accent text-white px-6 py-2 rounded font-bold hover:bg-red-600 border-2 border-black shadow-pixel-sm active:translate-y-1 active:shadow-none">
+              重新开始
+            </button>
+          </div>
+        </div>}
+      </div>
+    </div>
+  );
+};
+
+
+// --- Notification System ---
+const NotificationToast = ({ notifications }) => {
+  if (notifications.length === 0) return null;
+
+  return (
+    <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[9000] flex flex-col gap-2 w-full max-w-sm pointer-events-none px-4">
+      {notifications.map((notif) =>
+      <div key={notif.id} className="bg-retro-panel border-4 border-black p-3 shadow-pixel animate-bounce-in flex items-center gap-3 pixel-border relative">
+            <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center border-2 border-black ${notif.type === 'gold' ? 'bg-yellow-400' : 'bg-blue-400'}`}>
+                <i className={`fa-solid ${notif.type === 'gold' ? 'fa-coins text-yellow-900' : 'fa-gift text-white'} text-lg`}></i>
+            </div>
+            <div className="flex-1 font-bold font-mono text-gray-800 leading-tight">
+                {notif.message}
+            </div>
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-1 h-1 bg-white/50"></div>
+        </div>
+      )}
+    </div>);
+
+};
+
+const GameRoot = ({ children }) => {
+  const [notifications, setNotifications] = useState([]);
+
+  const addNotification = useCallback((message) => {
+    const id = Date.now() + Math.random();
+    // Determine type based on content
+    const type = message.includes('金币') || message.includes('Gold') ? 'gold' : 'item';
+    // Clean up debug text if present
+    const cleanMessage = message.replace('(需完善App逻辑以保存)', '').replace('获得:', '获得: ').trim();
+
+    setNotifications((prev) => [...prev, { id, message: cleanMessage, type }]);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    // Intercept window.alert for collection messages
+    const originalAlert = window.alert;
+    window.alert = (msg) => {
+      // Check for collection messages (Gold or Items)
+      if (typeof msg === 'string' && (msg.includes('获得:') || msg.includes('Found') || msg.includes('You got'))) {
+        addNotification(msg);
+      } else {
+        originalAlert(msg);
+      }
+    };
+
+    return () => {
+      window.alert = originalAlert;
+    };
+  }, [addNotification]);
+
+  return (
+    <>
+      {children}
+      <NotificationToast notifications={notifications} />
+    </>);
+
+};
+
+// Render
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <ErrorBoundary>
+        <GameRoot>
+            <App />
+        </GameRoot>
+    </ErrorBoundary>
+);;</script>
+
+  <script>
+      (function(){
+          if(window.SPARK_VERTEX_ID) return;
+          window.SPARK_VERTEX_ID = "garqlj6xkjs1vkiwrqxywk";
+      })();
+  </script>
+</body>
+</html>
+};

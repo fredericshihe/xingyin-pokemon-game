@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="960" viewBox="0 0 1280 960" role="img" aria-labelledby="title desc">
+  <title id="title">100x100 新手山谷扩展规划图</title>
+  <desc id="desc">保留现有 44x36 地图，从东侧和南侧扩展到 100x100，规划道路、水体、区域和 Kenney 素材分布。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fbf4; }
+      .board { fill: #d8f0c8; stroke: #1f2937; stroke-width: 3; }
+      .zone { stroke: rgba(15,23,42,.34); stroke-width: 1.2; }
+      .old { fill: #98d47b; stroke: #064e3b; stroke-width: 3; }
+      .flower { fill: #bde986; }
+      .wetland { fill: #98d9b8; }
+      .coast { fill: #b9e7de; }
+      .pine { fill: #6eaa63; }
+      .outpost { fill: #d6c07a; }
+      .mushroom { fill: #5b8f58; }
+      .meadow { fill: #d4ee8f; }
+      .badland { fill: #cfa36b; }
+      .water { fill: #62cfe0; stroke: #2e9ec3; stroke-width: 2; opacity: .86; }
+      .deep { fill: #2e9ec3; opacity: .42; }
+      .road-edge { fill: none; stroke: #b98b55; stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; opacity: .6; }
+      .road { fill: none; stroke: #e3c184; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+      .trail { fill: none; stroke: #87c66d; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 10; opacity: .9; }
+      .bridge { fill: none; stroke: #8b5a2b; stroke-width: 13; stroke-linecap: round; }
+      .label { font: 700 17px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .small { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #334155; }
+      .tiny { font: 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .coord { font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #475569; }
+      .legendTitle { font: 700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .iconText { font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI Emoji", sans-serif; fill: #111827; dominant-baseline: middle; text-anchor: middle; }
+      .callout { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .arrow { stroke: #0f766e; stroke-width: 2.2; fill: none; marker-end: url(#arrowHead); }
+      .grid { stroke: rgba(15,23,42,.08); stroke-width: .7; }
+    </style>
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+    <symbol id="tree" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="-2" r="9" fill="#2f7d46"/>
+      <rect x="-2" y="4" width="4" height="7" rx="1" fill="#7a4b2a"/>
+    </symbol>
+    <symbol id="pineTree" viewBox="-12 -12 24 24">
+      <path d="M0-12 9 3H5l6 8H-11l6-8h-4z" fill="#1f6f45"/>
+      <rect x="-2" y="5" width="4" height="6" fill="#6b4424"/>
+    </symbol>
+    <symbol id="rock" viewBox="-12 -12 24 24">
+      <path d="M-10 5 -5-7 5-9 11 1 5 8 -6 9z" fill="#7c8794"/>
+      <path d="M-4-5 2-7 6-1" fill="none" stroke="#a8b0ba" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="tent" viewBox="-12 -12 24 24">
+      <path d="M-10 8 0-10 10 8z" fill="#eab308" stroke="#7c4a03" stroke-width="1.5"/>
+      <path d="M0-10 0 8" stroke="#7c4a03" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="crate" viewBox="-12 -12 24 24">
+      <rect x="-9" y="-8" width="18" height="16" rx="2" fill="#a16207" stroke="#713f12" stroke-width="1.6"/>
+      <path d="M-8-7 8 7M8-7-8 7M-9 0H9" stroke="#facc15" stroke-width="1.2" opacity=".7"/>
+    </symbol>
+    <symbol id="barrel" viewBox="-12 -12 24 24">
+      <ellipse cx="0" cy="-7" rx="8" ry="3" fill="#b45309"/>
+      <path d="M-8-7v14c0 2 16 2 16 0V-7" fill="#92400e"/>
+      <ellipse cx="0" cy="7" rx="8" ry="3" fill="#78350f"/>
+      <path d="M-8-2H8M-8 4H8" stroke="#fbbf24" stroke-width="1.1"/>
+    </symbol>
+    <symbol id="sign" viewBox="-12 -12 24 24">
+      <rect x="-8" y="-8" width="16" height="8" rx="1.5" fill="#b45309" stroke="#78350f" stroke-width="1.4"/>
+      <rect x="-1.5" y="0" width="3" height="10" fill="#78350f"/>
+    </symbol>
+    <symbol id="flower" viewBox="-12 -12 24 24">
+      <circle cx="0" cy="0" r="3" fill="#facc15"/>
+      <circle cx="-5" cy="0" r="4" fill="#ef4444"/>
+      <circle cx="5" cy="0" r="4" fill="#f97316"/>
+      <circle cx="0" cy="-5" r="4" fill="#fef08a"/>
+      <circle cx="0" cy="5" r="4" fill="#fb7185"/>
+    </symbol>
+    <symbol id="mushroomIcon" viewBox="-12 -12 24 24">
+      <path d="M-10 0a10 8 0 0 1 20 0z" fill="#dc2626"/>
+      <circle cx="-4" cy="-3" r="2" fill="#fee2e2"/>
+      <circle cx="4" cy="-4" r="1.8" fill="#fee2e2"/>
+      <rect x="-3" y="0" width="6" height="9" rx="2" fill="#f5e8d1"/>
+    </symbol>
+    <symbol id="dock" viewBox="-12 -12 24 24">
+      <rect x="-10" y="-3" width="20" height="6" fill="#8b5a2b"/>
+      <path d="M-8-7v14M-3-7v14M2-7v14M7-7v14" stroke="#f2d09b" stroke-width="1"/>
+    </symbol>
+    <pattern id="grid10" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M80 0H0V80" class="grid" fill="none"/>
+    </pattern>
+  </defs>
+
+  <rect class="bg" width="1280" height="960"/>
+  <text x="40" y="28" class="legendTitle">新手山谷 100x100 扩展设计稿：旧图不移动，向东与向南扩展</text>
+  <text x="40" y="52" class="small">比例：1 格 = 1 tile。旧 44x36 地图完整保留在左上角坐标 0..43 / 0..35，避免旧存档坐标迁移风险。</text>
+
+  <g id="map" transform="translate(40 80)">
+    <rect class="board" x="0" y="0" width="800" height="800" rx="8"/>
+    <rect x="0" y="0" width="800" height="800" fill="url(#grid10)" opacity=".9"/>
+
+    <!-- Regional blocks: 100 tiles * 8 px -->
+    <rect class="zone old" x="0" y="0" width="352" height="288" rx="5"/>
+    <rect class="zone flower" x="352" y="0" width="224" height="192" rx="5"/>
+    <rect class="zone wetland" x="352" y="192" width="224" height="256" rx="5"/>
+    <rect class="zone coast" x="576" y="0" width="224" height="448" rx="5"/>
+    <rect class="zone pine" x="0" y="288" width="240" height="240" rx="5"/>
+    <rect class="zone outpost" x="240" y="288" width="240" height="240" rx="5"/>
+    <rect class="zone mushroom" x="0" y="528" width="240" height="272" rx="5"/>
+    <rect class="zone meadow" x="240" y="528" width="256" height="272" rx="5"/>
+    <rect class="zone badland" x="496" y="448" width="304" height="352" rx="5"/>
+
+    <!-- Water plan -->
+    <ellipse class="water" cx="250" cy="160" rx="52" ry="34"/>
+    <ellipse class="deep" cx="260" cy="164" rx="23" ry="15"/>
+    <path class="water" d="M310 180 C390 150 445 210 510 232 C588 258 648 216 742 252 L792 296 C705 340 628 332 545 300 C478 274 418 260 340 306 C316 282 302 232 310 180Z"/>
+    <ellipse class="deep" cx="564" cy="264" rx="98" ry="34"/>
+    <ellipse class="water" cx="520" cy="350" rx="62" ry="48"/>
+    <ellipse class="water" cx="664" cy="410" rx="60" ry="52"/>
+    <path class="water" d="M736 128 C800 152 812 300 770 424 C738 522 760 608 812 690 L812 814 L704 814 C662 716 658 620 682 526 C706 432 698 350 650 280 C668 220 700 164 736 128Z"/>
+
+    <!-- Road network -->
+    <path class="road-edge" d="M40 240 C80 240 112 226 144 216 C186 202 206 172 232 148 C268 124 310 124 344 122 C395 118 450 96 528 132 C604 166 674 186 728 256"/>
+    <path class="road" d="M40 240 C80 240 112 226 144 216 C186 202 206 172 232 148 C268 124 310 124 344 122 C395 118 450 96 528 132 C604 166 674 186 728 256"/>
+
+    <path class="road-edge" d="M304 208 C374 250 422 292 448 360 C424 424 354 454 288 424 C238 392 152 372 96 332 C70 306 50 270 40 240"/>
+    <path class="road" d="M304 208 C374 250 422 292 448 360 C424 424 354 454 288 424 C238 392 152 372 96 332 C70 306 50 270 40 240"/>
+
+    <path class="road-edge" d="M392 440 C380 520 392 624 480 718 C560 760 676 720 736 604 C762 516 754 396 728 256"/>
+    <path class="road" d="M392 440 C380 520 392 624 480 718 C560 760 676 720 736 604 C762 516 754 396 728 256"/>
+
+    <path class="road-edge" d="M96 332 C72 410 76 508 112 608 C152 684 226 716 324 720"/>
+    <path class="road" d="M96 332 C72 410 76 508 112 608 C152 684 226 716 324 720"/>
+
+    <path class="trail" d="M196 394 C250 430 302 438 392 440"/>
+    <path class="trail" d="M120 610 C86 658 70 706 84 766"/>
+    <path class="trail" d="M520 350 C580 402 610 462 612 552"/>
+    <path class="trail" d="M508 708 C548 654 596 614 668 606"/>
+
+    <line class="bridge" x1="160" y1="224" x2="160" y2="262"/>
+    <line class="bridge" x1="438" y1="298" x2="488" y2="328"/>
+    <line class="bridge" x1="690" y1="244" x2="738" y2="272"/>
+    <line class="bridge" x1="664" y1="486" x2="716" y2="520"/>
+
+    <!-- Existing-map internal hints -->
+    <path class="road" d="M40 240 C112 240 142 214 184 176 C208 158 218 132 232 120 C270 102 306 116 312 120"/>
+    <ellipse cx="248" cy="158" rx="46" ry="32" fill="none" stroke="#0284c7" stroke-width="2" stroke-dasharray="5 4"/>
+    <rect x="0" y="0" width="352" height="288" fill="none" stroke="#064e3b" stroke-width="4" stroke-dasharray="10 5"/>
+
+    <!-- Landmarks / assets -->
+    <use href="#tent" x="26" y="252" width="26" height="26"/>
+    <use href="#sign" x="64" y="232" width="22" height="22"/>
+    <use href="#tree" x="90" y="50" width="24" height="24"/>
+    <use href="#mushroomIcon" x="112" y="158" width="22" height="22"/>
+    <use href="#rock" x="184" y="214" width="24" height="24"/>
+
+    <use href="#flower" x="432" y="74" width="22" height="22"/>
+    <use href="#flower" x="498" y="126" width="22" height="22"/>
+    <use href="#rock" x="528" y="90" width="24" height="24"/>
+    <use href="#sign" x="470" y="154" width="20" height="20"/>
+
+    <use href="#pineTree" x="48" y="390" width="28" height="28"/>
+    <use href="#pineTree" x="118" y="450" width="28" height="28"/>
+    <use href="#rock" x="180" y="356" width="24" height="24"/>
+
+    <use href="#tent" x="302" y="392" width="28" height="28"/>
+    <use href="#crate" x="336" y="420" width="24" height="24"/>
+    <use href="#barrel" x="370" y="402" width="24" height="24"/>
+    <use href="#sign" x="404" y="448" width="22" height="22"/>
+
+    <use href="#mushroomIcon" x="70" y="650" width="28" height="28"/>
+    <use href="#mushroomIcon" x="154" y="716" width="28" height="28"/>
+    <use href="#tree" x="202" y="610" width="28" height="28"/>
+
+    <use href="#flower" x="320" y="650" width="24" height="24"/>
+    <use href="#flower" x="420" y="734" width="24" height="24"/>
+    <use href="#tree" x="456" y="616" width="24" height="24"/>
+
+    <use href="#dock" x="720" y="296" width="28" height="28"/>
+    <use href="#rock" x="688" y="132" width="26" height="26"/>
+    <use href="#crate" x="742" y="360" width="24" height="24"/>
+    <use href="#barrel" x="704" y="418" width="24" height="24"/>
+
+    <use href="#rock" x="596" y="588" width="28" height="28"/>
+    <use href="#crate" x="660" y="650" width="24" height="24"/>
+    <use href="#sign" x="722" y="584" width="22" height="22"/>
+    <use href="#barrel" x="708" y="724" width="24" height="24"/>
+
+    <!-- Labels -->
+    <text x="14" y="26" class="label">A 旧图保留：新手山谷</text>
+    <text x="14" y="48" class="tiny">44x36 原样保留</text>
+    <text x="366" y="28" class="label">B 石花坡</text>
+    <text x="366" y="50" class="tiny">花/岩/疏林</text>
+    <text x="366" y="220" class="label">C 月镜湿地</text>
+    <text x="366" y="242" class="tiny">栈桥/芦草/池塘</text>
+    <text x="592" y="28" class="label">D 东部岩岸</text>
+    <text x="592" y="50" class="tiny">码头/礁石/海湾</text>
+    <text x="14" y="316" class="label">E 松木高地</text>
+    <text x="14" y="338" class="tiny">松树/岩壁/回环山路</text>
+    <text x="254" y="316" class="label">F 生存补给前哨</text>
+    <text x="254" y="338" class="tiny">帐篷/箱桶/路牌/治疗点</text>
+    <text x="14" y="556" class="label">G 蘑菇幽林</text>
+    <text x="14" y="578" class="tiny">密林/蘑菇/隐藏支路</text>
+    <text x="254" y="556" class="label">H 南部花野</text>
+    <text x="254" y="578" class="tiny">开阔草场/花带/练级环道</text>
+    <text x="510" y="476" class="label">I 荒野训练场</text>
+    <text x="510" y="498" class="tiny">岩地/废弃营地/训练家点</text>
+
+    <text x="8" y="820" class="coord">坐标：左上角 (0,0)，右下角 (99,99)。粗黄线主路，绿虚线为探索支路。</text>
+  </g>
+
+  <g id="legend" transform="translate(890 80)">
+    <rect class="callout" x="0" y="0" width="350" height="800" rx="10"/>
+    <text x="20" y="34" class="legendTitle">规划原则</text>
+    <text x="20" y="64" class="small">1. 现有 GodotMap 的 44x36 网格不移动。</text>
+    <text x="20" y="88" class="small">2. 第一版只向东/南追加格子到 100x100。</text>
+    <text x="20" y="112" class="small">3. 主路形成大环，支路形成小环与风景点。</text>
+    <text x="20" y="136" class="small">4. 水体从旧湖自然延伸为湿地与东岸。</text>
+    <text x="20" y="160" class="small">5. 高草区分散在路边外侧，避免踩路遇怪。</text>
+
+    <text x="20" y="210" class="legendTitle">区域与玩法节奏</text>
+    <rect x="20" y="230" width="18" height="18" class="old"/><text x="48" y="244" class="small">A 旧新手山谷：不改原貌与出生点</text>
+    <rect x="20" y="260" width="18" height="18" class="flower"/><text x="48" y="274" class="small">B 石花坡：轻量草丛，教学分岔</text>
+    <rect x="20" y="290" width="18" height="18" class="wetland"/><text x="48" y="304" class="small">C 月镜湿地：桥、浅水、芦草</text>
+    <rect x="20" y="320" width="18" height="18" class="coast"/><text x="48" y="334" class="small">D 东部岩岸：码头和长视距景点</text>
+    <rect x="20" y="350" width="18" height="18" class="pine"/><text x="48" y="364" class="small">E 松木高地：密树与岩壁压缩视线</text>
+    <rect x="20" y="380" width="18" height="18" class="outpost"/><text x="48" y="394" class="small">F 补给前哨：治疗/商人/安全落脚</text>
+    <rect x="20" y="410" width="18" height="18" class="mushroom"/><text x="48" y="424" class="small">G 蘑菇幽林：隐藏道具和窄支路</text>
+    <rect x="20" y="440" width="18" height="18" class="meadow"/><text x="48" y="454" class="small">H 南部花野：开阔练级环道</text>
+    <rect x="20" y="470" width="18" height="18" class="badland"/><text x="48" y="484" class="small">I 荒野训练场：岩地/训练家节点</text>
+
+    <text x="20" y="536" class="legendTitle">素材使用策略</text>
+    <text x="20" y="566" class="small">Nature kit 当前本地可用：</text>
+    <use href="#tree" x="32" y="594" width="22" height="22"/><text x="62" y="600" class="small">tree_oak / tree_default</text>
+    <use href="#pineTree" x="32" y="624" width="22" height="22"/><text x="62" y="630" class="small">tree_pineTallA_detailed</text>
+    <use href="#rock" x="32" y="654" width="22" height="22"/><text x="62" y="660" class="small">rock_largeA / stone_largeA</text>
+    <use href="#flower" x="32" y="684" width="22" height="22"/><text x="62" y="690" class="small">flower_redA / flower_yellowA</text>
+    <use href="#mushroomIcon" x="32" y="714" width="22" height="22"/><text x="62" y="720" class="small">mushroom_redGroup / grass_leafsLarge</text>
+    <text x="20" y="752" class="small">Survival kit：当前项目未发现目录。</text>
+    <text x="20" y="776" class="small">若补入素材，将用于箱、桶、围栏、废营地。</text>
+  </g>
+
+  <path class="arrow" d="M405 62 C560 18 760 38 840 130"/>
+  <text x="650" y="38" class="small">扩展主方向：东侧湖岸 + 南侧大环线</text>
+</svg>

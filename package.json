@@ -3,9 +3,13 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:check": "vite build --emptyOutDir false --outDir .tmp-build-check",
     "cache:assets": "node scripts/cache-game-assets.mjs",
     "generate:map": "node scripts/generate-map.mjs",
     "generate:learnsets": "node scripts/generate-official-learnsets.mjs",
@@ -20,6 +24,7 @@
     "map:audit-gameplay": "node scripts/audit-map-gameplay-flow.mjs",
     "map:audit-pokemon": "node scripts/audit-map-pokemon-coverage.mjs",
     "map:audit-roads": "node scripts/audit-godotmap-roads.mjs",
+    "map:audit-mobile-performance": "node scripts/audit-mobile-map-performance.mjs",
     "map:preview": "node scripts/render-map-preview.mjs",
     "slice:route102": "node scripts/sliceRoute102Map.mjs",
     "audit:data": "node scripts/audit-game-data.mjs",
@@ -36,21 +41,28 @@
     "audit:economy": "node scripts/audit-economy-balance.mjs",
     "audit:catch": "node scripts/audit-catch-balance.mjs",
     "audit:trials": "node scripts/audit-trial-balance.mjs",
+    "audit:starter-wild": "node scripts/audit-starter-wild-balance.mjs",
+    "audit:starter-routes": "node scripts/audit-starter-route-feel.mjs",
+    "audit:map-levels": "node scripts/audit-map-level-progression.mjs",
+    "audit:role-difficulty": "node scripts/audit-trainer-role-difficulty.mjs",
     "audit:growth-battle-guards": "node scripts/audit-growth-battle-guards.mjs",
     "audit:trainer-daily-scope": "node scripts/audit-trainer-daily-map-scope.mjs",
     "audit:battle-scenes": "node scripts/audit-battle-scenes.mjs",
+    "audit:battle-replacement": "node scripts/audit-battle-replacement-flow.mjs",
+    "audit:battle-completion": "node scripts/audit-battle-completion-coverage.mjs",
+    "audit:battle-turn-recovery": "node scripts/audit-battle-turn-recovery.mjs",
     "audit:trainers": "node scripts/audit-trainer-battle.mjs",
     "audit:difficulty": "node scripts/audit-battle-difficulty.mjs",
+    "audit:battle-ai": "node scripts/audit-battle-ai-switching.mjs",
     "audit:growth": "node scripts/audit-growth-sim.mjs",
     "audit:battle": "node scripts/battle-balance-audit.mjs",
     "audit:battle-visual": "node scripts/audit-battle-visual-flow.mjs",
     "audit:cloud": "node scripts/audit-cloud-only-guards.mjs",
-    "audit:core": "npm run build && npm run audit:data && npm run audit:learnsets && npm run audit:growth && npm run audit:difficulty && npm run audit:cloud && npm run map:verify",
+    "audit:core": "npm run build:check && npm run audit:data && npm run audit:learnsets && npm run audit:growth && npm run audit:difficulty && npm run audit:cloud && npm run map:verify",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "phaser": "^3.80.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
@@ -59,11 +71,11 @@
   "devDependencies": {
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.0",
-    "vite": "^5.0.8"
+    "vite": "^8.0.14"
   }
 }

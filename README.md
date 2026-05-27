@@ -135,10 +135,12 @@ npm run dev
 3. 验证宝可梦可通过经验药水和战斗胜利获得经验
 4. 验证战斗、捕获、地图切换不再受旧账号资源限制
 
-### 阶段3：部署上线
-1. 配置Vercel部署
-2. 设置环境变量
-3. 测试生产环境
+### 阶段3：部署上线（Git + Cloudflare Pages + Supabase）
+1. 推送 `supabase/migrations` 到线上：`supabase db push`
+2. 将代码推送到 GitHub：`fredericshihe/xingyin-pokemon-game`
+3. 在 Cloudflare Pages 连接仓库，构建命令 `npm run build`，输出目录 `dist`
+4. 在 Cloudflare 配置环境变量：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
+5. 详细步骤见 **[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)**
 
 ---
 
@@ -163,7 +165,7 @@ A: 学生注册时填写老师用户名后，会自动出现在老师的学生�
 - Supabase Dashboard: https://supabase.com/dashboard
 - 项目计划: 查看 `PROJECT_PLAN.md`
 - 大地图重做方案: 查看 `MAP_SYSTEM_REBUILD_PLAN.md`
-- 当前冒险地图使用 Three.js 低多边形渲染（`src/game/ThreeLowPolyMap.jsx`），Phaser 地图层仍保留为旧兼容/实验入口
+- 当前冒险地图已统一使用 Three.js 低多边形渲染（`src/game/ThreeLowPolyMap.jsx`）
 - 数据库脚本: 查看 `supabase-setup.sql`
 
 ---

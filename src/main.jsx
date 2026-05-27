@@ -1,7 +1,27 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
+import './shell.css'
 import App from './App.jsx'
+
+if (typeof window !== 'undefined') {
+  const registerServiceWorker = () => {
+    void import('virtual:pwa-register').then(({ registerSW }) => {
+      registerSW({ immediate: true })
+    }).catch((error) => {
+      console.warn('[pwa] service worker registration skipped', error)
+    })
+  }
+
+  const deferServiceWorkerRegistration = () => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => registerServiceWorker(), { timeout: 8000 })
+      return
+    }
+    window.setTimeout(registerServiceWorker, 2500)
+  }
+
+  window.addEventListener('load', deferServiceWorkerRegistration, { once: true })
+}
 
 // GitHub Pages SPA fallback: 404.html rewrites to /?p=<path>. Restore it here.
 try {

@@ -11,20 +11,27 @@ import {
 import { getTypeEffectivenessMessage } from '../../utils/battleDamage'
 import { getCatchAttemptWarning, getPlayerAverageLevel } from '../../utils/gameBalance'
 import { applyImageFallback } from '../../utils/localAssetPreloader'
-import { assetUrl } from '../../utils/assetUrl'
+import { pokemonArtUrl, POKEMON_PLACEHOLDER_URL, extractPokedexIdFromArtUrl, toPngFallbackUrl } from '../../utils/mediaAssetUrl'
 
-const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
+const POKEMON_LOCAL_PLACEHOLDER = POKEMON_PLACEHOLDER_URL
 
-const extractPokedexIdFromSpriteUrl = (url) => {
-  if (typeof url !== 'string') return null
-  const match = url.match(/\/pokemon(?:\/back|\/official-artwork|\/other\/(?:official-artwork|home))?\/(\d+)\.png$/)
-  const id = match ? Number(match[1]) : null
-  return Number.isFinite(id) && id > 0 ? id : null
-}
+const extractPokedexIdFromSpriteUrl = (url) => (
+  extractPokedexIdFromArtUrl(url)
+)
 
 const getLocalPokemonSprite = (monster, preferredUrl) => {
   const pokedexId = Number(monster?.pokedexId || monster?.dexNo) || extractPokedexIdFromSpriteUrl(preferredUrl) || extractPokedexIdFromSpriteUrl(monster?.sprite)
-  return pokedexId ? assetUrl(`/assets/pokemon/official-artwork/${pokedexId}.png`) : (preferredUrl || POKEMON_LOCAL_PLACEHOLDER)
+  return pokedexId ? pokemonArtUrl(pokedexId) : (preferredUrl || POKEMON_LOCAL_PLACEHOLDER)
+}
+
+const handlePokemonImageError = (event) => {
+  const image = event?.currentTarget || event?.target
+  const currentSrc = image?.src || ''
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc))
+    return
+  }
+  applyImageFallback(event, POKEMON_LOCAL_PLACEHOLDER)
 }
 
 const normalizeBattleMonsterAsset = (monster) => {

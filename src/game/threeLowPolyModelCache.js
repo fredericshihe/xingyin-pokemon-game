@@ -1,5 +1,7 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { getAdventureMapInfo } from './data/overworldMaps'
+import { MAP_MODEL_MANIFEST } from './data/mapModelManifest.generated.js'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { assetUrl } from '../utils/assetUrl'
 
@@ -45,6 +47,10 @@ const MODEL_URLS = {
 }
 
 const SHARED_GLTF_LOADER = new GLTFLoader()
+const DRACO_LOADER = new DRACOLoader()
+DRACO_LOADER.setDecoderPath(`${import.meta.env.BASE_URL || '/'}draco/gltf/`)
+DRACO_LOADER.preload()
+SHARED_GLTF_LOADER.setDRACOLoader(DRACO_LOADER)
 const MODEL_SCENE_CACHE = new Map()
 const MODEL_LOAD_PROMISE_CACHE = new Map()
 
@@ -171,5 +177,9 @@ export function loadModels(requiredKeys = null) {
 export function preloadThreeLowPolyMapModels(mapName) {
   const mapInfo = getAdventureMapInfo(mapName)
   if (!mapInfo || mapInfo.renderMode !== 'three-lowpoly') return Promise.resolve({})
-  return loadModels(getRequiredModelKeys(mapInfo))
+  const manifestKeys = MAP_MODEL_MANIFEST?.[mapName]?.modelKeys
+  const requiredKeys = Array.isArray(manifestKeys) && manifestKeys.length > 0
+    ? manifestKeys
+    : getRequiredModelKeys(mapInfo)
+  return loadModels(requiredKeys)
 }

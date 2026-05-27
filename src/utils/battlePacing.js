@@ -25,6 +25,14 @@ const BATTLE_MOVE_PHASE_DURATIONS = {
 
 export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+export const waitForPaint = () => new Promise((resolve) => {
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  } else {
+    resolve()
+  }
+})
+
 export const getBattleLogReadDelay = (
   message,
   {

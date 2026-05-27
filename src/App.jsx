@@ -1,22 +1,28 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { authService } from './utils/authService'
-import { preloadImageAssets } from './utils/localAssetPreloader'
-import { assetUrl } from './utils/assetUrl'
+import { warmImageAssets } from './utils/localAssetPreloader'
+import { pokemonArtUrl, pokemonArtPngUrl, POKEMON_PLACEHOLDER_URL } from './utils/mediaAssetUrl'
+import { primeStudentSession } from './utils/primeStudentSession'
+import { loadGameStyles } from './utils/loadGameStyles'
+import { lazyWithRetry } from './utils/lazyWithRetry'
+import AppLoadingScreen from './components/AppLoadingScreen'
+import LazyRouteErrorBoundary from './components/LazyRouteErrorBoundary'
 
-const Login = lazy(() => import('./components/Auth/Login'))
-const Register = lazy(() => import('./components/Auth/Register'))
-const GameWrapper = lazy(() => import('./components/Game/GameWrapper'))
-const TeacherDashboard = lazy(() => import('./components/Teacher/Dashboard'))
-const MapRuntimePreview = lazy(() => import('./game/MapRuntimePreview'))
+const Login = lazyWithRetry(() => import('./components/Auth/Login'))
+const Register = lazyWithRetry(() => import('./components/Auth/Register'))
+const GameWrapper = lazyWithRetry(() => import('./components/Game/GameWrapper'))
+const TeacherDashboard = lazyWithRetry(() => import('./components/Teacher/Dashboard'))
+const MapRuntimePreview = lazyWithRetry(() => import('./game/MapRuntimePreview'))
 
 const AUTH_LOCAL_IMAGE_ASSETS = [
-  assetUrl('/assets/pokemon/placeholder.svg'),
-  assetUrl('/assets/pokemon/official-artwork/1.png'),
-  assetUrl('/assets/pokemon/official-artwork/4.png'),
-  assetUrl('/assets/pokemon/official-artwork/7.png'),
-  assetUrl('/assets/pokemon/official-artwork/25.png'),
-  assetUrl('/assets/pokemon/official-artwork/133.png')
+  POKEMON_PLACEHOLDER_URL,
+  pokemonArtUrl(1),
+  pokemonArtUrl(25),
+  pokemonArtUrl(133),
+  pokemonArtPngUrl(1),
+  pokemonArtPngUrl(25),
+  pokemonArtPngUrl(133)
 ]
 
 function GlobalLogoutButton({ onLogout }) {
@@ -33,54 +39,67 @@ function GlobalLogoutButton({ onLogout }) {
   )
 }
 
-function AppLoadingScreen({ message = '加载中...' }) {
-  return (
-    <div className="game-app-bg">
-      <div className="game-card p-5 text-2xl font-bold text-slate-700">{message}</div>
-    </div>
-  )
-}
-
 function App() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [authAssetsReady, setAuthAssetsReady] = useState(false)
   const [authView, setAuthView] = useState('login') // 'login' or 'register'
 
   useEffect(() => {
+    void import('./components/Auth/Login')
+    void import('./components/Auth/Register')
+    warmImageAssets(AUTH_LOCAL_IMAGE_ASSETS, { concurrency: 4, timeoutMs: 3500 })
+  }, [])
+
+  useEffect(() => {
     let cancelled = false
-    preloadImageAssets(AUTH_LOCAL_IMAGE_ASSETS, { concurrency: 4, timeoutMs: 8000 })
-      .catch((error) => {
-        console.warn('[assets] 登录素材预加载失败', error)
-      })
-      .finally(() => {
-        if (!cancelled) setAuthAssetsReady(true)
-      })
+
+    const storedProfile = authService.getStoredProfile()
+    if (storedProfile?.id) {
+      setUser(storedProfile)
+      setProfile(storedProfile)
+      setLoading(false)
+      void loadGameStyles()
+
+      if (storedProfile.role === 'student') {
+        primeStudentSession()
+      }
+
+      authService.refreshStoredProfile()
+        .then((latestProfile) => {
+          if (cancelled) return
+          if (latestProfile?.id) {
+            setUser(latestProfile)
+            setProfile(latestProfile)
+            return
+          }
+          if (storedProfile?.id) {
+            setUser(null)
+            setProfile(null)
+          }
+        })
+        .catch((error) => {
+          console.warn('[auth] 后台刷新登录状态失败', error)
+        })
+
+      return () => {
+        cancelled = true
+      }
+    }
+
+    setLoading(false)
     return () => {
       cancelled = true
     }
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-
-    const restoreBackendSession = async () => {
-      const storedProfile = await authService.refreshStoredProfile()
-      if (cancelled) return
-
-      if (storedProfile?.id) {
-        setUser(storedProfile)
-        setProfile(storedProfile)
-      }
-      setLoading(false)
+    if (!profile?.id) return
+    void loadGameStyles()
+    if (profile.role === 'student') {
+      primeStudentSession()
     }
-
-    restoreBackendSession()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  }, [profile?.id, profile?.role])
 
   const handleLogin = async (username, password) => {
     const result = await authService.login(username, password)
@@ -88,6 +107,10 @@ function App() {
       const storedProfile = authService.getStoredProfile()
       setUser(storedProfile)
       setProfile(storedProfile)
+      void loadGameStyles()
+      if (storedProfile?.role === 'student') {
+        primeStudentSession()
+      }
     }
     return result
   }
@@ -95,7 +118,6 @@ function App() {
   const handleRegister = async (formData) => {
     const result = await authService.register(formData)
     if (result.success && !result.pendingApproval) {
-      // 注册成功后自动登录
       await handleLogin(formData.username, formData.password)
     }
     return result
@@ -120,50 +142,48 @@ function App() {
     return <AppLoadingScreen message="加载中..." />
   }
 
-  // 未登录显示登录/注册页面
   if (!user || !profile) {
-    if (!authAssetsReady) {
-      return <AppLoadingScreen message="正在准备本地素材..." />
-    }
-
     return (
-      <Suspense fallback={<AppLoadingScreen message={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} />}>
-        {authView === 'login' ? (
-          <Login
-            onLogin={handleLogin}
-            onSwitchToRegister={() => setAuthView('register')}
-          />
-        ) : (
-          <Register
-            onRegister={handleRegister}
-            onSwitchToLogin={() => setAuthView('login')}
-          />
-        )}
-      </Suspense>
+      <LazyRouteErrorBoundary>
+        <Suspense fallback={<AppLoadingScreen message={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} />}>
+          {authView === 'login' ? (
+            <Login
+              onLogin={handleLogin}
+              onSwitchToRegister={() => setAuthView('register')}
+            />
+          ) : (
+            <Register
+              onRegister={handleRegister}
+              onSwitchToLogin={() => setAuthView('login')}
+            />
+          )}
+        </Suspense>
+      </LazyRouteErrorBoundary>
     )
   }
 
-  // 已登录，根据角色显示不同界面
   const basename = import.meta.env.BASE_URL || '/'
   return (
     <>
       {profile.role !== 'student' && <GlobalLogoutButton onLogout={handleLogout} />}
       <Router basename={basename} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Suspense fallback={<AppLoadingScreen message={profile.role === 'student' ? '游戏加载中...' : '教师后台加载中...'} />}>
-          <Routes>
-            {profile.role === 'student' ? (
-              <Route
-                path="/*"
-                element={<GameWrapper user={profile} onLogout={handleLogout} />}
-              />
-            ) : (
-              <Route
-                path="/*"
-                element={<TeacherDashboard profile={profile} />}
-              />
-            )}
-          </Routes>
-        </Suspense>
+        <LazyRouteErrorBoundary>
+          <Suspense fallback={<AppLoadingScreen message={profile.role === 'student' ? '游戏加载中...' : '教师后台加载中...'} />}>
+            <Routes>
+              {profile.role === 'student' ? (
+                <Route
+                  path="/*"
+                  element={<GameWrapper user={profile} onLogout={handleLogout} />}
+                />
+              ) : (
+                <Route
+                  path="/*"
+                  element={<TeacherDashboard profile={profile} />}
+                />
+              )}
+            </Routes>
+          </Suspense>
+        </LazyRouteErrorBoundary>
       </Router>
     </>
   )

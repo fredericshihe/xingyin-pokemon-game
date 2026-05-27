@@ -1,4 +1,4 @@
-/** 道具立绘本地路径（与宝可梦 official-artwork 同级，由 cache-game-assets 生成） */
+import { itemArtUrl } from './mediaAssetUrl.js'
 import { assetUrl } from './assetUrl.js'
 
 export const ITEM_ARTWORK_DIR = assetUrl('/assets/items/official-artwork')
@@ -6,7 +6,7 @@ export const ITEM_ARTWORK_DIR = assetUrl('/assets/items/official-artwork')
 /** 下载后长边目标像素（宝可梦立绘约 475px，道具插画源图较小，放大后供 UI 缩放） */
 export const ITEM_ARTWORK_TARGET_MAX = 384
 
-export const itemSprite = (fileName) => `${ITEM_ARTWORK_DIR}/${fileName}`
+export const itemSprite = (fileName) => itemArtUrl(fileName)
 
 /**
  * 本地文件名 → PokeAPI dream-world 道具 slug（矢量插画，非像素图标）

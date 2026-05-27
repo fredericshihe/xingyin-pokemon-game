@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { applyImageFallback } from '../../utils/localAssetPreloader'
-import { assetUrl } from '../../utils/assetUrl'
+import { pokemonArtUrl, POKEMON_PLACEHOLDER_URL, toPngFallbackUrl } from '../../utils/mediaAssetUrl'
 
-const AUTH_IMAGE_FALLBACK = assetUrl('/assets/pokemon/placeholder.svg')
+const AUTH_IMAGE_FALLBACK = POKEMON_PLACEHOLDER_URL
 
 const handleAuthImageError = (event) => {
+  const image = event?.currentTarget || event?.target
+  const currentSrc = image?.src || ''
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc))
+    return
+  }
   applyImageFallback(event, AUTH_IMAGE_FALLBACK)
 }
 
@@ -37,9 +43,9 @@ export default function Login({ onLogin, onSwitchToRegister }) {
       <div className="auth-scenery" aria-hidden="true">
         <span className="auth-cloud auth-cloud--one" />
         <span className="auth-cloud auth-cloud--two" />
-        <img className="auth-pokemon auth-pokemon--bulbasaur" src={assetUrl('/assets/pokemon/official-artwork/1.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
-        <img className="auth-pokemon auth-pokemon--pikachu" src={assetUrl('/assets/pokemon/official-artwork/25.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
-        <img className="auth-pokemon auth-pokemon--eevee" src={assetUrl('/assets/pokemon/official-artwork/133.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+        <img className="auth-pokemon auth-pokemon--bulbasaur" src={pokemonArtUrl(1)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+        <img className="auth-pokemon auth-pokemon--pikachu" src={pokemonArtUrl(25)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+        <img className="auth-pokemon auth-pokemon--eevee" src={pokemonArtUrl(133)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
       </div>
 
       <main className="auth-shell auth-shell--login" aria-labelledby="login-title">
@@ -56,9 +62,9 @@ export default function Login({ onLogin, onSwitchToRegister }) {
             <span className="auth-stage-cloud auth-stage-cloud--right" />
             <span className="auth-scene-flowers auth-scene-flowers--left" />
             <span className="auth-scene-flowers auth-scene-flowers--right" />
-            <img className="auth-mascot auth-mascot--left" src={assetUrl('/assets/pokemon/official-artwork/1.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
-            <img className="auth-mascot auth-mascot--hero" src={assetUrl('/assets/pokemon/official-artwork/25.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
-            <img className="auth-mascot auth-mascot--right" src={assetUrl('/assets/pokemon/official-artwork/133.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+            <img className="auth-mascot auth-mascot--left" src={pokemonArtUrl(1)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+            <img className="auth-mascot auth-mascot--hero" src={pokemonArtUrl(25)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+            <img className="auth-mascot auth-mascot--right" src={pokemonArtUrl(133)} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
           </div>
 
           <div className="auth-hero-copy">

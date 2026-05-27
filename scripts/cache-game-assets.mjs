@@ -48,16 +48,45 @@ const downloadBuffer = (url) => new Promise((resolve) => {
 
 const ensurePokemonArt = async (dexNo) => {
   const url = `${POKEAPI_ART}/${dexNo}.png`
-  const dest = path.join(pokemonDir, `${dexNo}.png`)
+  const pngDest = path.join(pokemonDir, `${dexNo}.png`)
+  const webpDest = path.join(pokemonDir, `${dexNo}.webp`)
   try {
-    await fs.access(dest)
-    return { ok: true, cached: true, dest }
+    await fs.access(pngDest)
   } catch {
     const result = await downloadBuffer(url)
-    if (!result.ok) return { ok: false, dest, ...result }
-    await fs.writeFile(dest, result.buffer)
-    return { ok: true, dest }
+    if (!result.ok) return { ok: false, dest: pngDest, ...result }
+    await fs.writeFile(pngDest, result.buffer)
   }
+
+  try {
+    const pngStat = await fs.stat(pngDest)
+    try {
+      const webpStat = await fs.stat(webpDest)
+      if (webpStat.mtimeMs >= pngStat.mtimeMs) {
+        return { ok: true, cached: true, dest: webpDest }
+      }
+    } catch {
+      // regenerate webp
+    }
+
+    const meta = await sharp(pngDest).metadata()
+    const width = meta.width || 1
+    const height = meta.height || 1
+    const maxDim = 512
+    const scale = Math.min(1, maxDim / Math.max(width, height))
+    await sharp(pngDest)
+      .resize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)), {
+        fit: 'inside',
+        withoutEnlargement: true,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      })
+      .webp({ quality: 82, effort: 4 })
+      .toFile(webpDest)
+  } catch (error) {
+    return { ok: false, dest: webpDest, error: error.message }
+  }
+
+  return { ok: true, dest: webpDest }
 }
 
 const ensureItemArtwork = async (fileName, slug) => {
@@ -93,7 +122,12 @@ const ensureItemArtwork = async (fileName, slug) => {
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toFile(dest)
 
-  return { ok: true, dest, fileName, slug, width: targetWidth, height: targetHeight }
+  const webpDest = dest.replace(/\.png$/i, '.webp')
+  await sharp(dest)
+    .webp({ quality: 82, effort: 4 })
+    .toFile(webpDest)
+
+  return { ok: true, dest, webpDest, fileName, slug, width: targetWidth, height: targetHeight }
 }
 
 let ok = 0

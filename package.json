@@ -11,6 +11,12 @@
     "build": "vite build",
     "build:check": "vite build --emptyOutDir false --outDir .tmp-build-check",
     "cache:assets": "node scripts/cache-game-assets.mjs",
+    "split:css": "node scripts/split-css.mjs",
+    "compress:models": "node scripts/compress-map-models.mjs",
+    "copy:draco": "node scripts/copy-draco-decoders.mjs",
+    "generate:map-manifest": "npx vite-node scripts/generate-map-model-manifest.mjs",
+    "assets:prepare": "npm run copy:draco && npm run cache:assets && npm run optimize:assets && npm run compress:models && npm run generate:map-manifest",
+    "prebuild": "npm run copy:draco && npm run generate:map-manifest",
     "generate:map": "node scripts/generate-map.mjs",
     "generate:learnsets": "node scripts/generate-official-learnsets.mjs",
     "generate:economy": "node scripts/generate-official-economy-data.mjs",
@@ -69,6 +75,7 @@
     "three": "^0.184.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.3.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^6.0.2",
@@ -76,6 +83,8 @@
     "postcss": "^8.4.32",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.0",
-    "vite": "^8.0.14"
+    "vite": "^8.0.14",
+    "vite-node": "^6.0.0",
+    "vite-plugin-pwa": "^1.3.0"
   }
 }

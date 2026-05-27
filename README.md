@@ -135,12 +135,13 @@ npm run dev
 3. 验证宝可梦可通过经验药水和战斗胜利获得经验
 4. 验证战斗、捕获、地图切换不再受旧账号资源限制
 
-### 阶段3：部署上线（Git + Cloudflare Pages + Supabase）
+### 阶段3：部署上线（GitHub Pages + Supabase）
 1. 推送 `supabase/migrations` 到线上：`supabase db push`
 2. 将代码推送到 GitHub：`fredericshihe/xingyin-pokemon-game`
-3. 在 Cloudflare Pages 连接仓库，构建命令 `npm run build`，输出目录 `dist`
-4. 在 Cloudflare 配置环境变量：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
-5. 详细步骤见 **[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)**
+3. GitHub Actions 会自动构建并发布到 **gh-pages** 分支（工作流：`.github/workflows/deploy-pages.yml`）
+4. 在 GitHub 仓库 **Settings → Secrets** 配置：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
+5. 公开地址必须是项目页完整路径：`https://<你的用户名>.github.io/xingyin-pokemon-game/`（末尾斜杠建议保留）
+6. 若改用 Cloudflare Pages 根路径部署，见 **[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)**（需设置 `VITE_BASE_PATH=/`）
 
 ---
 
@@ -157,6 +158,20 @@ A: 不会，登录后会直接从后端读取云端进度；关键操作会自�
 
 ### Q: 老师如何查看学生？
 A: 学生注册时填写老师用户名后，会自动出现在老师的学生列表中
+
+### Q: 手机打开 GitHub Pages 一直显示「登录/游戏加载中」？
+A: 常见原因有三点：
+1. **链接不完整**：必须打开 `https://<用户名>.github.io/xingyin-pokemon-game/`，不要少掉仓库名这一段。
+2. **首次下载较慢**：游戏 JS 约 2MB+，弱网下会多等一会儿；超过 1 分钟可刷新重试。
+3. **旧缓存**：游戏更新后，请在手机浏览器里清除该站点数据，或用无痕模式重新打开。
+
+若 GitHub Actions 构建失败，检查仓库 Secrets 是否已配置 Supabase 环境变量。
+
+### Q: 地图里的树/石头看起来很多切面、很粗糙？
+A: 常见原因：
+1. **模型被 Draco 强压缩过**（法线量化后会明显“三角化”）。仓库已恢复未压缩的 Kenney 原版 GLB；请勿随意运行 `npm run compress:models` 的 Draco 模式。
+2. **手机省电渲染**会关闭抗锯齿。可在地址后加 `?mapQuality=high` 强制高画质，或在控制台执行 `localStorage.setItem('mapVisualQuality','high')` 后刷新。
+3. 资源本身是 **低多边形风格**，棱角会比写实模型明显，这是正常风格，不是贴图坏了。
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { clone as cloneSkeletonScene } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { getAdventureMapInfo, getEncounterZoneAt, getMapSignMessage } from './data/overworldMaps'
@@ -23,6 +23,134 @@ const CAMERA_FORWARD_OFFSET = 12.5
 const CAMERA_LOOK_Y = 0.45
 const CAMERA_EDGE_PADDING = CELL * 0.75
 const PLAYER_BASE_Y = 0.16
+
+const GRASS_SWAY_KEYS = new Set(['grass', 'grassLarge'])
+const GRASS_SWAY_DISABLED = -999
+const grassSwayUniforms = { uMapTime: { value: 0 } }
+
+function readMapVisualQualityPref() {
+  if (typeof window === 'undefined') return 'auto'
+  const params = new URLSearchParams(window.location.search)
+  const query = params.get('mapQuality') || params.get('hq')
+  if (query === 'lite' || query === 'low') return 'lite'
+  if (query === 'high' || query === 'hq' || query === '1') return 'high'
+  try {
+    const stored = window.localStorage.getItem('mapVisualQuality')
+    if (stored === 'lite' || stored === 'high') return stored
+  } catch {
+    // ignore storage failures
+  }
+  return 'auto'
+}
+
+function resolveMapRendererProfile() {
+  const pref = readMapVisualQualityPref()
+  const isCoarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+  const cores = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 8) : 8
+  const liteTier = pref === 'lite' || (pref === 'auto' && isCoarsePointer && cores <= 2)
+  const mobileTier = pref !== 'high' && isCoarsePointer
+  return {
+    liteTier,
+    mobileTier,
+    antialias: !liteTier,
+    pixelRatioCap: liteTier ? 1.35 : (mobileTier ? 2 : 2.25),
+    shadowMapSize: liteTier ? 1024 : (mobileTier ? 1536 : 2048),
+    shadowType: liteTier ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap,
+    powerPreference: liteTier ? 'default' : 'high-performance'
+  }
+}
+
+function prepareMeshGeometry(geometry) {
+  if (!geometry?.isBufferGeometry) return geometry
+  const prepared = geometry.clone()
+  if (!prepared.getAttribute('normal')) {
+    prepared.computeVertexNormals()
+  }
+  return prepared
+}
+
+function enhanceMeshMaterial(material) {
+  if (!material) return material
+  const mats = Array.isArray(material) ? material : [material]
+  mats.forEach((mat) => {
+    if (!mat) return
+    mat.flatShading = false
+    if (typeof mat.roughness === 'number') mat.roughness = Math.min(mat.roughness, 0.86)
+    if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.05)
+    mat.needsUpdate = true
+  })
+  return material
+}
+
+function ensureGrassSwayMaterial(material) {
+  if (!material || material.userData?.grassSwayEnabled) return
+  material.userData.grassSwayEnabled = true
+  const previousOnBeforeCompile = material.onBeforeCompile
+  material.onBeforeCompile = (shader) => {
+    previousOnBeforeCompile?.(shader)
+    shader.uniforms.uMapTime = grassSwayUniforms.uMapTime
+    shader.vertexShader = `
+attribute vec2 instanceSwaySeed;
+uniform float uMapTime;
+${shader.vertexShader}`
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+#if defined( USE_INSTANCING )
+if ( instanceSwaySeed.x > -500.0 ) {
+  float phase = uMapTime * 0.0023809524 + instanceSwaySeed.x * 0.8 + instanceSwaySeed.y * 0.5;
+  float sway = sin( phase ) * 0.035;
+  transformed.x += transformed.y * sway * 0.55;
+  transformed.z += transformed.y * sway;
+  transformed.y += sin( phase * 0.73 ) * 0.012 * max( transformed.y, 0.08 );
+}
+#endif
+`
+    )
+  }
+  material.needsUpdate = true
+}
+
+function ensureGrassSwayGeometry(instancedMesh, capacity) {
+  if (instancedMesh.geometry.getAttribute('instanceSwaySeed')) return
+  const seeds = new Float32Array(capacity * 2)
+  for (let i = 0; i < capacity; i += 1) {
+    seeds[i * 2] = GRASS_SWAY_DISABLED
+    seeds[i * 2 + 1] = GRASS_SWAY_DISABLED
+  }
+  const attr = new THREE.InstancedBufferAttribute(seeds, 2)
+  attr.setUsage(THREE.DynamicDrawUsage)
+  instancedMesh.geometry.setAttribute('instanceSwaySeed', attr)
+  instancedMesh.userData.grassSwaySeedAttr = attr
+}
+
+function setGrassInstanceSwaySeed(instancedMesh, index, tileX, tileY) {
+  const attr = instancedMesh.userData.grassSwaySeedAttr
+    || instancedMesh.geometry.getAttribute('instanceSwaySeed')
+  if (!attr) return
+  attr.setXY(index, tileX, tileY)
+  attr.needsUpdate = true
+}
+
+function disableGrassInstanceSway(instancedMesh, index) {
+  setGrassInstanceSwaySeed(instancedMesh, index, GRASS_SWAY_DISABLED, GRASS_SWAY_DISABLED)
+}
+
+function restoreGrassClusterStatic(grass) {
+  if (!grass?.subInstances?.length) return
+  const dirtyMeshes = new Set()
+  grass.subInstances.forEach((sub) => {
+    if (sub.staticMatrix) {
+      sub.mesh.setMatrixAt(sub.index, sub.staticMatrix)
+      dirtyMeshes.add(sub.mesh)
+    }
+    setGrassInstanceSwaySeed(sub.mesh, sub.index, grass.tileX, grass.tileY)
+  })
+  dirtyMeshes.forEach((mesh) => {
+    mesh.instanceMatrix.needsUpdate = true
+  })
+  grass._swayDisabled = false
+}
 
 const LEGACY_DECORATIVE_ASSET_ALIASES = {
   'grass-small': 'nature_grass_small',
@@ -259,8 +387,10 @@ function cloneScene(scene, { scale = 1, shadows = true } = {}) {
       child.castShadow = shadows
       child.receiveShadow = shadows
       if (child.isSkinnedMesh) child.frustumCulled = false
+      child.geometry = prepareMeshGeometry(child.geometry)
       child.material = child.material?.clone?.() || child.material
-      if (child.material) {
+      enhanceMeshMaterial(child.material)
+      if (child.material && !Array.isArray(child.material)) {
         child.material.roughness = 0.82
         child.material.metalness = 0.03
       }
@@ -1391,7 +1521,7 @@ function isInRoadClearance(mapInfo, tileX, tileY, padding = 0.45) {
   return isNearVisualPath(mapInfo, tileX, tileY, padding) || isNearBridge(mapInfo, tileX, tileY, padding)
 }
 
-export default function ThreeLowPolyMap({
+function ThreeLowPolyMap({
   playerPos,
   mapGrid,
   currentMapName,
@@ -1498,11 +1628,17 @@ export default function ThreeLowPolyMap({
     scene.background = new THREE.Color(0xbfe9ff)
     scene.fog = new THREE.Fog(0xbfe9ff, 28, 55)
 
+    const renderProfile = resolveMapRendererProfile()
+
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75))
+      renderer = new THREE.WebGLRenderer({
+        antialias: renderProfile.antialias,
+        alpha: false,
+        powerPreference: renderProfile.powerPreference
+      })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
       renderer.shadowMap.enabled = true
-      renderer.shadowMap.type = THREE.PCFShadowMap
+      renderer.shadowMap.type = renderProfile.shadowType
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.08
@@ -1548,7 +1684,7 @@ export default function ThreeLowPolyMap({
     const sun = new THREE.DirectionalLight(0xfff6df, 2.55)
     sun.position.set(12, 22, 8)
     sun.castShadow = true
-    sun.shadow.mapSize.set(2048, 2048)
+    sun.shadow.mapSize.set(renderProfile.shadowMapSize, renderProfile.shadowMapSize)
     sun.shadow.camera.left = -35
     sun.shadow.camera.right = 35
     sun.shadow.camera.top = 35
@@ -1573,6 +1709,9 @@ export default function ThreeLowPolyMap({
     let keyboardDirection = null
     const cameraFocus = new THREE.Vector3()
     const cameraTarget = new THREE.Vector3()
+    const clampCameraOut = new THREE.Vector3()
+    const visibleChunkIds = new Set()
+    const activeTrampleGrassKeys = new Set()
 
     function updateCameraBounds() {
       const width = mapGrid[0].length
@@ -1593,17 +1732,21 @@ export default function ThreeLowPolyMap({
 
     function clampCameraTarget(x, z) {
       const bounds = camera.userData.bounds
-      if (!bounds) return new THREE.Vector3(x, CAMERA_LOOK_Y, z)
+      if (!bounds) {
+        clampCameraOut.set(x, CAMERA_LOOK_Y, z)
+        return clampCameraOut
+      }
 
       const safeMinX = Math.min(bounds.minX, bounds.maxX)
       const safeMaxX = Math.max(bounds.minX, bounds.maxX)
       const safeMinZ = Math.min(bounds.minZ, bounds.maxZ)
       const safeMaxZ = Math.max(bounds.minZ, bounds.maxZ)
-      return new THREE.Vector3(
+      clampCameraOut.set(
         clamp(x, safeMinX, safeMaxX),
         CAMERA_LOOK_Y,
         clamp(z, safeMinZ, safeMaxZ)
       )
+      return clampCameraOut
     }
 
     function syncCameraTargetToTile(tileX, tileY, force = false) {
@@ -1810,9 +1953,13 @@ export default function ThreeLowPolyMap({
           const mat = (typeof child.material?.clone === 'function')
             ? child.material.clone()
             : child.material
-          if (mat) { mat.roughness = 0.82; mat.metalness = 0.03 }
+          enhanceMeshMaterial(mat)
+          if (mat && !Array.isArray(mat)) {
+            mat.roughness = 0.82
+            mat.metalness = 0.03
+          }
           subMeshes.push({
-            geometry: child.geometry.clone(),
+            geometry: prepareMeshGeometry(child.geometry),
             material: mat,
             localMatrix: child.matrixWorld.clone()
           })
@@ -1860,13 +2007,16 @@ export default function ThreeLowPolyMap({
         const template = getInstanceTemplate(key)
         if (!template) return null
         const cap = perChunkCapacity(key)
+        const usesGrassSway = GRASS_SWAY_KEYS.has(key)
         const set = template.map((sub) => {
+          if (usesGrassSway) ensureGrassSwayMaterial(sub.material)
           const im = new THREE.InstancedMesh(sub.geometry, sub.material, cap)
           im.castShadow = true
           im.receiveShadow = true
           im.count = 0
           im.frustumCulled = false // chunk group 控制可见性
           im.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+          if (usesGrassSway) ensureGrassSwayGeometry(im, cap)
           chunk.group.add(im)
           return { instancedMesh: im, localMatrix: sub.localMatrix }
         })
@@ -1875,7 +2025,7 @@ export default function ThreeLowPolyMap({
       }
 
       // tmp 复用对象在外层 effect 作用域声明，animate 与 buildWorld 共享
-      const addInstanceMatrix = (key, worldMatrix) => {
+      const addInstanceMatrix = (key, worldMatrix, swaySeed = null) => {
         const worldX = worldMatrix.elements[12]
         const worldZ = worldMatrix.elements[14]
         const chunkId = chunkIdFromWorld(worldX, worldZ)
@@ -1885,18 +2035,24 @@ export default function ThreeLowPolyMap({
         if (!set) set = buildInstancedSetForChunk(chunk, key)
         if (!set) return null
         const refs = []
+        const usesGrassSway = GRASS_SWAY_KEYS.has(key)
         for (let i = 0; i < set.length; i += 1) {
           const sub = set[i]
           const max = sub.instancedMesh.instanceMatrix.count
           if (sub.instancedMesh.count >= max) continue
+          const instanceIndex = sub.instancedMesh.count
           _instTmpMatrix.multiplyMatrices(worldMatrix, sub.localMatrix)
-          sub.instancedMesh.setMatrixAt(sub.instancedMesh.count, _instTmpMatrix)
+          sub.instancedMesh.setMatrixAt(instanceIndex, _instTmpMatrix)
+          if (usesGrassSway && swaySeed) {
+            setGrassInstanceSwaySeed(sub.instancedMesh, instanceIndex, swaySeed.x, swaySeed.y)
+          }
           refs.push({
             mesh: sub.instancedMesh,
-            index: sub.instancedMesh.count,
+            index: instanceIndex,
             localOffset: sub.localMatrix
           })
           sub.instancedMesh.count += 1
+          sub.instancedMesh.instanceMatrix.needsUpdate = true
         }
         return refs.length > 0 ? refs : null
       }
@@ -2048,6 +2204,7 @@ export default function ThreeLowPolyMap({
 
       // 让 animate() 可访问 chunks 做视锥剔除（Step 5）
       stateRef.current.mapChunks = chunks
+      stateRef.current.chunkGrid = { chunkCountX, chunkTiles: CHUNK_TILES }
 
       const placeSmallDecoration = (key, pos, scale, rotation = 0, offsetX = 0, offsetZ = 0) => {
         return addInstance(key, pos.x + offsetX, 0.16, pos.z + offsetZ, rotation, scale)
@@ -2226,14 +2383,15 @@ export default function ThreeLowPolyMap({
 
           // 初始 world = clusterMatrix × localBase
           tmpWorld.multiplyMatrices(initialClusterMat, localBase)
-          const refs = addInstanceMatrix(key, tmpWorld)
+          const refs = addInstanceMatrix(key, tmpWorld, { x, y })
           if (!refs) continue
           refs.forEach((ref) => {
+            ref.mesh.getMatrixAt(ref.index, _instTmpMatrix)
             cluster.subInstances.push({
               mesh: ref.mesh,
               index: ref.index,
-              localOffset: ref.localOffset,
-              localBase
+              localBase,
+              staticMatrix: _instTmpMatrix.clone()
             })
           })
         }
@@ -2686,9 +2844,14 @@ export default function ThreeLowPolyMap({
 
       const grass = grassObjects.get(`${step.tileX},${step.tileY}`)
       if (grass) {
+        const grassKey = `${step.tileX},${step.tileY}`
         // cluster 对象（InstancedMesh 模式）直接挂属性；glint 仍是 Mesh，保留 userData fallback
-        if (grass.subInstances) grass.trampleUntil = performance.now() + TRAMPLED_GRASS_MS
-        else if (grass.userData) grass.userData.trampleUntil = performance.now() + TRAMPLED_GRASS_MS
+        if (grass.subInstances) {
+          grass.trampleUntil = performance.now() + TRAMPLED_GRASS_MS
+          activeTrampleGrassKeys.add(grassKey)
+        } else if (grass.userData) {
+          grass.userData.trampleUntil = performance.now() + TRAMPLED_GRASS_MS
+        }
       }
 
       return handleStepInteractionOrEncounter(step)
@@ -3003,11 +3166,29 @@ export default function ThreeLowPolyMap({
       return false
     }
 
+    const isGrassTileInVisibleChunk = (tileX, tileY, visibleChunkIds, chunkGrid) => {
+      if (!visibleChunkIds || !chunkGrid) return true
+      const cx = Math.floor(tileX / chunkGrid.chunkTiles)
+      const cy = Math.floor(tileY / chunkGrid.chunkTiles)
+      return visibleChunkIds.has(cy * chunkGrid.chunkCountX + cx)
+    }
+
     let last = performance.now()
     const animate = (now) => {
+      const state = stateRef.current
+      const mapShouldRun = Boolean(
+        state?.mapActive &&
+        (typeof document === 'undefined' || document.visibilityState === 'visible')
+      )
+
+      if (!mapShouldRun) {
+        frameId = requestAnimationFrame(animate)
+        return
+      }
+
       const dt = Math.min((now - last) / 1000, 0.05)
       last = now
-      const state = stateRef.current
+      grassSwayUniforms.uMapTime.value = now
       const player = state?.player
       if (player && state.pointer.moving && state.pointer.target) {
         const target = state.pointer.target
@@ -3063,20 +3244,65 @@ export default function ThreeLowPolyMap({
 	      }
 	      updatePickupCollectBursts(state?.pickupBursts, now)
 
-      // InstancedMesh 模式：grass cluster 不再是 Group，直接改 .rotation/.scale 已无效。
-      // 每帧根据 trample/swap 状态重算 clusterMatrix × localBase × subMeshLocal 并 setMatrixAt。
-      grassObjects.forEach((grass, key) => {
-        if (key.includes(':glint')) {
-          const [gx, gy] = key.split(':')[0].split(',').map(Number)
-          grass.material.opacity = 0.18 + Math.sin(now / 320 + gx + gy) * 0.08
-          grass.rotation.z += 0.01
-          return
+      if (player) {
+        const liveFocus = clampCameraTarget(player.position.x, player.position.z)
+        cameraTarget.copy(liveFocus)
+        cameraFocus.copy(liveFocus)
+        camera.position.set(cameraFocus.x, CAMERA_HEIGHT, cameraFocus.z + CAMERA_FORWARD_OFFSET)
+        camera.lookAt(cameraFocus.x, cameraFocus.y, cameraFocus.z)
+      }
+
+      // === Chunk 视锥剔除 ===
+      // 先剔除再更新草丛：屏幕外的 chunk 不再做 CPU 矩阵重算，也不产生 draw call。
+      const mapChunks = state?.mapChunks
+      const chunkGrid = state?.chunkGrid
+      let visibleChunkCount = 0
+      if (mapChunks && mapChunks.length > 0) {
+        _frustumMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+        _viewFrustum.setFromProjectionMatrix(_frustumMat)
+        visibleChunkIds.clear()
+        for (let i = 0; i < mapChunks.length; i += 1) {
+          const ch = mapChunks[i]
+          const visible = _viewFrustum.intersectsBox(ch.boundingBox)
+          ch.group.visible = visible
+          if (visible) {
+            visibleChunkCount += 1
+            visibleChunkIds.add(ch.id)
+          }
         }
-        if (!grass.subInstances) return
+      }
+
+      grassObjects.forEach((grass, key) => {
+        if (!key.includes(':glint')) return
+        const [gx, gy] = key.split(':')[0].split(',').map(Number)
+        if (!isGrassTileInVisibleChunk(gx, gy, visibleChunkIds, chunkGrid)) return
+        grass.material.opacity = 0.18 + Math.sin(now / 320 + gx + gy) * 0.08
+        grass.rotation.z += 0.01
+      })
+
+      for (const key of activeTrampleGrassKeys) {
+        const grass = grassObjects.get(key)
+        if (!grass?.subInstances) {
+          activeTrampleGrassKeys.delete(key)
+          continue
+        }
 
         const tx = grass.tileX
         const ty = grass.tileY
         const trample = Math.max(0, ((grass.trampleUntil ?? 0) - now) / TRAMPLED_GRASS_MS)
+        if (trample <= 0) {
+          activeTrampleGrassKeys.delete(key)
+          if (grass._swayDisabled) {
+            restoreGrassClusterStatic(grass)
+          }
+          continue
+        }
+
+        if (!grass._swayDisabled) {
+          grass.subInstances.forEach((sub) => disableGrassInstanceSway(sub.mesh, sub.index))
+          grass._swayDisabled = true
+        }
+
         const ambientSway = Math.sin(now / 420 + tx * 0.8 + ty * 0.5) * 0.035
         const stompShake = trample * Math.sin(now / 34 + tx) * 0.16
         const rotZ = ambientSway + stompShake
@@ -3084,7 +3310,6 @@ export default function ThreeLowPolyMap({
         const scaleFactor = 1 + trample * (0.1 + Math.abs(Math.sin(now / 45)) * 0.08)
 
         _instTmpPos.set(grass.basePosX, grass.basePosY, grass.basePosZ)
-        // Euler 顺序 'YXZ'：先 staticRotY 立起来，再叠 X 颤抖，再 Z 摇摆
         _instTmpEuler.set(rotX, grass.staticRotY, rotZ)
         _instTmpQuat.setFromEuler(_instTmpEuler)
         _instTmpScale.setScalar(scaleFactor)
@@ -3099,28 +3324,6 @@ export default function ThreeLowPolyMap({
         }
         dirtyMeshes.forEach((m) => { m.instanceMatrix.needsUpdate = true })
         dirtyMeshes.clear()
-      })
-      if (player) {
-        const liveFocus = clampCameraTarget(player.position.x, player.position.z)
-        cameraTarget.copy(liveFocus)
-        cameraFocus.copy(liveFocus)
-        camera.position.set(cameraFocus.x, CAMERA_HEIGHT, cameraFocus.z + CAMERA_FORWARD_OFFSET)
-        camera.lookAt(cameraFocus.x, cameraFocus.y, cameraFocus.z)
-      }
-
-      // === Chunk 视锥剔除 ===
-      // 用相机投影矩阵构建 Frustum，逐 chunk 测 AABB；视野外的 chunk.group.visible = false。
-      // 整组挂掉的 chunk 不再产生任何 draw call，使 GPU 负担从 O(地图) 降到 O(屏幕)。
-      const mapChunks = state?.mapChunks
-      let visibleChunkCount = 0
-      if (mapChunks && mapChunks.length > 0) {
-        _frustumMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-        _viewFrustum.setFromProjectionMatrix(_frustumMat)
-        for (let i = 0; i < mapChunks.length; i += 1) {
-          const ch = mapChunks[i]
-          ch.group.visible = _viewFrustum.intersectsBox(ch.boundingBox)
-          if (ch.group.visible) visibleChunkCount += 1
-        }
       }
 
       if (!renderer.getContext?.()?.isContextLost?.()) {
@@ -3439,3 +3642,5 @@ export default function ThreeLowPolyMap({
     </div>
   )
 }
+
+export default memo(ThreeLowPolyMap)

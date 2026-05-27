@@ -4,6 +4,7 @@ import { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 import { OFFICIAL_EXTRA_MOVES } from './officialExtraMoves.js'
 import { withExplicitLevelEvolution } from './pokemonEvolutionRules.js'
 import { assetUrl } from './assetUrl.js'
+import { pokemonArtUrl, pokemonArtPngUrl, POKEMON_PLACEHOLDER_URL } from './mediaAssetUrl.js'
 
 export { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 
@@ -11,9 +12,9 @@ export { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 // dexNo = 官方图鉴编号（与游戏内 id 不同）
 const sp = (dexNo) => ({
   pokedexId: dexNo,
-  sprite: assetUrl(`/assets/pokemon/official-artwork/${dexNo}.png`),
-  backSprite: assetUrl(`/assets/pokemon/official-artwork/${dexNo}.png`),
-  fallbackSprite: assetUrl('/assets/pokemon/placeholder.svg'),
+  sprite: pokemonArtUrl(dexNo),
+  backSprite: pokemonArtUrl(dexNo),
+  fallbackSprite: pokemonArtPngUrl(dexNo),
 })
 
 // ─── 技能数据库 ──────────────────────────────────────────────────────────────

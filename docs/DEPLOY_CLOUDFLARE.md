@@ -83,6 +83,7 @@ git push origin main
 
 | Name | Value |
 |------|-------|
+| `VITE_BASE_PATH` | `/`（**必填**。Pages 在根路径托管；若误用 `/xingyin-pokemon-game/`，移动端会一直卡在「登录/游戏加载中」） |
 | `VITE_SUPABASE_URL` | `https://waesizzoqodntrlvrwhw.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | 你的 anon key |
 | `NODE_VERSION` | `20` |
@@ -113,6 +114,16 @@ npm run preview              # 默认 http://localhost:4173
 ---
 
 ## 六、常见问题
+
+### 手机/浏览器一直显示「登录界面加载中」或「游戏加载中」
+
+通常是 **`VITE_BASE_PATH` 与托管地址不一致**：
+
+- Cloudflare 公开链接形如 `https://xxx.pages.dev/`，资源应部署在 **`VITE_BASE_PATH=/`**
+- 若仍使用 GitHub Pages 子路径的 `/xingyin-pokemon-game/`，浏览器会去请求不存在的 `/xingyin-pokemon-game/assets/*.js`，被 SPA 回退成 `index.html`，JS 模块无法执行，界面会永远停在 Suspense 的加载文案
+- 处理：Cloudflare → Settings → Environment variables → 将 `VITE_BASE_PATH` 设为 `/` → **重新部署** → 手机端清除站点数据或无痕重开
+
+首次进入游戏还需下载约 2MB 的 JS（含 Three.js），弱网下也会较慢，属正常现象。
 
 ### 构建失败：Missing Supabase environment variables
 

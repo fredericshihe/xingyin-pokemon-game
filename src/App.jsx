@@ -1,12 +1,22 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { authService } from './utils/authService'
+import { preloadImageAssets } from './utils/localAssetPreloader'
 
 const Login = lazy(() => import('./components/Auth/Login'))
 const Register = lazy(() => import('./components/Auth/Register'))
 const GameWrapper = lazy(() => import('./components/Game/GameWrapper'))
 const TeacherDashboard = lazy(() => import('./components/Teacher/Dashboard'))
 const MapRuntimePreview = lazy(() => import('./game/MapRuntimePreview'))
+
+const AUTH_LOCAL_IMAGE_ASSETS = [
+  '/assets/pokemon/placeholder.svg',
+  '/assets/pokemon/official-artwork/1.png',
+  '/assets/pokemon/official-artwork/4.png',
+  '/assets/pokemon/official-artwork/7.png',
+  '/assets/pokemon/official-artwork/25.png',
+  '/assets/pokemon/official-artwork/133.png'
+]
 
 function GlobalLogoutButton({ onLogout }) {
   return (
@@ -34,7 +44,22 @@ function App() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authAssetsReady, setAuthAssetsReady] = useState(false)
   const [authView, setAuthView] = useState('login') // 'login' or 'register'
+
+  useEffect(() => {
+    let cancelled = false
+    preloadImageAssets(AUTH_LOCAL_IMAGE_ASSETS, { concurrency: 4, timeoutMs: 8000 })
+      .catch((error) => {
+        console.warn('[assets] 登录素材预加载失败', error)
+      })
+      .finally(() => {
+        if (!cancelled) setAuthAssetsReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -81,7 +106,8 @@ function App() {
     setProfile(null)
   }
 
-  if (import.meta.env.DEV && window.location.pathname === '/map-runtime-preview') {
+  const mapRuntimePreviewEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_MAP_RUNTIME_PREVIEW === 'true'
+  if (mapRuntimePreviewEnabled && window.location.pathname === '/map-runtime-preview') {
     return (
       <Suspense fallback={<AppLoadingScreen message="地图预览加载中..." />}>
         <MapRuntimePreview />
@@ -95,6 +121,10 @@ function App() {
 
   // 未登录显示登录/注册页面
   if (!user || !profile) {
+    if (!authAssetsReady) {
+      return <AppLoadingScreen message="正在准备本地素材..." />
+    }
+
     return (
       <Suspense fallback={<AppLoadingScreen message={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} />}>
         {authView === 'login' ? (
@@ -113,10 +143,11 @@ function App() {
   }
 
   // 已登录，根据角色显示不同界面
+  const basename = import.meta.env.BASE_URL || '/'
   return (
     <>
       {profile.role !== 'student' && <GlobalLogoutButton onLogout={handleLogout} />}
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Router basename={basename} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<AppLoadingScreen message={profile.role === 'student' ? '游戏加载中...' : '教师后台加载中...'} />}>
           <Routes>
             {profile.role === 'student' ? (

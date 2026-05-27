@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        var base = '/xingyin-pokemon-game/';
+        var path = location.pathname || '/';
+        if (path.indexOf(base) !== 0) {
+          location.replace(base);
+          return;
+        }
+        var subPath = path.slice(base.length);
+        var target = base + '?p=' + encodeURIComponent('/' + subPath + location.search + location.hash);
+        location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
+

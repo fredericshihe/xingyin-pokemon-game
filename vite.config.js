@@ -2,14 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  base: '/xingyin-pokemon-game/',
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      'three',
+      'three/examples/jsm/loaders/GLTFLoader.js',
+      'three/examples/jsm/utils/SkeletonUtils.js'
+    ]
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('/node_modules/phaser/')) {
-            return 'vendor-phaser'
-          }
           if (id.includes('/node_modules/three/')) {
             return 'vendor-three'
           }

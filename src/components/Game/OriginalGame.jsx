@@ -2662,7 +2662,11 @@ const ExpBurst = ({ amount = 0, levelUps = [], compact = false }) => {
 };
 
 const RewardCountUp = ({ value = 0, delay = 0 }) => {
-  const target = Math.max(0, Math.round(Number(value) || 0));
+  const targetRef = useRef(null);
+  if (targetRef.current === null) {
+    targetRef.current = Math.max(0, Math.round(Number(value) || 0));
+  }
+  const target = targetRef.current;
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
@@ -2692,6 +2696,52 @@ const RewardCountUp = ({ value = 0, delay = 0 }) => {
   }, [delay, target]);
 
   return <>{displayValue.toLocaleString('zh-CN')}</>;
+};
+
+const buildBattleVictoryDisplaySnapshot = ({ enemyName, isTrainer, rewardSummary }) => {
+  const rewards = normalizeBattleRewardSummary(rewardSummary);
+  const participantText = rewards.participantCount > 1
+    ? `${rewards.participantCount} 只宝可梦平分`
+    : '出战宝可梦获得';
+  const primaryRewardItems = [
+    {
+      key: 'gold',
+      className: 'battle-victory-reward--gold',
+      icon: 'fa-coins',
+      label: '金币',
+      value: rewards.gold,
+      meta: '已加入钱包',
+      delay: 980
+    },
+    {
+      key: 'exp',
+      className: 'battle-victory-reward--exp',
+      icon: 'fa-bolt',
+      label: '经验',
+      value: rewards.exp,
+      meta: participantText,
+      delay: 1130
+    }
+  ];
+  const itemRewardItems = rewards.items.map((item, index) => ({
+    key: `item-${index}-${item.itemName}`,
+    icon: 'fa-gift',
+    sprite: item.sprite,
+    label: item.itemName,
+    value: item.quantity,
+    delay: 1280 + index * 90
+  }));
+
+  return {
+    enemyName: typeof enemyName === 'string' && enemyName.length > 0 ? enemyName : '对手',
+    isTrainer: Boolean(isTrainer),
+    rewards,
+    levelUps: rewards.levelUps || [],
+    unlocks: rewards.unlocks || [],
+    primaryRewardItems,
+    itemRewardItems,
+    rewardDetailCount: primaryRewardItems.length + itemRewardItems.length + (rewards.unlocks?.length || 0) + (rewards.levelUps?.length || 0)
+  };
 };
 
 const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) => {
@@ -3104,7 +3154,7 @@ const LaunchScreen = ({ onStartGame, user, transition = null, children = null })
 
   const handleStart = async () => {
     if (!selectedMonster || isStarting) return;
-    gameAudio.prime();
+    await gameAudio.unlock();
     gameAudio.playUiConfirm();
     setIsStarting(true);
     try {
@@ -3167,7 +3217,7 @@ const LaunchScreen = ({ onStartGame, user, transition = null, children = null })
                       className={`launch-starter-orb ${active ? 'launch-starter-orb--active' : ''}`}
                       style={{ '--starter-color': meta.color }}
                       onClick={() => {
-                        gameAudio.prime();
+                        void gameAudio.unlock();
                         gameAudio.playUiSelect();
                         setSelectedMonster(monster);
                       }}
@@ -4183,7 +4233,6 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
               <BattlePartyBalls
                 team={trainerIntroBallTeam}
                 className="battle-party-balls--intro"
-                compact
                 showActive={false}
                 aceId={bossAceId}
               />
@@ -4250,86 +4299,51 @@ const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening'
 
 // ── 胜利画面 ────────────────────────────────────────────────────────
 const BattleVictoryOverlay = ({ enemyName, isTrainer, rewardSummary, onContinue }) => {
+  const displayRef = useRef(null);
+  if (!displayRef.current) {
+    displayRef.current = buildBattleVictoryDisplaySnapshot({ enemyName, isTrainer, rewardSummary });
+  }
+  const {
+    enemyName: displayEnemyName,
+    isTrainer: displayIsTrainer,
+    levelUps,
+    unlocks,
+    primaryRewardItems,
+    itemRewardItems,
+    rewardDetailCount
+  } = displayRef.current;
+
   const [canContinue, setCanContinue] = useState(false);
-  const rewards = useMemo(() => normalizeBattleRewardSummary(rewardSummary), [rewardSummary]);
-  const levelUps = rewards.levelUps || [];
-  const unlocks = rewards.unlocks || [];
-  const participantText = rewards.participantCount > 1
-    ? `${rewards.participantCount} 只宝可梦平分`
-    : '出战宝可梦获得';
-  const primaryRewardItems = [
-    {
-      key: 'gold',
-      className: 'battle-victory-reward--gold',
-      icon: 'fa-coins',
-      label: '金币',
-      value: rewards.gold,
-      meta: '已加入钱包',
-      delay: 980
-    },
-    {
-      key: 'exp',
-      className: 'battle-victory-reward--exp',
-      icon: 'fa-bolt',
-      label: '经验',
-      value: rewards.exp,
-      meta: participantText,
-      delay: 1130
-    }
-  ];
-  const itemRewardItems = rewards.items.map((item, index) => ({
-    key: `item-${index}-${item.itemName}`,
-    icon: 'fa-gift',
-    sprite: item.sprite,
-    label: item.itemName,
-    value: item.quantity,
-    delay: 1280 + index * 90
-  }));
-  const rewardDetailCount = primaryRewardItems.length + itemRewardItems.length + unlocks.length + levelUps.length;
 
   useEffect(() => {
-    setCanContinue(false);
     const timer = setTimeout(() => setCanContinue(true), VICTORY_SETTLEMENT_READY_MS);
     return () => clearTimeout(timer);
-  }, [rewards.exp, rewards.gold, rewards.participantCount]);
+  }, []);
 
   return (
-    <div className="battle-victory-overlay absolute inset-0 z-[9500] flex flex-col items-center justify-center overflow-hidden select-none">
+    <div className="battle-victory-overlay battle-victory-overlay--enter absolute inset-0 z-[9500] flex flex-col items-center justify-center overflow-hidden select-none">
       <div className="battle-victory-spotlight" />
       <div className="battle-victory-sheen" aria-hidden="true" />
 
       <div className="battle-victory-panel relative z-10 w-full text-center">
         <div className="battle-victory-panel__header">
-          <div
-            className="battle-victory-panel__icon mb-3 w-full text-center leading-none"
-            style={{ animation: 'btVictoryIcon 700ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both' }}
-          >
+          <div className="battle-victory-panel__icon mb-3 w-full text-center leading-none">
             <i className="fa-solid fa-trophy"></i>
           </div>
 
-          <h2
-            className="battle-victory-panel__title m-0 w-full text-center font-black leading-tight text-yellow-300"
-            style={{
-              fontSize: 'clamp(2rem, 5.3vw, 2.45rem)',
-              textShadow: '0 0 24px rgba(255, 210, 0, 0.65), 0 0 24px rgba(255, 210, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.8)',
-              animation: 'btVictoryTitle 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms both',
-            }}
-          >
+          <h2 className="battle-victory-panel__title m-0 w-full text-center font-black leading-tight text-yellow-300">
             <span className="battle-victory-title-wrap" aria-label="战斗胜利！">
               <span className="battle-victory-title-core">战斗胜利</span>
               <span className="battle-victory-title-mark" aria-hidden="true">！</span>
             </span>
           </h2>
 
-          <div
-            className="battle-victory-panel__subtitle mt-3 flex w-full flex-col items-center gap-1 px-2"
-            style={{ animation: 'btVictorySubIn 500ms ease-out 700ms both' }}
-          >
+          <div className="battle-victory-panel__subtitle mt-3 flex w-full flex-col items-center gap-1 px-2">
             <p className="flex max-w-full flex-wrap items-center justify-center gap-x-1.5 text-center text-base font-bold text-white/70">
-              <span>击败了{isTrainer ? '训练家' : '野生的'}</span>
-              <span className="text-yellow-200 font-black">{enemyName}</span>
+              <span>击败了{displayIsTrainer ? '训练家' : '野生的'}</span>
+              <span className="text-yellow-200 font-black">{displayEnemyName}</span>
             </p>
-            {isTrainer && (
+            {displayIsTrainer && (
               <p className="inline-flex items-center gap-1 text-center text-sm font-bold text-emerald-300">
                 <i className="fa-solid fa-kit-medical"></i>
                 队伍全员已完全恢复
@@ -4458,12 +4472,7 @@ const BattleVictoryOverlay = ({ enemyName, isTrainer, rewardSummary, onContinue 
         <button
           onClick={onContinue}
           disabled={!canContinue}
-          className="battle-victory-panel__button mt-5 flex min-h-[56px] w-[210px] shrink-0 items-center justify-center self-center rounded-2xl px-6 py-4 text-base font-black text-black"
-          style={{
-            background: 'linear-gradient(135deg, #ffd700, #ffb300)',
-            boxShadow: '0 0 30px 8px rgba(255,215,0,0.3), 0 8px 24px rgba(0,0,0,0.4)',
-            animation: 'btVictoryBtnIn 500ms ease-out 1450ms both',
-          }}>
+          className="battle-victory-panel__button mt-5 flex min-h-[56px] w-[210px] shrink-0 items-center justify-center self-center rounded-2xl px-6 py-4 text-base font-black text-black">
           {canContinue ? '继续探索' : '结算中'}
         </button>
       </div>
@@ -4615,6 +4624,8 @@ const BattleScene = ({
   const [typedLog, setTypedLog] = useState('');
   const [battleFeedbackCue, setBattleFeedbackCue] = useState(null);
   const isBattleSceneMountedRef = useRef(true);
+  const battleSceneClassRef = useRef('');
+  const battleSceneRoleClassRef = useRef('');
   const battleVisualTimerRef = useRef([]);
   const battleEffectCleanupTimerRef = useRef(null);
   const battleFeedbackTimerRef = useRef(null);
@@ -5021,14 +5032,23 @@ const BattleScene = ({
       ...(battleEnvironment || {}),
       battleKind: battleEnvironment?.battleKind || battleKind
     });
+    let computed = battleKind === 'trainer' ? 'battle-scene-training-ground' : 'battle-scene-meadow';
     if (isKnownBattleSceneClass(stableEnvironment?.sceneClass)) {
-      return stableEnvironment.sceneClass;
+      computed = stableEnvironment.sceneClass;
     }
-    return battleKind === 'trainer' ? 'battle-scene-training-ground' : 'battle-scene-meadow';
+    if (battleEnvironment) {
+      battleSceneClassRef.current = computed;
+    }
+    return battleEnvironment ? computed : (battleSceneClassRef.current || computed);
   }, [battleEnvironment, battleKind]);
   const battleSceneRoleClass = useMemo(() => {
-    if (battleKind !== 'trainer') return 'battle-scene-role-wild';
-    return `battle-scene-role-${normalizeTrainerRole(battleEnvironment?.eventRole || battleEnvironment?.eventType || 'normal')}`;
+    const computed = battleKind !== 'trainer'
+      ? 'battle-scene-role-wild'
+      : `battle-scene-role-${normalizeTrainerRole(battleEnvironment?.eventRole || battleEnvironment?.eventType || 'normal')}`;
+    if (battleEnvironment) {
+      battleSceneRoleClassRef.current = computed;
+    }
+    return battleEnvironment ? computed : (battleSceneRoleClassRef.current || computed);
   }, [battleEnvironment?.eventRole, battleEnvironment?.eventType, battleKind]);
 
   // --- Modal Screen Rendering ---
@@ -5065,20 +5085,19 @@ const BattleScene = ({
           onSelect={async (id) => {
             if (id === battlePlayerMon?.id) return false;
             setIsBusy(true);
-            setShowTeam(false);
-            setShowControls('main');
             const switched = await onSwitch?.(id);
             if (switched === false) {
               if (isBattleSceneMountedRef.current) {
                 setIsBusy(false);
-                setShowTeam(true);
               }
               return false;
             }
             if (isBattleSceneMountedRef.current) {
+              setShowTeam(false);
+              setShowControls('main');
               setIsBusy(false);
             }
-            return false;
+            return true;
           }}
           activeId={battlePlayerMon?.id}
           onBack={() => {
@@ -7602,13 +7621,18 @@ const normalizeBattlePhase = (phase) => (
   ['active', 'intro', 'sendout', 'victory', 'defeat', 'escape'].includes(phase) ? phase : 'active'
 );
 
+const isActiveBattleContextView = (view, activeEnemyId = null) => (
+  view === 'battle' || (view === 'team' && Boolean(activeEnemyId))
+);
+
 const normalizeBattleTurn = (turn, {
   view = 'map',
   battlePhase = 'active',
   isThrowingPokeball = false,
-  captureSequenceData = null
+  captureSequenceData = null,
+  activeEnemyId = null
 } = {}) => {
-  if (view !== 'battle') return 'player';
+  if (!isActiveBattleContextView(view, activeEnemyId)) return 'player';
   if (battlePhase !== 'active') return 'player';
   if (turn === 'enemy') return 'enemy';
   if (turn === 'resolving') return 'resolving';
@@ -7633,7 +7657,8 @@ const shouldRepairBattleTurnOnLoad = (gameData) => {
     view,
     battlePhase,
     isThrowingPokeball,
-    captureSequenceData
+    captureSequenceData,
+    activeEnemyId: gameData.activeEnemyId || null
   });
   return view === 'battle' && battlePhase === 'active' && gameData.turn !== normalizedTurn;
 };
@@ -8184,7 +8209,8 @@ const normalizeCloudGameData = (gameData, backendGold) => {
       view,
       battlePhase,
       isThrowingPokeball,
-      captureSequenceData
+      captureSequenceData,
+      activeEnemyId
     }),
     playerTeam,
     storageBox,
@@ -8290,13 +8316,15 @@ const normalizeCloudGameData = (gameData, backendGold) => {
     view: normalized.view,
     battlePhase: normalized.battlePhase,
     isThrowingPokeball: normalized.isThrowingPokeball,
-    captureSequenceData: normalized.captureSequenceData
+    captureSequenceData: normalized.captureSequenceData,
+    activeEnemyId: normalized.activeEnemyId
   });
   if (
     normalized.activeEnemyId &&
     normalized.battlePhase === 'active' &&
     normalized.turn !== 'resolving' &&
-    normalized.turn !== 'capture'
+    normalized.turn !== 'capture' &&
+    !normalized.pendingBattleSwitch
   ) {
     const activeBattleMon = normalized.playerTeam.find((mon) => mon.id === normalized.activePlayerId);
     if (isBattleMonFainted(activeBattleMon) && getAliveBattleBench(normalized.playerTeam, normalized.activePlayerId).length > 0) {
@@ -8310,7 +8338,7 @@ const normalizeCloudGameData = (gameData, backendGold) => {
   }
   if (
     normalized.turn !== 'resolving' ||
-    normalized.view !== 'battle' ||
+    !isActiveBattleContextView(normalized.view, normalized.activeEnemyId) ||
     normalized.battlePhase !== 'active' ||
     normalized.pendingBattleSwitch?.nextActivePlayerId === normalized.activePlayerId
   ) {
@@ -8370,10 +8398,11 @@ const createCloudSnapshot = (gameData) => {
     view,
     battlePhase,
     isThrowingPokeball,
-    captureSequenceData
+    captureSequenceData,
+    activeEnemyId
   });
   const serializedPendingBattleSwitch = (
-    view === 'battle' &&
+    isActiveBattleContextView(view, activeEnemyId) &&
     battlePhase === 'active' &&
     snapshotTurn === 'resolving' &&
     pendingBattleSwitch?.nextActivePlayerId !== activePlayerId
@@ -8624,85 +8653,92 @@ const ChallengeBattleConfirmModal = ({
       : unlockDescription;
 
   return (
-    <div className="reset-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="challenge-confirm-title">
-      <div className="reset-confirm-card challenge-confirm-card">
-        <div className="reset-confirm-card__icon challenge-confirm-card__icon" aria-hidden="true">
-          <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-landmark'}`}></i>
-        </div>
-        <div className="reset-confirm-card__body">
-          <p className="reset-confirm-card__eyebrow">试炼确认</p>
-          <h2 id="challenge-confirm-title">{eventName}</h2>
-          <p className="challenge-confirm-card__lead">{introText}</p>
-          <div className="challenge-confirm-card__chips" aria-label="挑战信息">
-            <span className="challenge-confirm-card__chip">{teamSize} 连战</span>
-            {levelRangeText ? (
-              <span className="challenge-confirm-card__chip">{levelRangeText}</span>
-            ) : null}
-            <span className="challenge-confirm-card__chip">消耗 {energyCost} 点能量</span>
+    <div className="reset-confirm-overlay challenge-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="challenge-confirm-title">
+      <div className="challenge-confirm-card">
+        <div className="challenge-confirm-card__header">
+          <div className="challenge-confirm-card__icon" aria-hidden="true">
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-landmark'}`}></i>
           </div>
-          {fallbackRewardItems.length > 0 ? (
-            <div className="challenge-confirm-card__reward challenge-confirm-card__reward--summary">
-              <span className="challenge-confirm-card__reward-label">{rewardLabel || (alreadyCompleted ? '本次挑战奖励' : '首通与本次奖励')}</span>
-              <div className="challenge-confirm-card__reward-list" aria-label="完成奖励列表">
-                {fallbackRewardItems.map((reward, index) => (
-                  <span key={`${reward.itemType}-${reward.itemKey}-${index}`} className="challenge-confirm-card__reward-pill">
-                    <span className="challenge-confirm-card__reward-icon" aria-hidden="true">
-                      {reward.sprite ? (
-                        <img src={reward.sprite} alt="" onError={handleItemImageError} />
-                      ) : (
-                        <i className="fa-solid fa-gift"></i>
-                      )}
-                    </span>
-                    <span className="challenge-confirm-card__reward-name">{reward.itemName}</span>
-                    {reward.quantity > 1 ? (
-                      <span className="challenge-confirm-card__reward-qty">x{reward.quantity}</span>
-                    ) : null}
-                  </span>
-                ))}
-              </div>
-            </div>
+          <div className="challenge-confirm-card__headings">
+            <p className="challenge-confirm-card__eyebrow">试炼确认</p>
+            <h2 id="challenge-confirm-title">{eventName}</h2>
+          </div>
+        </div>
+
+        <p className="challenge-confirm-card__lead">{introText}</p>
+
+        <div className="challenge-confirm-card__chips" aria-label="挑战信息">
+          <span className="challenge-confirm-card__chip">{teamSize} 连战</span>
+          {levelRangeText ? (
+            <span className="challenge-confirm-card__chip">{levelRangeText}</span>
           ) : null}
-          {(displayedSpeciesCount > 0 || unlockDescription) ? (
-            <div className="challenge-confirm-card__reward challenge-confirm-card__reward--unlock">
-              <div className="challenge-confirm-card__reward-head">
-                <span className="challenge-confirm-card__reward-label">{showingBattlePreview ? '本次试炼守护者' : unlockCount > 0 ? `本次解锁 · 第 ${nextBatchIndex} 批` : '隐藏生态已全部开启'}</span>
-                {displayedSpeciesCount > 0 ? (
-                  <span className="challenge-confirm-card__reward-count">{showingBattlePreview ? `${displayedSpeciesCount} 只` : `${displayedSpeciesCount} 种`}</span>
+          <span className="challenge-confirm-card__chip">消耗 {energyCost} 点能量</span>
+        </div>
+
+        {fallbackRewardItems.length > 0 ? (
+          <section className="challenge-confirm-card__panel challenge-confirm-card__panel--rewards">
+            <span className="challenge-confirm-card__panel-label">{rewardLabel || (alreadyCompleted ? '本次挑战奖励' : '首通与本次奖励')}</span>
+            <div className="challenge-confirm-card__reward-list" aria-label="完成奖励列表">
+              {fallbackRewardItems.map((reward, index) => (
+                <span key={`${reward.itemType}-${reward.itemKey}-${index}`} className="challenge-confirm-card__reward-pill">
+                  <span className="challenge-confirm-card__reward-icon" aria-hidden="true">
+                    {reward.sprite ? (
+                      <img src={reward.sprite} alt="" onError={handleItemImageError} />
+                    ) : (
+                      <i className="fa-solid fa-gift"></i>
+                    )}
+                  </span>
+                  <span className="challenge-confirm-card__reward-name">{reward.itemName}</span>
+                  {reward.quantity > 1 ? (
+                    <span className="challenge-confirm-card__reward-qty">x{reward.quantity}</span>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {(displayedSpeciesCount > 0 || unlockDescription) ? (
+          <section className="challenge-confirm-card__panel challenge-confirm-card__panel--unlock">
+            <div className="challenge-confirm-card__panel-head">
+              <span className="challenge-confirm-card__panel-label">{showingBattlePreview ? '本次试炼守护者' : unlockCount > 0 ? `本次解锁 · 第 ${nextBatchIndex} 批` : '隐藏生态已全部开启'}</span>
+              {displayedSpeciesCount > 0 ? (
+                <span className="challenge-confirm-card__panel-count">{showingBattlePreview ? `${displayedSpeciesCount} 只` : `${displayedSpeciesCount} 种`}</span>
+              ) : null}
+            </div>
+            {unlockLeadText ? (
+              <p className="challenge-confirm-card__panel-copy">{unlockLeadText}</p>
+            ) : null}
+            {displayedSpeciesCount > 0 ? (
+              <div className="challenge-confirm-card__unlock-grid" aria-label={showingBattlePreview ? '本次试炼守护者' : '解锁的野生宝可梦'}>
+                {unlockPreviewSpecies.map((monster) => (
+                  <div key={monster.id} className="challenge-confirm-card__unlock-mon">
+                    <div className="challenge-confirm-card__unlock-sprite">
+                      <img src={monster.sprite} alt={monster.name} onError={handlePokemonImageError} />
+                    </div>
+                    <span className="challenge-confirm-card__unlock-name">{monster.name}</span>
+                    {monster.level ? <span className="challenge-confirm-card__unlock-level">Lv.{monster.level}</span> : null}
+                  </div>
+                ))}
+                {hiddenUnlockCount > 0 ? (
+                  <div className="challenge-confirm-card__unlock-mon challenge-confirm-card__unlock-mon--more">
+                    <div className="challenge-confirm-card__unlock-sprite" aria-hidden="true">
+                      <span className="challenge-confirm-card__more-mark">+{hiddenUnlockCount}</span>
+                    </div>
+                    <span className="challenge-confirm-card__unlock-name">更多稀有</span>
+                  </div>
                 ) : null}
               </div>
-              {unlockLeadText ? (
-                <p className="challenge-confirm-card__reward-copy">{unlockLeadText}</p>
-              ) : null}
-              {displayedSpeciesCount > 0 ? (
-                <div className="challenge-confirm-card__unlock-grid" aria-label={showingBattlePreview ? '本次试炼守护者' : '解锁的野生宝可梦'}>
-                  {unlockPreviewSpecies.map((monster) => (
-                    <div key={monster.id} className="challenge-confirm-card__unlock-mon">
-                      <div className="challenge-confirm-card__unlock-sprite">
-                        <img src={monster.sprite} alt={monster.name} onError={handlePokemonImageError} />
-                      </div>
-                      <span className="challenge-confirm-card__unlock-name">{monster.name}</span>
-                      {monster.level ? <span className="challenge-confirm-card__unlock-level">Lv.{monster.level}</span> : null}
-                    </div>
-                  ))}
-                  {hiddenUnlockCount > 0 ? (
-                    <div className="challenge-confirm-card__unlock-mon challenge-confirm-card__unlock-mon--more">
-                      <div className="challenge-confirm-card__unlock-sprite" aria-hidden="true">
-                        <span className="challenge-confirm-card__more-mark">+{hiddenUnlockCount}</span>
-                      </div>
-                      <span className="challenge-confirm-card__unlock-name">更多稀有</span>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <div className="reset-confirm-card__actions">
-          <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
+            ) : null}
+          </section>
+        ) : null}
+
+        <div className="challenge-confirm-card__actions">
+          <button type="button" className="game-soft-button challenge-confirm-card__button" onClick={onCancel} disabled={busy}>
             稍后再来
           </button>
-          <button type="button" className="game-primary-button" onClick={onConfirm} disabled={busy}>
-            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`}></i>
+          <button type="button" className="game-primary-button challenge-confirm-card__button challenge-confirm-card__button--confirm" onClick={onConfirm} disabled={busy}>
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`} aria-hidden="true"></i>
             {busy ? '进入中' : '开始挑战'}
           </button>
         </div>
@@ -8725,42 +8761,52 @@ const SpringRestoreConfirmModal = ({
 
   const displayGold = Number.isFinite(Number(currentGold)) ? Math.max(0, Math.trunc(Number(currentGold))) : 0;
   const displayCost = Math.max(1, Math.trunc(Number(cost)) || 1);
+  const formattedGold = displayGold.toLocaleString('zh-CN');
   const canAfford = displayGold >= displayCost;
 
   return (
     <div className="reset-confirm-overlay spring-restore-overlay" role="dialog" aria-modal="true" aria-labelledby="spring-restore-title">
-      <div className="reset-confirm-card spring-restore-card">
-        <div className="reset-confirm-card__icon spring-restore-card__icon" aria-hidden="true">
-          <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-droplet'}`}></i>
+      <div className="spring-restore-card">
+        <div className="spring-restore-card__header">
+          <div className="spring-restore-card__icon" aria-hidden="true">
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-droplet'}`}></i>
+          </div>
+          <div className="spring-restore-card__headings">
+            <p className="spring-restore-card__eyebrow">泉水恢复</p>
+            <h2 id="spring-restore-title">{springName}</h2>
+          </div>
         </div>
-        <div className="reset-confirm-card__body">
-          <p className="reset-confirm-card__eyebrow spring-restore-card__eyebrow">泉水恢复</p>
-          <h2 id="spring-restore-title">{springName}</h2>
-          <p>
-            支付 {displayCost} 金币后，泉水会为队伍全员恢复体力、技能值并解除异常状态。
-          </p>
-          <div className="spring-restore-card__chips" aria-label="泉水恢复信息">
-            <span className="spring-restore-card__chip">
-              <i className="fa-solid fa-coins"></i>
-              当前 {displayGold} 金币
-            </span>
-            <span className="spring-restore-card__chip">
-              <i className="fa-solid fa-heart-pulse"></i>
-              HP / MP / 异常全恢复
+
+        <p className="spring-restore-card__lead">
+          恢复全队 HP、MP，并解除异常状态。
+        </p>
+
+        <div className="spring-restore-card__facts" aria-label="泉水恢复信息">
+          <div className="spring-restore-card__fact">
+            <span className="spring-restore-card__fact-label">费用</span>
+            <span className="spring-restore-card__fact-value">
+              <i className="fa-solid fa-coins" aria-hidden="true"></i>
+              {displayCost} 金币
             </span>
           </div>
-          {(!canAfford || error) && (
-            <p className="spring-restore-card__warning">
-              {error || `金币不足，还需要 ${displayCost - displayGold} 金币。`}
-            </p>
-          )}
+          <div className="spring-restore-card__fact">
+            <span className="spring-restore-card__fact-label">当前金币</span>
+            <span className="spring-restore-card__fact-value">{formattedGold}</span>
+          </div>
         </div>
-        <div className="reset-confirm-card__actions">
-          <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
+
+        {(!canAfford || error) && (
+          <p className="spring-restore-card__warning" role="alert">
+            {error || `金币不足，还需要 ${(displayCost - displayGold).toLocaleString('zh-CN')} 金币。`}
+          </p>
+        )}
+
+        <div className="spring-restore-card__actions">
+          <button type="button" className="game-soft-button spring-restore-card__button" onClick={onCancel} disabled={busy}>
             暂不恢复
           </button>
-          <button type="button" className="game-primary-button" onClick={onConfirm} disabled={busy || !canAfford}>
-            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-coins'}`}></i>
+          <button type="button" className="game-primary-button spring-restore-card__button spring-restore-card__button--confirm" onClick={onConfirm} disabled={busy || !canAfford}>
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-droplet'}`} aria-hidden="true"></i>
             {busy ? '恢复中' : `支付 ${displayCost} 金币`}
           </button>
         </div>
@@ -9085,7 +9131,7 @@ const AdventureTopBar = ({
         <div className="topbar-settings-card__header">
           <p className="reset-confirm-card__eyebrow">设置</p>
           <h2 id="topbar-settings-title">冒险控制台</h2>
-          <p>存档、音量和重置都放在这里。</p>
+          <p>存档、音量与重置</p>
         </div>
         <div className="topbar-settings-card__body">
           <section className="topbar-settings-card__section">
@@ -9157,18 +9203,28 @@ const AdventureTopBar = ({
         <div className="map-player-hud__avatar">
           <img src={avatarSrc} onError={handlePokemonImageError} alt="" />
         </div>
-        <div className="map-player-hud__info">
-          <div className="map-player-hud__line map-player-hud__line--name">
+        <div className="map-player-hud__content">
+          <div className="map-player-hud__head">
             <span className="map-player-hud__name">{displayName}</span>
             <span className="map-player-hud__level">Lv.{level}</span>
           </div>
-          <div className="map-player-hud__line map-player-hud__stat map-player-hud__stat--gold">
-            <i className="fa-solid fa-coins" aria-hidden="true"></i>
-            <span>{formattedGold}</span>
-          </div>
-          <div className="map-player-hud__line map-player-hud__stat map-player-hud__stat--energy">
-            <i className="fa-solid fa-bolt" aria-hidden="true"></i>
-            <span>{energyValue}/{maxEnergyValue}</span>
+          <div className="map-player-hud__stats">
+            <span className="map-player-hud__stat map-player-hud__stat--gold">
+              <span className="map-player-hud__stat-icon" aria-hidden="true">
+                <i className="fa-solid fa-coins"></i>
+              </span>
+              <span className="map-player-hud__stat-value">{formattedGold}</span>
+            </span>
+            <span className="map-player-hud__stat map-player-hud__stat--energy">
+              <span className="map-player-hud__stat-icon" aria-hidden="true">
+                <i className="fa-solid fa-bolt"></i>
+              </span>
+              <span className="map-player-hud__stat-value">
+                {energyValue}
+                <span className="map-player-hud__stat-divider">/</span>
+                {maxEnergyValue}
+              </span>
+            </span>
           </div>
         </div>
       </div>
@@ -9176,7 +9232,7 @@ const AdventureTopBar = ({
         <button
           type="button"
           onClick={() => {
-            gameAudio.prime();
+            void gameAudio.unlock();
             setSettingsOpen((current) => !current);
           }}
           className={`map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted${settingsOpen ? ' map-hud-icon-button--active' : ''}`}
@@ -9549,6 +9605,7 @@ export default function OriginalGame({ user, onLogout }) {
   // 战斗过场阶段: 'active' | 'intro' | 'victory' | 'defeat' | 'escape'
   const [battlePhase, setBattlePhase] = useState('active');
   const [battlePhaseData, setBattlePhaseData] = useState(null);
+  const battleVictoryOverlayKeyRef = useRef('');
   const [battleEnvironment, setBattleEnvironment] = useState(null);
   const battleCompletionContextRef = useRef({
     battleEnvironment: null,
@@ -9714,19 +9771,21 @@ export default function OriginalGame({ user, onLogout }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-    const primeAudioOnGesture = () => {
-      gameAudio.prime();
+    const unlockAudioOnGesture = () => {
+      void gameAudio.unlock();
     };
-    window.addEventListener('pointerdown', primeAudioOnGesture, { passive: true });
-    window.addEventListener('keydown', primeAudioOnGesture);
+    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true });
+    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
+    window.addEventListener('keydown', unlockAudioOnGesture);
     return () => {
-      window.removeEventListener('pointerdown', primeAudioOnGesture);
-      window.removeEventListener('keydown', primeAudioOnGesture);
+      window.removeEventListener('pointerdown', unlockAudioOnGesture);
+      window.removeEventListener('touchstart', unlockAudioOnGesture);
+      window.removeEventListener('keydown', unlockAudioOnGesture);
     };
   }, []);
 
   const primeGameAudio = useCallback(() => {
-    gameAudio.prime();
+    void gameAudio.unlock();
   }, []);
 
   const handleToggleAudio = useCallback(() => {
@@ -10373,15 +10432,21 @@ export default function OriginalGame({ user, onLogout }) {
     const captureSequenceData = normalizeCaptureSequenceData(gameData.captureSequenceData);
     const view = gameData.view || 'map';
     const isBattleFlow = view === 'battle' || Boolean(gameData.activeEnemyId);
+    const persistedBattleContext = battleCompletionContextRef.current || {};
     const rawBattleEnvironment = isBattleFlow
-      ? normalizeBattleEnvironment(gameData.battleEnvironment || battlePhaseData?.battleEnvironment)
+      ? normalizeBattleEnvironment(
+        gameData.battleEnvironment ||
+        battlePhaseData?.battleEnvironment ||
+        persistedBattleContext.battleEnvironment
+      )
       : null;
     const battleEventCompletion = isBattleFlow
       ? normalizeBattleEventCompletion(
         gameData.battleEventCompletion ||
         rawBattleEnvironment?.battleEventCompletion ||
-        battlePhaseData?.battleEventCompletion,
-        rawBattleEnvironment
+        battlePhaseData?.battleEventCompletion ||
+        persistedBattleContext.battleEventCompletion,
+        rawBattleEnvironment || persistedBattleContext.battleEnvironment
       )
       : null;
     const battleEnvironment = rawBattleEnvironment && battleEventCompletion
@@ -10402,7 +10467,8 @@ export default function OriginalGame({ user, onLogout }) {
       view,
       battlePhase,
       isThrowingPokeball,
-      captureSequenceData
+      captureSequenceData,
+      activeEnemyId: gameData.activeEnemyId || null
     });
     const u = userRef.current;
     const backendGold = typeof resources.gold === 'number' ? resources.gold : u?.gold;
@@ -11207,7 +11273,7 @@ export default function OriginalGame({ user, onLogout }) {
   const saveGameToCloudRef = useRef(saveGameToCloud);
   useEffect(() => { saveGameToCloudRef.current = saveGameToCloud; }, [saveGameToCloud]);
   const localBattleSwitchInFlightRef = useRef(null);
-  const isResolvingBattleTurn = view === 'battle' && turn === 'resolving';
+  const isResolvingBattleTurn = turn === 'resolving' && Boolean(activeEnemyId) && isActiveBattleContextView(view, activeEnemyId);
   const handlePlayerMove = useCallback((position) => {
     const nextPosition = normalizeWorldPosition(position, playerPosRef.current);
     playerPosRef.current = nextPosition;
@@ -16650,7 +16716,7 @@ const handleReorderTeam = useCallback((newTeam) => {
   }, [addLog, addNotification, commitCloudSnapshot, hasLoadedCloudSave, user?.id]);
 
   useEffect(() => {
-    if (view !== 'battle' || battlePhase !== 'active') {
+    if (!isActiveBattleContextView(view, activeEnemyId) || battlePhase !== 'active') {
       localBattleSwitchInFlightRef.current = null;
       return;
     }
@@ -16712,7 +16778,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       window.clearTimeout(sendTimer);
       window.clearTimeout(clearTimer);
     };
-  }, [activePlayerMon, battlePhase, pendingBattleSwitch, playerTeam, view]);
+  }, [activeEnemyId, activePlayerMon, battlePhase, pendingBattleSwitch, playerTeam, view]);
 
   useEffect(() => {
     const normalizedPendingSwitch = normalizePendingBattleSwitch(pendingBattleSwitch);
@@ -16808,7 +16874,7 @@ const handleReorderTeam = useCallback((newTeam) => {
   }, [showLaunchScreen, view]);
 
 	  useEffect(() => {
-	    if (view !== 'battle' || gameOver || battlePhase !== 'active') return undefined;
+	    if (!isActiveBattleContextView(view, activeEnemyId) || gameOver || battlePhase !== 'active') return undefined;
 	    if (!user?.id || !hasLoadedCloudSave) return undefined;
 
 	    if (isThrowingPokeball && !captureSequenceData) {
@@ -17205,6 +17271,14 @@ const handleReorderTeam = useCallback((newTeam) => {
       followUpEnemyMessage: queuedEnemySendOutData?.message || ''
     });
     const pendingSwitchKey = getPendingBattleSwitchKey(pendingSwitch);
+    const inFlightSwitch = localBattleSwitchInFlightRef.current;
+    if (inFlightSwitch?.source === 'live') {
+      if (inFlightSwitch.key === pendingSwitchKey) {
+        return true;
+      }
+      addNotification('换人进行中，请稍候。', 'info');
+      return false;
+    }
     localBattleSwitchInFlightRef.current = pendingSwitchKey
       ? { key: pendingSwitchKey, source: 'live' }
       : null;
@@ -17222,9 +17296,12 @@ const handleReorderTeam = useCallback((newTeam) => {
           return abortCloudSnapshotCommit('这只宝可梦已在场。', 'info');
         }
 
+        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
         return {
           ...baseSnapshot,
-          view: 'battle',
+          view: isForced ? 'team' : 'battle',
+          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+          battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
           battlePhase: 'active',
           battlePhaseData: null,
           turn: 'resolving',
@@ -17248,7 +17325,11 @@ const handleReorderTeam = useCallback((newTeam) => {
       return false;
     }
 
-    setView('battle');
+    if (isForced) {
+      setView('team');
+    } else {
+      setView('battle');
+    }
     setBattlePhase('active');
     setBattlePhaseData(null);
     setTurn('resolving');
@@ -17695,7 +17776,17 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
-  const hideAdventureTopBar = view === 'bag' || view === 'team' || view === 'dex' || view === 'shop';
+  const hideAdventureTopBar = view !== 'map';
+  const battleVictoryOverlayKey = (() => {
+    if (view !== 'battle' || battlePhase !== 'victory') {
+      battleVictoryOverlayKeyRef.current = '';
+      return null;
+    }
+    if (!battleVictoryOverlayKeyRef.current) {
+      battleVictoryOverlayKeyRef.current = `${activeEnemyId ?? 'battle'}-${Date.now()}`;
+    }
+    return battleVictoryOverlayKeyRef.current;
+  })();
 
   return (
     <>
@@ -17782,8 +17873,9 @@ const handleReorderTeam = useCallback((newTeam) => {
             onComplete={handleCaptureSequenceComplete}
           />
         )}
-	        {view === 'battle' && battlePhase === 'victory' && (
+	        {view === 'battle' && battlePhase === 'victory' && battleVictoryOverlayKey && (
 	          <BattleVictoryOverlay
+	            key={battleVictoryOverlayKey}
 	            enemyName={battlePhaseData?.enemyName ?? '对手'}
 	            isTrainer={battlePhaseData?.isTrainer ?? false}
 	            rewardSummary={battlePhaseData?.rewardSummary}
@@ -17820,10 +17912,7 @@ const handleReorderTeam = useCallback((newTeam) => {
               team={playerTeam}
               storageBox={storageBox}
               activeId={activePlayerId}
-              onSelect={activeEnemyMon ? async (id) => {
-                await handleSwitch(id);
-                return false;
-              } : undefined}
+              onSelect={activeEnemyMon ? (id) => handleSwitch(id) : undefined}
               onBack={() => {
                 // 阵亡强制换人时禁止直接返回战场，必须选择替补宝可梦
                 if (activeEnemyMon && isBattleMonFainted(activePlayerMon)) {

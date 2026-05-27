@@ -303,7 +303,7 @@ class GameAudioController {
       this.resetContext()
       return this.ensureContext()
     }
-    this.resumeContext(context)
+    void this.resumeContext(context)
     this.syncMasterGain()
     this.updateDebugState({
       supported: true,
@@ -314,21 +314,52 @@ class GameAudioController {
     return context
   }
 
+  async unlock() {
+    if (!this.canPlay()) return false
+    let context = this.ensureContext()
+    if (!context) return false
+    if (context.state === 'closed') {
+      this.resetContext()
+      context = this.ensureContext()
+      if (!context) return false
+    }
+    const readyContext = await this.resumeContext(context)
+    this.syncMasterGain()
+    const running = readyContext?.state === 'running'
+    this.updateDebugState({
+      supported: true,
+      contextState: readyContext?.state || context.state,
+      reason: running ? 'unlocked' : 'unlock-pending',
+      lastError: running ? '' : this.debugState.lastError,
+    })
+    return running
+  }
+
   withReadyContext(callback) {
-    if (typeof callback !== 'function') return null
-    const context = this.prime()
+    if (typeof callback !== 'function' || !this.canPlay()) return null
+    const context = this.ensureContext()
     if (!context) return null
 
+    const invoke = (readyContext) => {
+      if (readyContext?.state !== 'running') return
+      try {
+        callback(readyContext)
+      } catch (error) {
+        const message = getErrorMessage(error)
+        this.updateDebugState({
+          reason: 'playback-callback-failed',
+          lastError: message,
+        })
+        this.logOnce('playback-callback-failed', 'warn', '音效回调执行失败。', message)
+      }
+    }
+
     if (context.state === 'running') {
-      callback(context)
+      invoke(context)
       return context
     }
 
-    this.resumeContext(context).then((readyContext) => {
-      if (readyContext?.state === 'running') {
-        callback(readyContext)
-      }
-    })
+    void this.resumeContext(context).then(invoke)
     return context
   }
 
@@ -376,6 +407,10 @@ class GameAudioController {
   }) {
     const context = this.ensureContext()
     if (!context || !this.master) return
+    if (context.state !== 'running') {
+      this.logOnce('schedule-tone-suspended', 'warn', 'AudioContext 未解锁，已跳过音效调度。')
+      return
+    }
     const safeStart = this.resolveScheduleStart(context, start)
     this.updateDebugState({
       scheduledTones: (Number(this.debugState.scheduledTones) || 0) + 1,
@@ -426,6 +461,10 @@ class GameAudioController {
     const context = this.ensureContext()
     const buffer = this.getNoiseBuffer()
     if (!context || !buffer || !this.master) return
+    if (context.state !== 'running') {
+      this.logOnce('schedule-noise-suspended', 'warn', 'AudioContext 未解锁，已跳过噪音调度。')
+      return
+    }
     const safeStart = this.resolveScheduleStart(context, start)
     this.updateDebugState({
       scheduledNoise: (Number(this.debugState.scheduledNoise) || 0) + 1,
@@ -507,10 +546,7 @@ class GameAudioController {
   }
 
   playBattleMove(move = null) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
-
+    this.withReadyContext((context) => {
     const moveType = move?.type || TYPES.NORMAL
     const isStatusMove = move?.category === 'status'
     const style = AUDIO_TYPE_STYLE[moveType] || {
@@ -563,12 +599,11 @@ class GameAudioController {
         lowpass: style.metallic ? 5200 : (style.thump ? 900 : 4200),
       })
     }
+    })
   }
 
   playBattleImpact({ effectiveness = 1, didHit = true, outcome = 'hit', targetFainted = false } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
     if (!didHit || outcome === 'miss') {
@@ -589,12 +624,11 @@ class GameAudioController {
     if (targetFainted) {
       this.scheduleTone({ start: start + 0.04, frequency: 174.61, toFrequency: 92.5, duration: 0.14, gain: 0.025, waveform: 'triangle' })
     }
+    })
   }
 
   playBattleStatus(status = 'status', variant = 'apply') {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
     const patterns = {
@@ -642,33 +676,30 @@ class GameAudioController {
 
     const playPattern = patterns[status] || patterns.buff
     playPattern()
+    })
   }
 
   playSwitch({ side = 'player' } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     const startFrequency = side === 'enemy' ? 349.23 : 440
     const endFrequency = side === 'enemy' ? 523.25 : 659.25
     this.scheduleTone({ start, frequency: startFrequency, toFrequency: endFrequency, duration: 0.09, gain: 0.032, waveform: 'triangle' })
     this.scheduleNoise({ start: start + 0.01, duration: 0.05, gain: 0.012, highpass: 1400, lowpass: 4600 })
+    })
   }
 
   playFaint({ side = 'enemy' } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     const from = side === 'player' ? 246.94 : 293.66
     this.scheduleNoise({ start, duration: 0.08, gain: 0.025, highpass: 500, lowpass: 1600 })
     this.scheduleTone({ start, frequency: from, toFrequency: 82.41, duration: 0.2, gain: 0.032, waveform: 'square', filterType: 'lowpass', filterFrequency: 900 })
+    })
   }
 
   playVictory({ trainer = false } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     const melody = trainer
       ? [
@@ -694,21 +725,19 @@ class GameAudioController {
         waveform: index % 2 === 0 ? 'triangle' : 'square',
       })
     })
+    })
   }
 
   playDefeat() {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     this.scheduleTone({ start, frequency: 392, toFrequency: 220, duration: 0.16, gain: 0.03, waveform: 'triangle' })
     this.scheduleTone({ start: start + 0.09, frequency: 220, toFrequency: 130.81, duration: 0.2, gain: 0.026, waveform: 'square', filterType: 'lowpass', filterFrequency: 1000 })
+    })
   }
 
   playEscape({ success = true } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
     if (success) {
@@ -719,40 +748,36 @@ class GameAudioController {
 
     this.scheduleTone({ start, frequency: 329.63, toFrequency: 196, duration: 0.09, gain: 0.024, waveform: 'square' })
     this.scheduleNoise({ start: start + 0.01, duration: 0.05, gain: 0.012, highpass: 900, lowpass: 2000 })
+    })
   }
 
   playCaptureThrow() {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     this.scheduleTone({ start, frequency: 783.99, toFrequency: 392, duration: 0.08, gain: 0.02, waveform: 'triangle' })
     this.scheduleNoise({ start: start + 0.015, duration: 0.05, gain: 0.012, highpass: 1200, lowpass: 4200 })
+    })
   }
 
   playCaptureSuccess() {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     this.scheduleTone({ start, frequency: 523.25, toFrequency: 783.99, duration: 0.08, gain: 0.028, waveform: 'sine' })
     this.scheduleTone({ start: start + 0.08, frequency: 659.25, toFrequency: 987.77, duration: 0.08, gain: 0.026, waveform: 'triangle' })
     this.scheduleTone({ start: start + 0.16, frequency: 783.99, toFrequency: 1174.66, duration: 0.11, gain: 0.024, waveform: 'sine' })
+    })
   }
 
   playCaptureFail() {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     this.scheduleTone({ start, frequency: 415.3, toFrequency: 220, duration: 0.08, gain: 0.022, waveform: 'square' })
     this.scheduleNoise({ start: start + 0.02, duration: 0.05, gain: 0.012, highpass: 1200, lowpass: 2800 })
+    })
   }
 
   playItemUse({ category = 'potion' } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
     if (category === 'shop') {
@@ -774,12 +799,11 @@ class GameAudioController {
     }
 
     this.scheduleTone({ start, frequency: 523.25, toFrequency: 698.46, duration: 0.08, gain: 0.026, waveform: 'triangle' })
+    })
   }
 
   playHeal({ strong = false } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
     this.scheduleTone({ start, frequency: 523.25, toFrequency: 783.99, duration: 0.1, gain: 0.028, waveform: 'sine' })
@@ -787,12 +811,11 @@ class GameAudioController {
     if (strong) {
       this.scheduleTone({ start: start + 0.12, frequency: 783.99, toFrequency: 1174.66, duration: 0.12, gain: 0.022, waveform: 'triangle' })
     }
+    })
   }
 
   playTravel({ kind = 'warp' } = {}) {
-    if (!this.canPlay()) return
-    const context = this.prime()
-    if (!context) return
+    this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
     const isFastTravel = kind === 'fast'
 
@@ -810,6 +833,7 @@ class GameAudioController {
       duration: isFastTravel ? 0.22 : 0.16,
       gain: isFastTravel ? 0.032 : 0.026,
       waveform: 'sine',
+    })
     })
   }
 }

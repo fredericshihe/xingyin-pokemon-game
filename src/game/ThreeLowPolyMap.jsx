@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { clone as cloneSkeletonScene } from 'three/examples/jsm/utils/SkeletonUtils.js'
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { getAdventureMapInfo, getEncounterZoneAt, getMapSignMessage } from './data/overworldMaps'
 import { getMapEventAt } from './data/mapEvents'
 import { getMapEventTile } from './data/mapEventTypes'
@@ -45,41 +46,111 @@ function readMapVisualQualityPref() {
 
 function resolveMapRendererProfile() {
   const pref = readMapVisualQualityPref()
-  const isCoarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
-  const cores = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 8) : 8
-  const liteTier = pref === 'lite' || (pref === 'auto' && isCoarsePointer && cores <= 2)
-  const mobileTier = pref !== 'high' && isCoarsePointer
+  const liteTier = pref === 'lite'
   return {
     liteTier,
-    mobileTier,
     antialias: !liteTier,
-    pixelRatioCap: liteTier ? 1.35 : (mobileTier ? 2 : 2.25),
-    shadowMapSize: liteTier ? 1024 : (mobileTier ? 1536 : 2048),
+    pixelRatioCap: liteTier ? 1.5 : 3,
+    shadowMapSize: liteTier ? 1024 : 2048,
     shadowType: liteTier ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap,
-    powerPreference: liteTier ? 'default' : 'high-performance'
+    powerPreference: 'high-performance',
+    maxAnisotropy: liteTier ? 4 : 8,
+    castDecorationShadows: pref === 'high'
   }
 }
 
-function prepareMeshGeometry(geometry) {
-  if (!geometry?.isBufferGeometry) return geometry
-  const prepared = geometry.clone()
-  if (!prepared.getAttribute('normal')) {
-    prepared.computeVertexNormals()
+function configureSunShadow(light, mapSize = 2048) {
+  if (!light?.shadow) return
+  light.shadow.mapSize.set(mapSize, mapSize)
+  light.shadow.camera.near = 0.5
+  light.shadow.camera.far = 80
+  light.shadow.bias = -0.00035
+  light.shadow.normalBias = 0.045
+  if ('radius' in light.shadow) {
+    light.shadow.radius = 2.2
   }
-  return prepared
 }
 
-function enhanceMeshMaterial(material) {
+const SHADOW_CASTING_MODEL_KEYS = new Set(['treeOak', 'treeDefault', 'treePine'])
+
+function applyGroundDecalMaterial(material) {
   if (!material) return material
   const mats = Array.isArray(material) ? material : [material]
   mats.forEach((mat) => {
     if (!mat) return
-    mat.flatShading = false
-    if (typeof mat.roughness === 'number') mat.roughness = Math.min(mat.roughness, 0.86)
-    if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.05)
-    mat.needsUpdate = true
+    mat.polygonOffset = true
+    mat.polygonOffsetFactor = -2
+    mat.polygonOffsetUnits = -2
+    mat.depthWrite = true
   })
   return material
+}
+
+const _preparedGeometryCache = new WeakMap()
+
+function prepareMeshGeometry(geometry) {
+  if (!geometry?.isBufferGeometry) return geometry
+  const cached = _preparedGeometryCache.get(geometry)
+  if (cached) return cached
+
+  let prepared = geometry.clone()
+  if (!prepared.getAttribute('normal')) {
+    try {
+      const merged = mergeVertices(prepared)
+      if (merged) prepared = merged
+    } catch {
+      // 个别模型 merge 失败时仍尝试平滑法线
+    }
+    prepared.computeVertexNormals()
+  }
+  _preparedGeometryCache.set(geometry, prepared)
+  return prepared
+}
+
+function polishModelTexture(texture, maxAnisotropy = 8) {
+  if (!texture) return
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.anisotropy = Math.max(1, Math.min(maxAnisotropy, 16))
+  if (texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.NearestMipmapNearestFilter) {
+    texture.minFilter = THREE.LinearMipmapLinearFilter
+    texture.magFilter = THREE.LinearFilter
+    texture.generateMipmaps = true
+  }
+  texture.needsUpdate = true
+}
+
+function convertToSmoothLitMaterial(material) {
+  if (!material?.isMeshBasicMaterial) return material
+  return new THREE.MeshStandardMaterial({
+    name: material.name,
+    color: material.color,
+    map: material.map,
+    alphaMap: material.alphaMap,
+    transparent: material.transparent,
+    opacity: material.opacity,
+    alphaTest: material.alphaTest,
+    side: material.side,
+    depthWrite: material.depthWrite,
+    depthTest: material.depthTest,
+    roughness: 0.84,
+    metalness: 0.02,
+    flatShading: false
+  })
+}
+
+function enhanceMeshMaterial(material, { maxAnisotropy = 8 } = {}) {
+  if (!material) return material
+  if (Array.isArray(material)) {
+    return material.map((mat) => enhanceMeshMaterial(mat, { maxAnisotropy }))
+  }
+  const mat = convertToSmoothLitMaterial(material)
+  mat.flatShading = false
+  if (typeof mat.roughness === 'number') mat.roughness = Math.min(Math.max(mat.roughness, 0.72), 0.88)
+  if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.05)
+  polishModelTexture(mat.map, maxAnisotropy)
+  polishModelTexture(mat.normalMap, maxAnisotropy)
+  mat.needsUpdate = true
+  return mat
 }
 
 function ensureGrassSwayMaterial(material) {
@@ -263,6 +334,7 @@ function makeHorizontalShape(points, material) {
   const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), material)
   mesh.rotation.x = -Math.PI / 2
   mesh.receiveShadow = true
+  applyGroundDecalMaterial(mesh.material)
   return mesh
 }
 
@@ -378,7 +450,7 @@ function shouldHideBlockedLowVegetation(object, mapGrid) {
   return !isLegacyTileWalkableValue(tile) && hasWalkableCardinalNeighbor(mapGrid, x, y)
 }
 
-function cloneScene(scene, { scale = 1, shadows = true } = {}) {
+function cloneScene(scene, { scale = 1, shadows = true, maxAnisotropy = 8 } = {}) {
   if (!scene) return null
   const clone = cloneSkeletonScene(scene)
   clone.scale.setScalar(scale)
@@ -389,7 +461,7 @@ function cloneScene(scene, { scale = 1, shadows = true } = {}) {
       if (child.isSkinnedMesh) child.frustumCulled = false
       child.geometry = prepareMeshGeometry(child.geometry)
       child.material = child.material?.clone?.() || child.material
-      enhanceMeshMaterial(child.material)
+      enhanceMeshMaterial(child.material, { maxAnisotropy })
       if (child.material && !Array.isArray(child.material)) {
         child.material.roughness = 0.82
         child.material.metalness = 0.03
@@ -1414,12 +1486,14 @@ function createBridge({ length = 3, width = 1.4, rotation = 0 } = {}) {
 function createTerrainTop(width, height) {
   const terrainW = (width + VISUAL_PADDING_TILES * 2) * CELL + 4
   const terrainH = (height + VISUAL_PADDING_TILES * 2) * CELL + 4
-  const geometry = new THREE.PlaneGeometry(terrainW, terrainH, width + 6, height + 6)
+  const segX = Math.min(40, Math.max(12, Math.round(width / 2)))
+  const segY = Math.min(40, Math.max(12, Math.round(height / 2)))
+  const geometry = new THREE.PlaneGeometry(terrainW, terrainH, segX, segY)
   const positions = geometry.attributes.position
   for (let i = 0; i < positions.count; i += 1) {
     const x = positions.getX(i)
     const y = positions.getY(i)
-    const wave = Math.sin(x * 0.42) * 0.035 + Math.cos(y * 0.36) * 0.03
+    const wave = Math.sin(x * 0.22) * 0.018 + Math.cos(y * 0.2) * 0.016
     positions.setZ(i, wave)
   }
   geometry.computeVertexNormals()
@@ -1430,11 +1504,13 @@ function createTerrainTop(width, height) {
     new THREE.MeshStandardMaterial({
       color: 0x79d16b,
       roughness: 0.95,
-      metalness: 0.02
+      metalness: 0.02,
+      flatShading: false
     })
   )
   mesh.position.y = -0.03
   mesh.receiveShadow = true
+  mesh.castShadow = false
   return mesh
 }
 
@@ -1634,7 +1710,8 @@ function ThreeLowPolyMap({
       renderer = new THREE.WebGLRenderer({
         antialias: renderProfile.antialias,
         alpha: false,
-        powerPreference: renderProfile.powerPreference
+        powerPreference: renderProfile.powerPreference,
+        logarithmicDepthBuffer: true
       })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
       renderer.shadowMap.enabled = true
@@ -1643,6 +1720,10 @@ function ThreeLowPolyMap({
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.08
       renderer.setClearColor(0xbfe9ff, 1)
+      renderProfile.maxAnisotropy = Math.min(
+        renderProfile.maxAnisotropy,
+        renderer.capabilities.getMaxAnisotropy?.() || renderProfile.maxAnisotropy
+      )
     } catch (error) {
       scheduleRendererRestart('renderer-create-failed', error, 600)
       return undefined
@@ -1681,10 +1762,10 @@ function ThreeLowPolyMap({
     const ambient = new THREE.HemisphereLight(0xffffff, 0x7fb06f, 1.55)
     scene.add(ambient)
 
-    const sun = new THREE.DirectionalLight(0xfff6df, 2.55)
+    const sun = new THREE.DirectionalLight(0xfff6df, 2.35)
     sun.position.set(12, 22, 8)
     sun.castShadow = true
-    sun.shadow.mapSize.set(renderProfile.shadowMapSize, renderProfile.shadowMapSize)
+    configureSunShadow(sun, renderProfile.shadowMapSize)
     sun.shadow.camera.left = -35
     sun.shadow.camera.right = 35
     sun.shadow.camera.top = 35
@@ -1796,6 +1877,7 @@ function ThreeLowPolyMap({
       const rect = host.getBoundingClientRect()
       const width = Math.max(rect.width, 1)
       const height = Math.max(rect.height, 1)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
       renderer.setSize(width, height, false)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
@@ -1923,6 +2005,12 @@ function ThreeLowPolyMap({
         transparent: true,
         opacity: 0.32
       })
+      applyGroundDecalMaterial(pathMaterial)
+      applyGroundDecalMaterial(pathEdgeMaterial)
+      applyGroundDecalMaterial(pathHighlightMaterial)
+      applyGroundDecalMaterial(waterBankMaterial)
+      applyGroundDecalMaterial(forestFloorMaterial)
+      applyGroundDecalMaterial(forestTrailMaterial)
 
       // === InstancedMesh 工厂 + Chunk 化 ===
       // 1) 把所有重复模型按 sub-mesh 建模板（draw call 从 ~1050 砍到 ~30）
@@ -1953,7 +2041,7 @@ function ThreeLowPolyMap({
           const mat = (typeof child.material?.clone === 'function')
             ? child.material.clone()
             : child.material
-          enhanceMeshMaterial(mat)
+          enhanceMeshMaterial(mat, { maxAnisotropy: renderProfile.maxAnisotropy })
           if (mat && !Array.isArray(mat)) {
             mat.roughness = 0.82
             mat.metalness = 0.03
@@ -2011,7 +2099,7 @@ function ThreeLowPolyMap({
         const set = template.map((sub) => {
           if (usesGrassSway) ensureGrassSwayMaterial(sub.material)
           const im = new THREE.InstancedMesh(sub.geometry, sub.material, cap)
-          im.castShadow = true
+          im.castShadow = renderProfile.castDecorationShadows && SHADOW_CASTING_MODEL_KEYS.has(key)
           im.receiveShadow = true
           im.count = 0
           im.frustumCulled = false // chunk group 控制可见性

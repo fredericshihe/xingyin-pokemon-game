@@ -55,7 +55,10 @@ function resolveMapRendererProfile() {
     shadowType: liteTier ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap,
     powerPreference: 'high-performance',
     maxAnisotropy: liteTier ? 4 : 8,
-    castDecorationShadows: pref === 'high'
+    // 默认要有“明显的方向阴影”（至少树/建筑），否则画面会显得很“贴纸”。
+    // 只有 lite 模式才关掉装饰投影；high 模式允许更多小物件也投影。
+    castDecorationShadows: !liteTier,
+    castAllDecorationShadows: pref === 'high'
   }
 }
 
@@ -2099,7 +2102,8 @@ function ThreeLowPolyMap({
         const set = template.map((sub) => {
           if (usesGrassSway) ensureGrassSwayMaterial(sub.material)
           const im = new THREE.InstancedMesh(sub.geometry, sub.material, cap)
-          im.castShadow = renderProfile.castDecorationShadows && SHADOW_CASTING_MODEL_KEYS.has(key)
+          const isTreeLike = SHADOW_CASTING_MODEL_KEYS.has(key)
+          im.castShadow = renderProfile.castDecorationShadows && (isTreeLike || renderProfile.castAllDecorationShadows)
           im.receiveShadow = true
           im.count = 0
           im.frustumCulled = false // chunk group 控制可见性

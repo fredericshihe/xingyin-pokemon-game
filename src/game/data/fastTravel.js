@@ -2,7 +2,7 @@ export const FAST_TRAVEL_EVENT_TYPE = 'fast_travel'
 export const FAST_TRAVEL_COST = 5
 
 export const FAST_TRAVEL_STATIONS = Object.freeze({
-  GodotMap: { x: 6, y: 29, direction: 'down', anchor: 'camp-road' },
+  GodotMap: { x: 5, y: 30, direction: 'up', anchor: 'camp-road' },
   GodotMapV2: { x: 6, y: 14, direction: 'down', anchor: 'west-gate' },
   GodotMapV2_MistLake: { x: 16, y: 14, direction: 'right', anchor: 'lake-causeway' },
   GodotMapV2_FarmTown: { x: 18, y: 6, direction: 'right', anchor: 'town-square' },

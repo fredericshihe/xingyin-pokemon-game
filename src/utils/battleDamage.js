@@ -49,6 +49,35 @@ export const getTypeEffectiveness = (moveType, defender) => (
   getTypeEffectivenessBreakdown(moveType, defender).effectiveness
 )
 
+const isDamagingBattleMove = (move) => (
+  Boolean(move) && move.category !== 'status' && Number(move.power) > 0
+)
+
+export const getBattleMoveEffectivenessResult = (move, defender, attacker = null) => {
+  const breakdown = getTypeEffectivenessBreakdown(move?.type, defender)
+  if (!isDamagingBattleMove(move)) {
+    return {
+      ...breakdown,
+      effectiveness: 1,
+      outcome: 'status'
+    }
+  }
+  if (!move?.type || breakdown.defenderTypes.length === 0) {
+    return {
+      ...breakdown,
+      effectiveness: 1,
+      outcome: 'unknown'
+    }
+  }
+
+  return {
+    ...breakdown,
+    effectiveness: breakdown.effectiveness,
+    outcome: 'resolved',
+    attackerTypes: getBattlePokemonTypes(attacker)
+  }
+}
+
 export const getTypeEffectivenessRank = (effectiveness = 1) => {
   if (effectiveness === 0) return 'immune'
   if (effectiveness >= 4) return 'verySuper'
@@ -58,9 +87,12 @@ export const getTypeEffectivenessRank = (effectiveness = 1) => {
   return 'neutral'
 }
 
-export const getMoveEffectivenessMeta = (move, defender) => {
-  if (!move || move.category === 'status' || !(Number(move.power) > 0)) {
+export const getMoveEffectivenessMeta = (move, defender, attacker = null) => {
+  const effectivenessResult = getBattleMoveEffectivenessResult(move, defender, attacker)
+
+  if (effectivenessResult.outcome === 'status') {
     return {
+      ...effectivenessResult,
       rank: 'status',
       label: '辅助',
       className: 'battle-move-effectiveness--status',
@@ -69,10 +101,9 @@ export const getMoveEffectivenessMeta = (move, defender) => {
     }
   }
 
-  const breakdown = getTypeEffectivenessBreakdown(move.type, defender)
-  if (!move.type || breakdown.defenderTypes.length === 0) {
+  if (effectivenessResult.outcome === 'unknown') {
     return {
-      ...breakdown,
+      ...effectivenessResult,
       rank: 'unknown',
       label: '待定',
       className: 'battle-move-effectiveness--unknown',
@@ -81,42 +112,42 @@ export const getMoveEffectivenessMeta = (move, defender) => {
     }
   }
 
-  const rank = getTypeEffectivenessRank(breakdown.effectiveness)
+  const rank = getTypeEffectivenessRank(effectivenessResult.effectiveness)
   const metaByRank = {
     immune: {
       label: '无效',
       className: 'battle-move-effectiveness--immune',
-      description: `${breakdown.moveTypeName}属性对当前对手没有效果。`
+      description: `${effectivenessResult.moveTypeName}属性对当前对手没有效果。`
     },
     verySuper: {
       label: '极佳',
       className: 'battle-move-effectiveness--very-super',
-      description: `${breakdown.moveTypeName}属性非常克制当前对手。`
+      description: `${effectivenessResult.moveTypeName}属性非常克制当前对手。`
     },
     super: {
       label: '克制',
       className: 'battle-move-effectiveness--super',
-      description: `${breakdown.moveTypeName}属性克制当前对手。`
+      description: `${effectivenessResult.moveTypeName}属性克制当前对手。`
     },
     veryResisted: {
       label: '很弱',
       className: 'battle-move-effectiveness--very-resisted',
-      description: `当前对手很抵抗${breakdown.moveTypeName}属性。`
+      description: `当前对手很抵抗${effectivenessResult.moveTypeName}属性。`
     },
     resisted: {
       label: '不利',
       className: 'battle-move-effectiveness--resisted',
-      description: `${breakdown.moveTypeName}属性不太适合攻击当前对手。`
+      description: `${effectivenessResult.moveTypeName}属性不太适合攻击当前对手。`
     },
     neutral: {
       label: '一般',
       className: 'battle-move-effectiveness--neutral',
-      description: `${breakdown.moveTypeName}属性对当前对手表现正常。`
+      description: `${effectivenessResult.moveTypeName}属性对当前对手表现正常。`
     }
   }
 
   return {
-    ...breakdown,
+    ...effectivenessResult,
     rank,
     ...(metaByRank[rank] || metaByRank.neutral)
   }
@@ -163,7 +194,7 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
     burnHalvesPhysicalAtk = true
   } = options
 
-  if (!move || move.category === 'status' || !move.power) {
+  if (!isDamagingBattleMove(move)) {
     return { damage: 0, effectiveness: 1, rawDamage: 0, capped: false }
   }
 
@@ -175,7 +206,7 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
     ? resolveBattleStat(defender, 'def')
     : resolveBattleStat(defender, 'spDef')
 
-  const effectiveness = getTypeEffectiveness(move.type, defender)
+  const effectiveness = getBattleMoveEffectivenessResult(move, defender, attacker).effectiveness
   if (effectiveness === 0) {
     return { damage: 0, effectiveness: 0, rawDamage: 0, capped: false }
   }

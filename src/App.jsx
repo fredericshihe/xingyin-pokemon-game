@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { authService } from './utils/authService'
 import { preloadImageAssets } from './utils/localAssetPreloader'
+import { assetUrl } from './utils/assetUrl'
 
 const Login = lazy(() => import('./components/Auth/Login'))
 const Register = lazy(() => import('./components/Auth/Register'))
@@ -10,12 +11,12 @@ const TeacherDashboard = lazy(() => import('./components/Teacher/Dashboard'))
 const MapRuntimePreview = lazy(() => import('./game/MapRuntimePreview'))
 
 const AUTH_LOCAL_IMAGE_ASSETS = [
-  '/assets/pokemon/placeholder.svg',
-  '/assets/pokemon/official-artwork/1.png',
-  '/assets/pokemon/official-artwork/4.png',
-  '/assets/pokemon/official-artwork/7.png',
-  '/assets/pokemon/official-artwork/25.png',
-  '/assets/pokemon/official-artwork/133.png'
+  assetUrl('/assets/pokemon/placeholder.svg'),
+  assetUrl('/assets/pokemon/official-artwork/1.png'),
+  assetUrl('/assets/pokemon/official-artwork/4.png'),
+  assetUrl('/assets/pokemon/official-artwork/7.png'),
+  assetUrl('/assets/pokemon/official-artwork/25.png'),
+  assetUrl('/assets/pokemon/official-artwork/133.png')
 ]
 
 function GlobalLogoutButton({ onLogout }) {

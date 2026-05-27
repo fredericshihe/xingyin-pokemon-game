@@ -1,7 +1,7 @@
 import { TYPES } from './constants'
 import { MOVES } from './gameData'
 import { calculateBattleDamage, getStabMultiplier, getTypeEffectiveness } from './battleDamage'
-import { getTrainerRoleBalance } from './gameBalance'
+import { getTrainerRoleBalance, normalizeTrainerRole } from './gameBalance'
 
 const STATUS_VALUE = {
   sleep: 40,
@@ -16,6 +16,179 @@ const STATUS_IMMUNITY_BY_TYPE = {
   poison: [TYPES.POISON, TYPES.STEEL],
   paralysis: [TYPES.ELECTRIC],
   freeze: [TYPES.ICE]
+}
+
+const AI_ROLE_PROFILES = {
+  wild: {
+    damageWeight: 0.96,
+    typeEdgeWeight: 0.9,
+    finisherWeight: 0.85,
+    utilityWeight: 0.6,
+    statusWeight: 0.68,
+    setupWeight: 0.58,
+    healWeight: 0.48,
+    repeatPenalty: 0.55,
+    costWeight: 1.08,
+    chargePenalty: 1.08,
+    lowHpUtilityPenalty: 1.2,
+    betterDamagePenalty: 0.72,
+    randomMultiplier: 1.12,
+    minRandomChance: 0.1,
+    temperatureMultiplier: 1.12,
+    minTemperature: 14,
+    finishLockMultiplier: 0.5,
+    typeLockMultiplier: 0.74
+  },
+  normal: {
+    damageWeight: 1,
+    typeEdgeWeight: 1,
+    finisherWeight: 1,
+    utilityWeight: 1,
+    statusWeight: 1,
+    setupWeight: 1,
+    healWeight: 1,
+    repeatPenalty: 1,
+    costWeight: 1,
+    chargePenalty: 1,
+    lowHpUtilityPenalty: 1,
+    betterDamagePenalty: 1,
+    randomMultiplier: 1,
+    minRandomChance: 0.04,
+    temperatureMultiplier: 1,
+    minTemperature: 7,
+    finishLockMultiplier: 0.25,
+    typeLockMultiplier: 0.55
+  },
+  lieutenant: {
+    damageWeight: 1.06,
+    typeEdgeWeight: 1.15,
+    finisherWeight: 1.2,
+    utilityWeight: 1.08,
+    statusWeight: 1.08,
+    setupWeight: 1.12,
+    healWeight: 1.06,
+    repeatPenalty: 1.08,
+    costWeight: 0.92,
+    chargePenalty: 1.02,
+    lowHpUtilityPenalty: 1.2,
+    betterDamagePenalty: 1.16,
+    randomMultiplier: 0.78,
+    minRandomChance: 0.03,
+    temperatureMultiplier: 0.78,
+    minTemperature: 6,
+    finishLockMultiplier: 0.2,
+    typeLockMultiplier: 0.48
+  },
+  challenge: {
+    damageWeight: 1.08,
+    typeEdgeWeight: 1.18,
+    finisherWeight: 1.24,
+    utilityWeight: 1.1,
+    statusWeight: 1.1,
+    setupWeight: 1.14,
+    healWeight: 1.08,
+    repeatPenalty: 1.1,
+    costWeight: 0.9,
+    chargePenalty: 1,
+    lowHpUtilityPenalty: 1.24,
+    betterDamagePenalty: 1.18,
+    randomMultiplier: 0.72,
+    minRandomChance: 0.03,
+    temperatureMultiplier: 0.72,
+    minTemperature: 5,
+    finishLockMultiplier: 0.18,
+    typeLockMultiplier: 0.45
+  },
+  boss: {
+    damageWeight: 1.12,
+    typeEdgeWeight: 1.26,
+    finisherWeight: 1.36,
+    utilityWeight: 1.12,
+    statusWeight: 1.16,
+    setupWeight: 1.16,
+    healWeight: 1.18,
+    repeatPenalty: 1.22,
+    costWeight: 0.82,
+    chargePenalty: 0.96,
+    lowHpUtilityPenalty: 1.42,
+    betterDamagePenalty: 1.28,
+    randomMultiplier: 0.58,
+    minRandomChance: 0.02,
+    temperatureMultiplier: 0.62,
+    minTemperature: 4,
+    finishLockMultiplier: 0.14,
+    typeLockMultiplier: 0.38
+  }
+}
+
+const TRAINER_STYLE_PROFILES = {
+  pressure: {
+    damageWeight: 1.1,
+    typeEdgeWeight: 1.08,
+    finisherWeight: 1.14,
+    utilityWeight: 0.88,
+    statusWeight: 0.9,
+    setupWeight: 0.92,
+    healWeight: 0.88,
+    repeatPenalty: 1.08,
+    randomMultiplier: 0.86,
+    minRandomChance: 0.02,
+    temperatureMultiplier: 0.88,
+    minTemperature: 5,
+    finishLockMultiplier: 0.2,
+    typeLockMultiplier: 0.46
+  },
+  control: {
+    damageWeight: 0.94,
+    typeEdgeWeight: 1.02,
+    finisherWeight: 0.98,
+    utilityWeight: 1.16,
+    statusWeight: 1.2,
+    setupWeight: 1.18,
+    healWeight: 1.12,
+    repeatPenalty: 0.96,
+    costWeight: 0.96,
+    randomMultiplier: 0.9,
+    minRandomChance: 0.02,
+    temperatureMultiplier: 0.9,
+    minTemperature: 5,
+    finishLockMultiplier: 0.24,
+    typeLockMultiplier: 0.52
+  },
+  elite: {
+    damageWeight: 1.05,
+    typeEdgeWeight: 1.12,
+    finisherWeight: 1.1,
+    utilityWeight: 1.02,
+    statusWeight: 1.04,
+    setupWeight: 1.08,
+    healWeight: 1.02,
+    repeatPenalty: 1.02,
+    costWeight: 0.94,
+    randomMultiplier: 0.72,
+    minRandomChance: 0.02,
+    temperatureMultiplier: 0.8,
+    minTemperature: 4,
+    finishLockMultiplier: 0.18,
+    typeLockMultiplier: 0.42
+  }
+}
+
+const normalizeTrainerStyle = (trainerStyle = null) => {
+  const normalized = typeof trainerStyle === 'string' ? trainerStyle.trim().toLowerCase() : ''
+  return TRAINER_STYLE_PROFILES[normalized] ? normalized : ''
+}
+
+const getAiRoleProfile = ({ battleKind = 'wild', trainerRole = 'normal', trainerStyle = null } = {}) => {
+  if (battleKind !== 'trainer') return AI_ROLE_PROFILES.wild
+  const normalizedRole = normalizeTrainerRole(trainerRole)
+  const roleProfile = AI_ROLE_PROFILES[normalizedRole] || AI_ROLE_PROFILES.normal
+  const normalizedStyle = normalizeTrainerStyle(trainerStyle)
+  if (normalizedRole !== 'lieutenant' || !normalizedStyle) return roleProfile
+  return {
+    ...roleProfile,
+    ...TRAINER_STYLE_PROFILES[normalizedStyle]
+  }
 }
 
 const getTypes = (mon) => [mon?.type, mon?.type2].filter(Boolean)
@@ -43,6 +216,10 @@ const hasTargetStatusRequirement = (move, target) => (
   !move?.requiresTargetStatus || target?.status === move.requiresTargetStatus
 )
 
+const hasUserStatusRequirement = (move, user) => (
+  !move?.requiresUserStatus || user?.status === move.requiresUserStatus
+)
+
 const getLastMoveKey = (mon) => {
   const moveKey = mon?.volatileStatuses?.lastMoveKey
   return MOVES[moveKey] ? moveKey : null
@@ -51,23 +228,24 @@ const getLastMoveKey = (mon) => {
 const canUseMove = (enemyMon, targetMon, moveKey) => {
   const move = MOVES[moveKey]
   if (!move || !isMoveAffordable(enemyMon, move)) return false
-  return hasTargetStatusRequirement(move, targetMon)
+  return hasUserStatusRequirement(move, enemyMon) && hasTargetStatusRequirement(move, targetMon)
 }
 
-const scoreStatusMove = ({ move, enemyMon, targetMon }) => {
+const scoreStatusMove = ({ move, enemyMon, targetMon, profile }) => {
   if (!move.status) return 0
   if (targetMon?.status) return -55
   if (hasStatusImmunity(targetMon, move.status)) return -75
 
   const targetHpRatio = getHpRatio(targetMon)
   const accuracyFactor = getMoveAccuracy(move) / 100
-  const baseValue = STATUS_VALUE[move.status] || 26
-  const setupWindow = targetHpRatio >= 0.65 ? 16 : targetHpRatio >= 0.35 ? 8 : -14
+  const baseValue = (STATUS_VALUE[move.status] || 26) * profile.statusWeight
+  const setupWindowBase = targetHpRatio >= 0.65 ? 16 : targetHpRatio >= 0.35 ? 8 : -14
+  const setupWindow = setupWindowBase * profile.setupWeight
   const speedPressure = (Number(targetMon?.spd) || 0) > (Number(enemyMon?.spd) || 0) ? 4 : 0
   return (baseValue + setupWindow + speedPressure) * accuracyFactor
 }
 
-const scoreStatChangeMove = ({ move, enemyMon, targetMon }) => {
+const scoreStatChangeMove = ({ move, enemyMon, targetMon, profile }) => {
   const statChange = move.statChange
   if (!statChange?.stat || !statChange.stages) return 0
 
@@ -81,44 +259,54 @@ const scoreStatChangeMove = ({ move, enemyMon, targetMon }) => {
   const base = statChange.target === 'attacker' ? 10 : 12
   const stageValue = Math.abs(statChange.stages) * 4
   const longBattleValue = battleStillLong * 7
-  return base + stageValue + longBattleValue - (targetLow ? 12 : 0)
+  return (base + stageValue + longBattleValue - (targetLow ? 12 * profile.lowHpUtilityPenalty : 0)) * profile.setupWeight
 }
 
-const scoreUtilityMove = ({ moveKey, move, enemyMon, targetMon, candidates }) => {
+const scoreUtilityMove = ({ moveKey, move, enemyMon, targetMon, candidates, profile, roleBalance = null }) => {
   let score = 0
   const enemyHpRatio = getHpRatio(enemyMon)
   const targetHpRatio = getHpRatio(targetMon)
 
   if (move.effect === 'heal') {
     if (enemyHpRatio >= 0.72) return -60
-    score += 18 + (1 - enemyHpRatio) * 88
-    if (enemyHpRatio <= 0.35) score += 24
+    score += (18 + (1 - enemyHpRatio) * 88) * profile.healWeight
+    if (enemyHpRatio <= 0.35) score += 24 * profile.healWeight
+    if (enemyHpRatio <= 0.5 && targetHpRatio >= 0.45) {
+      score += Math.max(0, profile.healWeight - 0.9) * 24
+    }
+    if (roleBalance) {
+      const healDiscipline = Math.max(0, roleBalance.aiSkill - 0.45)
+      const lowHpUrgency = Math.max(0, 0.72 - enemyHpRatio)
+      score += healDiscipline * lowHpUrgency * 54
+      if (targetHpRatio >= 0.6) score += healDiscipline * 8
+      if (enemyHpRatio <= 0.35) score += healDiscipline * 14
+    }
   }
 
   if (move.effect === 'mimic') {
     const targetLastMove = getLastMoveKey(targetMon)
-    score += targetLastMove && targetLastMove !== 'mimic' ? 24 : -62
+    score += (targetLastMove && targetLastMove !== 'mimic' ? 24 : -62) * profile.utilityWeight
   }
 
   if (move.status) {
-    score += scoreStatusMove({ move, enemyMon, targetMon })
+    score += scoreStatusMove({ move, enemyMon, targetMon, profile })
   }
 
   if (move.volatileStatus === 'confusion' && !targetMon?.volatileStatuses?.confusion) {
-    score += targetHpRatio > 0.35 ? 22 : 8
+    score += (targetHpRatio > 0.35 ? 22 : 8) * profile.utilityWeight
   }
 
   if (move.volatileStatus === 'flinch') {
     const likelyActsFirst = (Number(enemyMon?.spd) || 0) >= (Number(targetMon?.spd) || 0) || (move.priority || 0) > 0
-    score += likelyActsFirst ? 12 : 3
+    score += (likelyActsFirst ? 12 : 3) * profile.utilityWeight
   }
 
   if (move.statChange) {
-    score += scoreStatChangeMove({ move, enemyMon, targetMon })
+    score += scoreStatChangeMove({ move, enemyMon, targetMon, profile })
   }
 
   const previousMove = getLastMoveKey(enemyMon)
-  if (previousMove === moveKey && candidates.length > 1) score -= 6
+  if (previousMove === moveKey && candidates.length > 1) score -= 6 * profile.repeatPenalty
 
   return score
 }
@@ -133,11 +321,21 @@ const getCandidateDamageRows = ({ enemyMon, targetMon, candidates = [] }) => (
     .sort((left, right) => right.damage - left.damage || right.effectiveness - left.effectiveness)
 )
 
-export const scoreEnemyMove = ({ moveKey, enemyMon, targetMon, battleKind = 'wild', candidates = [] }) => {
+export const scoreEnemyMove = ({
+  moveKey,
+  enemyMon,
+  targetMon,
+  battleKind = 'wild',
+  trainerRole = 'normal',
+  trainerStyle = null,
+  candidates = []
+}) => {
   const move = MOVES[moveKey]
   if (!move || !enemyMon || !targetMon) return -Infinity
   if (!isMoveAffordable(enemyMon, move)) return -Infinity
 
+  const profile = getAiRoleProfile({ battleKind, trainerRole, trainerStyle })
+  const roleBalance = battleKind === 'trainer' ? getTrainerRoleBalance(trainerRole) : null
   let score = 10
   const enemyMp = Math.max(1, getCurrentMp(enemyMon))
   const targetHp = getCurrentHp(targetMon)
@@ -145,6 +343,7 @@ export const scoreEnemyMove = ({ moveKey, enemyMon, targetMon, battleKind = 'wil
   const candidateDamageRows = getCandidateDamageRows({ enemyMon, targetMon, candidates })
   const bestDamageOutcome = candidateDamageRows[0] || { moveKey: null, damage: 0, effectiveness: 1 }
   const bestSuperEffectiveOutcome = candidateDamageRows.find((entry) => entry.effectiveness > 1) || null
+  const roleTypeDiscipline = roleBalance ? Math.max(0, roleBalance.aiSkill - 0.45) * 18 : 0
 
   if (!hasTargetStatusRequirement(move, targetMon)) score -= 80
 
@@ -155,56 +354,65 @@ export const scoreEnemyMove = ({ moveKey, enemyMon, targetMon, battleKind = 'wil
     const damage = Math.max(0, result.damage)
     const damageRatio = targetHp > 0 ? damage / targetHp : 0
     const accuracyFactor = accuracy / 100
-    score += Math.min(1.45, damageRatio) * 68 * accuracyFactor
+    score += Math.min(1.45, damageRatio) * 68 * accuracyFactor * profile.damageWeight
 
     if (result.effectiveness === 0) score -= 95
-    else if (result.effectiveness >= 4) score += 48
-    else if (result.effectiveness > 1) score += 32
-    else if (result.effectiveness > 0 && result.effectiveness <= 0.25) score -= 34
-    else if (result.effectiveness > 0 && result.effectiveness < 1) score -= 20
+    else if (result.effectiveness >= 4) score += 48 * profile.typeEdgeWeight
+    else if (result.effectiveness > 1) score += 32 * profile.typeEdgeWeight
+    else if (result.effectiveness > 0 && result.effectiveness <= 0.25) score -= 34 * profile.typeEdgeWeight
+    else if (result.effectiveness > 0 && result.effectiveness < 1) score -= 20 * profile.typeEdgeWeight
 
-    if (getStabMultiplier(enemyMon, move.type) > 1) score += 8
-    if (targetHp > 0 && damage >= targetHp) score += 76 + (move.priority ? 10 : 0)
+    if (getStabMultiplier(enemyMon, move.type) > 1) score += 8 * (0.85 + profile.damageWeight * 0.15)
+    if (targetHp > 0 && damage >= targetHp) score += (76 + (move.priority ? 10 : 0)) * profile.finisherWeight
     else if (targetHp > 0 && getHpRatio(targetMon) <= 0.4) {
-      score -= Math.max(0, 1 - damage / targetHp) * 28
+      score -= Math.max(0, 1 - damage / targetHp) * 28 * profile.finisherWeight
     }
     if (bestDamageOutcome.damage > 0 && moveKey !== bestDamageOutcome.moveKey) {
-      score -= Math.max(0, 1 - damage / bestDamageOutcome.damage) * 18
+      score -= Math.max(0, 1 - damage / bestDamageOutcome.damage) * 18 * profile.betterDamagePenalty
     }
-    if (result.effectiveness > 1 && damageRatio >= 0.22) score += 12
-    if (move.effect === 'drain' && getHpRatio(enemyMon) < 0.8) score += (1 - getHpRatio(enemyMon)) * 18
-    if (move.charge) score -= targetHp > 0 && damage >= targetHp ? 10 : 18
+    if (result.effectiveness > 1 && damageRatio >= 0.22) score += 12 * profile.typeEdgeWeight
+    if (bestSuperEffectiveOutcome && bestSuperEffectiveOutcome.damage >= targetHp * 0.18) {
+      if (result.effectiveness > 1) score += roleTypeDiscipline
+      else score -= roleTypeDiscipline * 1.15
+    }
+    if (move.effect === 'drain' && getHpRatio(enemyMon) < 0.8) score += (1 - getHpRatio(enemyMon)) * 18 * profile.healWeight
+    if (move.charge) score -= (targetHp > 0 && damage >= targetHp ? 10 : 18) * profile.chargePenalty
   } else {
-    score += scoreUtilityMove({ moveKey, move, enemyMon, targetMon, candidates })
+    score += scoreUtilityMove({ moveKey, move, enemyMon, targetMon, candidates, profile, roleBalance })
 
     if (bestDamageOutcome.damage > 0 && targetHp > 0) {
       const bestDamageRatio = bestDamageOutcome.damage / targetHp
+      const utilityPressurePenalty = move.effect === 'heal'
+        ? Math.max(0.45, 0.75 - Math.max(0, profile.healWeight - 1) * 0.6)
+        : profile.lowHpUtilityPenalty
       if (bestDamageRatio >= 0.22) {
-        score -= 16 + bestDamageRatio * 18
+        score -= (16 + bestDamageRatio * 18) * utilityPressurePenalty
       }
       if (bestSuperEffectiveOutcome && bestSuperEffectiveOutcome.damage >= targetHp * 0.2) {
-        score -= 18
+        score -= 18 * profile.typeEdgeWeight
       }
       if (getHpRatio(targetMon) <= 0.5) {
-        score -= 18
+        score -= 18 * utilityPressurePenalty
       }
     }
   }
 
   if (move.status && move.power > 0 && !targetMon.status && !hasStatusImmunity(targetMon, move.status)) {
-    score += (STATUS_VALUE[move.status] || 20) * ((move.statusChance ?? 10) / 100) * 0.35
+    score += (STATUS_VALUE[move.status] || 20) * ((move.statusChance ?? 10) / 100) * 0.35 * profile.statusWeight
   }
 
   if (move.statChange && move.power > 0) {
-    score += scoreStatChangeMove({ move, enemyMon, targetMon }) * ((move.statChange.chance ?? 100) / 100) * 0.25
+    score += scoreStatChangeMove({ move, enemyMon, targetMon, profile }) * ((move.statChange.chance ?? 100) / 100) * 0.25
   }
 
   if (accuracy < 100) score -= (100 - accuracy) * 0.22
-  score -= Math.max(0, (Number(move.cost) || 0) - 8) * 0.45
-  score -= ((Number(move.cost) || 0) / enemyMp) * 4
+  score -= Math.max(0, (Number(move.cost) || 0) - 8) * 0.45 * profile.costWeight
+  score -= ((Number(move.cost) || 0) / enemyMp) * 4 * profile.costWeight
 
   const previousMove = getLastMoveKey(enemyMon)
-  if (previousMove === moveKey && candidates.length > 1) score -= battleKind === 'trainer' ? 4 : 7
+  if (previousMove === moveKey && candidates.length > 1) {
+    score -= (battleKind === 'trainer' ? 4 : 7) * profile.repeatPenalty
+  }
 
   return score
 }
@@ -258,11 +466,18 @@ const getBestDamageOutcome = ({ enemyMon, targetMon }) => {
     }
 }
 
+const getRecentEnemySwitchCount = (battleLogs = [], lookback = 8) => (
+  (Array.isArray(battleLogs) ? battleLogs.slice(-lookback) : [])
+    .filter((message) => typeof message === 'string' && message.startsWith('对手收回了 '))
+    .length
+)
+
 export function chooseBattleEnemyMove({
   enemyMon,
   targetMon,
   battleKind = 'wild',
-  trainerRole = 'normal'
+  trainerRole = 'normal',
+  trainerStyle = null
 } = {}) {
   const chargingMove = enemyMon?.volatileStatuses?.chargingMove
   if (chargingMove && MOVES[chargingMove]) return chargingMove
@@ -274,13 +489,16 @@ export function chooseBattleEnemyMove({
   })
   if (affordableMoves.length === 0) return null
 
-  const legalMoves = affordableMoves.filter((moveKey) => canUseMove(enemyMon, targetMon, moveKey))
-  const candidates = legalMoves.length > 0 ? legalMoves : affordableMoves
+  const userLegalMoves = affordableMoves.filter((moveKey) => hasUserStatusRequirement(MOVES[moveKey], enemyMon))
+  const legalMoves = userLegalMoves.filter((moveKey) => canUseMove(enemyMon, targetMon, moveKey))
+  const candidates = legalMoves.length > 0 ? legalMoves : userLegalMoves
+  if (candidates.length === 0) return null
   if (candidates.length === 1) return candidates[0]
 
+  const profile = getAiRoleProfile({ battleKind, trainerRole, trainerStyle })
   const scoredMoves = candidates.map((moveKey) => ({
     moveKey,
-    score: scoreEnemyMove({ moveKey, enemyMon, targetMon, battleKind, candidates })
+    score: scoreEnemyMove({ moveKey, enemyMon, targetMon, battleKind, trainerRole, trainerStyle, candidates })
   }))
   const sortedScoredMoves = scoredMoves.slice().sort((left, right) => right.score - left.score)
   const bestEntry = sortedScoredMoves[0]
@@ -301,25 +519,26 @@ export function chooseBattleEnemyMove({
   let randomChance = battleKind === 'trainer'
     ? Math.max(0.04, 0.18 - roleBalance.aiSkill * 0.14)
     : getWildRandomness(enemyMon)
-  if (bestCanFinish) randomChance *= battleKind === 'trainer' ? 0.25 : 0.42
-  else if (bestHasTypeEdge || lowHpPressure) randomChance *= battleKind === 'trainer' ? 0.55 : 0.68
+  randomChance *= profile.randomMultiplier
+  if (bestCanFinish) randomChance *= profile.finishLockMultiplier
+  else if (bestHasTypeEdge || lowHpPressure) randomChance *= profile.typeLockMultiplier
   if (clearBestMove) randomChance *= 0.68
-  randomChance = Math.max(battleKind === 'trainer' ? 0.02 : 0.08, randomChance)
+  randomChance = Math.max(profile.minRandomChance, randomChance)
   if (Math.random() < randomChance) return pickRandom(randomPool)
 
   return pickWeighted(finalScoredMoves, {
     temperature: battleKind === 'trainer'
-      ? Math.max(7, 16 - roleBalance.aiSkill * 8)
-      : 18
+      ? Math.max(profile.minTemperature, (16 - roleBalance.aiSkill * 8) * profile.temperatureMultiplier)
+      : Math.max(profile.minTemperature, 18 * profile.temperatureMultiplier)
   })
 }
 
-const getBestMoveScore = ({ enemyMon, targetMon, battleKind = 'trainer', trainerRole = 'normal' }) => {
+const getBestMoveScore = ({ enemyMon, targetMon, battleKind = 'trainer', trainerRole = 'normal', trainerStyle = null }) => {
   const moves = Array.isArray(enemyMon?.moves) ? enemyMon.moves : []
   const candidates = moves.filter((moveKey) => canUseMove(enemyMon, targetMon, moveKey))
   if (candidates.length === 0) return -Infinity
   return Math.max(...candidates.map((moveKey) => (
-    scoreEnemyMove({ moveKey, enemyMon, targetMon, battleKind, candidates })
+    scoreEnemyMove({ moveKey, enemyMon, targetMon, battleKind, trainerRole, trainerStyle, candidates })
   )))
 }
 
@@ -332,7 +551,7 @@ const getIncomingTypePressure = (attacker, defender) => {
   return Math.max(...damagingMoves.map((move) => getTypeEffectiveness(move.type, defender)))
 }
 
-const scoreTrainerSwitchCandidate = ({ candidate, activeEnemyMon, targetMon, battleKind, trainerRole }) => {
+const scoreTrainerSwitchCandidate = ({ candidate, activeEnemyMon, targetMon, battleKind, trainerRole, trainerStyle = null }) => {
   const candidateHpRatio = getHpRatio(candidate)
   if (candidateHpRatio <= 0) return -Infinity
 
@@ -340,63 +559,112 @@ const scoreTrainerSwitchCandidate = ({ candidate, activeEnemyMon, targetMon, bat
     enemyMon: candidate,
     targetMon,
     battleKind,
-    trainerRole
+    trainerRole,
+    trainerStyle
   })
   const activeAttackScore = getBestMoveScore({
     enemyMon: activeEnemyMon,
     targetMon,
     battleKind,
-    trainerRole
+    trainerRole,
+    trainerStyle
   })
   const incomingPressure = getIncomingTypePressure(targetMon, candidate)
   const activeIncomingPressure = getIncomingTypePressure(targetMon, activeEnemyMon)
+  const candidateIncomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: candidate })
+  const activeIncomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
+  const candidateIncomingRatio = candidateIncomingOutcome.damage / Math.max(1, getCurrentHp(candidate))
+  const activeIncomingRatio = activeIncomingOutcome.damage / Math.max(1, getCurrentHp(activeEnemyMon))
+  const candidateAtKoRisk = candidateIncomingRatio >= 1
+  const activeAtKoRisk = activeIncomingRatio >= 1
   const levelBonus = ((Number(candidate.level) || 1) - (Number(activeEnemyMon?.level) || 1)) * 2.2
   const healthBonus = candidateHpRatio * 18
   const defensiveSwing = (activeIncomingPressure - incomingPressure) * 18
+  const survivalSwing = Math.max(-1.5, Math.min(1.5, activeIncomingRatio - candidateIncomingRatio)) * 30
+  const sacrificePenalty = candidateAtKoRisk && !activeAtKoRisk ? 54 : 0
+  const rescueBonus = activeAtKoRisk && !candidateAtKoRisk ? 18 : 0
   const offensiveSwing = Number.isFinite(activeAttackScore)
     ? attackScore - activeAttackScore
     : attackScore
 
-  return offensiveSwing + defensiveSwing + healthBonus + levelBonus
+  return offensiveSwing + defensiveSwing + survivalSwing + healthBonus + levelBonus + rescueBonus - sacrificePenalty
 }
 
-export function chooseTrainerSwitchTarget({
+export function evaluateTrainerSwitchDecision({
   enemyTeam = [],
   activeEnemyMon,
   targetMon,
   battleKind = 'wild',
-  trainerRole = 'normal'
+  trainerRole = 'normal',
+  trainerStyle = null,
+  battleLogs = [],
+  random = Math.random
 } = {}) {
-  if (battleKind !== 'trainer' || !activeEnemyMon || !targetMon) return null
-  if (activeEnemyMon?.volatileStatuses?.chargingMove) return null
+  const stay = (reason = 'no_switch') => ({
+    shouldSwitch: false,
+    target: null,
+    reason,
+    probability: 0
+  })
+  if (battleKind !== 'trainer' || !activeEnemyMon || !targetMon) return stay('not_trainer')
+  if (activeEnemyMon?.volatileStatuses?.chargingMove) return stay('charging')
 
   const aliveBenched = (Array.isArray(enemyTeam) ? enemyTeam : [])
     .filter((mon) => mon && mon.id !== activeEnemyMon.id && getCurrentHp(mon) > 0)
-  if (aliveBenched.length === 0) return null
+  if (aliveBenched.length === 0) return stay('no_bench')
 
   const roleBalance = getTrainerRoleBalance(trainerRole)
+  const normalizedStyle = normalizeTrainerStyle(trainerStyle)
+  const styleSwitchProfile = {
+    pressure: { chanceDelta: -0.04, gapMultiplier: 1.1 },
+    control: { chanceDelta: 0.06, gapMultiplier: 0.92 },
+    elite: { chanceDelta: 0.03, gapMultiplier: 0.96 }
+  }[normalizedStyle] || { chanceDelta: 0, gapMultiplier: 1 }
   const activeHpRatio = getHpRatio(activeEnemyMon)
   const activeMoveScore = getBestMoveScore({
     enemyMon: activeEnemyMon,
     targetMon,
     battleKind,
-    trainerRole
+    trainerRole,
+    trainerStyle
   })
   const incomingPressure = getIncomingTypePressure(targetMon, activeEnemyMon)
+  const activeIncomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
+  const activeIncomingRatio = activeIncomingOutcome.damage / Math.max(1, getCurrentHp(activeEnemyMon))
+  const activeAtKoRisk = activeIncomingRatio >= 1
+  const activeSevereRisk = activeIncomingRatio >= 0.7 || incomingPressure >= 4
   const activeIsPinned = incomingPressure >= 2 || activeMoveScore < 18
   const activeIsLow = activeHpRatio <= roleBalance.switchHpRatio
+  const activeIsCritical = activeHpRatio <= Math.max(0.16, roleBalance.switchHpRatio - 0.12)
   const activeDamageOutcome = getBestDamageOutcome({ enemyMon: activeEnemyMon, targetMon })
   const activeCanFinish = activeDamageOutcome.damage >= getCurrentHp(targetMon)
-  if (activeCanFinish && activeHpRatio > Math.max(0.18, roleBalance.switchHpRatio * 0.5)) return null
+  const activeCanPressAdvantage = activeDamageOutcome.damage >= getCurrentHp(targetMon) * 0.55 || activeMoveScore >= 78
+  if (activeHpRatio >= 0.86 && !activeAtKoRisk && activeMoveScore >= 18) {
+    return stay('healthy_probe')
+  }
+  if (activeHpRatio >= 0.72 && !activeAtKoRisk && activeIncomingRatio < 0.55 && activeMoveScore >= 25) {
+    return stay('healthy_scout')
+  }
+  if (activeCanFinish && !activeAtKoRisk && activeHpRatio > Math.max(0.16, roleBalance.switchHpRatio * 0.48)) {
+    return stay('finish_available')
+  }
+  if (activeCanPressAdvantage && !activeAtKoRisk && !activeSevereRisk && !activeIsCritical) {
+    return stay('pressure_available')
+  }
   if (
     activeDamageOutcome.effectiveness > 1 &&
     activeMoveScore >= 65 &&
     !activeIsLow &&
     incomingPressure < 4
   ) {
-    return null
+    return stay('type_advantage')
   }
-  if (!activeIsPinned && !activeIsLow) return null
+  if (!activeIsPinned && !activeIsLow && !activeAtKoRisk) return stay('stable_position')
+
+  const recentSwitchCount = getRecentEnemySwitchCount(battleLogs)
+  if (recentSwitchCount > 0 && !activeAtKoRisk && !(activeIsCritical && activeSevereRisk)) {
+    return stay('switch_cooldown')
+  }
 
   const scoredCandidates = aliveBenched
     .map((candidate) => ({
@@ -406,19 +674,104 @@ export function chooseTrainerSwitchTarget({
         activeEnemyMon,
         targetMon,
         battleKind,
-        trainerRole
+        trainerRole,
+        trainerStyle
       })
     }))
     .filter((entry) => Number.isFinite(entry.score))
     .sort((left, right) => right.score - left.score)
   const best = scoredCandidates[0]
-  if (!best) return null
+  if (!best) return stay('no_valid_candidate')
 
   const scoreGap = best.score
-  if (scoreGap < roleBalance.switchScoreGap && !activeIsLow) return null
+  const requiredScoreGap = activeAtKoRisk
+    ? roleBalance.switchScoreGap * 0.45 * styleSwitchProfile.gapMultiplier
+    : activeIsCritical
+      ? roleBalance.switchScoreGap * 0.7 * styleSwitchProfile.gapMultiplier
+      : roleBalance.switchScoreGap * (activeHpRatio >= 0.72 ? 1.55 : 1) * styleSwitchProfile.gapMultiplier
+  if (scoreGap < requiredScoreGap) return stay('no_meaningful_gain')
+  if (recentSwitchCount > 0 && (!activeAtKoRisk || !activeIsCritical || scoreGap < roleBalance.switchScoreGap * 1.8)) {
+    return stay('switch_cooldown')
+  }
 
-  const pressureBonus = activeIsPinned ? 0.16 : 0
-  const lowHpBonus = activeIsLow ? 0.16 : 0
-  const probability = Math.min(0.82, roleBalance.switchChance + pressureBonus + lowHpBonus)
-  return Math.random() < probability ? best.candidate : null
+  const pressureBonus = activeIsPinned ? 0.06 : 0
+  const koRiskBonus = activeAtKoRisk ? 0.16 : activeSevereRisk ? 0.07 : 0
+  const lowHpBonus = activeIsCritical ? 0.05 : activeIsLow ? 0.02 : 0
+  const repeatPenalty = recentSwitchCount > 0 ? recentSwitchCount * 0.22 : 0
+  const healthyPatiencePenalty = activeHpRatio >= 0.72 ? 0.16 : activeHpRatio > roleBalance.switchHpRatio ? 0.08 : 0
+  const probability = Math.max(
+    0.04,
+    Math.min(0.68, roleBalance.switchChance + styleSwitchProfile.chanceDelta + pressureBonus + koRiskBonus + lowHpBonus - repeatPenalty - healthyPatiencePenalty)
+  )
+  const shouldSwitch = random() < probability
+  const reason = activeAtKoRisk
+    ? 'avoid_ko'
+    : activeSevereRisk || incomingPressure >= 2
+      ? 'type_pivot'
+      : activeIsCritical
+        ? 'preserve_partner'
+        : 'gain_matchup'
+  return {
+    shouldSwitch,
+    target: shouldSwitch ? best.candidate : null,
+    suggestedTarget: best.candidate,
+    reason,
+    probability,
+    scoreGap,
+    requiredScoreGap,
+    activeAtKoRisk,
+    activeIsLow,
+    activeIsCritical
+  }
+}
+
+export function chooseTrainerSwitchTarget(options = {}) {
+  return evaluateTrainerSwitchDecision(options).target
+}
+
+export function chooseTrainerBattleAction({
+  enemyTeam = [],
+  activeEnemyMon,
+  targetMon,
+  battleKind = 'wild',
+  trainerRole = 'normal',
+  trainerStyle = null,
+  battleLogs = [],
+  allowSwitch = true,
+  random = Math.random
+} = {}) {
+  const moveKey = chooseBattleEnemyMove({
+    enemyMon: activeEnemyMon,
+    targetMon,
+    battleKind,
+    trainerRole,
+    trainerStyle
+  })
+
+  if (allowSwitch && battleKind === 'trainer') {
+    const switchDecision = evaluateTrainerSwitchDecision({
+      enemyTeam,
+      activeEnemyMon,
+      targetMon,
+      battleKind,
+      trainerRole,
+      trainerStyle,
+      battleLogs,
+      random
+    })
+    if (switchDecision.shouldSwitch) {
+      return {
+        type: 'switch',
+        target: switchDecision.target,
+        reason: switchDecision.reason,
+        switchDecision
+      }
+    }
+  }
+
+  return {
+    type: 'move',
+    moveKey,
+    reason: moveKey ? 'use_move' : 'no_move'
+  }
 }

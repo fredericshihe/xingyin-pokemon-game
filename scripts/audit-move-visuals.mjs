@@ -13,6 +13,7 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
   const { MOVES, MONSTERS } = await loadModule('/src/utils/gameData.js')
   const { getMoveEffectConfig, getMoveVisualAudit } = await loadModule('/src/utils/moveVisuals.js')
   const {
+    calculateBattleDamage,
     getMoveEffectivenessMeta,
     getTypeEffectivenessBreakdown,
     getTypeEffectivenessRank,
@@ -93,7 +94,29 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
       const breakdown = getTypeEffectivenessBreakdown(move.type, monster)
       if (breakdown.defenderTypes.length === 0) continue
       const expectedRank = getTypeEffectivenessRank(breakdown.effectiveness)
-      const actualMeta = getMoveEffectivenessMeta(move, monster)
+      const attackerStub = {
+        id: 999999,
+        name: 'audit-attacker',
+        level: 50,
+        atk: 100,
+        def: 100,
+        spAtk: 100,
+        spDef: 100,
+        spd: 100,
+        type: move.type,
+        type2: null,
+        maxHp: 200,
+      }
+      const actualMeta = getMoveEffectivenessMeta(move, monster, attackerStub)
+      const liveBattleOutcome = calculateBattleDamage(attackerStub, {
+        ...monster,
+        currentHp: monster.currentHp ?? monster.maxHp ?? 200,
+        maxHp: monster.maxHp ?? 200
+      }, move, {
+        randomFactor: 1,
+        applySameLevelCap: false,
+        burnHalvesPhysicalAtk: false
+      })
       effectivenessPairCount += 1
       if (actualMeta.rank !== expectedRank || actualMeta.effectiveness !== breakdown.effectiveness) {
         issues.push({
@@ -106,6 +129,17 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
           actualRank: actualMeta.rank,
           expectedEffectiveness: breakdown.effectiveness,
           actualEffectiveness: actualMeta.effectiveness,
+        })
+      }
+      if (actualMeta.effectiveness !== liveBattleOutcome.effectiveness) {
+        issues.push({
+          issue: 'move_effectiveness_meta_not_matching_live_battle',
+          moveKey,
+          moveName: move.name,
+          monsterId: monster.id,
+          monsterName: monster.name,
+          metaEffectiveness: actualMeta.effectiveness,
+          battleEffectiveness: liveBattleOutcome.effectiveness,
         })
       }
     }
@@ -164,10 +198,17 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     })
   }
 
-  if (!/getMoveEffectivenessMeta\(move,\s*battleEnemyMon\)/.test(originalGameSource)) {
+  if (!/getMoveEffectivenessMeta\(move,\s*battleEnemyMon,\s*battlePlayerMon\)/.test(originalGameSource)) {
     issues.push({
-      issue: 'battle_move_button_not_using_live_enemy_for_effectiveness',
+      issue: 'battle_move_button_not_using_live_battle_participants_for_effectiveness',
       file: 'src/components/Game/OriginalGame.jsx',
+    })
+  }
+
+  if (!/getBattleMoveEffectivenessResult\(move,\s*defender,\s*attacker\)/.test(battleDamageSource)) {
+    issues.push({
+      issue: 'battle_damage_not_using_shared_effectiveness_result',
+      file: 'src/utils/battleDamage.js',
     })
   }
 

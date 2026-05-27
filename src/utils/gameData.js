@@ -3,6 +3,7 @@ import { itemSprite } from './itemSprites.js'
 import { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 import { OFFICIAL_EXTRA_MOVES } from './officialExtraMoves.js'
 import { withExplicitLevelEvolution } from './pokemonEvolutionRules.js'
+import { assetUrl } from './assetUrl.js'
 
 export { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 
@@ -10,9 +11,9 @@ export { getOfficialLearnLevelByMove } from './officialLearnsets.js'
 // dexNo = 官方图鉴编号（与游戏内 id 不同）
 const sp = (dexNo) => ({
   pokedexId: dexNo,
-  sprite: `/assets/pokemon/official-artwork/${dexNo}.png`,
-  backSprite: `/assets/pokemon/official-artwork/${dexNo}.png`,
-  fallbackSprite: '/assets/pokemon/placeholder.svg',
+  sprite: assetUrl(`/assets/pokemon/official-artwork/${dexNo}.png`),
+  backSprite: assetUrl(`/assets/pokemon/official-artwork/${dexNo}.png`),
+  fallbackSprite: assetUrl('/assets/pokemon/placeholder.svg'),
 })
 
 // ─── 技能数据库 ──────────────────────────────────────────────────────────────
@@ -482,7 +483,7 @@ export const POTIONS = {
     healAmount: 20,
     mpRestoreAmount: 5,
     sprite: itemSprite('potion.png'),
-    description: '恢复 HP 20 / MP 5',
+    description: '恢复 HP 20 / MP 5 / 解除异常',
   },
   super_potion: {
     name: '好伤药',
@@ -490,7 +491,7 @@ export const POTIONS = {
     healAmount: 50,
     mpRestoreAmount: 20,
     sprite: itemSprite('super-potion.png'),
-    description: '恢复 HP 50 / MP 20',
+    description: '恢复 HP 50 / MP 20 / 解除异常',
   },
   hyper_potion: {
     name: '厉害伤药',
@@ -498,7 +499,7 @@ export const POTIONS = {
     healAmount: 120,
     mpRestoreAmount: 50,
     sprite: itemSprite('hyper-potion.png'),
-    description: '恢复 HP 120 / MP 50',
+    description: '恢复 HP 120 / MP 50 / 解除异常',
   },
 }
 

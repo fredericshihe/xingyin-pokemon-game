@@ -91,7 +91,7 @@ const REGION_ENCOUNTER_TABLE_IDS = {
   GodotMapV2_Graveyard: 'region_grave_29_36',
   GodotMapV2_HexRuins: 'region_ruin_35_42',
   GodotMapV2_SurvivalRidge: 'region_ridge_41_47',
-  GodotMapV2_BossHighland: 'region_peak_47_50'
+  GodotMapV2_BossHighland: 'region_peak_52_60'
 }
 
 const STARTER_MAP_CONFIG = {

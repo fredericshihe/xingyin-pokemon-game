@@ -2,7 +2,7 @@ import { MOVES } from './gameData'
 import { calculateCatchRate as calculateBalancedCatchRate } from './gameBalance'
 import {
   calculateBattleDamage,
-  getTypeEffectiveness,
+  getBattleMoveEffectivenessResult,
   rollDamageRandomFactor
 } from './battleDamage'
 import { chooseBattleEnemyMove } from './battleAi'
@@ -39,7 +39,7 @@ export function applyMoveEffect(attacker, defender, move, damage) {
   }
 
   // 计算属性克制
-  result.effectiveness = getTypeEffectiveness(move.type, defender)
+  result.effectiveness = getBattleMoveEffectivenessResult(move, defender, attacker).effectiveness
 
   // 伤害技能
   if (move.power > 0) {

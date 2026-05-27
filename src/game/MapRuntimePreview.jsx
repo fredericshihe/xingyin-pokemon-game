@@ -10,6 +10,16 @@ import { applyMapEventsToGrid, getMapStartPosition } from './data/mapEvents'
 
 const PREVIEW_MAPS = ADVENTURE_MAP_CHAIN
 
+function getPreviewSearchParams() {
+  if (typeof window === 'undefined') return new URLSearchParams()
+  return new URLSearchParams(window.location.search)
+}
+
+function getInitialPreviewMap() {
+  const requestedMap = getPreviewSearchParams().get('map')
+  return PREVIEW_MAPS.includes(requestedMap) ? requestedMap : 'GodotMapV2'
+}
+
 function loadPreviewGrid(mapName) {
   return applyMapEventsToGrid(mapName, loadAdventureMapGrid(mapName))
 }
@@ -23,12 +33,14 @@ function makeEventLine(type, message) {
 }
 
 export default function MapRuntimePreview() {
-  const [mapName, setMapName] = useState('GodotMapV2')
-  const [mapGrid, setMapGrid] = useState(() => loadPreviewGrid('GodotMapV2'))
-  const [playerPos, setPlayerPos] = useState(() => getMapStartPosition('GodotMapV2'))
+  const initialMapName = useMemo(() => getInitialPreviewMap(), [])
+  const perfMode = useMemo(() => getPreviewSearchParams().get('perf') === '1', [])
+  const [mapName, setMapName] = useState(initialMapName)
+  const [mapGrid, setMapGrid] = useState(() => loadPreviewGrid(initialMapName))
+  const [playerPos, setPlayerPos] = useState(() => getMapStartPosition(initialMapName))
   const [zoneName, setZoneName] = useState('')
   const [logs, setLogs] = useState(() => [
-    makeEventLine('info', 'GodotMapV2 runtime preview ready')
+    makeEventLine('info', `${initialMapName} runtime preview ready`)
   ])
 
   const mapInfo = useMemo(() => getAdventureMapInfo(mapName), [mapName])
@@ -102,8 +114,8 @@ export default function MapRuntimePreview() {
   }, [mapName, pushLog])
 
   return (
-    <div className="map-runtime-preview">
-      <header className="map-runtime-preview__bar">
+    <div className={`map-runtime-preview${perfMode ? ' map-runtime-preview--perf' : ''}`}>
+      {!perfMode && <header className="map-runtime-preview__bar">
         <div>
           <p className="map-runtime-preview__eyebrow">Map Runtime Preview</p>
           <h1>{mapInfo.displayName || mapName}</h1>
@@ -121,7 +133,7 @@ export default function MapRuntimePreview() {
             </button>
           ))}
         </div>
-      </header>
+      </header>}
 
       <main className="map-runtime-preview__main">
         <section className="map-runtime-preview__canvas" aria-label="地图画面">
@@ -149,7 +161,7 @@ export default function MapRuntimePreview() {
           />
         </section>
 
-        <aside className="map-runtime-preview__panel" aria-label="地图数据">
+        {!perfMode && <aside className="map-runtime-preview__panel" aria-label="地图数据">
           <div className="map-runtime-preview__stat-grid">
             <span><strong>{stats.size}</strong><small>尺寸</small></span>
             <span><strong>{stats.decorations}</strong><small>装饰</small></span>
@@ -181,7 +193,7 @@ export default function MapRuntimePreview() {
               </div>
             ))}
           </div>
-        </aside>
+        </aside>}
       </main>
     </div>
   )

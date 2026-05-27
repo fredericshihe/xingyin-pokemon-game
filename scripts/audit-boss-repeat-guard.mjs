@@ -49,6 +49,42 @@ const requiredSnippets = [
     snippet: 'appendDailyTrainerBattleEvent('
   },
   {
+    label: 'local completed battle override helper exists',
+    snippet: 'const appendCompletedBattleEventVisualOverride = (overrides, {'
+  },
+  {
+    label: 'map visual state merges local completed override',
+    snippet: 'const buildMapEventVisualState = (mapName, world, completedBattleEventVisualOverrides = null) =>'
+  },
+  {
+    label: 'cloud apply preserves recent local battle completion progress',
+    snippet: 'mergeLocalBattleProgressIntoWorld(baseNormalizedWorld, worldRef.current, worldFallback)'
+  },
+  {
+    label: 'battle start checks local completed override before reopening battle',
+    snippet: 'const localCompletedBattleEventVisualState = getCompletedBattleEventVisualOverride('
+  },
+  {
+    label: 'cloud reload and reset clear local completion cache',
+    snippet: 'const resetLocalBattleEventCompletionState = useCallback(() => {'
+  },
+  {
+    label: 'battle completion context ref persists latest configured event metadata',
+    snippet: 'const battleCompletionContextRef = useRef({'
+  },
+  {
+    label: 'battle completion context hydration helper exists',
+    snippet: 'const hydrateCommittedBattleSnapshot = useCallback((snapshot = null) => {'
+  },
+  {
+    label: 'reward phase rehydrates configured battle context before saving',
+    snippet: 'const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);'
+  },
+  {
+    label: 'victory exit rehydrates configured battle context before map return save',
+    snippet: 'const completionMeta = getConfiguredBattleCompletionMeta({\n          snapshot: committedSnapshot,'
+  },
+  {
     label: 'lieutenant completion gets a permanent immediate lock',
     snippet: "const isPermanentTrainerEvent = eventType === 'trainer' && normalizeTrainerRole(resolvedEventRole) !== 'normal';"
   },

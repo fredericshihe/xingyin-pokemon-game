@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Component, startTransition } from "react"
+import React, { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Component, startTransition } from "react"
+import { createPortal } from "react-dom"
 import { TYPES, TYPE_NAMES_CN } from "../../utils/constants"
 import { MOVES, MONSTERS, OFFICIAL_DEX_MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, getBalancedMovesForLevel, normalizeMovesForPokemonLevel } from "../../utils/gameData"
 import { getMovesLearnedAtLevel, getEvolutionLevelForBranch } from "../../utils/pokemonGrowth"
@@ -8,7 +9,7 @@ import { applyMapEventsToGrid, getMapEventAt, getMapEvents, getMapStartPosition,
 import { getMapEventTile } from "../../game/data/mapEventTypes"
 import { FAST_TRAVEL_COST, getFastTravelStation, getFastTravelStationMeta } from "../../game/data/fastTravel"
 import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo, hasAdventureMap, hasAdventureMapGridVisualRoadMismatch, loadAdventureMapGrid } from "../../game/data/overworldMaps"
-import { PLAYER_VISUAL_VERSION, getPlayerFigureDataUrl } from "../../game/world/TextureFactory"
+import { PLAYER_VISUAL_VERSION, getPlayerFigureDataUrl } from "../../game/world/TextureFactory.js"
 import { supabase } from "../../supabaseClient"
 import {
   ENCOUNTER_SAFE_STEPS,
@@ -33,7 +34,7 @@ import {
   getStageMultiplier,
   resolveBattleStat
 } from "../../utils/battleDamage"
-import { chooseBattleEnemyMove, chooseTrainerSwitchTarget } from "../../utils/battleAi"
+import { chooseTrainerBattleAction } from "../../utils/battleAi"
 import {
   BATTLE_TEXT_CHAR_MS,
   getBattleLogReadDelay,
@@ -59,7 +60,9 @@ import { calculateStatsForLevel } from "../../utils/pokemonStats"
 import { isLevelValidForSpecies, pickLevelForSpecies } from "../../utils/wildEncounterRules"
 import {
   getTrainerDifficultyBounds,
+  getTrainerBattlePressureLevel,
   isDailyVariantBattleEvent,
+  rebalanceTrainerBattleTeamLevels,
   resolveTrainerBattleTeamConfig
 } from "../../utils/trainerBattleScaling"
 import {
@@ -67,25 +70,65 @@ import {
   normalizeRosterExpProgress,
   simulateMonsterExpGain
 } from "../../utils/pokemonProgress"
+import {
+  clearPotionCurableStatus,
+  consumeInventoryItem,
+  getInventoryItemQuantity,
+  hasPotionCurableStatus,
+  getPotionEffectParts,
+  getPotionEffectText,
+  getPotionRecoveryProfile,
+  isActiveInventoryItemType,
+  isLegacyInventoryItemType,
+  mergeInventoryEntries,
+  resolveInventoryItemDetails,
+  resolveInventoryItemType,
+  sanitizePlayerInventory,
+  sortInventorySlots,
+} from "../../utils/inventoryItems"
 import { getMoveEffectConfig } from "../../utils/moveVisuals"
 import {
   appendLevelUpCelebrationsToQueue,
   buildLevelUpCelebrationPayload,
   buildLevelUpCelebrationsForRoster
 } from "../../utils/levelUpCelebrations"
+import { applyImageFallback, preloadImageAssets, warmImageAssets } from "../../utils/localAssetPreloader"
+import { gameAudio, normalizeAudioSettings, readStoredAudioSettings, writeStoredAudioSettings } from "../../utils/gameAudio"
+import { CollectionCard, CollectionGrid, TypeBadge } from "./gameUiPrimitives"
+import { assetUrl } from "../../utils/assetUrl"
 
 // --- Data Definitions ---
 
 // 高清宝可梦素材：运行时只读取 public/assets 本地缓存，避免战斗时依赖外部网络。
-const POKEMON_LOCAL_SPRITE_BASE = '/assets/pokemon/official-artwork';
-const POKEMON_LOCAL_PLACEHOLDER = '/assets/pokemon/placeholder.svg';
-const BATTLE_SENDOUT_BALL_SPRITE = '/assets/characters/battle-trainer/pokeapi-pokeball-dreamworld.png';
+const POKEMON_LOCAL_SPRITE_BASE = assetUrl('/assets/pokemon/official-artwork');
+const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg');
+const BATTLE_SENDOUT_BALL_SPRITE = assetUrl('/assets/characters/battle-trainer/pokeapi-pokeball-dreamworld.png');
 const TRAINER_PORTRAITS = {
-  normal: '/assets/characters/trainers/trainer-normal.png',
-  lieutenant: '/assets/characters/trainers/trainer-lieutenant.png',
-  boss: '/assets/characters/trainers/trainer-boss.png',
-  challenge: '/assets/characters/trainers/trainer-challenge.png'
+  normal: assetUrl('/assets/characters/trainers/trainer-normal.png'),
+  lieutenant: assetUrl('/assets/characters/trainers/trainer-lieutenant.png'),
+  boss: assetUrl('/assets/characters/trainers/trainer-boss.png'),
+  challenge: assetUrl('/assets/characters/trainers/trainer-challenge.png')
 };
+
+const DeferredDexScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.DexScreen })));
+const DeferredShopScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.ShopScreen })));
+const DeferredTeamScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.TeamScreen })));
+const DeferredBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.BagScreen })));
+const DeferredUnifiedBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.UnifiedBagScreen })));
+
+const DeferredPanelFallback = ({ title = '界面加载中...' }) => (
+  <div className="game-page">
+    <div className="game-page-header">
+      <div>
+        <h2 className="game-page-title">{title}</h2>
+        <div className="game-page-subtitle">正在准备内容</div>
+      </div>
+    </div>
+    <div className="game-scroll-area">
+      <div className="game-card p-4 text-sm font-bold text-slate-500">请稍候...</div>
+    </div>
+  </div>
+);
 
 let threeLowPolyModelCacheModulePromise = null;
 
@@ -307,15 +350,6 @@ const normalizeMonsterAssetList = (monsters) => (
   Array.isArray(monsters) ? monsters.map(normalizeMonsterAssetSource) : []
 );
 
-const INVENTORY_ITEM_DEFINITIONS = {
-  pokeball: POKEBALLS,
-  potion: POTIONS,
-  expPotion: EXP_POTIONS,
-  evolutionItem: EVOLUTION_ITEMS,
-};
-
-const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion']);
-const LEGACY_INVENTORY_ITEM_TYPES = new Set(['evolutionItem']);
 const HEAL_ANIMATION_DURATION_MS = 950;
 const EXP_ANIMATION_DURATION_MS = 1150;
 const BATTLE_SWITCH_RECALL_MS = 760;
@@ -329,26 +363,6 @@ const LAUNCH_SPRITE_IMAGE_BASE_UNIT = 64;
 const LAUNCH_SPRITE_CONTAINER_BASE_UNIT = 68;
 const BATTLE_PLAYER_SPRITE_MULTIPLIER = 1.35;
 const BATTLE_ENEMY_SPRITE_MULTIPLIER = 1.25;
-const isActiveInventoryItemType = (itemType) => ACTIVE_INVENTORY_ITEM_TYPES.has(itemType);
-const isLegacyInventoryItemType = (itemType) => LEGACY_INVENTORY_ITEM_TYPES.has(itemType);
-
-const resolveInventoryItemType = (slot = {}) => (
-  slot.itemType ||
-  (POKEBALLS[slot.itemKey] ? 'pokeball' :
-    POTIONS[slot.itemKey] ? 'potion' :
-      EXP_POTIONS[slot.itemKey] ? 'expPotion' :
-        EVOLUTION_ITEMS[slot.itemKey] ? 'evolutionItem' :
-          null)
-);
-
-const resolveInventoryItemDetails = (itemType, itemKey) => (
-  INVENTORY_ITEM_DEFINITIONS[itemType]?.[itemKey] ||
-  POKEBALLS[itemKey] ||
-  POTIONS[itemKey] ||
-  EXP_POTIONS[itemKey] ||
-  EVOLUTION_ITEMS[itemKey] ||
-  null
-);
 
 const buildEvolutionEventKey = (monId, targetId) => `${String(monId)}::${Number(targetId)}`;
 const buildEvolutionChoiceEventKey = (monId, targetOptions = []) => `${String(monId)}::${[...targetOptions].map((targetId) => Number(targetId)).sort((a, b) => a - b).join(',')}`;
@@ -356,6 +370,10 @@ const buildLearnMoveEventKey = (monId, moveKey) => `${String(monId)}::${String(m
 const CLOUD_SYNC_CONFLICT_MESSAGE = '云端已有新进度，请重新读取。';
 const CLOUD_REQUEST_RETRY_DELAYS_MS = [220, 520, 920];
 const isCloudSyncConflict = (message) => typeof message === 'string' && message.includes('旧版本存档');
+const isMissingCloudRpcError = (error, rpcName) => {
+  const message = getCloudRequestErrorMessage(error);
+  return error?.code === 'PGRST202' || (typeof rpcName === 'string' && rpcName.length > 0 && message.includes(rpcName));
+};
 const getCloudRequestErrorMessage = (error) => {
   if (!error) return '';
   if (typeof error === 'string') return error;
@@ -386,21 +404,6 @@ const runCloudRequestWithRetry = async (requestFn, retryDelaysMs = CLOUD_REQUEST
   }
   throw lastTransientError || new Error('云端请求失败，稍后重试。');
 };
-const getPotionRecoveryProfile = (potion) => {
-  const safePotion = potion && typeof potion === 'object' ? potion : {};
-  return {
-    hp: Math.max(0, Number(safePotion.healAmount) || 0),
-    mp: Math.max(0, Number(safePotion.mpRestoreAmount) || 0),
-  };
-};
-const getPotionEffectParts = (potion = {}) => {
-  const recovery = getPotionRecoveryProfile(potion);
-  return [
-    recovery.hp > 0 ? `HP +${recovery.hp}` : null,
-    recovery.mp > 0 ? `MP +${recovery.mp}` : null,
-  ].filter(Boolean);
-};
-const getPotionEffectText = (potion) => getPotionEffectParts(potion).join(' / ') || '恢复';
 const getMonsterMaxHp = (mon) => Math.max(0, Number(mon?.maxHp ?? mon?.stats?.hp ?? 0) || 0);
 const getMonsterMaxMp = (mon) => {
   const directMaxMp = Number(mon?.maxMp);
@@ -457,6 +460,12 @@ const getAffordableBattleMoveKeys = (mon) => {
 const getNoMpBattleHint = (mon) => (
   `${mon?.name || '宝可梦'} 的 MP 不足，暂时无法使用任何技能。可以打开背包使用伤药恢复 MP，或更换宝可梦继续对战。`
 );
+const getNoMpOverlayTitle = (mon) => (
+  `${mon?.name || '宝可梦'} 暂时放不出技能`
+);
+const getNoMpOverlayBody = () => (
+  '补一点 MP，或换一只上场。'
+);
 const getMoveMpShortageHint = (mon, move) => (
   `${move?.name || '这个技能'} 需要 MP ${getMoveMpCost(move)}，${mon?.name || '宝可梦'} 当前 MP 不足。可以选择其他技能、打开背包使用伤药恢复 MP，或更换宝可梦继续对战。`
 );
@@ -497,6 +506,20 @@ const didPlayerJustSwitchOnLastBattleLog = (logs = [], playerMon = null) => {
   if (typeof latestLog !== 'string' || latestLog.length === 0) return false;
   if (playerName) return latestLog === `上吧，${playerName}！`;
   return /^上吧，.+！$/.test(latestLog);
+};
+const getEnemyAiSwitchIntentMessage = (action) => {
+  const targetName = action?.target?.name;
+  if (!targetName) return '';
+  switch (action.reason) {
+    case 'avoid_ko':
+      return `对手察觉到危险，准备换上 ${targetName} 承受攻势。`;
+    case 'type_pivot':
+      return `对手判断属性不利，选择换上 ${targetName} 调整节奏。`;
+    case 'preserve_partner':
+      return `对手想保留当前伙伴的体力，换上 ${targetName}。`;
+    default:
+      return `对手看准机会，换上 ${targetName}。`;
+  }
 };
 const FLOATING_ENTRY_POKEDEX_IDS = new Set([65, 81, 82, 92, 93, 94, 122, 144, 145, 146, 149, 150, 462]);
 const HEAVY_ENTRY_TYPES = new Set([TYPES.ROCK, TYPES.GROUND, TYPES.STEEL]);
@@ -549,42 +572,83 @@ for (let i = 0; i < MONSTERS.length; i += 1) {
   MONSTERS[i] = applyHighResPokemonSprites(MONSTERS[i]);
 }
 
-let hasPreloadedGameAssets = false;
-const preloadedGameImages = [];
+let gameAssetPreloadPromise = null;
+let latestGameAssetPreloadSummary = null;
 
-const preloadGameAssets = () => {
-  if (hasPreloadedGameAssets || typeof window === 'undefined' || typeof Image === 'undefined') return;
-  hasPreloadedGameAssets = true;
+const toUniqueAssetUrls = (urls = []) => (
+  [...new Set(urls
+    .filter((url) => typeof url === 'string' && url.trim().length > 0)
+    .map((url) => url.trim()))]
+);
 
-  const urls = new Set([
-    POKEMON_LOCAL_PLACEHOLDER,
-    ...MONSTERS.flatMap((monster) => [monster.sprite, monster.backSprite, monster.fallbackSprite]),
+const getInventoryImageAssetUrls = () => (
+  [
     ...Object.values(POKEBALLS).map((item) => item.sprite),
     ...Object.values(POTIONS).map((item) => item.sprite),
     ...Object.values(EXP_POTIONS).map((item) => item.sprite),
     ...Object.values(EVOLUTION_ITEMS).map((item) => item.sprite)
-  ].filter(Boolean));
+  ]
+);
 
-  urls.forEach((url) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.src = url;
-    preloadedGameImages.push(image);
-  });
+const getCriticalPokemonImageAssetUrls = () => (
+  [1, 4, 7, 25, 59, 65, 94, 129, 130, 131, 133, 135, 149]
+    .map((dexNo) => `${POKEMON_LOCAL_SPRITE_BASE}/${dexNo}.png`)
+);
+
+const getCriticalGameImageAssetUrls = () => toUniqueAssetUrls([
+  POKEMON_LOCAL_PLACEHOLDER,
+  BATTLE_SENDOUT_BALL_SPRITE,
+  ...Object.values(TRAINER_PORTRAITS),
+  ...getCriticalPokemonImageAssetUrls(),
+  ...getInventoryImageAssetUrls()
+]);
+
+const getAllGameImageAssetUrls = () => toUniqueAssetUrls([
+  ...getCriticalGameImageAssetUrls(),
+  ...MONSTERS.flatMap((monster) => [monster.sprite, monster.backSprite, monster.fallbackSprite]),
+  ...OFFICIAL_DEX_MONSTERS.flatMap((monster) => [monster.sprite, monster.backSprite, monster.fallbackSprite])
+]);
+
+const preloadGameAssets = () => {
+  if (typeof window === 'undefined' || typeof Image === 'undefined') {
+    latestGameAssetPreloadSummary = { ok: true, skipped: true, total: 0, loaded: 0, failed: [] };
+    return Promise.resolve(latestGameAssetPreloadSummary);
+  }
+  if (gameAssetPreloadPromise) return gameAssetPreloadPromise;
+
+  gameAssetPreloadPromise = (async () => {
+    const critical = await preloadImageAssets(getCriticalGameImageAssetUrls(), {
+      concurrency: 10,
+      timeoutMs: 12000
+    });
+    latestGameAssetPreloadSummary = critical;
+    if (!critical.ok) {
+      console.warn('[assets] 关键游戏素材预加载存在失败项', critical.failed);
+    }
+    warmImageAssets(getAllGameImageAssetUrls(), {
+      concurrency: 8,
+      timeoutMs: 16000
+    });
+    return critical;
+  })();
+
+  return gameAssetPreloadPromise;
 };
 
 const handlePokemonImageError = (event) => {
-  const image = event.currentTarget;
-  if (image.dataset.fallbackApplied === 'true') return;
-  image.dataset.fallbackApplied = 'true';
-  image.src = POKEMON_LOCAL_PLACEHOLDER;
+  applyImageFallback(event, POKEMON_LOCAL_PLACEHOLDER);
 };
 
 const handleItemImageError = (event) => {
-  const image = event.currentTarget;
-  if (image.dataset.fallbackApplied === 'true') return;
-  image.dataset.fallbackApplied = 'true';
-  image.src = POKEBALLS.pokeball_basic.sprite;
+  applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER);
+};
+
+const handlePokeballImageError = (event) => {
+  applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER);
+};
+
+const handleTrainerPortraitImageError = (event) => {
+  applyImageFallback(event, TRAINER_PORTRAITS.normal || POKEMON_LOCAL_PLACEHOLDER);
 };
 
 const getChallengeUnlockSpeciesPreview = (pool = []) => {
@@ -656,20 +720,20 @@ const STATUS_LABELS = {
 };
 
 const STATUS_BATTLE_HINTS = {
-  sleep: '暂时无法行动',
-  poison: '持续损失体力',
-  burn: '持续损失体力',
-  paralysis: '可能无法行动',
-  freeze: '暂时无法行动',
-  confusion: '可能伤到自己',
-  flinch: '本回合难以行动'
+  sleep: '倒计时醒来前无法行动',
+  poison: '回合结束时损失体力',
+  burn: '回合结束时损失体力',
+  paralysis: '25%无法行动，速度降低',
+  freeze: '每回合尝试解冻，部分火焰招式可破冰',
+  confusion: '33%可能伤到自己',
+  flinch: '本回合无法行动'
 };
 
 const getStatusAppliedBattleMessage = (targetName, status) => ({
   sleep: `${targetName} 睡着了，暂时无法行动！`,
   poison: `${targetName} 中毒了，会持续损失体力！`,
   burn: `${targetName} 被灼伤了，会持续损失体力！`,
-  paralysis: `${targetName} 麻痹了，可能无法行动！`,
+  paralysis: `${targetName} 麻痹了，行动时有25%概率无法出招！`,
   freeze: `${targetName} 被冻住了，暂时无法行动！`,
   confusion: `${targetName} 混乱了，可能伤到自己！`,
   flinch: `${targetName} 畏缩了，本回合难以行动！`
@@ -689,6 +753,34 @@ const hasStatusImmunity = (mon, status) => {
   if (!immuneTypes) return false;
   const monsterTypes = getMonsterTypes(mon);
   return immuneTypes.some((type) => monsterTypes.includes(type));
+};
+
+const createBattleStatusVisualMove = (status) => {
+  const base = {
+    name: STATUS_LABELS[status] || '异常',
+    category: 'status',
+    power: 0,
+    accuracy: 100,
+    cost: 0,
+  };
+  switch (status) {
+    case 'sleep':
+      return { ...base, type: 'psychic', status: 'sleep' };
+    case 'poison':
+      return { ...base, type: 'poison', status: 'poison' };
+    case 'burn':
+      return { ...base, type: 'fire', status: 'burn' };
+    case 'paralysis':
+      return { ...base, type: 'electric', status: 'paralysis' };
+    case 'freeze':
+      return { ...base, type: 'ice', status: 'freeze' };
+    case 'confusion':
+      return { ...base, type: 'psychic', volatileStatus: 'confusion' };
+    case 'flinch':
+      return { ...base, type: 'normal', volatileStatus: 'flinch' };
+    default:
+      return { ...base, type: 'normal' };
+  }
 };
 
 const withBattleRuntimeDefaults = (mon) => {
@@ -727,10 +819,49 @@ const checkMoveHit = (move, attacker, defender = null) => {
 };
 
 const createStatusPayload = (status) => {
-  if (status === 'sleep') return { status, statusTurns: 2 + Math.floor(Math.random() * 2) };
+  // 这里的内部计数会在行动开始时先递减一次，因此用 2~4 来贴近官方 1~3 回合睡眠。
+  if (status === 'sleep') return { status, statusTurns: 2 + Math.floor(Math.random() * 3) };
   if (status === 'freeze') return { status, statusTurns: 0 };
   return { status, statusTurns: 0 };
 };
+
+const getConfusionDurationTurns = () => (
+  // 与睡眠同理，内部 2~5 次计数能更贴近官方 1~4 回合混乱。
+  2 + Math.floor(Math.random() * 4)
+);
+
+const calculateConfusionSelfHitDamage = (mon) => {
+  const runtimeMon = withBattleRuntimeDefaults(mon);
+  const level = runtimeMon?.level || 50;
+  const attackStat = Math.max(1, getEffectiveBattleStat(runtimeMon, 'atk'));
+  const defenseStat = Math.max(1, getEffectiveBattleStat(runtimeMon, 'def'));
+  const randomFactor = (Math.floor(Math.random() * 16) + 85) / 100;
+  const damage = (((2 * level / 5 + 2) * 40 * (attackStat / defenseStat)) / 50 + 2) * randomFactor;
+  return Math.max(1, Math.floor(damage));
+};
+
+const isFreezeThawingMove = (move) => (
+  move?.category !== 'status' && move?.type === TYPES.FIRE
+);
+
+const isFreezeSelfThawingMove = (move) => Boolean(move?.thawsUser);
+
+const createBattleStatusEvent = (status, message, mon, options = {}) => ({
+  status,
+  message,
+  mon: withBattleRuntimeDefaults(mon),
+  move: options.move || createBattleStatusVisualMove(status),
+  moveKey: options.moveKey || `__status_${status}`,
+  phase: options.phase || 'status',
+  visual: options.visual !== false,
+  suppressActorMotion: options.suppressActorMotion ?? true,
+  forceTargetReaction: options.forceTargetReaction ?? false,
+  reactionClass: options.reactionClass || null,
+  minMs: options.minMs,
+  maxMs: options.maxMs,
+  extraMs: options.extraMs,
+  durationMs: options.durationMs,
+});
 
 const sanitizeBattleRuntime = (mon) => {
   if (!mon) return mon;
@@ -751,10 +882,23 @@ const clearTemporaryBattleRuntime = (mon) => {
   delete volatileStatuses.confusion;
   delete volatileStatuses.chargingMove;
   delete volatileStatuses.lastMoveKey;
+  delete volatileStatuses.furyCutterCount;
+  delete volatileStatuses.rolloutCount;
   return {
     ...mon,
     volatileStatuses,
     statStages: {}
+  };
+};
+
+const clearBattleExitRuntime = (mon) => {
+  if (!mon) return mon;
+  const cleared = clearTemporaryBattleRuntime(mon);
+  const volatileStatuses = { ...(cleared.volatileStatuses || {}) };
+  delete volatileStatuses.rageFistHits;
+  return {
+    ...cleared,
+    volatileStatuses
   };
 };
 
@@ -804,83 +948,273 @@ const STAT_LABELS = {
   evasion: '闪避'
 };
 
+const STAT_SHORT_LABELS = {
+  atk: '攻',
+  def: '防',
+  spAtk: '特攻',
+  spDef: '特防',
+  spd: '速',
+  accuracy: '命中',
+  evasion: '闪避'
+};
+
 const MOVE_CATEGORY_LABELS = {
   physical: '物理',
   special: '特殊',
   status: '变化'
 };
 
-const resolveTurnStart = (mon) => {
+const getMoveStatChangeEntries = (move) => {
+  const entries = [];
+  if (move?.statChange) entries.push(move.statChange);
+  if (Array.isArray(move?.statChanges)) entries.push(...move.statChanges);
+  return entries.filter((entry) => entry?.stat && Number(entry.stages) !== 0);
+};
+
+const getMoveStatChangeLabel = (entry, { compact = false } = {}) => {
+  const statLabel = compact
+    ? (STAT_SHORT_LABELS[entry.stat] || STAT_LABELS[entry.stat] || '能力')
+    : (STAT_LABELS[entry.stat] || '能力');
+  return `${statLabel}${Number(entry.stages) > 0 ? '提升' : '降低'}`;
+};
+
+const getMoveEffectLabels = (move) => {
+  const labels = [];
+  if (!move) return labels;
+  if (move.status) labels.push(STATUS_LABELS[move.status] || '异常');
+  if (move.volatileStatus) {
+    labels.push(
+      move.volatileStatus === 'flinch'
+        ? '畏缩'
+        : move.volatileStatus === 'confusion'
+          ? '混乱'
+          : move.volatileStatus
+    );
+  }
+  getMoveStatChangeEntries(move).forEach((entry) => labels.push(getMoveStatChangeLabel(entry)));
+  if (move.effect === 'heal') labels.push('回复');
+  if (move.effect === 'drain') labels.push('吸取');
+  if (move.effect === 'mimic') labels.push('模仿技能');
+  if (move.effect === 'teleport') labels.push('脱离战斗');
+  if (move.effect === 'nothing') labels.push('无效果');
+  if (move.requiresTargetStatus) labels.push(`需要${STATUS_LABELS[move.requiresTargetStatus] || '状态'}`);
+  if (move.requiresUserStatus) labels.push(`需自身${STATUS_LABELS[move.requiresUserStatus] || '状态'}`);
+  if (move.usableWhileAsleep) labels.push('睡眠中可用');
+  if (move.thawsUser) labels.push('可破冰');
+  if (move.priority) labels.push(`先制 +${move.priority}`);
+  if (move.charge) labels.push('蓄力');
+  return labels.slice(0, 3);
+};
+
+const getMovePrimaryEffectDisplay = (move) => {
+  if (Number(move?.power) > 0) {
+    return { label: '威力', value: String(move.power) };
+  }
+  if (!move) return { label: '效果', value: '--' };
+  if (move.status) return { label: '效果', value: STATUS_LABELS[move.status] || '异常' };
+  if (move.volatileStatus) {
+    return {
+      label: '效果',
+      value: move.volatileStatus === 'flinch'
+        ? '畏缩'
+        : move.volatileStatus === 'confusion'
+          ? '混乱'
+          : String(move.volatileStatus)
+    };
+  }
+  if (move.effect === 'heal') return { label: '效果', value: '回复' };
+  if (move.effect === 'mimic') return { label: '效果', value: '模仿' };
+  if (move.effect === 'teleport') return { label: '效果', value: '脱离' };
+  if (move.effect === 'nothing') return { label: '效果', value: '无效果' };
+
+  const statChanges = getMoveStatChangeEntries(move);
+  if (statChanges.length > 0) {
+    const positives = statChanges.filter((entry) => Number(entry.stages) > 0);
+    const negatives = statChanges.filter((entry) => Number(entry.stages) < 0);
+    const compactStats = (entries) => entries
+      .slice(0, 3)
+      .map((entry) => STAT_SHORT_LABELS[entry.stat] || STAT_LABELS[entry.stat] || '能力')
+      .join('/');
+    if (positives.length > 0 && negatives.length > 0) {
+      return { label: '效果', value: `${compactStats(positives)}升/${compactStats(negatives)}降` };
+    }
+    const entries = positives.length > 0 ? positives : negatives;
+    return { label: '效果', value: `${compactStats(entries)}${positives.length > 0 ? '提升' : '降低'}` };
+  }
+
+  const labels = getMoveEffectLabels(move);
+  return { label: '效果', value: labels[0] || '辅助' };
+};
+
+const getUserStatusRequirementFailureMessage = (move, attackerName = '宝可梦') => {
+  if (!move?.requiresUserStatus) return null;
+  const requiredStatusLabel = STATUS_LABELS[move.requiresUserStatus] || move.requiresUserStatus;
+  return `${attackerName} 现在不能使用 ${move.name}，需要自己处于${requiredStatusLabel}状态。`;
+};
+
+const resolveTurnStart = (mon, attemptedMoveKey = null) => {
   let nextMon = withBattleRuntimeDefaults(mon);
   if (!nextMon) {
-    return { mon: null, messages: [], canAct: false, fainted: false };
+    return { mon: null, events: [], canAct: false, fainted: false };
   }
-  const messages = [];
+  const events = [];
   let canAct = true;
+  let confusionActiveThisTurn = false;
+  const attemptedMove = attemptedMoveKey ? MOVES[attemptedMoveKey] : null;
 
   const volatileStatuses = { ...nextMon.volatileStatuses };
+  const pendingConfusionTurns = Math.max(0, Number(volatileStatuses.confusion) || 0);
 
   if (volatileStatuses.flinch) {
     delete volatileStatuses.flinch;
     nextMon = { ...nextMon, volatileStatuses };
-    messages.push(`${nextMon.name} 畏缩了，无法行动！`);
+    events.push(createBattleStatusEvent('flinch', `${nextMon.name} 畏缩了，无法行动！`, nextMon, {
+      forceTargetReaction: true,
+      minMs: 780,
+      maxMs: 1480,
+      extraMs: 80,
+    }));
     canAct = false;
-  }
-
-  if (canAct && volatileStatuses.confusion) {
-    const nextTurns = Math.max(0, volatileStatuses.confusion - 1);
-    if (nextTurns <= 0) {
-      delete volatileStatuses.confusion;
-      messages.push(`${nextMon.name} 从混乱中清醒了。`);
-    } else {
-      volatileStatuses.confusion = nextTurns;
-      messages.push(`${nextMon.name} 混乱了！`);
-      if (rollChance(33)) {
-        const hurt = Math.max(1, Math.floor(nextMon.maxHp / 10));
-        nextMon = { ...nextMon, currentHp: Math.max(0, nextMon.currentHp - hurt) };
-        messages.push(`${nextMon.name} 在混乱中伤到了自己！`);
-        canAct = false;
-      }
-    }
-    nextMon = { ...nextMon, volatileStatuses };
   }
 
   if (canAct && nextMon.status === 'sleep') {
     const nextTurns = Math.max(0, (nextMon.statusTurns || 1) - 1);
     if (nextTurns <= 0) {
       nextMon = { ...nextMon, status: null, statusTurns: 0 };
-      messages.push(`${nextMon.name} 醒来了！`);
+      events.push(createBattleStatusEvent('sleep', `${nextMon.name} 醒来了！`, nextMon, {
+        minMs: 760,
+        maxMs: 1320,
+        extraMs: 70,
+      }));
     } else {
       nextMon = { ...nextMon, statusTurns: nextTurns };
-      messages.push(`${nextMon.name} 睡着了，无法行动！`);
-      canAct = false;
+      if (attemptedMove?.usableWhileAsleep) {
+        events.push(createBattleStatusEvent('sleep', `${nextMon.name} 还在睡梦中，但可以使出 ${attemptedMove.name}！`, nextMon, {
+          minMs: 760,
+          maxMs: 1420,
+          extraMs: 80,
+        }));
+      } else {
+        events.push(createBattleStatusEvent('sleep', `${nextMon.name} 睡着了，无法行动！`, nextMon, {
+          forceTargetReaction: true,
+          minMs: 820,
+          maxMs: 1500,
+          extraMs: 90,
+        }));
+        canAct = false;
+      }
     }
   }
 
   if (canAct && nextMon.status === 'freeze') {
-    if (rollChance(20)) {
+    if (attemptedMove && isFreezeSelfThawingMove(attemptedMove)) {
       nextMon = { ...nextMon, status: null, statusTurns: 0 };
-      messages.push(`${nextMon.name} 解冻了！`);
+      events.push(createBattleStatusEvent('freeze', `${nextMon.name} 破冰而出，准备使出 ${attemptedMove.name}！`, nextMon, {
+        minMs: 760,
+        maxMs: 1380,
+        extraMs: 70,
+      }));
+    } else if (rollChance(20)) {
+      nextMon = { ...nextMon, status: null, statusTurns: 0 };
+      events.push(createBattleStatusEvent('freeze', `${nextMon.name} 解冻了！`, nextMon, {
+        minMs: 760,
+        maxMs: 1380,
+        extraMs: 70,
+      }));
     } else {
-      messages.push(`${nextMon.name} 被冻住了，无法行动！`);
+      events.push(createBattleStatusEvent('freeze', `${nextMon.name} 被冻住了，无法行动！`, nextMon, {
+        forceTargetReaction: true,
+        minMs: 820,
+        maxMs: 1540,
+        extraMs: 90,
+      }));
       canAct = false;
     }
   }
 
-  if (canAct && nextMon.status === 'paralysis' && rollChance(25)) {
-    messages.push(`${nextMon.name} 因麻痹无法行动！`);
-    canAct = false;
+  if (canAct && nextMon.status === 'paralysis') {
+    if (rollChance(25)) {
+      events.push(createBattleStatusEvent('paralysis', `${nextMon.name} 因麻痹无法行动！`, nextMon, {
+        forceTargetReaction: true,
+        minMs: 780,
+        maxMs: 1460,
+        extraMs: 80,
+      }));
+      canAct = false;
+    }
   }
 
+  // 混乱的剩余回合只会在这回合真正通过行动检查时消耗；
+  // 满麻、睡眠、冰冻、畏缩等导致的停手不应白白消耗混乱回合。
+  if (canAct && pendingConfusionTurns > 0) {
+    const nextTurns = Math.max(0, pendingConfusionTurns - 1);
+    if (nextTurns <= 0) {
+      delete volatileStatuses.confusion;
+      nextMon = { ...nextMon, volatileStatuses };
+      events.push(createBattleStatusEvent('confusion', `${nextMon.name} 从混乱中清醒了。`, nextMon, {
+        visual: false,
+        minMs: 720,
+        maxMs: 1220,
+        extraMs: 70,
+      }));
+    } else {
+      volatileStatuses.confusion = nextTurns;
+      nextMon = { ...nextMon, volatileStatuses };
+      events.push(createBattleStatusEvent('confusion', `${nextMon.name} 混乱了！`, nextMon, {
+        forceTargetReaction: true,
+        minMs: 760,
+        maxMs: 1360,
+        extraMs: 80,
+      }));
+      confusionActiveThisTurn = true;
+    }
+  }
+
+  if (canAct && confusionActiveThisTurn) {
+    if (rollChance(100 / 3)) {
+      const hurt = calculateConfusionSelfHitDamage(nextMon);
+      nextMon = { ...nextMon, currentHp: Math.max(0, nextMon.currentHp - hurt) };
+      events.push(createBattleStatusEvent('confusion', `${nextMon.name} 在混乱中伤到了自己！`, nextMon, {
+        forceTargetReaction: true,
+        minMs: 840,
+        maxMs: 1540,
+        extraMs: 100,
+      }));
+      canAct = false;
+    }
+  }
+
+  return { mon: nextMon, events, canAct, fainted: nextMon.currentHp <= 0 };
+};
+
+const resolveTurnEnd = (mon) => {
+  let nextMon = withBattleRuntimeDefaults(mon);
+  if (!nextMon || nextMon.currentHp <= 0) {
+    return { mon: nextMon, events: [], fainted: false };
+  }
+
+  const events = [];
   if (nextMon.status === 'poison' || nextMon.status === 'burn') {
-    const divisor = nextMon.status === 'poison' ? 8 : 16;
+    const residualStatus = nextMon.status;
+    const divisor = residualStatus === 'poison' ? 8 : 16;
     const damage = Math.max(1, Math.floor(nextMon.maxHp / divisor));
     nextMon = { ...nextMon, currentHp: Math.max(0, nextMon.currentHp - damage) };
-    messages.push(`${nextMon.name} 受到${STATUS_LABELS[nextMon.status]}影响，体力下降了！`);
-    if (nextMon.currentHp <= 0) canAct = false;
+    events.push(createBattleStatusEvent(
+      residualStatus,
+      residualStatus === 'poison'
+        ? `${nextMon.name} 因中毒损失了体力！`
+        : `${nextMon.name} 因灼伤损失了体力！`,
+      nextMon,
+      {
+        forceTargetReaction: true,
+        minMs: 820,
+        maxMs: 1500,
+        extraMs: 90,
+      }
+    ));
   }
 
-  return { mon: nextMon, messages, canAct, fainted: nextMon.currentHp <= 0 };
+  return { mon: nextMon, events, fainted: nextMon.currentHp <= 0 };
 };
 
 const applyPrimaryStatusToMon = (target, status) => {
@@ -893,8 +1227,12 @@ const applyPrimaryStatusToMon = (target, status) => {
 const applyVolatileStatusToMon = (target, status) => {
   if (!status) return target;
   const volatileStatuses = { ...(target.volatileStatuses || {}) };
-  if (status === 'confusion') volatileStatuses.confusion = 3;
-  else if (status === 'flinch') volatileStatuses.flinch = 1;
+  if (status === 'confusion') {
+    if (volatileStatuses.confusion) return target;
+    volatileStatuses.confusion = getConfusionDurationTurns();
+  } else if (status === 'flinch') {
+    volatileStatuses.flinch = 1;
+  }
   return { ...target, volatileStatuses };
 };
 
@@ -1008,6 +1346,15 @@ const determineBattleActionOrder = (playerMon, enemyMon, playerMove, enemyMove) 
   return Math.random() < 0.5 ? ['player', 'enemy'] : ['enemy', 'player'];
 };
 
+const determineBattleEndOfTurnSideOrder = (playerMon, enemyMon) => {
+  const playerSpeed = getEffectiveBattleStat(playerMon, 'spd');
+  const enemySpeed = getEffectiveBattleStat(enemyMon, 'spd');
+  if (playerSpeed !== enemySpeed) {
+    return playerSpeed > enemySpeed ? ['player', 'enemy'] : ['enemy', 'player'];
+  }
+  return Math.random() < 0.5 ? ['player', 'enemy'] : ['enemy', 'player'];
+};
+
 const getBattleActionOrderReason = (playerMon, enemyMon, playerMove, enemyMove, actionOrder) => {
   const firstSide = actionOrder?.[0];
   const firstName = firstSide === 'player' ? playerMon?.name : `敌方 ${enemyMon?.name}`;
@@ -1032,12 +1379,16 @@ const getBattleMoveUseMessage = (actorName, moveName, isRelease = false) => (
   isRelease ? `${actorName} 释放了 ${moveName}！` : `${actorName} 使用了 ${moveName}！`
 );
 
-const getRecoveryBehaviorText = ({ hp = 0, mp = 0 } = {}) => {
+const getRecoveryBehaviorText = ({ hp = 0, mp = 0, curedStatus = false } = {}) => {
   const restoredHp = hp > 0;
   const restoredMp = mp > 0;
+  if (restoredHp && restoredMp && curedStatus) return '恢复了体力、技能值并解除了异常状态';
   if (restoredHp && restoredMp) return '恢复了体力与技能值';
+  if (restoredHp && curedStatus) return '恢复了体力并解除了异常状态';
   if (restoredHp) return '恢复了体力';
+  if (restoredMp && curedStatus) return '恢复了技能值并解除了异常状态';
   if (restoredMp) return '恢复了技能值';
+  if (curedStatus) return '解除了异常状态';
   return '恢复没有生效';
 };
 
@@ -1048,7 +1399,7 @@ const getBattleMovePressure = (attacker, defender) => {
     .filter((move) => move && move.category !== 'status' && Number(move.power) > 0)
     .map((move) => ({
       move,
-      ...getMoveEffectivenessMeta(move, defender)
+      ...getMoveEffectivenessMeta(move, defender, attacker)
     }));
 
   if (damagingMoveMetas.length === 0) {
@@ -1275,10 +1626,75 @@ const getBattleEventCompletedLockKeys = ({ world, mapName, eventType, eventId, e
     getMapEventProperties(getMapEventById(mapName, eventId))
   );
   const isPermanentTrainerEvent = eventType === 'trainer' && normalizeTrainerRole(resolvedEventRole) !== 'normal';
+  const dailyKey = typeof world?.dailyRefreshKey === 'string' && world.dailyRefreshKey.length > 0
+    ? world.dailyRefreshKey
+    : getCurrentDailyRefreshKey();
   return [
     interactionKey,
-    (eventType === 'boss' || isPermanentTrainerEvent) && scopedId ? `permanent:${eventType}:${scopedId}` : null
+    eventId && isDailyVariantBattleEvent(eventType, resolvedEventRole) ? `${dailyKey}:${eventType}:${eventId}` : null,
+    (eventType === 'boss' || isPermanentTrainerEvent) && scopedId ? `permanent:${eventType}:${scopedId}` : null,
+    (eventType === 'boss' || isPermanentTrainerEvent) && eventId ? `permanent:${eventType}:${eventId}` : null
   ].filter(Boolean);
+};
+
+const getCompletedBattleEventVisualOverrideKey = (mapName, eventId) => (
+  getMapScopedEventId(mapName, eventId)
+);
+
+const resolveCompletedBattleEventVisualOverrideStatus = ({ eventType, eventRole = null } = {}) => {
+  if (eventType === 'boss') return 'completed';
+  if (eventType === 'challenge') return 'daily_complete';
+  if (eventType === 'trainer') {
+    return isDailyScalingTrainerEvent(eventType, eventRole) ? 'daily_complete' : 'cleared';
+  }
+  return null;
+};
+
+const appendCompletedBattleEventVisualOverride = (overrides, {
+  world,
+  mapName,
+  eventType,
+  eventId,
+  eventRole = null
+} = {}) => {
+  const key = getCompletedBattleEventVisualOverrideKey(mapName, eventId);
+  const status = resolveCompletedBattleEventVisualOverrideStatus({ eventType, eventRole });
+  const normalized = overrides && typeof overrides === 'object' ? overrides : {};
+
+  if (!key || !status) return normalized;
+
+  return {
+    ...normalized,
+    [key]: {
+      status,
+      dailyRefreshKey: status === 'daily_complete'
+        ? (
+          typeof world?.dailyRefreshKey === 'string' && world.dailyRefreshKey.length > 0
+            ? world.dailyRefreshKey
+            : getCurrentDailyRefreshKey()
+        )
+        : null
+    }
+  };
+};
+
+const getCompletedBattleEventVisualOverride = (overrides, {
+  world,
+  mapName,
+  eventId
+} = {}) => {
+  const key = getCompletedBattleEventVisualOverrideKey(mapName, eventId);
+  if (!key || !overrides || typeof overrides !== 'object') return null;
+  const override = overrides[key];
+  if (!override || typeof override.status !== 'string') return null;
+  if (override.status !== 'daily_complete') return override;
+
+  const activeDailyRefreshKey = (
+    typeof world?.dailyRefreshKey === 'string' && world.dailyRefreshKey.length > 0
+      ? world.dailyRefreshKey
+      : getCurrentDailyRefreshKey()
+  );
+  return override.dailyRefreshKey === activeDailyRefreshKey ? override : null;
 };
 
 const globalMapEventIdCountCache = new Map();
@@ -1314,6 +1730,14 @@ const appendMapScopedWorldEventId = (world, key, mapName, eventId) => {
   return appendWorldEventId(world, key, scopedId || eventId);
 };
 
+const appendBattleCompletionWorldEventId = (world, key, mapName, eventId) => {
+  const scopedId = getMapScopedEventId(mapName, eventId);
+  const normalized = appendWorldEventId(world, key, scopedId || eventId);
+  return scopedId && scopedId !== eventId
+    ? appendWorldEventId(normalized, key, eventId)
+    : normalized;
+};
+
 const countMapScopedWorldEventIds = (world, key, mapName, eventIds = []) => (
   (Array.isArray(eventIds) ? eventIds : [])
     .filter((eventId) => hasMapScopedWorldEventId(world, key, mapName, eventId))
@@ -1325,7 +1749,7 @@ const hasDailyTrainerBattleEvent = (world, mapName, eventId) => (
 );
 
 const appendDailyTrainerBattleEvent = (world, mapName, eventId) => {
-  return appendMapScopedWorldEventId(world, 'dailyTrainerBattleIds', mapName, eventId);
+  return appendBattleCompletionWorldEventId(world, 'dailyTrainerBattleIds', mapName, eventId);
 };
 
 const getTrainerVictoryCount = (world, eventId, mapName = null) => {
@@ -1450,7 +1874,9 @@ const resolveDailyBattleTeamConfig = (teamConfig, {
   eventId,
   eventType = 'trainer',
   role = 'normal',
-  challengeRarePool = []
+  challengeRarePool = [],
+  dailyVariantSpeciesIds = [],
+  dailyVariantLevelJitter = null
 } = {}) => {
   if (!Array.isArray(teamConfig) || teamConfig.length === 0) return [];
   const mapConfig = getMapConfig(mapName);
@@ -1468,6 +1894,8 @@ const resolveDailyBattleTeamConfig = (teamConfig, {
     ),
     mapConfig,
     mapWildPokemon: mapConfig?.wildPokemon,
+    dailyVariantSpeciesIds,
+    dailyVariantLevelJitter,
     bossTeamConfig: getMapEventProperties(bossEvent).team,
     challengeRarePool,
     enableDailyVariant: isDailyVariantBattleEvent(eventType, role)
@@ -1497,7 +1925,9 @@ const getDailyTrainerVictoryText = ({ eventName, mapName, world, eventId } = {})
     eventId,
     eventType: event?.type,
     role: eventRole,
-    challengeRarePool: eventProps.challengeRarePool
+    challengeRarePool: eventProps.challengeRarePool,
+    dailyVariantSpeciesIds: eventProps.dailyVariantSpeciesIds,
+    dailyVariantLevelJitter: eventProps.dailyVariantLevelJitter
   });
   const levels = getConfiguredBattleLevels(scaledTeam);
   const bounds = getTrainerDifficultyBounds({
@@ -1743,36 +2173,6 @@ const ExpBar = ({ current, max }) => {
   );
 };
 
-const TypeBadge = ({ type, small = false }) => {
-  const colors = {
-    normal: 'from-slate-400 to-slate-500',
-    fire: 'from-orange-400 to-red-500',
-    water: 'from-sky-300 to-blue-500',
-    grass: 'from-emerald-300 to-green-500',
-    electric: 'from-yellow-300 to-amber-400 text-slate-900',
-    ghost: 'from-violet-500 to-purple-700',
-    psychic: 'from-pink-400 to-fuchsia-600',
-    poison: 'from-fuchsia-600 to-purple-800',
-    ice: 'from-cyan-200 to-sky-400 text-slate-900',
-    dragon: 'from-indigo-500 to-violet-700',
-    flying: 'from-sky-200 to-cyan-500',
-    fighting: 'from-red-500 to-rose-800',
-    bug: 'from-lime-300 to-green-600',
-    rock: 'from-yellow-600 to-stone-700',
-    ground: 'from-amber-500 to-orange-800',
-    dark: 'from-slate-700 to-slate-950',
-    steel: 'from-slate-300 to-slate-500',
-    fairy: 'from-pink-200 to-rose-400 text-slate-900'
-  };
-  const darkTextTypes = new Set(['electric', 'ice', 'fairy']);
-  const textColor = darkTextTypes.has(type) ? 'text-slate-900' : 'text-white';
-  return (
-    <span className={`type-badge ${small ? 'type-badge--small' : ''} bg-gradient-to-r ${colors[type] || 'from-gray-400 to-gray-600'} ${textColor} rounded-full font-black border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_10px_rgba(0,0,0,0.18)] ${small ? 'text-[10px] px-1.5 py-0.5' : 'text-xs px-2.5 py-1'}`}>
-            {TYPE_NAMES_CN[type] || type}
-        </span>);
-
-};
-
 const LevelUpCelebrationModal = ({ celebration, onClose }) => {
   if (!celebration) return null;
 
@@ -2000,7 +2400,7 @@ const LearnMoveCeremonyModal = ({
   const knownMoves = Array.isArray(mon.moves) ? mon.moves.filter((knownMoveKey) => MOVES[knownMoveKey]) : [];
   const hasOpenSlot = knownMoves.length < 4;
   const categoryLabel = MOVE_CATEGORY_LABELS[newMove?.category] || '招式';
-  const movePowerLabel = Number(newMove?.power) > 0 ? newMove.power : '变化';
+  const movePowerDisplay = getMovePrimaryEffectDisplay(newMove);
   const moveCostLabel = Number(newMove?.cost) || 0;
   const eventLevel = Number.isInteger(Number(event?.level)) ? Number(event.level) : null;
   const [isCommitting, setIsCommitting] = useState(false);
@@ -2074,7 +2474,7 @@ const LearnMoveCeremonyModal = ({
             </div>
             <div className="growth-learn-move-card__meta">
               <span>{categoryLabel}</span>
-              <span>威力 {movePowerLabel}</span>
+              <span>{movePowerDisplay.label} {movePowerDisplay.value}</span>
               <span>MP {moveCostLabel}</span>
             </div>
           </div>
@@ -2105,7 +2505,7 @@ const LearnMoveCeremonyModal = ({
             <div className="growth-learn-forget-list">
               {knownMoves.map((knownMoveKey, index) => {
                 const knownMove = MOVES[knownMoveKey];
-                const knownPowerLabel = Number(knownMove?.power) > 0 ? knownMove.power : '变化';
+                const knownPowerDisplay = getMovePrimaryEffectDisplay(knownMove);
                 const knownCostLabel = getMoveMpCost(knownMove);
                 const knownCategoryLabel = MOVE_CATEGORY_LABELS[knownMove?.category] || '招式';
                 return (
@@ -2123,7 +2523,7 @@ const LearnMoveCeremonyModal = ({
                     </div>
                     <div className="growth-learn-forget-card__meta">
                       <em>{knownCategoryLabel}</em>
-                      <em>威力 {knownPowerLabel}</em>
+                      <em>{knownPowerDisplay.label} {knownPowerDisplay.value}</em>
                       <em>MP {knownCostLabel}</em>
                     </div>
                   </button>
@@ -2194,59 +2594,12 @@ const PixelCard = ({ children, className = "", onClick, active = false }) =>
         </div>
     </div>;
 
-const CollectionGrid = ({ children, className = '' }) => (
-  <div className={`game-collection-grid ${className}`.trim()}>{children}</div>
-);
-
-const CollectionCard = ({
-  children,
-  onClick,
-  active = false,
-  disabled = false,
-  className = '',
-  asButton = true
-}) => {
-  const classes = [
-    'game-card game-collection-card',
-    active ? 'game-card-active' : '',
-    disabled ? 'game-collection-card--disabled' : '',
-    className
-  ].filter(Boolean).join(' ');
-
-  if (onClick && asButton) {
-    return (
-      <button type="button" onClick={onClick} disabled={disabled} className={classes}>
-        {children}
-      </button>
-    );
-  }
-
-  const handleKeyDown = (event) => {
-    if (!onClick || disabled) return;
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    onClick(event);
-  };
-
-  return (
-    <div
-      className={classes}
-      onClick={disabled ? undefined : onClick}
-      onKeyDown={handleKeyDown}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick && !disabled ? 0 : undefined}
-      aria-disabled={onClick && disabled ? 'true' : undefined}
-    >
-      {children}
-    </div>
-  );
-};
-
 const HealingBurst = ({ amount = 0, compact = false }) => {
   const restoreParts = typeof amount === 'object' && amount !== null
     ? [
       Number(amount.hp) > 0 ? { key: 'hp', text: `+${amount.hp} HP` } : null,
       Number(amount.mp) > 0 ? { key: 'mp', text: `+${amount.mp} MP` } : null,
+      amount.status ? { key: 'status', text: '异常解除' } : null,
     ].filter(Boolean)
     : [{ key: 'hp', text: `+${amount} HP` }];
   const hasMp = restoreParts.some((part) => part.key === 'mp');
@@ -2644,6 +2997,7 @@ const STARTER_STORY_META = {
     promise: '后期成长为强力火系伙伴',
     voiceLine: '尾焰明亮，战斗节奏直接有力。',
     mapHint: '适合喜欢主动推进、快速结束战斗的玩家。',
+    earlyRouteHint: '建议先在阳光草坡热身，再去湖北浅滩补经验，最后压进南边密林。',
     motionClass: 'launch-partner-motion--ember',
     color: '#f97316',
     icon: 'fa-fire',
@@ -2653,7 +3007,8 @@ const STARTER_STORY_META = {
     trait: '草与阳光会慢慢积蓄力量，适合喜欢稳扎稳打的冒险者。',
     promise: '回复与控制能力更均衡',
     voiceLine: '背上的种子泛起柔和绿光，适合稳步探索。',
-    mapHint: '适合耐心培养、慢慢积累优势的玩家。',
+    mapHint: '适合耐心培养、先稳住节奏再逐步推进的玩家。',
+    earlyRouteHint: '建议先在阳光草坡练到更稳，再去湖北浅滩，最后再挑战南边密林。',
     motionClass: 'launch-partner-motion--leaf',
     color: '#16a34a',
     icon: 'fa-seedling',
@@ -2664,6 +3019,7 @@ const STARTER_STORY_META = {
     promise: '防御可靠，水系招式稳定',
     voiceLine: '龟壳可靠，适合在未知区域稳住节奏。',
     mapHint: '适合喜欢防守稳定、一步一步完成挑战的玩家。',
+    earlyRouteHint: '建议先过阳光草坡，再去花丘草地补一轮，最后再进南边密林。',
     motionClass: 'launch-partner-motion--water',
     color: '#2563eb',
     icon: 'fa-droplet',
@@ -2674,6 +3030,7 @@ const STARTER_STORY_META = {
     promise: '速度快，电系打击感强',
     voiceLine: '电光一闪，它已经跑到你的脚边。',
     mapHint: '适合反应快、喜欢灵活节奏的玩家。',
+    earlyRouteHint: '建议先在阳光草坡起手，再看状态去花丘或湖边继续推进。',
     motionClass: 'launch-partner-motion--spark',
     color: '#eab308',
     icon: 'fa-bolt',
@@ -2684,6 +3041,7 @@ const STARTER_STORY_META = {
     promise: '路线灵活，适合收藏成长',
     voiceLine: '它歪头看着你，像在等待一个共同决定的未来。',
     mapHint: '适合想长期陪伴、慢慢找到专属路线的玩家。',
+    earlyRouteHint: '建议先在阳光草坡稳住，再根据状态去花丘或湖北浅滩继续练级。',
     motionClass: 'launch-partner-motion--star',
     color: '#a16207',
     icon: 'fa-star',
@@ -2746,6 +3104,8 @@ const LaunchScreen = ({ onStartGame, user, transition = null, children = null })
 
   const handleStart = async () => {
     if (!selectedMonster || isStarting) return;
+    gameAudio.prime();
+    gameAudio.playUiConfirm();
     setIsStarting(true);
     try {
       const started = await onStartGame(selectedMonster);
@@ -2806,7 +3166,11 @@ const LaunchScreen = ({ onStartGame, user, transition = null, children = null })
                       type="button"
                       className={`launch-starter-orb ${active ? 'launch-starter-orb--active' : ''}`}
                       style={{ '--starter-color': meta.color }}
-                      onClick={() => setSelectedMonster(monster)}
+                      onClick={() => {
+                        gameAudio.prime();
+                        gameAudio.playUiSelect();
+                        setSelectedMonster(monster);
+                      }}
                       disabled={isStarting}
                       aria-pressed={active}
                     >
@@ -2902,7 +3266,7 @@ const LaunchDepartureOverlay = ({ transition }) => {
 const AttackEffect = ({ effect, onDone }) => {
   if (!effect) return null;
 
-  const move = effect.moveKey ? MOVES[effect.moveKey] : null;
+  const move = effect.move || (effect.moveKey ? MOVES[effect.moveKey] : null);
   const moveConfig = getMoveEffectConfig(effect.moveKey, move || effect);
   const isSecondaryResult = effect.phase === 'secondary';
   const visual = isSecondaryResult ? 'secondary-result' : (moveConfig.visual || 'impact');
@@ -3058,6 +3422,7 @@ const PERSISTENT_MAP_EVENT_TILES = new Set(
     .map((type) => getMapEventTile(type))
     .filter((tile) => Number.isSafeInteger(tile))
 );
+const PERSISTABLE_ADVENTURE_CLEAR_TILES = new Set([9]);
 
 const ensurePersistentMapEventsInGrid = (mapName, sourceGrid) => {
   const grid = cloneMapGrid(sourceGrid);
@@ -3161,11 +3526,40 @@ const syncConsumableMapEventsInGrid = (mapName, sourceGrid, world) => {
   return grid;
 };
 
+const buildAuthoritativeAdventureMapGrid = (mapName, sourceGrid = null) => {
+  const authoritativeGrid = loadPokemonMap(mapName);
+  if (!Array.isArray(sourceGrid) || sourceGrid.length === 0) {
+    return authoritativeGrid;
+  }
+
+  const nextGrid = cloneMapGrid(authoritativeGrid);
+  for (let y = 0; y < nextGrid.length; y += 1) {
+    const nextRow = nextGrid[y];
+    const sourceRow = sourceGrid[y];
+    if (!Array.isArray(nextRow) || !Array.isArray(sourceRow)) continue;
+
+    for (let x = 0; x < nextRow.length; x += 1) {
+      const authoritativeTile = nextRow[x];
+      const sourceTile = sourceRow[x];
+      if (!PERSISTABLE_ADVENTURE_CLEAR_TILES.has(authoritativeTile)) continue;
+      if (!Number.isSafeInteger(sourceTile) || sourceTile === authoritativeTile) continue;
+      nextRow[x] = sourceTile;
+    }
+  }
+
+  return nextGrid;
+};
+
 const buildMapGridForWorld = (mapName, world, sourceGrid = null) => {
   const safeMapName = hasAdventureMap(mapName) ? mapName : DEFAULT_WORLD_MAP_NAME;
-  const baseGrid = Array.isArray(sourceGrid) && sourceGrid.length > 0
-    ? sourceGrid
-    : loadPokemonMap(safeMapName);
+  const usesAuthoritativeAdventureGrid = getAdventureMapInfo(safeMapName)?.renderMode === 'three-lowpoly';
+  const baseGrid = usesAuthoritativeAdventureGrid
+    ? buildAuthoritativeAdventureMapGrid(safeMapName, sourceGrid)
+    : (
+      Array.isArray(sourceGrid) && sourceGrid.length > 0
+        ? sourceGrid
+        : loadPokemonMap(safeMapName)
+    );
   return syncConsumableMapEventsInGrid(safeMapName, baseGrid, world);
 };
 
@@ -3334,6 +3728,7 @@ const UnifiedBagScreen = ({
 	    const mpRestoreAmount = item.type === 'potion'
 	      ? Math.max(0, Math.min(recoveryProfile.mp, maxMp - currentMp))
 	      : 0;
+    const curesStatus = item.type === 'potion' && hasPotionCurableStatus(targetMon);
     const remainingQuantityBeforeUse = getInventoryItemQuantity(
       inventory,
       item.inventoryType,
@@ -3370,7 +3765,7 @@ const UnifiedBagScreen = ({
 	        await playItemUseEffect({
 	          type: 'heal',
 	          monId,
-	          amount: { hp: healAmount, mp: mpRestoreAmount },
+	          amount: { hp: healAmount, mp: mpRestoreAmount, status: curesStatus },
 	          itemName: item.name
 	        }, HEAL_ANIMATION_DURATION_MS);
       } else if (item.type === 'expPotion') {
@@ -3559,17 +3954,22 @@ const UnifiedBagScreen = ({
                 const isPending = pendingItemTargetId === mon.id;
                 const canPotionRestoreHp = Boolean(selectedPotion && selectedPotionRecovery.hp > 0 && currentHp < maxHp);
                 const canPotionRestoreMp = Boolean(selectedPotion && selectedPotionRecovery.mp > 0 && currentMp < maxMp);
+                const canPotionCureStatus = Boolean(selectedPotion && hasPotionCurableStatus(mon));
                 const hpPreview = Math.min(selectedPotionRecovery.hp, Math.max(0, maxHp - currentHp));
                 const mpPreview = Math.min(selectedPotionRecovery.mp, Math.max(0, maxMp - currentMp));
                 const isUnavailable = selectedExpPotion
                   ? isMaxLevel
-                  : !canPotionRestoreHp && !canPotionRestoreMp;
+                  : !canPotionRestoreHp && !canPotionRestoreMp && !canPotionCureStatus;
                 const isTargetDisabled = isUnavailable || isItemUsePending || selectedItemIsDepleted;
                 const statusLabel = selectedItemIsDepleted
                   ? '无库存'
                   : selectedExpPotion
                     ? isMaxLevel ? '满级' : `+${selectedExpPotion.expAmount || 0}`
-                    : isUnavailable ? '已满' : '可用';
+                    : isUnavailable
+                      ? '已满'
+                      : canPotionCureStatus && !canPotionRestoreHp && !canPotionRestoreMp
+                        ? '解异常'
+                        : '可用';
 
                 return (
                   <button
@@ -3603,6 +4003,7 @@ const UnifiedBagScreen = ({
                         <div className="bag-target-restore-preview">
                           <span className={canPotionRestoreHp ? 'bag-target-restore-preview--active' : ''}>HP +{hpPreview}</span>
                           <span className={canPotionRestoreMp ? 'bag-target-restore-preview--active bag-target-restore-preview--mp' : ''}>MP +{mpPreview}</span>
+                          <span className={canPotionCureStatus ? 'bag-target-restore-preview--active bag-target-restore-preview--status' : ''}>解除异常</span>
                         </div>
                       )}
                       <div className="bag-target-option__bars">
@@ -3650,7 +4051,7 @@ const UnifiedBagScreen = ({
 // ═══════════════════════════════════════════════════════════════════
 
 // ── 遭遇开场 ────────────────────────────────────────────────────────
-const BattlePartyBalls = ({ team = [], activeId = null, className = '', compact = false, showActive = true }) => {
+const BattlePartyBalls = ({ team = [], activeId = null, className = '', compact = false, showActive = true, aceId = null }) => {
   const party = (Array.isArray(team) ? team : []).slice(0, 6);
   if (party.length === 0) return null;
 
@@ -3661,14 +4062,15 @@ const BattlePartyBalls = ({ team = [], activeId = null, className = '', compact 
       {party.map((mon, index) => {
         const fainted = isBattleMonFainted(mon);
         const active = showActive && !fainted && activeId != null && mon?.id === activeId;
+        const ace = aceId != null && mon?.id === aceId;
         return (
           <span
             key={mon?.id || index}
-            className={`battle-party-ball ${active ? 'battle-party-ball--active' : ''} ${fainted ? 'battle-party-ball--fainted' : ''}`}
+            className={`battle-party-ball ${active ? 'battle-party-ball--active' : ''} ${ace ? 'battle-party-ball--ace' : ''} ${fainted ? 'battle-party-ball--fainted' : ''}`}
             style={{ '--ball-index': index }}
-            title={`${mon?.name || '宝可梦'}${fainted ? ' 已失去战斗能力' : active ? ' 正在场上' : ' 待命中'}`}
+            title={`${mon?.name || '宝可梦'}${ace ? ' 压轴王牌' : fainted ? ' 已失去战斗能力' : active ? ' 正在场上' : ' 待命中'}`}
           >
-            <img src={BATTLE_SENDOUT_BALL_SPRITE} alt="" onError={handleItemImageError} />
+            <img src={BATTLE_SENDOUT_BALL_SPRITE} alt="" loading="eager" decoding="async" draggable="false" onError={handlePokeballImageError} />
           </span>
         );
       })}
@@ -3691,6 +4093,11 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
   const trainerIntroBallTeam = trainerTeam.length > 0
     ? trainerTeam
     : (enemyMon ? [enemyMon] : Array.from({ length: trainerTeamSize }, (_, index) => ({ id: `intro-ball-${index}`, name: '宝可梦' })));
+  const bossAceMon = battleEnvironment?.eventRole === 'boss'
+    ? (trainerTeam.length > 0 ? trainerTeam[trainerTeam.length - 1] : null)
+    : null;
+  const bossAceId = bossAceMon?.id ?? null;
+  const bossSupportCount = bossAceMon ? Math.max(0, trainerTeam.length - 1) : 0;
 
   return (
     <div
@@ -3712,19 +4119,22 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
               <img
                 src={trainerPortraitSrc}
                 alt=""
-                onError={(event) => {
-                  if (event.currentTarget.src.endsWith(TRAINER_PORTRAITS.normal)) return;
-                  event.currentTarget.src = TRAINER_PORTRAITS.normal;
-                }}
+                loading="eager"
+                decoding="async"
+                draggable="false"
+                onError={handleTrainerPortraitImageError}
               />
             </div>
           ) : (
             <img
-              src={enemyMon?.sprite}
+              src={enemyMon?.sprite || POKEMON_LOCAL_PLACEHOLDER}
               alt={enemyMon?.name}
               className="battle-intro-sprite"
               style={{ imageRendering: 'auto', filter: 'drop-shadow(0 16px 28px rgba(0,0,0,0.32)) drop-shadow(0 0 18px rgba(150,200,255,0.38))' }}
-              onError={(e) => { e.target.src = '/assets/pokemon/placeholder.svg'; }}
+              loading="eager"
+              decoding="async"
+              draggable="false"
+              onError={handlePokemonImageError}
             />
           )}
         </div>
@@ -3747,12 +4157,35 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
         {isTrainerBattle ? (
           <>
             <p className="battle-intro-trainer-text">{trainerIntroMeta.promptText}</p>
+            {bossAceMon ? (
+              <div className="battle-intro-boss-ace-panel">
+                <span className="battle-intro-boss-ace-panel__eyebrow">
+                  压轴王牌
+                </span>
+                <div className="battle-intro-boss-ace-panel__main">
+                  <span className="battle-intro-boss-ace-panel__name">{bossAceMon.name}</span>
+                  <span className="battle-intro-boss-ace-panel__level">Lv.{bossAceMon.level}</span>
+                </div>
+                <div className="battle-intro-boss-ace-panel__meta">
+                  {bossSupportCount > 0 ? (
+                    <span className="battle-intro-boss-ace-panel__hint">
+                      先破前阵 {bossSupportCount} 只，再迎最终王牌
+                    </span>
+                  ) : null}
+                  <div className="battle-intro-boss-ace-panel__types">
+                    {bossAceMon.type ? <TypeBadge type={bossAceMon.type} small /> : null}
+                    {bossAceMon.type2 ? <TypeBadge type={bossAceMon.type2} small /> : null}
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="battle-intro-trainer-meta">
               <BattlePartyBalls
                 team={trainerIntroBallTeam}
                 className="battle-party-balls--intro"
                 compact
                 showActive={false}
+                aceId={bossAceId}
               />
             </div>
           </>
@@ -3798,7 +4231,9 @@ const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening'
               src={BATTLE_SENDOUT_BALL_SPRITE}
               alt="精灵球"
               className={`battle-sendout-ball battle-sendout-ball--${side}`}
-              onError={handleItemImageError}
+              loading="eager"
+              decoding="async"
+              onError={handlePokeballImageError}
               draggable="false"
             />
           </div>
@@ -4108,12 +4543,21 @@ const BattleDefeatOverlay = ({ onContinue, goldPenalty = 0 }) => {
 };
 
 // ── 逃跑画面（自动消失）────────────────────────────────────────────
-const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = false }) => {
+const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = false, phaseData = null }) => {
   React.useEffect(() => {
     if (paused) return undefined;
     const t = setTimeout(onComplete, 1600);
     return () => clearTimeout(t);
   }, [onComplete, paused]);
+
+  const isTeleportEscape = phaseData?.reason === 'teleport';
+  const isEnemyEscape = isTeleportEscape && phaseData?.side === 'enemy';
+  const title = isTeleportEscape
+    ? isEnemyEscape ? '对手逃走了！' : '瞬间移动成功！'
+    : '成功逃跑！';
+  const subtitle = isTeleportEscape
+    ? '瞬间移动让战斗结束了'
+    : refundEligible ? '未进入战斗，已返还能量' : '已进入战斗，能量不会返还';
 
   return (
     <div className="absolute inset-0 z-[9500] flex flex-col items-center justify-center pointer-events-none"
@@ -4123,12 +4567,12 @@ const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = fals
       }}>
       <div className="flex flex-col items-center gap-3"
         style={{ animation: 'btEscapeIn 450ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
-        <div className="text-6xl" style={{ animation: 'btEscapeIcon 400ms ease-out 200ms both' }}>💨</div>
+        <div className="text-6xl" style={{ animation: 'btEscapeIcon 400ms ease-out 200ms both' }}>{isTeleportEscape ? '✨' : '💨'}</div>
         <div className="text-white font-black text-2xl" style={{ textShadow: '0 2px 12px rgba(100,200,255,0.4)' }}>
-          成功逃跑！
+          {title}
         </div>
         <div className="text-sm font-bold text-white/55">
-          {refundEligible ? '未进入战斗，已返还能量' : '已进入战斗，能量不会返还'}
+          {subtitle}
         </div>
       </div>
     </div>
@@ -4228,21 +4672,22 @@ const BattleScene = ({
     const phase = event?.phase || 'hit';
     const durationMs = event?.durationMs || getBattleMovePhaseDuration(phase);
     const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
-    const move = MOVES[moveKey];
+    const move = event?.move || MOVES[moveKey];
     if (!move || isThrowingPokeball) return;
     const moveConfig = getMoveEffectConfig(moveKey, move);
     const isEnemyAttack = attackerSide === 'enemy';
     const isSecondaryResultPhase = phase === 'secondary';
     const isActorFocusedPhase = ['charge', 'start', 'copy', 'fizzle'].includes(phase);
-    const shouldMoveActor = !isSecondaryResultPhase && ['start', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
+    const shouldMoveActor = !event?.suppressActorMotion && !isSecondaryResultPhase && ['start', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
     const shouldShowTargetEffect = ['hit', 'status', 'secondary', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
-    const shouldApplyTargetReaction = ['hit', 'status', 'heal', 'drain'].includes(phase);
+    const shouldApplyTargetReaction = Boolean(event?.forceTargetReaction) || ['hit', 'status', 'heal', 'drain'].includes(phase);
     const explicitTargetSide = ['player', 'enemy'].includes(event?.targetSide) ? event.targetSide : null;
     const effectTarget = explicitTargetSide || (isActorFocusedPhase || moveConfig.target === 'self' || move.effect === 'heal'
       ? (isEnemyAttack ? 'enemy' : 'player')
       : (isEnemyAttack ? 'player' : 'enemy'));
     const actorAnim = `battle-actor-motion battle-actor-motion--${moveConfig.motion || 'lunge'}`;
-    const targetAnim = `battle-hit-reaction battle-hit-reaction--${isSecondaryResultPhase ? 'ripple' : phase === 'charge' ? 'charge' : moveConfig.hitReaction || 'bump'}`;
+    const resolvedReactionClass = event?.reactionClass || (isSecondaryResultPhase ? 'ripple' : phase === 'charge' ? 'charge' : moveConfig.hitReaction || 'bump');
+    const targetAnim = `battle-hit-reaction battle-hit-reaction--${resolvedReactionClass}`;
 
     clearBattleVisualTimers();
     setAttackEffect(null);
@@ -4479,11 +4924,13 @@ const BattleScene = ({
 
   const handleNoMpOpenBag = useCallback(() => {
     if (activePlayerActionDisabled || !!playerChargingMoveKey) return;
+    gameAudio.playUiSelect();
     setShowBag(true);
   }, [activePlayerActionDisabled, playerChargingMoveKey]);
 
   const handleNoMpOpenTeam = useCallback(() => {
     if (noMpTeamSwitchDisabled) return;
+    gameAudio.playUiSelect();
     setShowTeam(true);
   }, [noMpTeamSwitchDisabled]);
 
@@ -4494,6 +4941,7 @@ const BattleScene = ({
       return;
     }
     if (isBattleInputLocked || turn !== 'player' || isBusy || isThrowingPokeball) return;
+    gameAudio.playUiConfirm();
     setIsBusy(true);
     try {
       await onMove(moveKey);
@@ -4535,6 +4983,7 @@ const BattleScene = ({
     if (!resolvedEscapeRule.canRun) {
       return;
     }
+    gameAudio.playUiSelect();
     setIsBusy(true);
     try {
       await onRun?.();
@@ -4584,55 +5033,64 @@ const BattleScene = ({
 
   // --- Modal Screen Rendering ---
   if (showBag) {
-    return <UnifiedBagScreen
-      inventory={playerInventory}
-      onClose={() => setShowBag(false)}
-      onUseItem={onUseItem}
-      onUsePotion={onUsePotion}
-      onUseExpPotion={onUseExpPotion}
-      onBattleItemConsumed={({ itemType }) => {
-        if (itemType !== 'potion') return;
-        setShowBag(false);
-        setShowControls('main');
-        setIsBusy(true);
-      }}
-      team={playerTeam && playerTeam.length > 0 ? playerTeam : [battlePlayerMon].filter(Boolean)}
-      isBattle={true}
-      canUseBattleBalls={canUsePokeballs}
-      addLog={addLog}
-      activeMonId={battlePlayerMon?.id} />;
+    return (
+      <Suspense fallback={<DeferredPanelFallback title="背包加载中..." />}>
+        <DeferredUnifiedBagScreen
+          inventory={playerInventory}
+          onClose={() => setShowBag(false)}
+          onUseItem={onUseItem}
+          onUsePotion={onUsePotion}
+          onUseExpPotion={onUseExpPotion}
+          onBattleItemConsumed={({ itemType }) => {
+            if (itemType !== 'potion') return;
+            setShowBag(false);
+            setShowControls('main');
+            setIsBusy(true);
+          }}
+          team={playerTeam && playerTeam.length > 0 ? playerTeam : [battlePlayerMon].filter(Boolean)}
+          isBattle={true}
+          canUseBattleBalls={canUsePokeballs}
+          addLog={addLog}
+        />
+      </Suspense>
+    );
 
   }
 
   if (showTeam) {
-    return <TeamScreen
-      team={playerTeam}
-      onSelect={async (id) => {
-        if (id === battlePlayerMon?.id) return false;
-        setIsBusy(true);
-        setShowTeam(false);
-        setShowControls('main');
-        const switched = await onSwitch?.(id);
-        if (switched === false) {
-          if (isBattleSceneMountedRef.current) {
-            setIsBusy(false);
-            setShowTeam(true);
-          }
-          return false;
-        }
-        if (isBattleSceneMountedRef.current) {
-          setIsBusy(false);
-        }
-        return false;
-      }} // Pass onSwitch for potential switch logic
-      activeId={battlePlayerMon?.id}
-      onBack={() => {
-        if (forcedSwitchRequired) {
-          addLog?.('宝可梦倒下了，请选择下一只。');
-          return;
-        }
-        setShowTeam(false);
-      }} />;
+    return (
+      <Suspense fallback={<DeferredPanelFallback title="队伍加载中..." />}>
+        <DeferredTeamScreen
+          team={playerTeam}
+          onSelect={async (id) => {
+            if (id === battlePlayerMon?.id) return false;
+            setIsBusy(true);
+            setShowTeam(false);
+            setShowControls('main');
+            const switched = await onSwitch?.(id);
+            if (switched === false) {
+              if (isBattleSceneMountedRef.current) {
+                setIsBusy(false);
+                setShowTeam(true);
+              }
+              return false;
+            }
+            if (isBattleSceneMountedRef.current) {
+              setIsBusy(false);
+            }
+            return false;
+          }}
+          activeId={battlePlayerMon?.id}
+          onBack={() => {
+            if (forcedSwitchRequired) {
+              addLog?.('宝可梦倒下了，请选择下一只。');
+              return;
+            }
+            setShowTeam(false);
+          }}
+        />
+      </Suspense>
+    );
 
   }
 
@@ -4702,6 +5160,7 @@ const BattleScene = ({
               team={enemyTeam}
               activeId={activeEnemyId || battleEnemyMon?.id}
               className="battle-party-balls--hud"
+              aceId={battleEnvironment?.eventRole === 'boss' ? enemyTeam[enemyTeam.length - 1]?.id : null}
             />
           ) : null}
         />
@@ -4811,43 +5270,8 @@ const BattleScene = ({
             </>
           ) : (
             <div className={`battle-move-stack flex flex-col min-h-0 ${playerOutOfMpLocked ? 'battle-move-stack--no-mp' : ''}`}>
-              {playerOutOfMpLocked && (
-                <div className="battle-no-mp-notice" role="status" aria-live="polite">
-                  <div className="battle-no-mp-notice__copy">
-                    <i className="fa-solid fa-bolt-lightning" aria-hidden="true"></i>
-                    <span>{getNoMpBattleHint(battlePlayerMon)}</span>
-                  </div>
-                  {playerNoMpHardLock && (
-                    <div className="battle-no-mp-notice__warning">
-                      <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                      <span>{getNoMpBattleDeadlockHint()}</span>
-                    </div>
-                  )}
-                  <div className="battle-no-mp-notice__actions">
-                    <button
-                      type="button"
-                      className="battle-no-mp-action battle-no-mp-action--bag"
-                      onClick={handleNoMpOpenBag}
-                      disabled={activePlayerActionDisabled || !!playerChargingMoveKey}
-                    >
-                      <i className="fa-solid fa-bag-shopping" aria-hidden="true"></i>
-                      <span>打开背包</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="battle-no-mp-action battle-no-mp-action--team"
-                      onClick={handleNoMpOpenTeam}
-                      disabled={noMpTeamSwitchDisabled}
-                      title={noMpTeamSwitchDisabled ? '当前没有可替换的队伍成员。' : ''}
-                    >
-                      <i className="fa-solid fa-people-group" aria-hidden="true"></i>
-                      <span>切换队伍</span>
-                    </button>
-                  </div>
-                </div>
-              )}
               <div
-                className="battle-move-grid min-h-0"
+                className={`battle-move-grid min-h-0 ${playerOutOfMpLocked ? 'battle-move-grid--blocked' : ''}`}
                 style={{ gridTemplateRows: `repeat(${moveGridRowCount}, minmax(0, 1fr))` }}
               >
                 {(battlePlayerMon?.moves || []).map((moveKey) => {
@@ -4857,14 +5281,14 @@ const BattleScene = ({
                   const moveCost = getMoveMpCost(move);
                   const hasEnoughMp = isChargingReleaseMove || playerStats.currentMp >= moveCost;
                   const isMoveDisabledByCharge = !!playerChargingMoveKey && !isChargingReleaseMove;
-                  const effectivenessMeta = getMoveEffectivenessMeta(move, battleEnemyMon);
+                  const effectivenessMeta = getMoveEffectivenessMeta(move, battleEnemyMon, battlePlayerMon);
                   const shouldShowEffectiveness = Boolean(effectivenessMeta.label);
-                  const movePowerLabel = Number(move.power) > 0 ? move.power : '变化';
+                  const movePowerDisplay = getMovePrimaryEffectDisplay(move);
                   const moveCategoryLabel = MOVE_CATEGORY_LABELS[move.category] || '招式';
                   const moveEffectLabels = getMoveEffectLabels(move);
                   const moveTitle = [
                     effectivenessMeta.description,
-                    `威力 ${movePowerLabel}`,
+                    `${movePowerDisplay.label} ${movePowerDisplay.value}`,
                     moveCategoryLabel,
                     `MP ${moveCost}`,
                     ...moveEffectLabels
@@ -4890,7 +5314,7 @@ const BattleScene = ({
                       </div>
                       <div className="battle-move-button__details">
                         <span className="battle-move-button__detail battle-move-button__detail--power">
-                          <small>威力</small><b>{movePowerLabel}</b>
+                          <small>{movePowerDisplay.label}</small><b>{movePowerDisplay.value}</b>
                         </span>
                         <span className={`battle-move-button__category battle-move-button__category--${move.category || 'unknown'}`}>
                           {moveCategoryLabel}
@@ -4906,712 +5330,59 @@ const BattleScene = ({
               <button
                 onClick={() => setShowControls('main')}
                 className="battle-back-button shrink-0"
+                disabled={playerOutOfMpLocked}
               >
                 <i className="fa-solid fa-arrow-left"></i>
                 <span>返回</span>
               </button>
+              {playerOutOfMpLocked && (
+                <div className="battle-no-mp-overlay" role="status" aria-live="polite">
+                  <div className="battle-no-mp-overlay__card">
+                    <div className="battle-no-mp-overlay__badge" aria-hidden="true">
+                      <i className="fa-solid fa-bolt-lightning"></i>
+                      <span>MP 不足</span>
+                    </div>
+                    <h3 className="battle-no-mp-overlay__title">{getNoMpOverlayTitle(battlePlayerMon)}</h3>
+                    <p className="battle-no-mp-overlay__body">{getNoMpOverlayBody()}</p>
+                    <div className="battle-no-mp-overlay__meters" aria-label="当前魔力状态">
+                      <span className="battle-no-mp-overlay__meter battle-no-mp-overlay__meter--mp">
+                        MP {getMonsterCurrentMp(battlePlayerMon)} / {getMonsterMaxMp(battlePlayerMon)}
+                      </span>
+                      {playerNoMpHardLock && (
+                        <span className="battle-no-mp-overlay__meter battle-no-mp-overlay__meter--warn">
+                          没有替补就会战败
+                        </span>
+                      )}
+                    </div>
+                    <div className="battle-no-mp-overlay__actions">
+                      <button
+                        type="button"
+                        className="battle-no-mp-action battle-no-mp-action--bag"
+                        onClick={handleNoMpOpenBag}
+                        disabled={activePlayerActionDisabled || !!playerChargingMoveKey}
+                      >
+                        <i className="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+                        <span>去背包补充</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="battle-no-mp-action battle-no-mp-action--team"
+                        onClick={handleNoMpOpenTeam}
+                        disabled={noMpTeamSwitchDisabled}
+                        title={noMpTeamSwitchDisabled ? '当前没有可替换的队伍成员。' : ''}
+                      >
+                        <i className="fa-solid fa-people-group" aria-hidden="true"></i>
+                        <span>换一只上场</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>);
-
-};
-
-const PokemonDetailDialog = ({
-  monster,
-  stats,
-  moves = [],
-  onClose,
-  contextLabel = '出战队伍',
-  children
-}) => {
-  if (!monster || !stats) return null;
-
-  const hpPercent = stats.maxHp > 0 ? Math.max(0, Math.min(100, (stats.currentHp / stats.maxHp) * 100)) : 0;
-  const mpPercent = stats.maxMp > 0 ? Math.max(0, Math.min(100, (stats.currentMp / stats.maxMp) * 100)) : 0;
-  const expToNextLevel = monster.expToNextLevel || 0;
-  const currentExp = monster.currentExp || 0;
-  const expPercent = expToNextLevel > 0 ? Math.max(0, Math.min(100, (currentExp / expToNextLevel) * 100)) : 0;
-  const statTiles = [
-    { label: '生命', value: `${stats.currentHp}/${stats.maxHp}`, icon: 'fa-heart-pulse', tone: 'hp' },
-    { label: '技能值', value: `${stats.currentMp}/${stats.maxMp}`, icon: 'fa-droplet', tone: 'mp' },
-    { label: '速度', value: monster.spd || 0, icon: 'fa-wind', tone: 'speed' },
-    { label: '攻击', value: monster.atk || 0, icon: 'fa-hand-fist', tone: 'attack' },
-    { label: '防御', value: monster.def || 0, icon: 'fa-shield-halved', tone: 'defense' },
-    { label: '特攻', value: monster.spAtk || 0, icon: 'fa-wand-sparkles', tone: 'spattack' },
-    { label: '特防', value: monster.spDef || 0, icon: 'fa-gem', tone: 'spdefense' }
-  ];
-  const dialogTitleId = `pokemon-detail-title-${monster.id || 'monster'}`;
-
-  return (
-    <div
-      className="game-screen-dialog-overlay game-screen-dialog-overlay--detail"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={dialogTitleId}
-      onClick={onClose}
-    >
-      <div className="pokemon-detail-modal animate-bounce-in" onClick={(e) => e.stopPropagation()}>
-        <div className="pokemon-detail-hero">
-          <div className="pokemon-detail-art">
-            <img src={monster.sprite} onError={handlePokemonImageError} alt={monster.name} style={{ imageRendering: 'auto' }} />
-          </div>
-          <div className="pokemon-detail-hero-copy">
-            <div className="pokemon-detail-eyebrow">{contextLabel}</div>
-            <div className="pokemon-detail-name-row">
-              <h3 id={dialogTitleId}>{monster.name}</h3>
-              <span>Lv.{monster.level}</span>
-            </div>
-            <div className="pokemon-detail-type-row">
-              {monster.type2 && <TypeBadge type={monster.type2} />}
-              <TypeBadge type={monster.type} />
-            </div>
-            <div className="pokemon-detail-exp">
-              <div className="pokemon-detail-exp__top">
-                <span>距离下一级</span>
-                <b>{currentExp}/{expToNextLevel || '--'}</b>
-              </div>
-              <div className="game-collection-card__bar">
-                <div className="game-collection-card__bar-fill game-collection-card__bar-fill--exp" style={{ width: `${expPercent}%` }}></div>
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="game-icon-button pokemon-detail-close" title="关闭" aria-label="关闭">
-            <i className="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div className="pokemon-detail-body">
-          <section className="pokemon-detail-panel">
-            <div className="pokemon-detail-section-title">
-              <span>当前状态</span>
-              <b>Status</b>
-            </div>
-            <div className="pokemon-detail-vitals">
-              <div className="pokemon-detail-vital-row pokemon-detail-vital-row--hp">
-                <span>HP</span>
-                <div className="game-collection-card__bar">
-                  <div className="game-collection-card__bar-fill game-collection-card__bar-fill--hp" style={{ width: `${hpPercent}%` }}></div>
-                </div>
-                <b>{stats.currentHp}/{stats.maxHp}</b>
-              </div>
-              <div className="pokemon-detail-vital-row pokemon-detail-vital-row--mp">
-                <span>MP</span>
-                <div className="game-collection-card__bar">
-                  <div className="game-collection-card__bar-fill game-collection-card__bar-fill--mp" style={{ width: `${mpPercent}%` }}></div>
-                </div>
-                <b>{stats.currentMp}/{stats.maxMp}</b>
-              </div>
-            </div>
-          </section>
-
-          <section className="pokemon-detail-panel">
-            <div className="pokemon-detail-section-title">
-              <span>能力值</span>
-              <b>Stats</b>
-            </div>
-            <div className="pokemon-detail-stat-grid">
-              {statTiles.map((stat) => (
-                <div key={stat.label} className={`pokemon-detail-stat-tile pokemon-detail-stat-tile--${stat.tone}`}>
-                  <i className={`fa-solid ${stat.icon}`}></i>
-                  <span>{stat.label}</span>
-                  <b>{stat.value}</b>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="pokemon-detail-panel">
-            <div className="pokemon-detail-section-title">
-              <span>已学技能</span>
-              <b>Moves</b>
-            </div>
-            <div className="pokemon-detail-move-grid">
-              {moves.length === 0 && <div className="pokemon-detail-empty">暂未学习技能</div>}
-              {moves.map((move) => {
-                const moveCost = getMoveMpCost(move);
-                return (
-                  <div key={move.name} className="pokemon-detail-move-card">
-                    <div className="pokemon-detail-move-card__top">
-                      <div>
-                        <h4>{move.name}</h4>
-                        <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'}</span>
-                      </div>
-                      <TypeBadge type={move.type} small />
-                    </div>
-                    <div className="pokemon-detail-move-card__meta">
-                      <span>威力 <b>{move.power || '--'}</b></span>
-                      <span>MP <b>{moveCost}</b></span>
-                      <span>命中 <b>{move.accuracy || '--'}</b></span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-
-        {children && <div className="pokemon-detail-actions">{children}</div>}
-      </div>
-    </div>
-  );
-};
-
-const GameConfirmDialog = ({
-  open,
-  title,
-  message,
-  icon = 'fa-triangle-exclamation',
-  confirmLabel = '确认',
-  cancelLabel = '取消',
-  busy = false,
-  onCancel,
-  onConfirm
-}) => {
-  if (!open) return null;
-
-  return (
-    <div className="reset-confirm-overlay game-local-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="game-local-confirm-title">
-      <div className="reset-confirm-card game-local-confirm-card">
-        <div className="reset-confirm-card__icon game-local-confirm-card__icon" aria-hidden="true">
-          <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : icon}`}></i>
-        </div>
-        <div className="reset-confirm-card__body">
-          <p className="reset-confirm-card__eyebrow">需要确认</p>
-          <h2 id="game-local-confirm-title">{title}</h2>
-          <p>{message}</p>
-        </div>
-        <div className="reset-confirm-card__actions">
-          <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
-            {cancelLabel}
-          </button>
-          <button type="button" className="game-danger-button" onClick={onConfirm} disabled={busy}>
-            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : icon}`}></i>
-            {busy ? '处理中' : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const TeamScreen = ({
-  team = [],
-  storageBox = [],
-  onSelect,
-  activeId,
-  onBack,
-  onReorderTeam,
-  onRelease,
-  onReleaseStorage,
-  onDeposit,
-  onWithdraw,
-  onSwapWithStorage
-}) => {
-  const [selectedPartyMonsterId, setSelectedPartyMonsterId] = useState(null);
-  const [selectedStorageMonsterId, setSelectedStorageMonsterId] = useState(null);
-  const [activeRosterTab, setActiveRosterTab] = useState('party');
-  const [storageSwapTargetId, setStorageSwapTargetId] = useState(null);
-  const [isBusy, setIsBusy] = useState(false);
-  const [releaseConfirm, setReleaseConfirm] = useState(null);
-
-  // --- Data Normalization (same as in BattleScene) ---
-  const normalizeStats = (mon) => {
-    if (!mon) return { currentHp: 0, maxHp: 0, currentMp: 0, maxMp: 0 };
-    const maxHp = getMonsterMaxHp(mon);
-    const currentHp = getMonsterCurrentHp(mon, maxHp);
-    const maxMp = getMonsterMaxMp(mon);
-    const currentMp = getMonsterCurrentMp(mon, maxMp);
-    return { currentHp, maxHp, currentMp, maxMp };
-  };
-
-  useEffect(() => {
-    if (selectedPartyMonsterId && !team.some((mon) => mon.id === selectedPartyMonsterId)) {
-      setSelectedPartyMonsterId(null);
-    }
-    if (releaseConfirm?.from === 'party' && !team.some((mon) => mon.id === releaseConfirm.monId)) {
-      setReleaseConfirm(null);
-    }
-  }, [releaseConfirm, selectedPartyMonsterId, team]);
-
-  useEffect(() => {
-    if (selectedStorageMonsterId && !storageBox.some((mon) => mon.id === selectedStorageMonsterId)) {
-      setSelectedStorageMonsterId(null);
-    }
-    if (storageSwapTargetId && !storageBox.some((mon) => mon.id === storageSwapTargetId)) {
-      setStorageSwapTargetId(null);
-    }
-    if (releaseConfirm?.from === 'storage' && !storageBox.some((mon) => mon.id === releaseConfirm.monId)) {
-      setReleaseConfirm(null);
-    }
-  }, [releaseConfirm, selectedStorageMonsterId, storageBox, storageSwapTargetId]);
-
-  // Open the detail dialog for viewing and roster management.
-  const handleMonsterSelect = (monId) => {
-    if (selectedPartyMonsterId === monId) {
-      setSelectedPartyMonsterId(null); // Deselect if already selected
-    } else {
-      setSelectedPartyMonsterId(monId);
-    }
-  };
-
-  const handleReleaseClick = async (e, mon) => {
-    e.stopPropagation();
-    if (!onRelease || team.length <= 1 || isBusy) return;
-    setReleaseConfirm({
-      from: 'party',
-      monId: mon.id,
-      title: `放生 ${mon.name}？`,
-      message: '放生后会从队伍中移除，无法直接找回。'
-    });
-  };
-
-  const handleStorageReleaseClick = async (e, mon) => {
-    e.stopPropagation();
-    if (!onReleaseStorage || isBusy) return;
-    setReleaseConfirm({
-      from: 'storage',
-      monId: mon.id,
-      title: `放生仓库中的 ${mon.name}？`,
-      message: '放生后会从仓库中移除，无法找回。'
-    });
-  };
-
-  const handleConfirmRelease = async () => {
-    if (!releaseConfirm || isBusy) return;
-    const isStorageRelease = releaseConfirm.from === 'storage';
-    const target = isStorageRelease
-      ? storageBox.find((mon) => mon.id === releaseConfirm.monId)
-      : team.find((mon) => mon.id === releaseConfirm.monId);
-    if (!target) {
-      setReleaseConfirm(null);
-      return;
-    }
-
-    setIsBusy(true);
-    try {
-      const success = isStorageRelease
-        ? await onReleaseStorage?.(target.id)
-        : await onRelease?.(target.id);
-      if (success) {
-        if (isStorageRelease) {
-          setSelectedStorageMonsterId(null);
-          setStorageSwapTargetId(null);
-        } else {
-          setSelectedPartyMonsterId(null);
-        }
-        setReleaseConfirm(null);
-      }
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const handleDepositClick = async (e, mon) => {
-    e.stopPropagation();
-    if (!onDeposit || isBusy) return;
-    setIsBusy(true);
-    try {
-      const success = await onDeposit(mon.id);
-      if (success) {
-        setSelectedPartyMonsterId(null);
-      }
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const handleWithdrawClick = async (e, mon) => {
-    e.stopPropagation();
-    if (!onWithdraw || isBusy) return;
-    setIsBusy(true);
-    try {
-      const success = await onWithdraw(mon.id);
-      if (success) {
-        setSelectedStorageMonsterId(null);
-      }
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const handleSwapChoice = async (partyId) => {
-    if (!onSwapWithStorage || !storageSwapTargetId || isBusy) return;
-    setIsBusy(true);
-    try {
-      const success = await onSwapWithStorage(partyId, storageSwapTargetId);
-      if (success) {
-        setStorageSwapTargetId(null);
-        setSelectedStorageMonsterId(null);
-      }
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const isSwitching = !!onSelect;
-  const selectedMonster = !isSwitching ? team.find((mon) => mon.id === selectedPartyMonsterId) : null;
-  const selectedStorageMonster = !isSwitching ? storageBox.find((mon) => mon.id === selectedStorageMonsterId) : null;
-  const selectedStats = selectedMonster ? normalizeStats(selectedMonster) : null;
-  const selectedStorageStats = selectedStorageMonster ? normalizeStats(selectedStorageMonster) : null;
-  const selectedMoves = selectedMonster?.moves?.map((moveKey) => MOVES[moveKey]).filter(Boolean) || [];
-  const selectedStorageMoves = selectedStorageMonster?.moves?.map((moveKey) => MOVES[moveKey]).filter(Boolean) || [];
-  const canManageRoster = !isSwitching;
-
-  const handleMove = async (e, index, direction) => {
-    e.stopPropagation(); // Prevent card click
-    if (!onReorderTeam || isBusy) {
-      return;
-    }
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= team.length) {
-      return;
-    }
-
-    const newTeam = [...team];
-    // Simple swap
-    [newTeam[index], newTeam[targetIndex]] = [newTeam[targetIndex], newTeam[index]];
-
-    setIsBusy(true);
-    try {
-      await onReorderTeam(newTeam);
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  return (
-    <div className="game-page relative overflow-hidden">
-            <div className="game-page-header">
-                <div>
-                  <h2 className="game-page-title">
-                    <i className={`fa-solid ${isSwitching ? 'fa-users' : 'fa-paw'} text-teal-600`}></i>
-                    {isSwitching ? '选择替换的宝可梦' : '宝可梦管理'}
-                  </h2>
-                  <div className="game-page-subtitle">
-                    {isSwitching ? '仅出战队伍可上场' : '队伍与仓库分开管理，道具只对出战队伍生效'}
-                  </div>
-                </div>
-                <button onClick={onBack} disabled={isBusy} className="game-icon-button" title="返回" aria-label="返回">
-                  <i className="fa-solid fa-arrow-left"></i>
-                </button>
-            </div>
-            {canManageRoster && (
-              <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                <button
-                  type="button"
-                  onClick={() => { setActiveRosterTab('party'); setSelectedStorageMonsterId(null); }}
-                  disabled={isBusy}
-                  className={`${activeRosterTab === 'party' ? 'game-primary-button' : 'game-soft-button'} min-h-9 text-sm`}
-                >
-                  队伍 ({team.length}/{MAX_PARTY_SIZE})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setActiveRosterTab('storage'); setSelectedPartyMonsterId(null); }}
-                  disabled={isBusy}
-                  className={`${activeRosterTab === 'storage' ? 'game-primary-button' : 'game-soft-button'} min-h-9 text-sm`}
-                >
-                  仓库 ({storageBox.length}/{MAX_STORAGE_SIZE})
-                </button>
-              </div>
-            )}
-            <div className="game-scroll-area">
-              {(activeRosterTab === 'party' || isSwitching) ? (
-              <div className="pokemon-roster-list">
-                {team.map((mon, index) => {
-          const stats = normalizeStats(mon);
-          const isFainted = stats.currentHp <= 0;
-          const isActive = activeId === mon.id;
-          const canSelect = !isFainted && !isActive;
-          const hpPercent = stats.maxHp > 0 ? Math.max(0, Math.min(100, (stats.currentHp / stats.maxHp) * 100)) : 0;
-          const mpPercent = stats.maxMp > 0 ? Math.max(0, Math.min(100, (stats.currentMp / stats.maxMp) * 100)) : 0;
-          const expPercent = mon.expToNextLevel > 0 ? Math.max(0, Math.min(100, ((mon.currentExp || 0) / mon.expToNextLevel) * 100)) : 0;
-
-          const handleCardClick = async () => {
-            if (isSwitching) {
-              if (!canSelect || isBusy) return;
-              setIsBusy(true);
-              try {
-                const switched = await onSelect(mon.id);
-                if (switched) {
-                  onBack();
-                }
-              } finally {
-                setIsBusy(false);
-              }
-            } else {
-              handleMonsterSelect(mon.id);
-            }
-          };
-
-          return (
-            <CollectionCard
-              key={mon.id}
-              onClick={handleCardClick}
-              asButton={false}
-              active={isActive || (!isSwitching && selectedPartyMonsterId === mon.id)}
-              disabled={(isSwitching && !canSelect) || isBusy}
-              className={`pokemon-roster-row ${isFainted ? 'opacity-50 grayscale' : ''}`}
-            >
-              <div className="pokemon-roster-row__sprite">
-                <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} style={{ imageRendering: 'auto' }} />
-              </div>
-              <div className="pokemon-roster-row__main">
-                <div className="pokemon-roster-row__title">
-                  {!isSwitching && <span className="pokemon-roster-row__rank-chip">#{index + 1}</span>}
-                  <span className="pokemon-roster-row__name">{mon.name}</span>
-                  <b>Lv.{mon.level}</b>
-                  {isActive && <em className="pokemon-roster-row__active-chip">出战</em>}
-                </div>
-                <div className="pokemon-roster-row__types">
-                  {mon.type2 && <TypeBadge type={mon.type2} small />}
-                  <TypeBadge type={mon.type} small />
-                </div>
-                <div className="pokemon-roster-row__bars">
-                  <div className="pokemon-roster-row__bar-line">
-                    <span>HP</span>
-                    <div className="game-collection-card__bar">
-                      <div className="game-collection-card__bar-fill game-collection-card__bar-fill--hp" style={{ width: `${hpPercent}%` }}></div>
-                    </div>
-                    <b>{stats.currentHp}/{stats.maxHp}</b>
-                  </div>
-                  <div className="pokemon-roster-row__bar-line">
-                    <span>MP</span>
-                    <div className="game-collection-card__bar">
-                      <div className="game-collection-card__bar-fill game-collection-card__bar-fill--mp" style={{ width: `${mpPercent}%` }}></div>
-                    </div>
-                    <b>{stats.currentMp}/{stats.maxMp}</b>
-                  </div>
-                  <div className="pokemon-roster-row__bar-line">
-                    <span>EXP</span>
-                    <div className="game-collection-card__bar">
-                      <div className="game-collection-card__bar-fill game-collection-card__bar-fill--exp" style={{ width: `${expPercent}%` }}></div>
-                    </div>
-                    <b>{mon.currentExp || 0}/{mon.expToNextLevel || '--'}</b>
-                  </div>
-                </div>
-              </div>
-              {!isSwitching && (
-                <div className="pokemon-roster-row__actions">
-                  <button
-                    type="button"
-                    onClick={(e) => handleMove(e, index, 'up')}
-                    disabled={index === 0}
-                    className="game-icon-button !h-8 !min-h-8"
-                    title="上移"
-                    aria-label="上移"
-                  >
-                    <i className="fa-solid fa-arrow-up"></i>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleMove(e, index, 'down')}
-                    disabled={index === team.length - 1}
-                    className="game-icon-button !h-8 !min-h-8"
-                    title="下移"
-                    aria-label="下移"
-                  >
-                    <i className="fa-solid fa-arrow-down"></i>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDepositClick(e, mon)}
-                    disabled={!onDeposit || team.length <= 1 || storageBox.length >= MAX_STORAGE_SIZE}
-                    className="game-soft-button !min-h-8 text-xs"
-                  >
-                    存
-                  </button>
-                </div>
-              )}
-            </CollectionCard>
-          );
-        })}
-              </div>
-              ) : (
-              <CollectionGrid>
-                {storageBox.length === 0 && <div className="game-collection-empty">仓库还是空的</div>}
-                {storageBox.map((mon) => {
-                  const stats = normalizeStats(mon);
-                  const hpPercent = stats.maxHp > 0 ? Math.max(0, Math.min(100, (stats.currentHp / stats.maxHp) * 100)) : 0;
-                  const mpPercent = stats.maxMp > 0 ? Math.max(0, Math.min(100, (stats.currentMp / stats.maxMp) * 100)) : 0;
-                  const expPercent = mon.expToNextLevel > 0 ? Math.max(0, Math.min(100, ((mon.currentExp || 0) / mon.expToNextLevel) * 100)) : 0;
-                  return (
-                    <CollectionCard
-                      key={mon.id}
-                      onClick={() => setSelectedStorageMonsterId(mon.id)}
-                      asButton={false}
-                      active={selectedStorageMonsterId === mon.id}
-                    >
-                      <div className="game-collection-card__sprite-wrap">
-                        <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
-                      </div>
-                      <div className="game-collection-card__name">{mon.name}</div>
-                      <div className="game-collection-card__meta">Lv.{mon.level}</div>
-                      <div className="game-collection-card__types">
-                        {mon.type2 && <TypeBadge type={mon.type2} small />}
-                        <TypeBadge type={mon.type} small />
-                      </div>
-                      <div className="game-collection-card__bars">
-                        <div className="game-collection-card__bar">
-                          <div className="game-collection-card__bar-fill game-collection-card__bar-fill--hp" style={{ width: `${hpPercent}%` }}></div>
-                        </div>
-                        <div className="game-collection-card__bar">
-                          <div className="game-collection-card__bar-fill game-collection-card__bar-fill--mp" style={{ width: `${mpPercent}%` }}></div>
-                        </div>
-                        <div className="game-collection-card__bar">
-                          <div className="game-collection-card__bar-fill game-collection-card__bar-fill--exp" style={{ width: `${expPercent}%` }}></div>
-                        </div>
-                      </div>
-                      <div className="game-collection-card__desc">
-                        HP {stats.currentHp}/{stats.maxHp} · MP {stats.currentMp}/{stats.maxMp}
-                      </div>
-                      <div className="game-collection-card__footer-row">
-                        <button
-                          type="button"
-                          onClick={(e) => handleWithdrawClick(e, mon)}
-                          disabled={!onWithdraw || team.length >= MAX_PARTY_SIZE}
-                          className="game-primary-button !min-h-8 !w-full text-xs"
-                        >
-                          取出
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setStorageSwapTargetId(mon.id); }}
-                          disabled={!onSwapWithStorage || team.length === 0}
-                          className="game-soft-button !min-h-8 !w-full text-xs"
-                        >
-                          互换
-                        </button>
-                      </div>
-                    </CollectionCard>
-                  );
-                })}
-              </CollectionGrid>
-              )}
-            </div>
-            {selectedMonster && (
-              <PokemonDetailDialog
-                monster={selectedMonster}
-                stats={selectedStats}
-                moves={selectedMoves}
-                contextLabel="出战队伍"
-                onClose={() => { if (!isBusy) setSelectedPartyMonsterId(null); }}
-              >
-                <div className="pokemon-detail-action-group pokemon-detail-action-group--manage">
-                  <span>管理</span>
-                  <div>
-                    <button
-                      onClick={(e) => handleDepositClick(e, selectedMonster)}
-                      disabled={!onDeposit || team.length <= 1 || storageBox.length >= MAX_STORAGE_SIZE}
-                      className="game-soft-button min-h-9 text-xs"
-                    >
-                      <i className="fa-solid fa-box-archive"></i>
-                      存入仓库
-                    </button>
-                    <button
-                      onClick={(e) => handleReleaseClick(e, selectedMonster)}
-                      disabled={!onRelease || team.length <= 1}
-                      className="game-danger-button min-h-9 text-xs"
-                    >
-                      <i className="fa-solid fa-right-from-bracket"></i>
-                      {team.length <= 1 ? '保留最后一只' : '放生'}
-                    </button>
-                  </div>
-                </div>
-              </PokemonDetailDialog>
-            )}
-            {selectedStorageMonster && (
-              <PokemonDetailDialog
-                monster={selectedStorageMonster}
-                stats={selectedStorageStats}
-                moves={selectedStorageMoves}
-                contextLabel="仓库收藏"
-                onClose={() => { if (!isBusy) setSelectedStorageMonsterId(null); }}
-              >
-                <div className="pokemon-detail-action-group pokemon-detail-action-group--manage">
-                  <span>管理</span>
-                  <div>
-                    <button
-                      onClick={(e) => handleWithdrawClick(e, selectedStorageMonster)}
-                      disabled={!onWithdraw || team.length >= MAX_PARTY_SIZE}
-                      className="game-primary-button min-h-9 text-xs"
-                    >
-                      <i className="fa-solid fa-person-walking-arrow-right"></i>
-                      取出到队伍
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setStorageSwapTargetId(selectedStorageMonster.id); }}
-                      disabled={!onSwapWithStorage || team.length === 0}
-                      className="game-soft-button min-h-9 text-xs"
-                    >
-                      <i className="fa-solid fa-right-left"></i>
-                      与队伍互换
-                    </button>
-                    <button
-                      onClick={(e) => handleStorageReleaseClick(e, selectedStorageMonster)}
-                      disabled={!onReleaseStorage}
-                      className="game-danger-button min-h-9 text-xs"
-                    >
-                      <i className="fa-solid fa-right-from-bracket"></i>
-                      放生
-                    </button>
-                  </div>
-                </div>
-              </PokemonDetailDialog>
-            )}
-            {storageSwapTargetId && (
-              <div
-                className="game-screen-dialog-overlay game-screen-dialog-overlay--swap"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="storage-swap-title"
-                onClick={() => setStorageSwapTargetId(null)}
-              >
-                <div className="game-card game-screen-swap-card animate-bounce-in" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between border-b border-black/10 p-3">
-                    <div>
-                      <h3 id="storage-swap-title" className="text-lg font-black text-slate-900">选择互换对象</h3>
-                      <p className="text-xs font-bold text-slate-500">仓库宝可梦会与所选队伍宝可梦交换位置</p>
-                    </div>
-                    <button onClick={() => setStorageSwapTargetId(null)} disabled={isBusy} className="game-icon-button !h-9 !min-h-9 !w-9" title="关闭" aria-label="关闭">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-                  <div className="game-screen-swap-list">
-                    <CollectionGrid>
-                      {team.map((mon) => (
-                        <CollectionCard key={mon.id} onClick={() => handleSwapChoice(mon.id)}>
-                          <div className="game-collection-card__sprite-wrap">
-                            <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
-                          </div>
-                          <div className="game-collection-card__name">{mon.name}</div>
-                          <div className="game-collection-card__meta">Lv.{mon.level}</div>
-                        </CollectionCard>
-                      ))}
-                    </CollectionGrid>
-                  </div>
-                </div>
-              </div>
-            )}
-            <GameConfirmDialog
-              open={Boolean(releaseConfirm)}
-              title={releaseConfirm?.title}
-              message={releaseConfirm?.message}
-              icon="fa-person-walking-arrow-right"
-              confirmLabel="确认放生"
-              cancelLabel="再想想"
-              busy={isBusy}
-              onCancel={() => {
-                if (!isBusy) setReleaseConfirm(null);
-              }}
-              onConfirm={handleConfirmRelease}
-            />
-      </div>
-  );
 
 };
 
@@ -5768,485 +5539,6 @@ const MonsterAcquisitionDecisionModal = ({
       </div>
     </div>
   );
-};
-
-const DEX_STAT_DEFINITIONS = [
-  { key: 'maxHp', label: '生命', code: 'HP', max: 255, className: 'dex-stat-hp' },
-  { key: 'atk', label: '攻击', code: 'ATK', max: 180, className: 'dex-stat-atk' },
-  { key: 'def', label: '防御', code: 'DEF', max: 180, className: 'dex-stat-def' },
-  { key: 'spAtk', label: '特攻', code: 'SPA', max: 180, className: 'dex-stat-spa' },
-  { key: 'spDef', label: '特防', code: 'SPD', max: 180, className: 'dex-stat-spd' },
-  { key: 'spd', label: '速度', code: 'SPE', max: 180, className: 'dex-stat-spe' }
-];
-
-const DEX_EVOLUTION_METHOD_LABELS = {
-  thunder_stone: '雷之石',
-  trade_item: '使用道具',
-  level_up_item_day: '白天道具',
-  move_known: '学会招式'
-};
-
-const formatDexNo = (mon) => String(mon?.dexNo ?? mon?.pokedexId ?? mon?.id ?? 0).padStart(3, '0');
-
-const getDexStatRows = (mon) => DEX_STAT_DEFINITIONS.map((stat) => {
-  const value = Number(mon?.[stat.key]) || 0;
-  return {
-    ...stat,
-    value,
-    percent: Math.max(4, Math.min(100, Math.round(value / stat.max * 100)))
-  };
-});
-
-const getStrongestDexStat = (statRows) => (
-  [...statRows].sort((a, b) => b.value - a.value)[0] || statRows[0]
-);
-
-const getMoveEffectLabels = (move) => {
-  const labels = [];
-  if (!move) return labels;
-  if (move.status) labels.push(STATUS_LABELS[move.status] || '异常');
-  if (move.volatileStatus) labels.push(move.volatileStatus === 'flinch' ? '畏缩' : move.volatileStatus === 'confusion' ? '混乱' : move.volatileStatus);
-  if (move.statChange) labels.push(`${STAT_LABELS[move.statChange.stat] || '能力'}${move.statChange.stages > 0 ? '提升' : '降低'}`);
-  if (move.effect === 'heal') labels.push('回复');
-  if (move.effect === 'drain') labels.push('吸取');
-  if (move.requiresTargetStatus) labels.push(`需要${STATUS_LABELS[move.requiresTargetStatus] || '状态'}`);
-  if (move.priority) labels.push(`先制 +${move.priority}`);
-  if (move.charge) labels.push('蓄力');
-  return labels.slice(0, 3);
-};
-
-const getEvolutionConditionLabel = (sourceMon, evolution) => {
-  if (!evolution) return '';
-  const simplifiedLevel = getEvolutionLevelForBranch(sourceMon, evolution);
-  if (Number.isInteger(simplifiedLevel)) return `Lv.${simplifiedLevel}`;
-  if (evolution.method && DEX_EVOLUTION_METHOD_LABELS[evolution.method]) return DEX_EVOLUTION_METHOD_LABELS[evolution.method];
-  if (evolution.item) return '道具';
-  if (evolution.move) return '学会招式';
-  return '特殊条件';
-};
-
-const isEnabledDexEvolution = (evolution) => Boolean(evolution) && evolution.disabled !== true;
-
-const getDexEvolutionLinks = (mon) => {
-  const previous = OFFICIAL_DEX_MONSTERS.flatMap((candidate) => {
-    const direct = isEnabledDexEvolution(candidate.evolvesTo) && candidate.evolvesTo?.targetId === mon.id
-      ? [{ mon: candidate, condition: getEvolutionConditionLabel(candidate, candidate.evolvesTo) }]
-      : [];
-    const alternate = (candidate.alternateEvolutions || [])
-      .filter((evolution) => isEnabledDexEvolution(evolution) && evolution.targetId === mon.id)
-      .map((evolution) => ({ mon: candidate, condition: getEvolutionConditionLabel(candidate, evolution) }));
-    return [...direct, ...alternate];
-  });
-
-  const next = [
-    ...(isEnabledDexEvolution(mon.evolvesTo) && mon.evolvesTo?.targetId
-      ? [{ mon: OFFICIAL_DEX_MONSTERS.find((candidate) => candidate.id === mon.evolvesTo.targetId), condition: getEvolutionConditionLabel(mon, mon.evolvesTo) }]
-      : []),
-    ...(mon.alternateEvolutions || []).filter(isEnabledDexEvolution).map((evolution) => ({
-      mon: OFFICIAL_DEX_MONSTERS.find((candidate) => candidate.id === evolution.targetId),
-      condition: getEvolutionConditionLabel(mon, evolution)
-    }))
-  ].filter((link) => link.mon);
-
-  return { previous, next };
-};
-
-const DexScreen = ({ onBack }) => {
-  const [selectedMon, setSelectedMon] = useState(null);
-  const dexListScrollRef = useRef(0);
-  const dexListScrollAreaRef = useRef(null);
-  const shouldRestoreDexListScrollRef = useRef(false);
-
-  useLayoutEffect(() => {
-    if (selectedMon) return;
-    if (!shouldRestoreDexListScrollRef.current) return;
-
-    const scrollArea = dexListScrollAreaRef.current;
-    if (!scrollArea) return;
-
-    shouldRestoreDexListScrollRef.current = false;
-    scrollArea.scrollTop = dexListScrollRef.current;
-  }, [selectedMon]);
-
-  const rememberDexListScroll = useCallback(() => {
-    dexListScrollRef.current = dexListScrollAreaRef.current?.scrollTop || 0;
-  }, []);
-
-  const handleDexCardClick = useCallback((mon) => {
-    rememberDexListScroll();
-    shouldRestoreDexListScrollRef.current = true;
-    setSelectedMon(mon);
-  }, [rememberDexListScroll]);
-
-  const handleDexDetailBack = useCallback(() => {
-    setSelectedMon(null);
-  }, []);
-
-  if (selectedMon) {
-    const moves = selectedMon.moves
-      .map((moveKey) => ({ key: moveKey, ...MOVES[moveKey] }))
-      .filter((move) => move.name);
-    const statRows = getDexStatRows(selectedMon);
-    const statTotal = statRows.reduce((sum, stat) => sum + stat.value, 0);
-    const strongestStat = getStrongestDexStat(statRows);
-    const evolutionLinks = getDexEvolutionLinks(selectedMon);
-    return (
-      <div className="game-page dex-detail-page">
-                <div className="game-page-header">
-                    <div>
-                      <h2 className="game-page-title">
-                        <i className="fa-solid fa-fingerprint text-teal-600"></i>
-                        {selectedMon.name}
-                      </h2>
-                      <div className="game-page-subtitle">No.{formatDexNo(selectedMon)} 图鉴资料</div>
-                    </div>
-                    <button onClick={handleDexDetailBack} className="game-icon-button" title="返回列表" aria-label="返回列表">
-                      <i className="fa-solid fa-arrow-left"></i>
-                    </button>
-                </div>
-                <div className="game-scroll-area dex-detail-scroll">
-                    <section className="dex-hero-panel">
-                      <div className="dex-hero-copy">
-                        <div className="dex-number-chip">No.{formatDexNo(selectedMon)}</div>
-                        <h3>{selectedMon.name}</h3>
-                        <div className="dex-type-row">
-                          {selectedMon.type2 && <TypeBadge type={selectedMon.type2} />}
-                          <TypeBadge type={selectedMon.type} />
-                        </div>
-                        <div className="dex-hero-metrics">
-                          <div>
-                            <span>种族总和</span>
-                            <b>{statTotal}</b>
-                          </div>
-                          <div>
-                            <span>最高能力</span>
-                            <b>{strongestStat.label} {strongestStat.value}</b>
-                          </div>
-                          <div>
-                            <span>技能值</span>
-                            <b>{selectedMon.maxMp}</b>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="dex-sprite-stage">
-                        <img src={selectedMon.sprite} onError={handlePokemonImageError} alt={selectedMon.name} />
-                      </div>
-                    </section>
-
-                    <div className="dex-detail-grid">
-                      <section className="dex-panel dex-stat-panel">
-                        <div className="dex-section-heading">
-                          <span>能力分析</span>
-                          <b>Base Stats</b>
-                        </div>
-                        <div className="dex-stat-list">
-                          {statRows.map((stat) =>
-                            <div key={stat.key} className="dex-stat-row">
-                              <div className="dex-stat-label">
-                                <b>{stat.code}</b>
-                                <span>{stat.label}</span>
-                              </div>
-                              <div className="dex-stat-track">
-                                <div className={`dex-stat-fill ${stat.className}`} style={{ width: `${stat.percent}%` }}></div>
-                              </div>
-                              <strong>{stat.value}</strong>
-                            </div>
-                          )}
-                        </div>
-                      </section>
-
-                      <section className="dex-panel dex-evolution-panel">
-                        <div className="dex-section-heading">
-                          <span>进化关系</span>
-                          <b>Evolution</b>
-                        </div>
-                        <div className="dex-evolution-flow">
-                          {evolutionLinks.previous.map((link) =>
-                            <button key={`prev-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => setSelectedMon(link.mon)}>
-                              <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
-                              <span>No.{formatDexNo(link.mon)}</span>
-                              <b>{link.mon.name}</b>
-                            </button>
-                          )}
-                          <div className="dex-evolution-tile dex-evolution-current">
-                            <img src={selectedMon.sprite} onError={handlePokemonImageError} alt={selectedMon.name} />
-                            <span>No.{formatDexNo(selectedMon)}</span>
-                            <b>{selectedMon.name}</b>
-                          </div>
-                          {evolutionLinks.next.map((link) =>
-                            <button key={`next-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => setSelectedMon(link.mon)}>
-                              <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
-                              <span>{link.condition}</span>
-                              <b>{link.mon.name}</b>
-                            </button>
-                          )}
-                        </div>
-                        {evolutionLinks.previous.length === 0 && evolutionLinks.next.length === 0 &&
-                          <div className="dex-empty-evolution">暂无可展示的进化路线</div>
-                        }
-                      </section>
-                    </div>
-
-                    <section className="dex-panel">
-                      <div className="dex-section-heading">
-                        <span>可学习技能</span>
-                        <b>Moves</b>
-                      </div>
-                      <div className="dex-move-grid">
-                        {moves.map((move) => {
-                          const effectLabels = getMoveEffectLabels(move);
-                          const moveCost = getMoveMpCost(move);
-                          return (
-                            <div key={move.key} className="dex-move-card">
-                              <div className="dex-move-card-top">
-                                <div>
-                                  <h4>{move.name}</h4>
-                                  <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'} · Lv.{move.unlockLevel || 1}</span>
-                                </div>
-                                <TypeBadge type={move.type} small />
-                              </div>
-                              <div className="dex-move-stats">
-                                <div><span>威力</span><b>{move.power || '--'}</b></div>
-                                <div><span>命中</span><b>{move.accuracy || '--'}</b></div>
-                                <div><span>MP</span><b>{moveCost}</b></div>
-                              </div>
-                              {effectLabels.length > 0 &&
-                                <div className="dex-effect-row">
-                                  {effectLabels.map((label) => <span key={label}>{label}</span>)}
-                                </div>
-                              }
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                </div>
-            </div>);
-
-  }
-
-  return (
-    <div className="game-page">
-            <div className="game-page-header">
-                <div>
-                  <h2 className="game-page-title">
-                    <i className="fa-solid fa-book-open text-teal-600"></i>
-                    图鉴
-                  </h2>
-                  <div className="game-page-subtitle">查看宝可梦资料与技能</div>
-                </div>
-                <button onClick={onBack} className="game-icon-button" title="返回" aria-label="返回">
-                  <i className="fa-solid fa-arrow-left"></i>
-                </button>
-            </div>
-            <div
-              ref={dexListScrollAreaRef}
-              className="game-scroll-area"
-              onScroll={rememberDexListScroll}
-            >
-              <CollectionGrid>
-                {OFFICIAL_DEX_MONSTERS.map((mon) => (
-                  <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)}>
-                    <div className="game-collection-card__sprite-wrap">
-                      <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
-                    </div>
-                    <div className="game-collection-card__dexno">No.{formatDexNo(mon)}</div>
-                    <div className="game-collection-card__name">{mon.name}</div>
-                    <div className="game-collection-card__types">
-                      {mon.type2 && <TypeBadge type={mon.type2} small />}
-                      <TypeBadge type={mon.type} small />
-                    </div>
-                  </CollectionCard>
-                ))}
-              </CollectionGrid>
-            </div>
-        </div>);
-
-};
-
-const SHOP_PURCHASE_FEEDBACK_MS = 1250;
-
-const ShopScreen = ({ playerGold, playerInventory, onPurchase, onBack }) => {
-  const [pendingPurchaseKey, setPendingPurchaseKey] = useState(null);
-  const [purchaseFeedback, setPurchaseFeedback] = useState(null);
-  const pendingPurchaseKeyRef = useRef(null);
-  const purchaseFeedbackTimerRef = useRef(null);
-  const purchaseFeedbackFrameRef = useRef(null);
-  const allItems = {
-    pokeball: POKEBALLS,
-    potion: POTIONS,
-    expPotion: EXP_POTIONS
-  };
-  const sectionLabels = {
-    pokeball: '精灵球',
-    potion: '回复药',
-    expPotion: '经验药水'
-  };
-  const sectionDescriptions = {
-    pokeball: '用于捕捉野生宝可梦',
-    potion: '用于恢复宝可梦体力与技能值',
-    expPotion: '用于提升宝可梦经验'
-  };
-  const showPurchaseFeedback = (feedback) => {
-    if (purchaseFeedbackTimerRef.current) {
-      clearTimeout(purchaseFeedbackTimerRef.current);
-      purchaseFeedbackTimerRef.current = null;
-    }
-    if (purchaseFeedbackFrameRef.current) {
-      cancelAnimationFrame(purchaseFeedbackFrameRef.current);
-      purchaseFeedbackFrameRef.current = null;
-    }
-    // 先卸载一帧再挂回，连续购买同一个物品时 CSS 动画也能重新开始。
-    setPurchaseFeedback(null);
-    const feedbackId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    purchaseFeedbackFrameRef.current = requestAnimationFrame(() => {
-      purchaseFeedbackFrameRef.current = null;
-      setPurchaseFeedback({ ...feedback, id: feedbackId });
-      purchaseFeedbackTimerRef.current = setTimeout(() => {
-        setPurchaseFeedback(null);
-        purchaseFeedbackTimerRef.current = null;
-      }, SHOP_PURCHASE_FEEDBACK_MS);
-    });
-  };
-
-  useEffect(() => () => {
-    if (purchaseFeedbackTimerRef.current) {
-      clearTimeout(purchaseFeedbackTimerRef.current);
-    }
-    if (purchaseFeedbackFrameRef.current) {
-      cancelAnimationFrame(purchaseFeedbackFrameRef.current);
-    }
-  }, []);
-
-  const handleBuy = async (itemType, itemKey, amount = 1) => {
-    const purchaseKey = `${itemType}:${itemKey}`;
-    if (pendingPurchaseKeyRef.current) return;
-    pendingPurchaseKeyRef.current = purchaseKey;
-    setPendingPurchaseKey(purchaseKey);
-    try {
-      const result = await Promise.resolve(onPurchase(itemType, itemKey, amount));
-      if (result?.success) {
-        showPurchaseFeedback({
-          key: purchaseKey,
-          itemName: result.itemName,
-          quantity: result.quantity || amount,
-          totalPrice: result.totalPrice || 0,
-        });
-      }
-    } finally {
-      if (pendingPurchaseKeyRef.current === purchaseKey) {
-        pendingPurchaseKeyRef.current = null;
-        setPendingPurchaseKey(null);
-      }
-    }
-  };
-  const isShopBusy = Boolean(pendingPurchaseKey);
-
-  return (
-    <div className="game-page">
-            <div className="game-page-header">
-                <div>
-                  <h2 className="game-page-title">
-                    <i className="fa-solid fa-store text-teal-600"></i>
-                    商店
-                  </h2>
-                  <div className="game-page-subtitle">购买捕捉、回复和经验道具</div>
-                </div>
-                <div className="flex items-center gap-2 text-sm font-bold">
-                    <span className="adventure-chip">
-                      <i className="fa-solid fa-coins text-amber-500"></i>
-                      {playerGold}
-                    </span>
-                    <button onClick={onBack} className="game-icon-button" title="返回" aria-label="返回">
-                      <i className="fa-solid fa-arrow-left"></i>
-                    </button>
-                </div>
-            </div>
-            <div className="game-scroll-area">
-                {Object.entries(allItems).map(([itemType, itemsMap]) => (
-        <section key={itemType} className="game-collection-section">
-                        <div className="game-collection-section__head">
-                            <h3 className="game-collection-section__title">{sectionLabels[itemType]}</h3>
-                            <span className="game-collection-section__desc">{sectionDescriptions[itemType]}</span>
-                        </div>
-                        <CollectionGrid>
-                        {Object.entries(itemsMap).map(([key, item]) => {
-            const currentQuantity = getInventoryItemQuantity(playerInventory, itemType, key);
-            const cannotAfford = playerGold < item.price;
-            const purchaseKey = `${itemType}:${key}`;
-            const isPending = pendingPurchaseKey === purchaseKey;
-            const purchaseFeedbackId = purchaseFeedback?.id || 'idle';
-            const isPurchased = purchaseFeedback?.key === purchaseKey;
-            return (
-              <CollectionCard
-                key={key}
-                className={[
-                  'shop-item-card',
-                  cannotAfford ? 'game-collection-card--disabled' : '',
-                  isPurchased ? 'shop-item-card--purchased' : ''
-                ].filter(Boolean).join(' ')}
-              >
-                <span className="game-collection-card__corner">
-                  <span className={`game-collection-card__qty ${isPurchased ? 'shop-item-card__qty-bump' : ''}`}>
-                    x{currentQuantity}
-                  </span>
-                </span>
-                <div className={`game-collection-card__sprite-wrap ${isPurchased ? 'shop-item-card__sprite-wrap--purchased' : ''}`}>
-                  <img src={item.sprite} alt={item.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} onError={handleItemImageError} />
-                  {isPurchased && (
-                    <span key={`sparkles-${purchaseFeedbackId}`} className="shop-item-card__sparkles" aria-hidden="true">
-                      {Array.from({ length: 8 }, (_, index) => <i key={index} style={{ '--i': index }} />)}
-                    </span>
-                  )}
-                </div>
-                <div className="game-collection-card__name">{item.name}</div>
-                <div className="game-collection-card__desc">
-	                  {itemType === 'expPotion'
-	                    ? `经验 +${item.expAmount}`
-	                    : itemType === 'potion'
-	                      ? getPotionEffectText(item)
-	                      : '用于捕捉'}
-                </div>
-                <div className="game-collection-card__price">
-                  <i className="fa-solid fa-coins"></i>
-                  {item.price}
-                </div>
-                <div className="game-collection-card__footer">
-                  <button
-                    type="button"
-                    onClick={() => handleBuy(itemType, key, 1)}
-                    disabled={cannotAfford || isShopBusy}
-                    className={`game-primary-button ${isPurchased ? 'shop-item-card__buy-button--done' : ''}`}
-                  >
-                    {isPending ? (
-                      <>
-                        <i className="fa-solid fa-spinner fa-spin"></i>
-                        购买中
-                      </>
-                    ) : isPurchased ? (
-                      <>
-                        <i className="fa-solid fa-check"></i>
-                        继续购买
-                      </>
-                    ) : '购买'}
-                  </button>
-                </div>
-                {isPurchased && (
-                  <div key={`feedback-${purchaseFeedbackId}`} className="shop-purchase-feedback" role="status" aria-live="polite">
-                    <i className="fa-solid fa-bag-shopping"></i>
-                    <span>已放入背包</span>
-                    <b>+{purchaseFeedback.quantity}</b>
-                  </div>
-                )}
-              </CollectionCard>
-            );
-          })}
-                        </CollectionGrid>
-                    </section>
-        ))}
-            </div>
-        </div>);
-
 };
 
 const BagScreen = ({ playerInventory = [], activePlayerMon, activeEnemyMon, onUseItem, onBack, addLog, turn, playerTeam = [], onUsePotion, onUseExpPotion, canUsePokeballs = true }) => {
@@ -6605,6 +5897,7 @@ const normalizeBattleEnvironment = (environment) => {
     ? environment.eventType
     : '';
   const eventRole = toBattleEnvironmentText(environment.eventRole);
+  const trainerStyle = toBattleEnvironmentText(environment.trainerStyle);
   const eventName = toBattleEnvironmentText(environment.eventName);
   const eventTitle = toBattleEnvironmentText(environment.eventTitle);
   const introText = toBattleEnvironmentText(environment.introText);
@@ -6630,6 +5923,7 @@ const normalizeBattleEnvironment = (environment) => {
     eventId,
     eventType,
     eventRole,
+    trainerStyle,
     eventName,
     eventTitle,
     eventPosition,
@@ -6647,6 +5941,7 @@ const normalizeBattleEnvironment = (environment) => {
     eventId: eventId || null,
     eventType: eventType || null,
     eventRole: eventRole || null,
+    trainerStyle: trainerStyle || null,
     eventName: eventName || null,
     eventTitle: eventTitle || null,
     introText: introText || null,
@@ -6667,6 +5962,7 @@ const createBattleEnvironment = ({
   eventId,
   eventType,
   eventRole,
+  trainerStyle,
   eventName,
   eventTitle,
   introText,
@@ -6684,6 +5980,7 @@ const createBattleEnvironment = ({
   eventId,
   eventType,
   eventRole,
+  trainerStyle,
   eventName,
   eventTitle,
   introText,
@@ -6712,101 +6009,6 @@ const getBattleVictoryDisplayName = ({
 };
 
 const getDefaultInventory = () => DEFAULT_INVENTORY.map((item) => ({ ...item }));
-
-const collapseInventorySlots = (inventory) => {
-  const source = Array.isArray(inventory) ? inventory : [];
-  return source.reduce((acc, slot) => {
-    const itemKey = typeof slot?.itemKey === 'string' ? slot.itemKey : null;
-    const itemType = resolveInventoryItemType(slot);
-    const quantity = Math.trunc(Number(slot?.quantity));
-    if (!itemKey || !itemType || !Number.isSafeInteger(quantity) || quantity <= 0) {
-      return acc;
-    }
-    if (!isActiveInventoryItemType(itemType)) {
-      return acc;
-    }
-    if (!resolveInventoryItemDetails(itemType, itemKey)) {
-      return acc;
-    }
-
-    const existingIndex = acc.findIndex((entry) => entry.itemType === itemType && entry.itemKey === itemKey);
-    if (existingIndex >= 0) {
-      acc[existingIndex] = {
-        ...acc[existingIndex],
-        quantity: acc[existingIndex].quantity + quantity,
-      };
-    } else {
-      acc.push({ itemType, itemKey, quantity });
-    }
-    return acc;
-  }, []);
-};
-
-const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'evolutionItem'];
-
-const getInventoryItemSortIndex = (inventoryType, itemKey) => {
-  const typeRank = INVENTORY_TYPE_SORT_ORDER.indexOf(inventoryType);
-  const catalog = INVENTORY_ITEM_DEFINITIONS[inventoryType] || {};
-  const keyRank = Object.keys(catalog).indexOf(itemKey);
-  return [
-    typeRank >= 0 ? typeRank : INVENTORY_TYPE_SORT_ORDER.length,
-    keyRank >= 0 ? keyRank : Number.MAX_SAFE_INTEGER,
-    itemKey,
-  ];
-};
-
-const sortInventorySlots = (inventory) => (
-  collapseInventorySlots(inventory).sort((slotA, slotB) => {
-    const typeA = resolveInventoryItemType(slotA);
-    const typeB = resolveInventoryItemType(slotB);
-    const rankA = getInventoryItemSortIndex(typeA, slotA.itemKey);
-    const rankB = getInventoryItemSortIndex(typeB, slotB.itemKey);
-    if (rankA[0] !== rankB[0]) return rankA[0] - rankB[0];
-    if (rankA[1] !== rankB[1]) return rankA[1] - rankB[1];
-    return String(rankA[2]).localeCompare(String(rankB[2]), 'zh-CN');
-  })
-);
-
-const mergeInventoryEntries = (inventory, itemType, itemKey, quantity = 1) => {
-  const safeQuantity = Math.trunc(Number(quantity));
-  const normalizedItemType = resolveInventoryItemType({ itemType, itemKey });
-  if (!normalizedItemType || !itemKey || !Number.isSafeInteger(safeQuantity) || safeQuantity <= 0) {
-    return collapseInventorySlots(inventory);
-  }
-
-  return collapseInventorySlots([
-    ...(Array.isArray(inventory) ? inventory : []),
-    { itemType: normalizedItemType, itemKey, quantity: safeQuantity },
-  ]);
-};
-
-const sanitizePlayerInventory = (inventory) => collapseInventorySlots(inventory);
-
-const consumeInventoryItem = (inventory, itemType, itemKey, amount = 1) => {
-  const safeAmount = Math.trunc(Number(amount));
-  const normalizedItemType = resolveInventoryItemType({ itemType, itemKey });
-  if (!normalizedItemType || !itemKey || !Number.isSafeInteger(safeAmount) || safeAmount <= 0) {
-    return collapseInventorySlots(inventory);
-  }
-
-  const collapsed = collapseInventorySlots(inventory);
-  return collapsed
-    .map((slot) => (
-      slot.itemType === normalizedItemType && slot.itemKey === itemKey
-        ? { ...slot, quantity: slot.quantity - safeAmount }
-        : slot
-    ))
-    .filter((slot) => slot.quantity > 0);
-};
-
-const getInventoryItemQuantity = (inventory, itemType, itemKey) => {
-  const normalizedItemType = resolveInventoryItemType({ itemType, itemKey });
-  if (!normalizedItemType || !itemKey) return 0;
-  const slot = collapseInventorySlots(inventory).find(
-    (entry) => entry.itemType === normalizedItemType && entry.itemKey === itemKey
-  );
-  return slot?.quantity || 0;
-};
 
 const consumeInventoryFromSnapshot = (baseSnapshot, itemType, itemKey, amount = 1) => {
   const previousQuantity = getInventoryItemQuantity(baseSnapshot?.playerInventory, itemType, itemKey);
@@ -6961,7 +6163,7 @@ const hasCompletedBossEvent = (world, mapName, eventId = null) => (
 
 const appendCompletedBossEventIds = (world, mapName, eventId = null) => (
   getBossCompletionEventIds(mapName, eventId)
-    .reduce((nextWorld, id) => appendMapScopedWorldEventId(nextWorld, 'defeatedBossIds', mapName, id), normalizeWorldState(world))
+    .reduce((nextWorld, id) => appendBattleCompletionWorldEventId(nextWorld, 'defeatedBossIds', mapName, id), normalizeWorldState(world))
 );
 
 const isFreshStartSnapshot = (snapshot) => (
@@ -7023,6 +6225,22 @@ const mergeMonotonicSnapshotProgress = (sourceSnapshot, targetSnapshot) => {
   return {
     ...targetSnapshot,
     world: mergedWorld
+  };
+};
+
+const mergeLocalBattleProgressIntoWorld = (targetWorld, sourceWorld, fallback = {}) => {
+  const target = normalizeWorldState(targetWorld, fallback);
+  const source = normalizeWorldState(sourceWorld, {
+    currentMapName: target.currentMapName,
+    playerPos: target.playerPos
+  });
+  const merged = mergeMonotonicWorldProgress(target, source, fallback);
+
+  return {
+    ...merged,
+    collectedEventIds: target.collectedEventIds,
+    usedHealPointIds: target.usedHealPointIds,
+    flags: target.flags
   };
 };
 
@@ -7286,14 +6504,21 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
   return null;
 };
 
-const buildMapEventVisualState = (mapName, world) => {
+const buildMapEventVisualState = (mapName, world, completedBattleEventVisualOverrides = null) => {
   const events = getMapEvents(mapName);
   const visualState = {};
 
   events.forEach((event) => {
     const eventVisualState = getConfiguredBattleEventVisualState(mapName, world, event);
     if (!eventVisualState) return;
-    visualState[event.id] = eventVisualState;
+    const override = getCompletedBattleEventVisualOverride(completedBattleEventVisualOverrides, {
+      world,
+      mapName,
+      eventId: event.id
+    });
+    visualState[event.id] = override
+      ? { ...eventVisualState, ...override }
+      : eventVisualState;
   });
 
   return visualState;
@@ -7408,6 +6633,7 @@ const applyConfiguredBattleCompletionToWorld = (world, completionMeta) => {
   const mapName = completionMeta?.mapName;
   const eventType = completionMeta?.eventType;
   const eventId = completionMeta?.eventId;
+  const eventRole = completionMeta?.eventRole;
   const completionKey = completionMeta?.completionKey;
   let nextWorld = normalizeWorldState(world, {
     currentMapName: mapName || DEFAULT_WORLD_MAP_NAME
@@ -7424,13 +6650,83 @@ const applyConfiguredBattleCompletionToWorld = (world, completionMeta) => {
   if (!wasAlreadyCompleted) {
     nextWorld = eventType === 'boss'
       ? appendCompletedBossEventIds(nextWorld, mapName, eventId)
-      : appendMapScopedWorldEventId(nextWorld, completionKey, mapName, eventId);
+      : appendBattleCompletionWorldEventId(nextWorld, completionKey, mapName, eventId);
+  }
+
+  if (
+    eventType === 'trainer' &&
+    isDailyVariantBattleEvent(eventType, eventRole) &&
+    !hasDailyTrainerBattleEvent(nextWorld, mapName, eventId)
+  ) {
+    nextWorld = appendDailyTrainerBattleEvent(nextWorld, mapName, eventId);
+    if (getTrainerVictoryCount(nextWorld, eventId, mapName) <= 0) {
+      nextWorld = incrementTrainerVictoryCount(nextWorld, eventId, mapName);
+    }
   }
 
   return {
     world: withUpdatedMapProgress(nextWorld, mapName),
     completedNow: !wasAlreadyCompleted,
     wasAlreadyCompleted
+  };
+};
+
+const buildCompletedBattleEventLocalPrimeState = ({
+  snapshot = null,
+  world = null,
+  fallbackMapName = DEFAULT_WORLD_MAP_NAME,
+  currentOverrides = {}
+} = {}) => {
+  const normalizedWorld = normalizeWorldState(world, {
+    currentMapName: fallbackMapName || snapshot?.currentMapName || DEFAULT_WORLD_MAP_NAME,
+    playerPos: snapshot?.playerPos || world?.playerPos || getDefaultWorldPosition()
+  });
+  const completionMeta = getConfiguredBattleCompletionMeta({
+    snapshot,
+    battleEnvironment: snapshot?.battleEnvironment || snapshot?.battlePhaseData?.battleEnvironment || null,
+    fallbackMapName: normalizedWorld.currentMapName
+  });
+
+  if (!completionMeta?.mapName || !completionMeta?.eventType || !completionMeta?.eventId) {
+    return {
+      overrides: currentOverrides,
+      lockKeys: []
+    };
+  }
+
+  const isVictoryPhase = snapshot?.battlePhase === 'victory';
+  const primedWorld = isVictoryPhase
+    ? applyConfiguredBattleCompletionToWorld(normalizedWorld, completionMeta).world
+    : normalizedWorld;
+  const isCompleted = completionMeta.eventType === 'boss'
+    ? hasCompletedBossEvent(primedWorld, completionMeta.mapName, completionMeta.eventId)
+    : Boolean(
+      completionMeta.completionKey &&
+      hasMapScopedWorldEventId(primedWorld, completionMeta.completionKey, completionMeta.mapName, completionMeta.eventId)
+    );
+
+  if (!isCompleted) {
+    return {
+      overrides: currentOverrides,
+      lockKeys: []
+    };
+  }
+
+  return {
+    overrides: appendCompletedBattleEventVisualOverride(currentOverrides, {
+      world: primedWorld,
+      mapName: completionMeta.mapName,
+      eventType: completionMeta.eventType,
+      eventId: completionMeta.eventId,
+      eventRole: completionMeta.eventRole
+    }),
+    lockKeys: getBattleEventCompletedLockKeys({
+      world: primedWorld,
+      mapName: completionMeta.mapName,
+      eventType: completionMeta.eventType,
+      eventId: completionMeta.eventId,
+      eventRole: completionMeta.eventRole
+    })
   };
 };
 
@@ -7640,6 +6936,57 @@ const getForwardMapBossGate = ({ currentMapName, targetMapName, world }) => {
   };
 };
 
+const normalizeRequiredEventIds = (ids) => {
+  if (Array.isArray(ids)) {
+    return ids.filter((id) => typeof id === 'string' && id.length > 0);
+  }
+  return typeof ids === 'string' && ids.length > 0 ? [ids] : [];
+};
+
+const formatMapLockHint = ({ reason = '', nextStep = '' }) => {
+  const cleanReason = String(reason || '').trim().replace(/[。．\.]+$/u, '');
+  const cleanNextStep = String(nextStep || '').trim().replace(/[。．\.]+$/u, '');
+  return cleanReason || cleanNextStep || '暂不能进入。';
+};
+
+const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam }) => {
+  const props = getMapEventProperties(warpEvent);
+  const requiredAverageLevel = Number(props.requiredAverageLevel);
+  const requiredTrainerIds = normalizeRequiredEventIds(props.requiredTrainerIds);
+  const missingTrainerCount = Math.max(
+    0,
+    requiredTrainerIds.length - countMapScopedWorldEventIds(world, 'defeatedTrainerIds', currentMapName, requiredTrainerIds)
+  );
+  const levelLocked = Number.isFinite(requiredAverageLevel) &&
+    requiredAverageLevel > 0 &&
+    getPlayerAverageLevel(playerTeam, 5) < requiredAverageLevel;
+
+  if (missingTrainerCount <= 0 && !levelLocked) {
+    return { locked: false, reason: '' };
+  }
+
+  const explicitText = typeof props.lockedText === 'string' ? props.lockedText.trim() : '';
+  if (explicitText) {
+    return { locked: true, reason: explicitText };
+  }
+
+  const reasons = [];
+  if (missingTrainerCount > 0) {
+    reasons.push(`再胜 ${missingTrainerCount} 人`);
+  }
+  if (levelLocked) {
+    const targetLevel = Math.trunc(requiredAverageLevel);
+    reasons.push(`平均 Lv.${targetLevel}`);
+  }
+
+  return {
+    locked: true,
+    reason: formatMapLockHint({
+      reason: reasons.join('，')
+    })
+  };
+};
+
 const getAdventureRouteIndex = (mapName) => {
   const index = ADVENTURE_MAP_CHAIN.indexOf(mapName);
   return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
@@ -7672,6 +7019,7 @@ const getFastTravelForwardRoutes = (mapName) => {
       return {
         fromMapName: mapName,
         targetMapName,
+        warpEvent: event,
         fromLabel: getMapConfig(mapName).displayName,
         targetLabel: getMapConfig(targetMapName).displayName,
         directionLabel: getWarpDirectionLabel(mapName, event),
@@ -7693,11 +7041,25 @@ const describeBossGateOptions = (routeStates) => {
     .map((gate) => `${gate.mapName}的${gate.bossName}`);
   const uniqueGates = [...new Set(gates)];
   if (uniqueGates.length === 0) return '';
-  if (uniqueGates.length === 1) return `需击败${uniqueGates[0]}`;
-  return `需打通任一路线：击败${uniqueGates.join('，或击败')}`;
+  if (uniqueGates.length === 1) return `击败${uniqueGates[0]}`;
+  return `击败其一：${uniqueGates.join(' / ')}`;
 };
 
-const getFastTravelRouteGate = ({ targetMapName, world }) => {
+const describeRouteGateOptions = (routeStates) => {
+  const reasons = routeStates
+    .map((state) => (
+      state.bossGate
+        ? `击败${state.bossGate.mapName}的${state.bossGate.bossName}`
+        : state.warpGate?.reason
+    ))
+    .filter(Boolean);
+  const uniqueReasons = [...new Set(reasons)];
+  if (uniqueReasons.length === 0) return '';
+  if (uniqueReasons.length === 1) return uniqueReasons[0];
+  return `其一：${uniqueReasons.join(' / ')}`;
+};
+
+const getFastTravelRouteGate = ({ targetMapName, world, playerTeam }) => {
   const routes = getFastTravelIncomingRoutes(targetMapName);
   if (routes.length === 0) return { locked: false, routes, reason: '' };
 
@@ -7707,9 +7069,15 @@ const getFastTravelRouteGate = ({ targetMapName, world }) => {
       currentMapName: route.fromMapName,
       targetMapName,
       world
+    }),
+    warpGate: getWarpEventLockState({
+      currentMapName: route.fromMapName,
+      warpEvent: route.warpEvent,
+      world,
+      playerTeam
     })
   }));
-  const openRoute = routeStates.find((state) => !state.bossGate);
+  const openRoute = routeStates.find((state) => !state.bossGate && !state.warpGate?.locked);
   if (openRoute) {
     return { locked: false, routes, openRoute: openRoute.route, reason: '' };
   }
@@ -7717,7 +7085,7 @@ const getFastTravelRouteGate = ({ targetMapName, world }) => {
   return {
     locked: true,
     routes,
-    reason: describeBossGateOptions(routeStates)
+    reason: describeRouteGateOptions(routeStates) || describeBossGateOptions(routeStates)
   };
 };
 
@@ -7754,26 +7122,31 @@ const getFastTravelMapLockState = ({ targetMapName, currentMapName, world, playe
   }
 
   const playerAvgLevel = getPlayerAverageLevel(playerTeam);
-  const routeGate = getFastTravelRouteGate({ targetMapName, world });
+  const routeGate = getFastTravelRouteGate({ targetMapName, world, playerTeam });
   const levelLocked = isMapLockedForLevel(mapConfig, playerAvgLevel);
-  const levelReason = `队伍平均等级不足，建议 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}`;
 
   if (routeGate.locked && levelLocked) {
     return {
       locked: true,
-      reason: `${routeGate.reason}，并达到建议 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}。`
+      reason: formatMapLockHint({
+        reason: routeGate.reason || `路线 / 平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}`
+      })
     };
   }
   if (routeGate.locked) {
     return {
       locked: true,
-      reason: `${routeGate.reason}。`
+      reason: formatMapLockHint({
+        reason: routeGate.reason || '路线未通'
+      })
     };
   }
   if (levelLocked) {
     return {
       locked: true,
-      reason: `${levelReason}。`
+      reason: formatMapLockHint({
+        reason: `平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}`
+      })
     };
   }
 
@@ -7792,6 +7165,29 @@ const getMapEncounterProgressTier = (mapName, world) => {
   if (requiredIds.length > 0 && defeatedCount >= requiredIds.length) return 2;
   if (defeatedCount >= 1) return 1;
   return 0;
+};
+
+const STARTER_VALLEY_MAP_ID = 'GodotMap';
+const STARTER_VALLEY_TUTORIAL_TRAINER_ID = 'valley_trainer_camp_path';
+const STARTER_VALLEY_THICKET_ZONE_ID = 'grove_grass';
+const STARTER_VALLEY_THICKET_GUIDE_TEXT = '南边密林的宝可梦更强，先沿土路往上去阳光草坡练练手更稳。';
+
+const isStarterValleyThicketUnlocked = (world, playerTeam = []) => (
+  hasMapScopedWorldEventId(world, 'defeatedTrainerIds', STARTER_VALLEY_MAP_ID, STARTER_VALLEY_TUTORIAL_TRAINER_ID) ||
+  getPlayerAverageLevel(playerTeam, 5) >= 6
+);
+
+const buildEncounterZoneLocks = (mapName, world, playerTeam = []) => {
+  if (mapName !== STARTER_VALLEY_MAP_ID || isStarterValleyThicketUnlocked(world, playerTeam)) {
+    return {};
+  }
+
+  return {
+    [STARTER_VALLEY_THICKET_ZONE_ID]: {
+      blocked: true,
+      reason: STARTER_VALLEY_THICKET_GUIDE_TEXT
+    }
+  };
 };
 
 const pickProgressEncounterCandidate = ({ candidates, minLevel, maxLevel, rare = false, progressTier = 0 }) => {
@@ -8156,6 +7552,12 @@ const resolveDefaultActivePlayerId = (playerTeam = [], fallbackId = null) => {
   return team[0]?.id ?? (team.some((mon) => mon?.id === fallbackId) ? fallbackId : null);
 };
 
+const resolveActiveEnemyId = (enemyTeam = [], fallbackId = null) => {
+  const team = Array.isArray(enemyTeam) ? enemyTeam : [];
+  if (team.some((mon) => mon?.id === fallbackId)) return fallbackId;
+  return team.find(hasBattleHp)?.id ?? team[0]?.id ?? null;
+};
+
 const resolveBattleLeadId = (playerTeam = []) => {
   const team = Array.isArray(playerTeam) ? playerTeam : [];
   const partyLead = team[0];
@@ -8271,12 +7673,20 @@ const normalizePendingBattleSwitch = (value) => {
   const previousActivePlayerId = value.previousActivePlayerId != null
     ? String(value.previousActivePlayerId)
     : null;
+  const followUpEnemyMon = value.followUpEnemyMon
+    ? sanitizeBattleRuntime(normalizeMonsterAssetSource(value.followUpEnemyMon))
+    : null;
+  const followUpEnemyMessage = typeof value.followUpEnemyMessage === 'string'
+    ? value.followUpEnemyMessage
+    : '';
 
   return {
     previousActivePlayerId,
     nextActivePlayerId,
     forced: Boolean(value.forced),
-    createdAt: typeof value.createdAt === 'string' ? value.createdAt : null
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : null,
+    followUpEnemyMon,
+    followUpEnemyMessage
   };
 };
 
@@ -8295,7 +7705,9 @@ const buildPendingBattleSwitch = ({
   previousActivePlayerId,
   nextActivePlayerId,
   forced = false,
-  createdAt = new Date().toISOString()
+  createdAt = new Date().toISOString(),
+  followUpEnemyMon = null,
+  followUpEnemyMessage = ''
 } = {}) => {
   const normalizedNextActivePlayerId = nextActivePlayerId != null ? String(nextActivePlayerId) : null;
   if (!normalizedNextActivePlayerId) return null;
@@ -8304,7 +7716,9 @@ const buildPendingBattleSwitch = ({
     previousActivePlayerId: previousActivePlayerId != null ? String(previousActivePlayerId) : null,
     nextActivePlayerId: normalizedNextActivePlayerId,
     forced: Boolean(forced),
-    createdAt
+    createdAt,
+    followUpEnemyMon: followUpEnemyMon ? sanitizeBattleRuntime(normalizeMonsterAssetSource(followUpEnemyMon)) : null,
+    followUpEnemyMessage: typeof followUpEnemyMessage === 'string' ? followUpEnemyMessage : ''
   };
 };
 
@@ -8526,6 +7940,36 @@ const normalizeBattlePhaseData = (phase, data) => {
   return null;
 };
 
+const buildQueuedEnemySendOutPhaseData = ({
+  enemyMon = null,
+  leadMonId = null,
+  message = '',
+  battleEnvironment = null,
+  battleEventCompletion = null
+} = {}) => {
+  const normalizedEnemyMon = enemyMon
+    ? sanitizeBattleRuntime(normalizeMonsterAssetSource(enemyMon))
+    : null;
+  if (!normalizedEnemyMon) return null;
+
+  const normalizedBattleEnvironment = normalizeBattleEnvironment(battleEnvironment);
+  const normalizedBattleEventCompletion = normalizeBattleEventCompletion(
+    battleEventCompletion || normalizedBattleEnvironment?.battleEventCompletion,
+    normalizedBattleEnvironment
+  );
+
+  return {
+    enemyMon: normalizedEnemyMon,
+    leadMonId,
+    message: typeof message === 'string' ? message : '',
+    sendOutSide: 'enemy',
+    battleEnvironment: normalizedBattleEnvironment && normalizedBattleEventCompletion
+      ? { ...normalizedBattleEnvironment, battleEventCompletion: normalizedBattleEventCompletion }
+      : normalizedBattleEnvironment,
+    battleEventCompletion: normalizedBattleEventCompletion
+  };
+};
+
 const normalizePendingTeacherRewardClaim = (claim) => {
   if (!claim || typeof claim !== 'object') return null;
   const token = typeof claim.token === 'string' && claim.token.length > 0 ? claim.token : null;
@@ -8656,12 +8100,28 @@ const getSavedMapContentVersion = (gameData) => {
   return Number.isFinite(version) ? version : 0;
 };
 
+const hasAdventureMapRuntimeGridMismatch = (gameData) => {
+  if (!gameData || typeof gameData !== 'object') return false;
+
+  const savedMapName = gameData.world?.currentMapName || gameData.currentMapName || DEFAULT_WORLD_MAP_NAME;
+  if (getAdventureMapInfo(savedMapName)?.renderMode !== 'three-lowpoly') return false;
+  if (!Array.isArray(gameData.mapGrid) || gameData.mapGrid.length === 0) return false;
+
+  const normalizedWorld = normalizeWorldState(gameData.world, {
+    currentMapName: savedMapName,
+    playerPos: gameData.playerPos || gameData.world?.playerPos || getMapStartPosition(savedMapName)
+  });
+  const runtimeGrid = buildMapGridForWorld(savedMapName, normalizedWorld, gameData.mapGrid);
+  return !areMapGridsEqual(gameData.mapGrid, runtimeGrid);
+};
+
 const shouldPersistMapContentMigration = (gameData) => {
   if (!gameData || typeof gameData !== 'object') return false;
   const savedMapName = gameData.world?.currentMapName || gameData.currentMapName || DEFAULT_WORLD_MAP_NAME;
   return (
     getSavedMapContentVersion(gameData) !== WORLD_MAP_CONTENT_VERSION ||
-    hasAdventureMapGridVisualRoadMismatch(savedMapName, gameData.mapGrid)
+    hasAdventureMapGridVisualRoadMismatch(savedMapName, gameData.mapGrid) ||
+    hasAdventureMapRuntimeGridMismatch(gameData)
   );
 };
 
@@ -8687,12 +8147,14 @@ const normalizeCloudGameData = (gameData, backendGold) => {
   const captureSequenceData = normalizeCaptureSequenceData(gameData.captureSequenceData);
   const pendingBattleSwitch = normalizePendingBattleSwitch(gameData.pendingBattleSwitch);
   const view = gameData.view || defaults.view;
-  const initialActivePlayerId = (view === 'battle' || Boolean(gameData.activeEnemyId))
+  const isBattleContext = view === 'battle' || Boolean(gameData.activeEnemyId);
+  const activeEnemyId = isBattleContext ? resolveActiveEnemyId(enemyTeam, gameData.activeEnemyId) : null;
+  const initialActivePlayerId = isBattleContext
     ? progressRoster.activePlayerId
     : resolveDefaultActivePlayerId(playerTeam, progressRoster.activePlayerId);
   const isThrowingPokeball = Boolean(gameData.isThrowingPokeball) && !!captureSequenceData;
   const normalizedBattlePhaseData = normalizeBattlePhaseData(battlePhase, gameData.battlePhaseData);
-  const isBattleFlow = view === 'battle' || Boolean(gameData.activeEnemyId);
+  const isBattleFlow = isBattleContext;
   const rawBattleEnvironment = isBattleFlow
     ? normalizeBattleEnvironment(gameData.battleEnvironment || normalizedBattlePhaseData?.battleEnvironment)
     : null;
@@ -8749,6 +8211,7 @@ const normalizeCloudGameData = (gameData, backendGold) => {
     pendingMonsterAcquisition: normalizePendingMonsterAcquisition(gameData.pendingMonsterAcquisition),
     pendingBattleSwitch,
     activePlayerId: initialActivePlayerId,
+    activeEnemyId,
     mapLevel: gameData.mapLevel || defaults.mapLevel,
     maxReachedLevel: gameData.maxReachedLevel || defaults.maxReachedLevel,
     currentMapName: gameData.currentMapName || defaults.currentMapName,
@@ -8804,6 +8267,8 @@ const normalizeCloudGameData = (gameData, backendGold) => {
   }
 
   if (normalized.view !== 'battle' && !normalized.activeEnemyId) {
+    normalized.playerTeam = (Array.isArray(normalized.playerTeam) ? normalized.playerTeam : []).map(clearBattleExitRuntime);
+    normalized.storageBox = (Array.isArray(normalized.storageBox) ? normalized.storageBox : []).map(clearBattleExitRuntime);
     normalized.battlePhase = 'active';
     normalized.battlePhaseData = null;
     normalized.battleEnvironment = null;
@@ -8873,7 +8338,9 @@ const createCloudSnapshot = (gameData) => {
   const captureSequenceData = normalizeCaptureSequenceData(gameData.captureSequenceData);
   const isThrowingPokeball = Boolean(gameData.isThrowingPokeball) && !!captureSequenceData;
   const pendingBattleSwitch = normalizePendingBattleSwitch(gameData.pendingBattleSwitch);
-  const isBattleFlow = view === 'battle' || Boolean(gameData.activeEnemyId);
+  const isBattleContext = view === 'battle' || Boolean(gameData.activeEnemyId);
+  const activeEnemyId = isBattleContext ? resolveActiveEnemyId(enemyTeam, gameData.activeEnemyId) : null;
+  const isBattleFlow = isBattleContext;
   const activePlayerId = isBattleFlow
     ? progressRoster.activePlayerId
     : resolveDefaultActivePlayerId(playerTeam, progressRoster.activePlayerId);
@@ -8913,21 +8380,26 @@ const createCloudSnapshot = (gameData) => {
   )
     ? pendingBattleSwitch
     : null;
+  const snapshotPlayerTeam = isBattleFlow ? playerTeam : playerTeam.map(clearBattleExitRuntime);
+  const snapshotStorageBox = isBattleFlow ? storageBox : storageBox.map(clearBattleExitRuntime);
+  const snapshotActivePlayerId = isBattleFlow
+    ? activePlayerId
+    : resolveDefaultActivePlayerId(snapshotPlayerTeam, activePlayerId);
 
   return {
     schemaVersion: 4,
     mapContentVersion: WORLD_MAP_CONTENT_VERSION,
-    showLaunchScreen: Boolean(gameData.showLaunchScreen) || playerTeam.length === 0,
+    showLaunchScreen: Boolean(gameData.showLaunchScreen) || snapshotPlayerTeam.length === 0,
     view,
     turn: snapshotTurn,
     logs: Array.isArray(gameData.logs) ? gameData.logs.slice(-80) : ['在地图上探索吧！'],
     participatedMonIds: Array.isArray(gameData.participatedMonIds) ? gameData.participatedMonIds : [],
     pendingGrowthEvents: progressRoster.pendingGrowthEvents,
-    playerTeam,
-    storageBox,
+    playerTeam: snapshotPlayerTeam,
+    storageBox: snapshotStorageBox,
     enemyTeam,
-    activePlayerId,
-    activeEnemyId: gameData.activeEnemyId || null,
+    activePlayerId: snapshotActivePlayerId,
+    activeEnemyId,
     gameOver: Boolean(gameData.gameOver),
     battleKind: gameData.battleKind || 'wild',
     battlePhase,
@@ -9265,7 +8737,7 @@ const SpringRestoreConfirmModal = ({
           <p className="reset-confirm-card__eyebrow spring-restore-card__eyebrow">泉水恢复</p>
           <h2 id="spring-restore-title">{springName}</h2>
           <p>
-            支付 {displayCost} 金币后，泉水会为队伍全员恢复体力与技能值。
+            支付 {displayCost} 金币后，泉水会为队伍全员恢复体力、技能值并解除异常状态。
           </p>
           <div className="spring-restore-card__chips" aria-label="泉水恢复信息">
             <span className="spring-restore-card__chip">
@@ -9274,7 +8746,7 @@ const SpringRestoreConfirmModal = ({
             </span>
             <span className="spring-restore-card__chip">
               <i className="fa-solid fa-heart-pulse"></i>
-              HP / MP 全恢复
+              HP / MP / 异常全恢复
             </span>
           </div>
           {(!canAfford || error) && (
@@ -9399,10 +8871,13 @@ const FastTravelMapModal = ({
                 ? entry.forwardRoutes.map((route) => `${route.directionLabel} → ${route.targetLabel}`).join(' · ')
                 : '终点区域';
               const detailText = entry.locked
-                ? (entry.reason || '继续冒险后解锁')
+                ? (entry.reason || '未解锁')
                 : entry.current
                   ? entry.stationTitle
                   : entry.landmark;
+              const compactStatusText = entry.locked
+                ? '未解锁'
+                : statusText;
               return (
                 <button
                   key={entry.mapName}
@@ -9416,8 +8891,8 @@ const FastTravelMapModal = ({
                   ].filter(Boolean).join(' ')}
                   disabled={disabled}
                   onClick={() => onTravel?.(entry.mapName)}
-                  aria-label={`${entry.config.displayName}，${statusText}，${entry.stationTitle}`}
-                  title={`${entry.config.displayName} · ${entry.stationTitle} · ${statusText}`}
+                  aria-label={`${entry.config.displayName}，${compactStatusText}，${entry.stationTitle}`}
+                  title={`${entry.config.displayName} · ${entry.stationTitle} · ${compactStatusText}`}
                 >
                   <span className="fast-travel-destination__order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                   <span className="fast-travel-destination__icon" aria-hidden="true">
@@ -9429,7 +8904,7 @@ const FastTravelMapModal = ({
                     <small>{detailText}</small>
                     <span className="fast-travel-destination__links">{routeLinks}</span>
                   </span>
-                  <span className="fast-travel-destination__status">{statusText}</span>
+                  <span className="fast-travel-destination__status">{compactStatusText}</span>
                 </button>
               );
             })}
@@ -9551,53 +9026,172 @@ const AdventureTopBar = ({
   saveProps,
   onLogout,
   onResetGame,
-  resetDisabled = false
+  resetDisabled = false,
+  audioSettings = null,
+  onToggleAudio = null,
+  onVolumeChange = null
 }) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsPanelRef = useRef(null);
   const displayName = user?.nickname || user?.username || '冒险者';
   const avatarSrc = activeMon?.sprite || PLAYER_SPRITE_URL;
   const level = activeMon?.level || 1;
   const energyValue = Number.isFinite(Number(playerEnergy)) ? Number(playerEnergy) : 0;
   const maxEnergyValue = Number.isFinite(Number(maxEnergy)) && Number(maxEnergy) > 0 ? Number(maxEnergy) : DEFAULT_MAX_ENERGY;
+  const goldValue = Number.isFinite(Number(playerGold)) ? Number(playerGold) : 0;
+  const formattedGold = goldValue.toLocaleString('zh-CN');
+  const resolvedAudioSettings = normalizeAudioSettings(audioSettings);
+  const audioEnabled = resolvedAudioSettings.enabled && resolvedAudioSettings.volume > 0;
+  const audioVolumePercent = Math.round(resolvedAudioSettings.volume * 100);
+  const audioButtonTitle = audioEnabled ? `音效已开 ${audioVolumePercent}%` : '音效已关闭';
+
+  useEffect(() => {
+    if (!settingsOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (!settingsPanelRef.current?.contains(event.target)) {
+        setSettingsOpen(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [settingsOpen]);
+
+  const settingsOverlay = settingsOpen ? (
+    <div
+      className="reset-confirm-overlay topbar-settings-overlay topbar-settings-overlay--shell"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="topbar-settings-title"
+    >
+      <div className="reset-confirm-card topbar-settings-card" ref={settingsPanelRef}>
+        <button
+          type="button"
+          className="game-icon-button topbar-settings-close"
+          onClick={() => setSettingsOpen(false)}
+          aria-label="关闭设置"
+          title="关闭设置"
+        >
+          <i className="fa-solid fa-xmark"></i>
+        </button>
+        <div className="topbar-settings-card__header">
+          <p className="reset-confirm-card__eyebrow">设置</p>
+          <h2 id="topbar-settings-title">冒险控制台</h2>
+          <p>存档、音量和重置都放在这里。</p>
+        </div>
+        <div className="topbar-settings-card__body">
+          <section className="topbar-settings-card__section">
+            <div className="topbar-settings-card__label">云端存档</div>
+            <CloudSaveControls {...saveProps} />
+          </section>
+          {onToggleAudio && (
+            <section className="topbar-settings-card__section">
+              <div className="topbar-settings-card__label">音量</div>
+              <div className="topbar-settings-card__row">
+                <button
+                  type="button"
+                  onClick={onToggleAudio}
+                  className={`game-icon-button ${audioEnabled ? '' : 'game-icon-button--muted'} topbar-volume-button`}
+                  title={audioButtonTitle}
+                  aria-label={audioButtonTitle}
+                  aria-pressed={audioEnabled}
+                >
+                  <i className={`fa-solid ${audioEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}`}></i>
+                </button>
+                {onVolumeChange && (
+                  <label className="topbar-audio-slider" aria-label="音效音量">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={audioVolumePercent}
+                      onChange={(event) => onVolumeChange?.(event.target.value)}
+                      title={`音效音量 ${audioVolumePercent}%`}
+                      aria-label={`音效音量 ${audioVolumePercent}%`}
+                    />
+                    <span>{audioVolumePercent}%</span>
+                  </label>
+                )}
+              </div>
+            </section>
+          )}
+          {onResetGame && (
+            <section className="topbar-settings-card__section">
+              <div className="topbar-settings-card__label">重置</div>
+              <button
+                onClick={onResetGame}
+                disabled={resetDisabled}
+                className="game-icon-button game-icon-button--danger topbar-reset-button topbar-settings-card__reset"
+                title="重置进度"
+                aria-label="重置进度"
+              >
+                <i className="fa-solid fa-rotate-left"></i>
+              </button>
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const settingsPortalRoot =
+    settingsOpen && typeof document !== 'undefined'
+      ? document.querySelector('.game-console-shell')
+      : null;
 
   return (
-    <div className="game-topbar">
-      <div className="adventurer-profile">
-        <div className="adventurer-avatar">
-          <img src={avatarSrc} onError={handlePokemonImageError} alt={displayName} />
+    <div className="game-topbar game-topbar--unified">
+      <div
+        className="map-player-hud map-hud-frosted"
+        aria-label={`${displayName}，等级 ${level}，金币 ${formattedGold}，体力 ${energyValue} / ${maxEnergyValue}`}
+      >
+        <div className="map-player-hud__avatar">
+          <img src={avatarSrc} onError={handlePokemonImageError} alt="" />
         </div>
-        <div className="adventurer-profile__body">
-          <div className="adventurer-title">冒险者档案</div>
-          <div className="adventurer-name">{displayName}</div>
-          <div className="adventurer-meta">
-            <span className="adventure-chip adventure-chip--level">Lv.{level}</span>
-            <span className="adventure-chip adventure-chip--gold">
-              <i className="fa-solid fa-coins"></i>
-              {playerGold}
-            </span>
-            <span className="adventure-chip adventure-chip--energy">
-              <i className="fa-solid fa-bolt"></i>
-              {energyValue}/{maxEnergyValue}
-            </span>
+        <div className="map-player-hud__info">
+          <div className="map-player-hud__line map-player-hud__line--name">
+            <span className="map-player-hud__name">{displayName}</span>
+            <span className="map-player-hud__level">Lv.{level}</span>
+          </div>
+          <div className="map-player-hud__line map-player-hud__stat map-player-hud__stat--gold">
+            <i className="fa-solid fa-coins" aria-hidden="true"></i>
+            <span>{formattedGold}</span>
+          </div>
+          <div className="map-player-hud__line map-player-hud__stat map-player-hud__stat--energy">
+            <i className="fa-solid fa-bolt" aria-hidden="true"></i>
+            <span>{energyValue}/{maxEnergyValue}</span>
           </div>
         </div>
       </div>
-      <div className="topbar-actions">
-        <CloudSaveControls {...saveProps} />
-        {onResetGame && (
-          <button
-            onClick={onResetGame}
-            disabled={resetDisabled}
-            className="game-icon-button game-icon-button--danger topbar-reset-button"
-            title="重置进度"
-            aria-label="重置进度"
-          >
-            <i className="fa-solid fa-rotate-left"></i>
-          </button>
-        )}
+      <div className="map-action-rail map-hud-actions-rail">
+        <button
+          type="button"
+          onClick={() => {
+            gameAudio.prime();
+            setSettingsOpen((current) => !current);
+          }}
+          className={`map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted${settingsOpen ? ' map-hud-icon-button--active' : ''}`}
+          title="设置"
+          aria-label="设置"
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+        >
+          <i className={`fa-solid ${settingsOpen ? 'fa-xmark' : 'fa-gear'}`}></i>
+        </button>
         {onLogout && (
           <button
+            type="button"
             onClick={onLogout}
-            className="game-icon-button"
+            className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted"
             title="退出登录"
             aria-label="退出登录"
           >
@@ -9605,6 +9199,9 @@ const AdventureTopBar = ({
           </button>
         )}
       </div>
+      {settingsPortalRoot && settingsOverlay
+        ? createPortal(settingsOverlay, settingsPortalRoot)
+        : settingsOverlay}
     </div>
   );
 };
@@ -9681,9 +9278,6 @@ const normalizeNotificationMessage = (message) => {
     .replace(/^(.+?) 已经没有了。$/, '$1 数量不足。')
     .replace(/^(.+?)已经完成挑战。$/, '$1已完成。')
     .replace(/^(.+?) 的体力和技能值已满。$/, '$1 状态已满。')
-    .replace(/^等级不足：需要 Lv\.\d+ 以上才能进入。$/, '等级不足，暂不能进入。')
-    .replace(/^还不能前往(.+?)：请先击败(.+?)的(.+?)，并把队伍平均等级提升到 Lv\.\d+ 以上。$/, '前往$1需要击败$2的$3，并提升队伍等级。')
-    .replace(/^还不能前往(.+?)：请先击败(.+?)的(.+?)。$/, '前往$1需要击败$2的$3。')
     .replace(/^(.+?)消耗 \d+ 金币，队伍已满状态恢复。$/, '$1已恢复全队。')
     .replace(/^泉水恢复需要 \d+ 金币，当前金币不足。$/, '金币不足，无法恢复。')
     .replace(/^领取奖励: (.+?) x(\d+)$/, '获得$1 x$2。')
@@ -9740,8 +9334,29 @@ const takeLatestNotificationItem = (queue) => {
 };
 
 export default function OriginalGame({ user, onLogout }) {
+  const [assetsReady, setAssetsReady] = useState(() => (
+    typeof window === 'undefined' || typeof Image === 'undefined'
+  ));
+  const [assetLoadSummary, setAssetLoadSummary] = useState(() => latestGameAssetPreloadSummary);
+
   useEffect(() => {
-    preloadGameAssets();
+    let cancelled = false;
+    preloadGameAssets()
+      .then((summary) => {
+        if (cancelled) return;
+        setAssetLoadSummary(summary);
+        setAssetsReady(true);
+      })
+      .catch((error) => {
+        console.warn('[assets] 游戏素材预加载失败', error);
+        if (!cancelled) {
+          setAssetLoadSummary({ ok: false, error });
+          setAssetsReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 用 ref 锁住最新 user，避免 user 对象引用变化导致 applyCloudGameData / loadGameFromCloud
@@ -9768,6 +9383,7 @@ export default function OriginalGame({ user, onLogout }) {
   const latestCloudSnapshotRef = useRef(null);
   const cloudSaveInFlightRef = useRef(false);
   const cloudLoadInFlightRef = useRef(null);
+  const atomicCloudLoadUnavailableRef = useRef(false);
   const queuedCloudSaveRef = useRef(null);
   const pendingManualSaveNoticeRef = useRef(false);
   const criticalCloudSaveRequestedRef = useRef(false);
@@ -9781,12 +9397,14 @@ export default function OriginalGame({ user, onLogout }) {
   const teacherRewardConfirmRetryAtRef = useRef(0);
   const legacyTeacherRewardRecoveryInFlightRef = useRef(false);
   const legacyTeacherRewardRecoveryRetryAtRef = useRef(0);
+  const loadedCloudUserIdRef = useRef(null);
   const playerDefeatRecoveryInFlightRef = useRef(false);
   const activeBattleEnergyCostRef = useRef(0);
   const shopPurchaseInFlightRef = useRef(false);
   const battleEventConfirmInFlightRef = useRef(false);
   const battleEventStartInFlightRef = useRef(new Set());
   const completedBattleEventLockRef = useRef(new Set());
+  const completedBattleEventVisualOverridesRef = useRef({});
   const battleNoMpResolutionKeyRef = useRef(null);
   const requiresCloudReloadRef = useRef(false);
   const cloudBlockedRef = useRef(cloudBlocked);
@@ -9844,11 +9462,38 @@ export default function OriginalGame({ user, onLogout }) {
     currentMapName: DEFAULT_WORLD_MAP_NAME,
     playerPos: getDefaultWorldPosition()
   }));
+  const [completedBattleEventVisualOverrides, setCompletedBattleEventVisualOverrides] = useState({});
   const worldRef = useRef(normalizeWorldState(null, {
     currentMapName: DEFAULT_WORLD_MAP_NAME,
     playerPos: getDefaultWorldPosition()
   }));
   const encounterCooldownStepsRef = useRef(0);
+
+  const resetLocalBattleEventCompletionState = useCallback(() => {
+    completedBattleEventLockRef.current = new Set();
+    completedBattleEventVisualOverridesRef.current = {};
+    setCompletedBattleEventVisualOverrides({});
+  }, []);
+
+  const markCompletedBattleEventLocally = useCallback(({
+    world: sourceWorld = null,
+    mapName,
+    eventType,
+    eventId,
+    eventRole = null
+  } = {}) => {
+    setCompletedBattleEventVisualOverrides((current) => {
+      const next = appendCompletedBattleEventVisualOverride(current, {
+        world: sourceWorld,
+        mapName,
+        eventType,
+        eventId,
+        eventRole
+      });
+      completedBattleEventVisualOverridesRef.current = next;
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!world) return;
@@ -9905,11 +9550,85 @@ export default function OriginalGame({ user, onLogout }) {
   const [battlePhase, setBattlePhase] = useState('active');
   const [battlePhaseData, setBattlePhaseData] = useState(null);
   const [battleEnvironment, setBattleEnvironment] = useState(null);
+  const battleCompletionContextRef = useRef({
+    battleEnvironment: null,
+    battleEventCompletion: null
+  });
+  const [audioSettings, setAudioSettings] = useState(() => readStoredAudioSettings());
   const [moveVisualEvent, setMoveVisualEvent] = useState(null);
   const [switchVisualEvent, setSwitchVisualEvent] = useState(null);
   const battleTurnInFlightRef = useRef(false);
   const enemyTurnInFlightRef = useRef(false);
   const notificationSuppressedForBattle = view === 'battle' || Boolean(activeEnemyId);
+
+  const resolveCommittedBattleContext = useCallback((snapshot = null) => {
+    const persistedContext = battleCompletionContextRef.current || {};
+    const resolvedBattleEnvironment = normalizeBattleEnvironment(
+      snapshot?.battleEnvironment ||
+      snapshot?.battlePhaseData?.battleEnvironment ||
+      battleEnvironment ||
+      battlePhaseData?.battleEnvironment ||
+      persistedContext.battleEnvironment
+    );
+    const resolvedBattleEventCompletion = normalizeBattleEventCompletion(
+      snapshot?.battleEventCompletion ||
+      snapshot?.battlePhaseData?.battleEventCompletion ||
+      resolvedBattleEnvironment?.battleEventCompletion ||
+      battleEnvironment?.battleEventCompletion ||
+      battlePhaseData?.battleEventCompletion ||
+      persistedContext.battleEventCompletion,
+      resolvedBattleEnvironment || battleEnvironment || battlePhaseData?.battleEnvironment || persistedContext.battleEnvironment
+    );
+    return {
+      battleEnvironment: resolvedBattleEnvironment && resolvedBattleEventCompletion
+        ? { ...resolvedBattleEnvironment, battleEventCompletion: resolvedBattleEventCompletion }
+        : resolvedBattleEnvironment,
+      battleEventCompletion: resolvedBattleEventCompletion
+    };
+  }, [battleEnvironment, battlePhaseData]);
+
+  const hydrateCommittedBattleSnapshot = useCallback((snapshot = null) => {
+    const baseSnapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
+    const committedContext = resolveCommittedBattleContext(baseSnapshot);
+    if (!committedContext.battleEnvironment && !committedContext.battleEventCompletion) {
+      return {
+        snapshot: baseSnapshot,
+        battleEnvironment: null,
+        battleEventCompletion: null
+      };
+    }
+    const hydratedPhaseData = baseSnapshot.battlePhaseData && committedContext.battleEventCompletion
+      ? {
+        ...baseSnapshot.battlePhaseData,
+        battleEnvironment: baseSnapshot.battlePhaseData.battleEnvironment || committedContext.battleEnvironment,
+        battleEventCompletion: committedContext.battleEventCompletion
+      }
+      : baseSnapshot.battlePhaseData;
+    return {
+      snapshot: {
+        ...baseSnapshot,
+        battleEnvironment: committedContext.battleEnvironment,
+        battleEventCompletion: committedContext.battleEventCompletion,
+        battlePhaseData: hydratedPhaseData
+      },
+      ...committedContext
+    };
+  }, [resolveCommittedBattleContext]);
+
+  useEffect(() => {
+    const battleContextActive = view === 'battle' || Boolean(activeEnemyId);
+    const committedContext = resolveCommittedBattleContext();
+    if (battleContextActive && (committedContext.battleEnvironment || committedContext.battleEventCompletion)) {
+      battleCompletionContextRef.current = committedContext;
+      return;
+    }
+    if (!battleContextActive) {
+      battleCompletionContextRef.current = {
+        battleEnvironment: null,
+        battleEventCompletion: null
+      };
+    }
+  }, [activeEnemyId, resolveCommittedBattleContext, view]);
 
   useEffect(() => {
     if (!moveVisualEvent) return;
@@ -9987,6 +9706,69 @@ export default function OriginalGame({ user, onLogout }) {
       setMaxEnergy(user.max_energy);
     }
   }, [user?.energy, user?.max_energy]);
+
+  useEffect(() => {
+    gameAudio.applySettings(audioSettings);
+    writeStoredAudioSettings(audioSettings);
+  }, [audioSettings]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const primeAudioOnGesture = () => {
+      gameAudio.prime();
+    };
+    window.addEventListener('pointerdown', primeAudioOnGesture, { passive: true });
+    window.addEventListener('keydown', primeAudioOnGesture);
+    return () => {
+      window.removeEventListener('pointerdown', primeAudioOnGesture);
+      window.removeEventListener('keydown', primeAudioOnGesture);
+    };
+  }, []);
+
+  const primeGameAudio = useCallback(() => {
+    gameAudio.prime();
+  }, []);
+
+  const handleToggleAudio = useCallback(() => {
+    primeGameAudio();
+    setAudioSettings((current) => {
+      const normalizedCurrent = normalizeAudioSettings(current);
+      const next = normalizeAudioSettings({
+        enabled: !normalizedCurrent.enabled,
+        volume: normalizedCurrent.volume > 0 ? normalizedCurrent.volume : 0.72
+      });
+      gameAudio.applySettings(next);
+      if (next.enabled) {
+        gameAudio.playUiConfirm();
+      }
+      return next;
+    });
+  }, [primeGameAudio]);
+
+  const handleAudioVolumeChange = useCallback((value) => {
+    primeGameAudio();
+    const normalizedValue = Math.max(0, Math.min(1, Number(value) / 100));
+    const nextSettings = normalizeAudioSettings({
+      enabled: normalizedValue > 0,
+      volume: normalizedValue
+    });
+    setAudioSettings(nextSettings);
+    gameAudio.applySettings(nextSettings);
+    if (nextSettings.enabled && nextSettings.volume > 0) {
+      gameAudio.playUiSelect();
+    }
+  }, [audioSettings.enabled, primeGameAudio]);
+
+  const handleNavigateView = useCallback((nextView) => {
+    if (typeof nextView !== 'string' || !nextView) return;
+    primeGameAudio();
+    if (nextView === 'map') {
+      gameAudio.playUiBack();
+    } else {
+      gameAudio.playUiSelect();
+    }
+    setView(nextView);
+  }, [primeGameAudio]);
 
   useEffect(() => {
     currentMapNameRef.current = currentMapName;
@@ -10239,17 +10021,28 @@ export default function OriginalGame({ user, onLogout }) {
     targetSide = null,
     onImpact = null,
     durationMs = getBattleMovePhaseDuration(phase),
+    effectMove = null,
+    effectMoveKey = moveKey,
+    suppressActorMotion = false,
+    forceTargetReaction = false,
+    reactionClass = null,
   } = {}) => {
-    if (!MOVES[moveKey]) return;
+    const resolvedMove = effectMove || MOVES[moveKey];
+    const resolvedMoveKey = effectMoveKey || moveKey;
+    if (!resolvedMove) return;
     const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
-    const visualId = `${moveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const visualId = `${resolvedMoveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setMoveVisualEvent({
       id: visualId,
-      moveKey,
+      moveKey: resolvedMoveKey,
+      move: resolvedMove,
       attackerSide,
       targetSide,
       phase,
       durationMs,
+      suppressActorMotion,
+      forceTargetReaction,
+      reactionClass,
     });
     try {
       if (typeof onImpact === 'function') {
@@ -10263,6 +10056,125 @@ export default function OriginalGame({ user, onLogout }) {
       setMoveVisualEvent((prev) => prev?.id === visualId ? null : prev);
     }
   }, []);
+
+  const playBattleVisualMessage = useCallback(async ({
+    moveKey,
+    move,
+    attackerSide,
+    phase = 'status',
+    targetSide = null,
+    onImpact = null,
+    message = '',
+    durationMs = getBattleMovePhaseDuration(phase),
+    suppressActorMotion = false,
+    forceTargetReaction = false,
+    reactionClass = null,
+    minMs = 860,
+    maxMs = 2300,
+    extraMs = 130,
+  }) => {
+    const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
+    let loggedAtImpact = false;
+
+    await waitForBattleMoveVisual(moveKey, attackerSide, phase, {
+      targetSide,
+      durationMs,
+      onImpact: () => {
+        onImpact?.();
+        if (message) {
+          addLog(message);
+          loggedAtImpact = true;
+        }
+      },
+      effectMove: move,
+      effectMoveKey: moveKey,
+      suppressActorMotion,
+      forceTargetReaction,
+      reactionClass,
+    });
+
+    if (!message) return;
+    if (!loggedAtImpact) {
+      await addBattleLogAndWait(addLog, message, { minMs, maxMs, extraMs });
+      return;
+    }
+
+    const visualReadOverlapMs = Math.max(0, durationMs - impactDelayMs);
+    const readDelayMs = getBattleLogReadDelay(message, { minMs, maxMs, extraMs });
+    await wait(Math.max(220, readDelayMs - visualReadOverlapMs));
+  }, [addLog, waitForBattleMoveVisual]);
+
+  const playBattleStatusEvents = useCallback(async ({ side, monId, events = [] }) => {
+    let latestMon = null;
+
+    for (const event of events) {
+      latestMon = withBattleRuntimeDefaults(event.mon);
+      if (!latestMon) continue;
+      const eventStatus = event.status || (
+        event.phase === 'heal'
+          ? 'heal'
+          : event.phase === 'secondary'
+            ? 'buff'
+            : 'status'
+      );
+      const syncMonState = () => {
+        updateBattleMonBySide({
+          side,
+          monId,
+          setPlayerTeam,
+          setEnemyTeam,
+          updater: () => latestMon
+        });
+      };
+
+      if (event.visual === false) {
+        syncMonState();
+        gameAudio.playBattleStatus(eventStatus, eventStatus === 'freeze' && event.message?.includes('解冻')
+          ? 'recover'
+          : event.message?.includes('恢复') || event.message?.includes('醒') || event.message?.includes('清醒')
+            ? 'recover'
+            : event.message?.includes('伤害') || event.message?.includes('中毒') || event.message?.includes('灼伤')
+              ? 'tick'
+              : 'apply');
+        if (event.message) {
+          await addBattleLogAndWait(addLog, event.message, {
+            minMs: event.minMs,
+            maxMs: event.maxMs,
+            extraMs: event.extraMs,
+          });
+        }
+        continue;
+      }
+
+      await playBattleVisualMessage({
+        moveKey: event.moveKey || `__status_${event.status || 'effect'}`,
+        move: event.move || null,
+        attackerSide: side,
+        phase: event.phase || 'status',
+        targetSide: side,
+        onImpact: () => {
+          syncMonState();
+          gameAudio.playBattleStatus(eventStatus, eventStatus === 'freeze' && event.message?.includes('解冻')
+            ? 'recover'
+            : event.message?.includes('恢复') || event.message?.includes('醒') || event.message?.includes('清醒')
+              ? 'recover'
+              : event.message?.includes('伤害') || event.message?.includes('中毒') || event.message?.includes('灼伤')
+                ? 'tick'
+                : 'apply');
+        },
+        message: event.message,
+        durationMs: event.durationMs,
+        suppressActorMotion: event.suppressActorMotion ?? true,
+        forceTargetReaction: event.forceTargetReaction ?? false,
+        reactionClass: event.reactionClass || null,
+        minMs: event.minMs,
+        maxMs: event.maxMs,
+        extraMs: event.extraMs,
+      });
+    }
+
+    return latestMon;
+  }, [addLog, playBattleVisualMessage]);
 
 	  const getBaseMonsterDefinition = useCallback((monsterId) => {
 	      const safeId = Number(monsterId);
@@ -10532,9 +10444,35 @@ export default function OriginalGame({ user, onLogout }) {
     setPlayerInventory(sanitizePlayerInventory(gameData.playerInventory));
     setNextPlayerMonsterId(gameData.nextPlayerMonsterId || 100);
     setNextEnemyMonsterId(gameData.nextEnemyMonsterId || 200);
-    const normalizedWorld = normalizeWorldState(gameData.world, {
+    const worldFallback = {
       currentMapName: gameData.currentMapName || DEFAULT_WORLD_MAP_NAME,
       playerPos: gameData.playerPos || gameData.world?.playerPos || getDefaultWorldPosition()
+    };
+    const baseNormalizedWorld = normalizeWorldState(gameData.world, worldFallback);
+    const shouldPreserveLocalBattleProgress = Boolean(
+      loadedCloudUserIdRef.current &&
+      loadedCloudUserIdRef.current === (userRef.current?.id || null) &&
+      !isFreshStartSnapshot(gameData) &&
+      (
+        completedBattleEventLockRef.current.size > 0 ||
+        Object.keys(completedBattleEventVisualOverridesRef.current).length > 0
+      )
+    );
+    const normalizedWorld = shouldPreserveLocalBattleProgress
+      ? mergeLocalBattleProgressIntoWorld(baseNormalizedWorld, worldRef.current, worldFallback)
+      : baseNormalizedWorld;
+    const primedCompletedBattleEventState = buildCompletedBattleEventLocalPrimeState({
+      snapshot: {
+        ...gameData,
+        world: normalizedWorld,
+        currentMapName: normalizedWorld.currentMapName,
+        playerPos: normalizedWorld.playerPos
+      },
+      world: normalizedWorld,
+      fallbackMapName: normalizedWorld.currentMapName,
+      currentOverrides: shouldPreserveLocalBattleProgress
+        ? completedBattleEventVisualOverridesRef.current
+        : {}
     });
     playerPosRef.current = normalizedWorld.playerPos;
     currentMapNameRef.current = normalizedWorld.currentMapName;
@@ -10552,6 +10490,14 @@ export default function OriginalGame({ user, onLogout }) {
     setUseRealMaps(true);
     setCurrentMapName(normalizedWorld.currentMapName);
     setWorld(normalizedWorld);
+    completedBattleEventLockRef.current = shouldPreserveLocalBattleProgress
+      ? new Set([
+        ...completedBattleEventLockRef.current,
+        ...primedCompletedBattleEventState.lockKeys
+      ])
+      : new Set(primedCompletedBattleEventState.lockKeys);
+    completedBattleEventVisualOverridesRef.current = primedCompletedBattleEventState.overrides;
+    setCompletedBattleEventVisualOverrides(primedCompletedBattleEventState.overrides);
     const resolvedEncounterCooldown = Math.max(0, Math.trunc(Number(gameData.encounterCooldownSteps ?? 0)));
     encounterCooldownStepsRef.current = resolvedEncounterCooldown;
     setEncounterCooldownSteps(resolvedEncounterCooldown);
@@ -10668,7 +10614,6 @@ export default function OriginalGame({ user, onLogout }) {
 
   // 首次加载成功后即便有奇怪原因再触发，也不再显示全屏"正在读取云端进度"覆盖，避免回闪。
   const hasCompletedInitialLoadRef = useRef(false);
-  const loadedCloudUserIdRef = useRef(null);
 
   const loadGameFromCloud = useCallback(async ({ force = false } = {}) => {
     if (cloudLoadInFlightRef.current) return cloudLoadInFlightRef.current;
@@ -10709,22 +10654,55 @@ export default function OriginalGame({ user, onLogout }) {
       }
 
       try {
-        const [saveResult, resourceResult] = await Promise.all([
-          runCloudRequestWithRetry(() => supabase.rpc('load_cloud_game_save', {
+        let saveRow = null;
+        let resources = {};
+
+        if (!atomicCloudLoadUnavailableRef.current) {
+          const atomicLoadResult = await runCloudRequestWithRetry(() => supabase.rpc('load_cloud_game_state_with_resources', {
             p_user_id: targetUserId
-          })),
-          runCloudRequestWithRetry(() => supabase
-            .from('users')
-            .select('gold, energy, max_energy')
-            .eq('id', targetUserId)
-            .limit(1))
-        ]);
+          }));
 
-        if (saveResult.error) throw saveResult.error;
-        if (resourceResult.error) throw resourceResult.error;
+          if (atomicLoadResult.error) {
+            if (isMissingCloudRpcError(atomicLoadResult.error, 'load_cloud_game_state_with_resources')) {
+              atomicCloudLoadUnavailableRef.current = true;
+            } else {
+              throw atomicLoadResult.error;
+            }
+          } else {
+            const atomicRow = Array.isArray(atomicLoadResult.data) ? atomicLoadResult.data[0] : atomicLoadResult.data;
+            if (atomicRow) {
+              atomicCloudLoadUnavailableRef.current = false;
+              saveRow = {
+                game_data: atomicRow.game_data,
+                last_saved: atomicRow.last_saved,
+                save_revision: atomicRow.save_revision,
+              };
+              resources = {
+                gold: atomicRow.gold,
+                energy: atomicRow.energy,
+                max_energy: atomicRow.max_energy,
+              };
+            }
+          }
+        }
 
-        const saveRow = Array.isArray(saveResult.data) ? saveResult.data[0] : saveResult.data;
-        const resources = resourceResult.data?.[0] || {};
+        if (!saveRow) {
+          const [saveResult, resourceResult] = await Promise.all([
+            runCloudRequestWithRetry(() => supabase.rpc('load_cloud_game_save', {
+              p_user_id: targetUserId
+            })),
+            runCloudRequestWithRetry(() => supabase.rpc('get_user_resources', {
+              p_user_id: targetUserId
+            }))
+          ]);
+
+          if (saveResult.error) throw saveResult.error;
+          if (resourceResult.error) throw resourceResult.error;
+
+          saveRow = Array.isArray(saveResult.data) ? saveResult.data[0] : saveResult.data;
+          resources = Array.isArray(resourceResult.data) ? (resourceResult.data[0] || {}) : (resourceResult.data || {});
+        }
+
         const backendGold = typeof resources.gold === 'number'
           ? resources.gold
           : (typeof u?.gold === 'number' ? u.gold : DEFAULT_STARTING_GOLD);
@@ -10733,6 +10711,7 @@ export default function OriginalGame({ user, onLogout }) {
         if (!normalized) throw new Error('云端存档格式无效。');
         const mapContentMigrated = shouldPersistMapContentMigration(cloudGameData);
 
+        resetLocalBattleEventCompletionState();
         applyCloudGameDataRef.current(normalized, resources);
         cloudSaveRevisionRef.current = Number(saveRow?.save_revision) || getCloudSaveRevision(saveRow?.game_data);
         const normalizedSnapshot = JSON.stringify(createCloudSnapshot(normalized));
@@ -10776,7 +10755,7 @@ export default function OriginalGame({ user, onLogout }) {
       }
     }
     // 仅在登录用户切换（id 变）时重建。user.gold/energy 等通过 userRef 读，不再列依赖。
-  }, [user?.id]);
+  }, [resetLocalBattleEventCompletionState, user?.id]);
 
   const saveGameToCloud = useCallback(async ({ manual = false, force = false } = {}) => {
     if (!user?.id) {
@@ -11707,6 +11686,7 @@ export default function OriginalGame({ user, onLogout }) {
     });
 
     if (commitResult.success) {
+      gameAudio.playCaptureThrow();
       return true;
     }
 
@@ -11787,11 +11767,9 @@ export default function OriginalGame({ user, onLogout }) {
   const refreshGoldBalance = useCallback(async () => {
     if (!user?.id) return playerGold;
 
-    const { data, error } = await runCloudRequestWithRetry(() => supabase
-      .from('users')
-      .select('gold')
-      .eq('id', user.id)
-      .limit(1));
+    const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('get_user_resources', {
+      p_user_id: user.id
+    }));
 
     if (error) {
       console.error('Error refreshing gold:', error);
@@ -11799,7 +11777,8 @@ export default function OriginalGame({ user, onLogout }) {
       return playerGold;
     }
 
-    const latestGold = typeof data?.[0]?.gold === 'number' ? data[0].gold : playerGold;
+    const row = Array.isArray(data) ? (data[0] || {}) : (data || {});
+    const latestGold = typeof row.gold === 'number' ? row.gold : playerGold;
     setPlayerGold(latestGold);
     return latestGold;
   }, [user?.id, playerGold, addLog]);
@@ -11807,11 +11786,9 @@ export default function OriginalGame({ user, onLogout }) {
   const refreshPlayerResources = useCallback(async () => {
     if (!user?.id) return { gold: playerGold, energy: playerEnergy, maxEnergy };
 
-    const { data, error } = await runCloudRequestWithRetry(() => supabase
-      .from('users')
-      .select('gold, energy, max_energy')
-      .eq('id', user.id)
-      .limit(1));
+    const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('get_user_resources', {
+      p_user_id: user.id
+    }));
 
     if (error) {
       console.error('Error refreshing resources:', error);
@@ -11819,7 +11796,7 @@ export default function OriginalGame({ user, onLogout }) {
       return { gold: playerGold, energy: playerEnergy, maxEnergy };
     }
 
-    const row = data?.[0] || {};
+    const row = Array.isArray(data) ? (data[0] || {}) : (data || {});
     const latestGold = typeof row.gold === 'number' ? row.gold : playerGold;
     const latestEnergy = row.energy ?? DEFAULT_STARTING_ENERGY;
     const latestMaxEnergy = row.max_energy ?? DEFAULT_MAX_ENERGY;
@@ -11896,9 +11873,11 @@ export default function OriginalGame({ user, onLogout }) {
 	    let committedRewardGrowthPreview = rewardGrowthPreview;
 	    const atomicResult = await commitCloudSnapshotWithResources({
 	      buildSnapshot: (baseSnapshot) => {
+        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+        const rewardSnapshot = hydratedBattleSnapshot.snapshot;
 	        const rewardCompletionMeta = getConfiguredBattleCompletionMeta({
-	          snapshot: baseSnapshot,
-	          battleEnvironment,
+	          snapshot: rewardSnapshot,
+	          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
 	          fallbackMapName: currentMapName
 	        });
 	        const shouldApplyBattleCompletionWithRewards =
@@ -11906,9 +11885,9 @@ export default function OriginalGame({ user, onLogout }) {
 	          ['boss', 'trainer'].includes(rewardCompletionMeta.eventType) &&
 	          rewardCompletionMeta.eventId;
 	        const rewardCompletionResult = shouldApplyBattleCompletionWithRewards
-	          ? applyConfiguredBattleCompletionToWorld(baseSnapshot.world, rewardCompletionMeta)
+	          ? applyConfiguredBattleCompletionToWorld(rewardSnapshot.world, rewardCompletionMeta)
 	          : null;
-          let rewardPhaseWorld = rewardCompletionResult?.world || baseSnapshot.world;
+          let rewardPhaseWorld = rewardCompletionResult?.world || rewardSnapshot.world;
           if (
             shouldApplyBattleCompletionWithRewards &&
             isDailyVariantBattleEvent(rewardCompletionMeta.eventType, rewardCompletionMeta.eventRole) &&
@@ -11931,8 +11910,8 @@ export default function OriginalGame({ user, onLogout }) {
             rewardPhaseWorld = withUpdatedMapProgress(rewardPhaseWorld, rewardCompletionMeta.mapName);
           }
 	        const rewardGrowth = applyBattleRewardGrowth({
-	          playerTeam: baseSnapshot.playerTeam,
-	          pendingGrowthEvents: baseSnapshot.pendingGrowthEvents,
+	          playerTeam: rewardSnapshot.playerTeam,
+	          pendingGrowthEvents: rewardSnapshot.pendingGrowthEvents,
           participantIds: targetParticipantIds,
           totalExp: rewards.exp,
           getBaseMonsterDefinition
@@ -11944,11 +11923,11 @@ export default function OriginalGame({ user, onLogout }) {
           ...(rewards.gold > 0 ? ['获得了战斗奖励。'] : [])
         ];
 	        return {
-	          ...baseSnapshot,
+	          ...rewardSnapshot,
 	          world: rewardPhaseWorld,
 	          playerTeam: rewardGrowth.playerTeam,
 	          pendingGrowthEvents: rewardGrowth.pendingGrowthEvents,
-	          logs: appendSnapshotLogs(baseSnapshot, snapshotRewardLogs)
+	          logs: appendSnapshotLogs(rewardSnapshot, snapshotRewardLogs)
 	        };
       },
       goldDelta: rewards.gold,
@@ -11971,7 +11950,7 @@ export default function OriginalGame({ user, onLogout }) {
     addLog(atomicResult.message || '战斗奖励结算失败。');
     addNotification('战斗奖励保存失败，请重新读取。', 'error');
     return { ...rewardSummary, exp: 0, gold: 0, levelUps: [] };
-	  }, [activePlayerId, addLog, addNotification, battleEnvironment, battleKind, commitCloudSnapshotWithResources, currentMapName, getBaseMonsterDefinition, hasLoadedCloudSave, participatedMonIds, pendingGrowthEvents, playerTeam, scheduleLevelUpCelebrationsForTeam, user?.id]);
+	  }, [activePlayerId, addLog, addNotification, battleEnvironment, battleKind, commitCloudSnapshotWithResources, currentMapName, getBaseMonsterDefinition, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, participatedMonIds, pendingGrowthEvents, playerTeam, scheduleLevelUpCelebrationsForTeam, user?.id]);
 
   // ── 成长事件处理 ─────────────────────────────────────────────────────────────
 
@@ -12459,6 +12438,7 @@ export default function OriginalGame({ user, onLogout }) {
         max_energy: resetMaxEnergy,
       };
       activeBattleEnergyCostRef.current = 0;
+      resetLocalBattleEventCompletionState();
       applyCloudGameData(defaults, resetResources);
       latestCloudSnapshotRef.current = createCloudSnapshot(defaults);
       lastSavedSnapshotRef.current = '';
@@ -12479,11 +12459,12 @@ export default function OriginalGame({ user, onLogout }) {
     } finally {
       setIsResettingProgress(false);
     }
-  }, [applyCloudGameData, clearNotifications, isResettingProgress, user]);
+  }, [applyCloudGameData, clearNotifications, isResettingProgress, resetLocalBattleEventCompletionState, user]);
 
 
 	  async function finishEnemyDefeat(defeatedMon) {
 	    if (!defeatedMon) return;
+      gameAudio.playFaint({ side: 'enemy' });
 	    await addBattleLogAndWait(addLog, `${defeatedMon.name} 倒下了！`);
 
     const currentEnemyTeam = enemyTeam.map((mon) => (
@@ -12502,35 +12483,33 @@ export default function OriginalGame({ user, onLogout }) {
 
 		      const commitResult = await commitCloudSnapshot({
 		        buildSnapshot: (baseSnapshot) => {
-              const battleEventCompletion = getSnapshotBattleEventCompletion(baseSnapshot, battleEnvironment);
-              const phaseBattleEnvironment = battleEventCompletion && (baseSnapshot.battleEnvironment || battleEnvironment)
-                ? {
-                  ...normalizeBattleEnvironment(baseSnapshot.battleEnvironment || battleEnvironment),
-                  battleEventCompletion
-                }
-                : (baseSnapshot.battleEnvironment || battleEnvironment);
-		          const baseEnemyTeam = Array.isArray(baseSnapshot.enemyTeam) ? baseSnapshot.enemyTeam : [];
+              const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+              const phaseBattleEnvironment = hydratedBattleSnapshot.battleEnvironment;
+              const battleEventCompletion = hydratedBattleSnapshot.battleEventCompletion;
+              const committedSnapshot = hydratedBattleSnapshot.snapshot;
+		          const baseEnemyTeam = Array.isArray(committedSnapshot.enemyTeam) ? committedSnapshot.enemyTeam : [];
 		          const baseNextEnemy = baseEnemyTeam.find((mon) => mon.id === nextEnemy.id && hasBattleHp(mon));
 		          if (!baseNextEnemy) {
 	            return abortCloudSnapshotCommit('对手状态已变化，请重新读取。');
 	          }
-            const baseParticipantIds = Array.isArray(baseSnapshot.participatedMonIds)
-              ? baseSnapshot.participatedMonIds
+            const baseParticipantIds = Array.isArray(committedSnapshot.participatedMonIds)
+              ? committedSnapshot.participatedMonIds
               : [];
             const nextParticipantIds = battleKind === 'trainer'
-              ? [...new Set([...baseParticipantIds, baseSnapshot.activePlayerId].filter(Boolean))]
-              : [baseSnapshot.activePlayerId].filter(Boolean);
+              ? [...new Set([...baseParticipantIds, committedSnapshot.activePlayerId].filter(Boolean))]
+              : [committedSnapshot.activePlayerId].filter(Boolean);
 
 	          return {
-	            ...baseSnapshot,
+	            ...committedSnapshot,
 	            activeEnemyId: baseNextEnemy.id,
 	            participatedMonIds: nextParticipantIds,
 	            turn: 'player',
+              battleEnvironment: phaseBattleEnvironment,
               battlePhase: battleKind === 'trainer' ? 'sendout' : 'active',
               battlePhaseData: battleKind === 'trainer'
                 ? {
 	                  enemyMon: baseNextEnemy,
-	                  leadMonId: baseSnapshot.activePlayerId,
+	                  leadMonId: committedSnapshot.activePlayerId,
 	                  message: nextEnemyLog,
 	                  sendOutSide: 'enemy',
 	                  battleEnvironment: phaseBattleEnvironment,
@@ -12538,7 +12517,7 @@ export default function OriginalGame({ user, onLogout }) {
 	                }
 	                : null,
                 battleEventCompletion,
-		            logs: appendSnapshotLogs(baseSnapshot, [nextEnemyLog])
+		            logs: appendSnapshotLogs(committedSnapshot, [nextEnemyLog])
 		          };
 		        }
 	      });
@@ -12575,6 +12554,7 @@ export default function OriginalGame({ user, onLogout }) {
       let completedBattleEventLockKeys = [];
       let completedBattleEventWorld = null;
       let completedBattleEventMapName = null;
+      let completedBattleEventLocalOverrideMeta = null;
 
 	      if (!user?.id || !hasLoadedCloudSave) {
 	        addNotification('云端未就绪，暂不能结算胜利。', 'error');
@@ -12583,9 +12563,11 @@ export default function OriginalGame({ user, onLogout }) {
 
 		      const commitResult = await commitCloudSnapshot({
 		        buildSnapshot: (baseSnapshot) => {
+            const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+            const committedSnapshot = hydratedBattleSnapshot.snapshot;
 	          const completionMeta = getConfiguredBattleCompletionMeta({
-              snapshot: baseSnapshot,
-              battleEnvironment,
+              snapshot: committedSnapshot,
+              battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
               fallbackMapName: currentMapName
             });
             const eventMeta = completionMeta.eventMeta;
@@ -12604,9 +12586,9 @@ export default function OriginalGame({ user, onLogout }) {
             eventProps: completedEventProps,
             fallbackName: fallbackVictoryEnemyName
           });
-          let nextWorld = normalizeWorldState(baseSnapshot.world, {
-            currentMapName: baseSnapshot.currentMapName,
-            playerPos: baseSnapshot.playerPos
+          let nextWorld = normalizeWorldState(committedSnapshot.world, {
+            currentMapName: committedSnapshot.currentMapName,
+            playerPos: committedSnapshot.playerPos
           });
           const completionKey = getConfiguredBattleCompletionKey(completedEventType);
           const wasAlreadyCompleted = completedEventType === 'boss'
@@ -12614,10 +12596,12 @@ export default function OriginalGame({ user, onLogout }) {
             : completionKey
               ? hasMapScopedWorldEventId(nextWorld, completionKey, completedMapName, completedEventId)
               : true;
+          const allowRewardSaveCompletionReplay = completedEventType !== 'challenge';
           const wasPreCompletedByCurrentBattleRewardSave =
+            allowRewardSaveCompletionReplay &&
             wasAlreadyCompleted &&
-            baseSnapshot.view === 'battle' &&
-            baseSnapshot.battlePhase !== 'victory' &&
+            committedSnapshot.view === 'battle' &&
+            committedSnapshot.battlePhase !== 'victory' &&
             battleEventCompletion?.mapName === completedMapName &&
             battleEventCompletion?.eventType === completedEventType &&
             battleEventCompletion?.eventId === completedEventId;
@@ -12631,8 +12615,8 @@ export default function OriginalGame({ user, onLogout }) {
               3,
               Math.min(
                 6,
-                Array.isArray(baseSnapshot.enemyTeam) && baseSnapshot.enemyTeam.length > 0
-                  ? baseSnapshot.enemyTeam.length
+                Array.isArray(committedSnapshot.enemyTeam) && committedSnapshot.enemyTeam.length > 0
+                  ? committedSnapshot.enemyTeam.length
                   : currentEnemyTeam.length
               )
             )
@@ -12647,7 +12631,7 @@ export default function OriginalGame({ user, onLogout }) {
             if (!wasAlreadyCompleted) {
               nextWorld = completedEventType === 'boss'
                 ? appendCompletedBossEventIds(nextWorld, completedMapName, completedEventId)
-                : appendMapScopedWorldEventId(nextWorld, completionKey, completedMapName, completedEventId);
+                : appendBattleCompletionWorldEventId(nextWorld, completionKey, completedMapName, completedEventId);
             }
             eventRewardItems = normalizeMapRewardItems(completedEventProps.rewardItems);
             completionLogs = getBattleEventCompletionMessages({
@@ -12669,8 +12653,8 @@ export default function OriginalGame({ user, onLogout }) {
             const wasAlreadyDailyCompleted = hasDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);
             const wasDailyPreCompletedByCurrentBattleRewardSave =
               wasAlreadyDailyCompleted &&
-              baseSnapshot.view === 'battle' &&
-              baseSnapshot.battlePhase !== 'victory' &&
+              committedSnapshot.view === 'battle' &&
+              committedSnapshot.battlePhase !== 'victory' &&
               battleEventCompletion?.mapName === completedMapName &&
               battleEventCompletion?.eventType === completedEventType &&
               battleEventCompletion?.eventId === completedEventId;
@@ -12744,13 +12728,20 @@ export default function OriginalGame({ user, onLogout }) {
             eventId: completedEventId,
             eventRole: completedEventRole
           });
+          completedBattleEventLocalOverrideMeta = {
+            world: nextWorld,
+            mapName: completedMapName,
+            eventType: completedEventType,
+            eventId: completedEventId,
+            eventRole: completedEventRole
+          };
           completedBattleEventWorld = nextWorld;
           completedBattleEventMapName = completedMapName;
           completionNotifications = completionLogs;
           const finalEventRewardItems = mergeNormalizedMapRewardItems(eventRewardItems);
           const nextInventory = finalEventRewardItems.length > 0
-            ? mergeMapRewardItems(baseSnapshot.playerInventory, finalEventRewardItems)
-            : baseSnapshot.playerInventory;
+            ? mergeMapRewardItems(committedSnapshot.playerInventory, finalEventRewardItems)
+            : committedSnapshot.playerInventory;
           const victoryRewardSummary = {
             ...rewardSummary,
             items: finalEventRewardItems,
@@ -12758,15 +12749,18 @@ export default function OriginalGame({ user, onLogout }) {
           };
 
           return {
-	          ...baseSnapshot,
+	          ...committedSnapshot,
             world: nextWorld,
             playerInventory: nextInventory,
+            battleEnvironment: eventMeta && battleEventCompletion
+              ? { ...eventMeta, battleEventCompletion }
+              : (eventMeta || hydratedBattleSnapshot.battleEnvironment),
 	            playerTeam: battleKind === 'trainer'
-		            ? (Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : []).map((mon) => (
+		            ? (Array.isArray(committedSnapshot.playerTeam) ? committedSnapshot.playerTeam : []).map((mon) => (
 		              sanitizeBattleRuntime({ ...mon, currentHp: getMonsterMaxHp(mon), currentMp: getMonsterMaxMp(mon) })
 	            ))
-		            : baseSnapshot.playerTeam,
-	            logs: completionLogs.length > 0 ? appendSnapshotLogs(baseSnapshot, completionLogs) : baseSnapshot.logs,
+		            : committedSnapshot.playerTeam,
+	            logs: completionLogs.length > 0 ? appendSnapshotLogs(committedSnapshot, completionLogs) : committedSnapshot.logs,
 		          battlePhaseData: {
                 ...victoryPhaseData,
                 enemyName: victoryDisplayName,
@@ -12778,10 +12772,12 @@ export default function OriginalGame({ user, onLogout }) {
 		          battlePhase: 'victory'
 		        };
         }
-	      });
+      });
 
-	      if (commitResult.success) {
-          completedBattleEventLockKeys.forEach((key) => completedBattleEventLockRef.current.add(key));
+      if (commitResult.success) {
+        gameAudio.playVictory({ trainer: battleKind === 'trainer' });
+        completedBattleEventLockKeys.forEach((key) => completedBattleEventLockRef.current.add(key));
+        markCompletedBattleEventLocally(completedBattleEventLocalOverrideMeta || {});
           if (completedBattleEventWorld) {
             const syncedWorld = mergeMonotonicWorldProgress(worldRef.current, completedBattleEventWorld, {
               currentMapName: completedBattleEventMapName || currentMapName,
@@ -12836,10 +12832,15 @@ export default function OriginalGame({ user, onLogout }) {
 	    return false;
 	  }
 
-  const handlePlayerDefeatCheck = useCallback(async (faintedMon, currentPlayerTeam = playerTeam) => {
+  const handlePlayerDefeatCheck = useCallback(async (faintedMon, currentPlayerTeam = playerTeam, options = {}) => {
     if (!faintedMon) return false;
+    gameAudio.playFaint({ side: 'player' });
     await addBattleLogAndWait(addLog, `${faintedMon.name} 倒下了！`);
     const hasAlive = getAliveBattleBench(currentPlayerTeam, faintedMon.id).length > 0;
+    const delayedEnemySendOutMon = options?.delayedEnemySendOutMon
+      ? sanitizeBattleRuntime(normalizeMonsterAssetSource(options.delayedEnemySendOutMon))
+      : null;
+    const delayedEnemySendOutMessage = delayedEnemySendOutMon ? `对手派出了 ${delayedEnemySendOutMon.name}！` : '';
     if (!hasAlive) {
       await addBattleLogAndWait(addLog, '挑战失败。');
       await handleRecoverFromDefeat();
@@ -12850,22 +12851,34 @@ export default function OriginalGame({ user, onLogout }) {
 	      }
 	      const commitResult = await commitCloudSnapshot({
 	        buildSnapshot: (baseSnapshot) => {
+            const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+            const committedSnapshot = hydratedBattleSnapshot.snapshot;
 	          const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
-	          const baseActiveId = baseSnapshot.activePlayerId || faintedMon.id;
+	          const baseActiveId = committedSnapshot.activePlayerId || faintedMon.id;
 	          const baseActiveMon = baseTeam.find((mon) => mon.id === baseActiveId) || baseTeam.find((mon) => mon.id === faintedMon.id);
 	          const hasAvailableBench = getAliveBattleBench(baseTeam, baseActiveMon?.id || baseActiveId).length > 0;
 	          if (hasBattleHp(baseActiveMon) || !hasAvailableBench) {
-	            return baseSnapshot;
+	            return committedSnapshot;
 	          }
 
+            const queuedEnemySendOutPhaseData = buildQueuedEnemySendOutPhaseData({
+              enemyMon: delayedEnemySendOutMon,
+              leadMonId: baseActiveMon?.id || baseActiveId,
+              message: delayedEnemySendOutMessage,
+              battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+              battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+            });
+
 	          return {
-	            ...baseSnapshot,
+	            ...committedSnapshot,
 	            view: 'team',
-	            battlePhase: 'active',
-	            battlePhaseData: null,
+              battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+              battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+	            battlePhase: queuedEnemySendOutPhaseData ? 'sendout' : 'active',
+	            battlePhaseData: queuedEnemySendOutPhaseData,
 	            turn: 'player',
 	            pendingBattleSwitch: null,
-	            logs: appendSnapshotLogs(baseSnapshot, ['请选择一只宝可梦继续战斗。'])
+	            logs: appendSnapshotLogs(committedSnapshot, ['请选择一只宝可梦继续战斗。'])
 	          };
 	        }
 	      });
@@ -12880,7 +12893,7 @@ export default function OriginalGame({ user, onLogout }) {
 	      }
 	    }
 	    return true;
-	  }, [addLog, addNotification, commitCloudSnapshot, handleRecoverFromDefeat, hasLoadedCloudSave, playerTeam, user?.id]);
+	  }, [addLog, addNotification, battleEnvironment, commitCloudSnapshot, handleRecoverFromDefeat, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, playerTeam, user?.id]);
 
   const executeBattleMove = useCallback(async ({ attacker, defender, moveKey, attackerSide, canTargetStillAct = false }) => {
     const move = MOVES[moveKey];
@@ -12893,6 +12906,10 @@ export default function OriginalGame({ user, onLogout }) {
     const addResultLog = async (message) => {
       if (message) await addBattleLogAndWait(addLog, message);
     };
+    let damage = 0;
+    let effectiveness = 1;
+    let updatedDefender = withBattleRuntimeDefaults(defender);
+    let updatedAttacker = withBattleRuntimeDefaults(attacker);
     const playMovePhaseWithResult = async (phase, message, {
       targetSide = null,
       onImpact = null,
@@ -12909,6 +12926,17 @@ export default function OriginalGame({ user, onLogout }) {
         durationMs,
         onImpact: () => {
           onImpact?.();
+          if (phase === 'heal' || phase === 'drain') {
+            gameAudio.playBattleStatus('heal', 'recover');
+          } else if (phase === 'secondary' || phase === 'status') {
+            gameAudio.playBattleStatus(move?.status || move?.volatileStatus || (move?.category === 'status' ? 'buff' : 'status'));
+          } else if (phase === 'hit') {
+            gameAudio.playBattleImpact({ effectiveness, didHit: true, outcome: 'hit', targetFainted: updatedDefender?.currentHp <= 0 });
+          } else if (phase === 'fizzle') {
+            gameAudio.playBattleImpact({ effectiveness, didHit: effectiveness > 0, outcome: 'fizzle', targetFainted: false });
+          } else if (phase === 'miss') {
+            gameAudio.playBattleImpact({ didHit: false, outcome: 'miss' });
+          }
           if (message) {
             addLog(message);
             loggedAtImpact = true;
@@ -12926,8 +12954,32 @@ export default function OriginalGame({ user, onLogout }) {
       const readDelayMs = getBattleLogReadDelay(message, { minMs, maxMs, extraMs });
       await wait(Math.max(220, readDelayMs - visualReadOverlapMs));
     };
+    const markAttackerLastMove = (sourceMon) => {
+      const normalized = withBattleRuntimeDefaults(sourceMon);
+      const withLastMove = {
+        ...normalized,
+        volatileStatuses: {
+          ...(normalized.volatileStatuses || {}),
+          lastMoveKey: moveKey
+        }
+      };
+      updateBattleMonBySide({
+        side: attackerSide,
+        monId: attacker.id,
+        setPlayerTeam,
+        setEnemyTeam,
+        updater: (mon) => ({
+          ...mon,
+          volatileStatuses: {
+            ...(withLastMove.volatileStatuses || {})
+          }
+        })
+      });
+      return withLastMove;
+    };
 
     if (move.charge && !attacker.volatileStatuses?.chargingMove) {
+      gameAudio.playBattleMove(move);
       const chargingAttacker = {
         ...withBattleRuntimeDefaults(attacker),
         volatileStatuses: {
@@ -12957,6 +13009,7 @@ export default function OriginalGame({ user, onLogout }) {
     const attackerAfterCharge = attacker.volatileStatuses?.chargingMove === moveKey
       ? { ...attacker, volatileStatuses: { ...(attacker.volatileStatuses || {}), chargingMove: null } }
       : attacker;
+    gameAudio.playBattleMove(move);
     if (attacker.volatileStatuses?.chargingMove === moveKey) {
       updateBattleMonBySide({
         side: attackerSide,
@@ -12971,9 +13024,24 @@ export default function OriginalGame({ user, onLogout }) {
       });
     }
 
+    if (move.requiresUserStatus && attackerAfterCharge.status !== move.requiresUserStatus) {
+      await addResultLog(getUserStatusRequirementFailureMessage(move, attackerName));
+      return {
+        attacker: withBattleRuntimeDefaults(attackerAfterCharge),
+        defender: withBattleRuntimeDefaults(defender),
+        targetFainted: false,
+        actorFainted: false
+      };
+    }
+
     if (move.requiresTargetStatus && defender.status !== move.requiresTargetStatus) {
       await addResultLog(`${move.name} 需要目标处于${STATUS_LABELS[move.requiresTargetStatus] || move.requiresTargetStatus}状态。`);
-      return { targetFainted: false };
+      return {
+        attacker: withBattleRuntimeDefaults(attackerAfterCharge),
+        defender: withBattleRuntimeDefaults(defender),
+        targetFainted: false,
+        actorFainted: false
+      };
     }
 
     if (move.effect === 'mimic') {
@@ -13041,6 +13109,28 @@ export default function OriginalGame({ user, onLogout }) {
       };
     }
 
+    if (move.effect === 'teleport') {
+      const attackerWithLastMove = markAttackerLastMove(attackerAfterCharge);
+      const teleportEscaped = battleEscapeRule.canRun;
+      const message = teleportEscaped
+        ? `${attackerName} 使用 ${move.name} 脱离了战斗！`
+        : `${attackerName} 使用了 ${move.name}，但${battleEscapeRule.blockedReason || '当前战斗不能脱离。'}`;
+      await playMovePhaseWithResult(teleportEscaped ? 'status' : 'fizzle', message, {
+        targetSide: attackerSide,
+        minMs: 820,
+        maxMs: 1700,
+        extraMs: 80,
+      });
+      return {
+        attacker: attackerWithLastMove,
+        defender: withBattleRuntimeDefaults(defender),
+        targetFainted: false,
+        actorFainted: false,
+        escaped: teleportEscaped,
+        escapeSide: attackerSide
+      };
+    }
+
     if (!checkMoveHit(move, attackerAfterCharge, defender)) {
       updateBattleMonBySide({
         side: attackerSide,
@@ -13074,10 +13164,7 @@ export default function OriginalGame({ user, onLogout }) {
       };
     }
 
-    let damage = 0;
-    let effectiveness = 1;
-    let updatedDefender = withBattleRuntimeDefaults(defender);
-    let updatedAttacker = withBattleRuntimeDefaults(attackerAfterCharge);
+    updatedAttacker = withBattleRuntimeDefaults(attackerAfterCharge);
 
     if (move.effect === 'nothing') {
       await playMovePhaseWithResult('status', `${attackerName} 使用了 ${move.name}，但没有任何效果。`, {
@@ -13150,6 +13237,22 @@ export default function OriginalGame({ user, onLogout }) {
           extraMs: 100,
         });
       }
+    }
+
+    if (updatedDefender.currentHp > 0 && updatedDefender.status === 'freeze' && damage > 0 && isFreezeThawingMove(move)) {
+      updatedDefender = { ...updatedDefender, status: null, statusTurns: 0 };
+      await playMovePhaseWithResult('secondary', `${defenderName} 被火焰解冻了！`, {
+        targetSide: defenderSide,
+        onImpact: () => {
+          updateBattleMonBySide({
+            side: defenderSide,
+            monId: defender.id,
+            setPlayerTeam,
+            setEnemyTeam,
+            updater: (mon) => ({ ...mon, status: null, statusTurns: 0 })
+          });
+        }
+      });
     }
 
     if (move.effect === 'heal') {
@@ -13257,20 +13360,29 @@ export default function OriginalGame({ user, onLogout }) {
 
     const canApplyVolatileStatus = move.volatileStatus !== 'flinch' || canTargetStillAct;
     if (canApplySecondaryEffect && canApplyVolatileStatus && updatedDefender.currentHp > 0 && move.volatileStatus && rollChance(move.volatileChance ?? 100)) {
-      const defenderAfterVolatile = applyVolatileStatusToMon(updatedDefender, move.volatileStatus);
-      updatedDefender = defenderAfterVolatile;
-      await playMovePhaseWithResult(secondaryResultPhase, getStatusAppliedBattleMessage(defenderName, move.volatileStatus), {
-        targetSide: defenderSide,
-        onImpact: () => {
-          updateBattleMonBySide({
-            side: defenderSide,
-            monId: defender.id,
-            setPlayerTeam,
-            setEnemyTeam,
-            updater: (mon) => ({ ...mon, volatileStatuses: defenderAfterVolatile.volatileStatuses })
-          });
-        }
-      });
+      if (move.volatileStatus === 'confusion' && updatedDefender.volatileStatuses?.confusion) {
+        await playMovePhaseWithResult(secondaryResultPhase, `${defenderName} 已经混乱了。`, {
+          targetSide: defenderSide,
+          minMs: 820,
+          maxMs: 1900,
+          extraMs: 100,
+        });
+      } else {
+        const defenderAfterVolatile = applyVolatileStatusToMon(updatedDefender, move.volatileStatus);
+        updatedDefender = defenderAfterVolatile;
+        await playMovePhaseWithResult(secondaryResultPhase, getStatusAppliedBattleMessage(defenderName, move.volatileStatus), {
+          targetSide: defenderSide,
+          onImpact: () => {
+            updateBattleMonBySide({
+              side: defenderSide,
+              monId: defender.id,
+              setPlayerTeam,
+              setEnemyTeam,
+              updater: (mon) => ({ ...mon, volatileStatuses: defenderAfterVolatile.volatileStatuses })
+            });
+          }
+        });
+      }
     }
 
     for (const statChange of getMoveStatChanges(move)) {
@@ -13333,32 +13445,29 @@ export default function OriginalGame({ user, onLogout }) {
       actorFainted: updatedAttacker.currentHp <= 0,
       defender: updatedDefender
     };
-  }, [addLog, waitForBattleMoveVisual]);
+  }, [addLog, battleEscapeRule, waitForBattleMoveVisual]);
 
-  const chooseEnemyMove = useCallback((enemyMon, targetMon = activePlayerMon) => (
-    chooseBattleEnemyMove({
-      enemyMon,
-      targetMon,
-      battleKind,
-      trainerRole: battleEnvironment?.eventRole || 'normal'
-    })
-  ), [activePlayerMon, battleEnvironment?.eventRole, battleKind]);
-
-  const chooseEnemySwitchTarget = useCallback((enemyMon, targetMon = activePlayerMon) => (
-    chooseTrainerSwitchTarget({
+  const chooseEnemyAction = useCallback((enemyMon, targetMon = activePlayerMon, options = {}) => {
+    const battleLogs = Array.isArray(logsRef.current) ? logsRef.current : [];
+    const allowSwitch = options.allowSwitch !== false && !didPlayerJustSwitchOnLastBattleLog(battleLogs, targetMon);
+    return chooseTrainerBattleAction({
       enemyTeam,
       activeEnemyMon: enemyMon,
       targetMon,
       battleKind,
-      trainerRole: battleEnvironment?.eventRole || 'normal'
-    })
-  ), [activePlayerMon, battleEnvironment?.eventRole, battleKind, enemyTeam]);
+      trainerRole: battleEnvironment?.eventRole || 'normal',
+      trainerStyle: battleEnvironment?.trainerStyle || null,
+      battleLogs,
+      allowSwitch
+    });
+  }, [activePlayerMon, battleEnvironment?.eventRole, battleEnvironment?.trainerStyle, battleKind, enemyTeam]);
 
   const commitBattleRuntimeCheckpoint = useCallback(async ({
     playerMon = null,
     enemyMon = null,
     turn: nextTurn = 'resolving',
-    extraLogs = []
+    extraLogs = [],
+    snapshotPatch = {}
   } = {}) => {
     if (!user?.id || !hasLoadedCloudSave) {
       addNotification('云端未就绪，战斗暂停。', 'error');
@@ -13379,6 +13488,7 @@ export default function OriginalGame({ user, onLogout }) {
 
         return {
           ...baseSnapshot,
+          ...snapshotPatch,
           playerTeam: replaceMon(baseSnapshot.playerTeam, playerMon),
           enemyTeam: replaceMon(baseSnapshot.enemyTeam, enemyMon),
           turn: nextTurn,
@@ -13432,32 +13542,30 @@ export default function OriginalGame({ user, onLogout }) {
 
 	    const commitResult = await commitCloudSnapshot({
 	      buildSnapshot: (baseSnapshot) => {
-	        const battleEventCompletion = getSnapshotBattleEventCompletion(baseSnapshot, battleEnvironment);
-	        const phaseBattleEnvironment = battleEventCompletion && (baseSnapshot.battleEnvironment || battleEnvironment)
-	          ? {
-	            ...normalizeBattleEnvironment(baseSnapshot.battleEnvironment || battleEnvironment),
-	            battleEventCompletion
-	          }
-	          : (baseSnapshot.battleEnvironment || battleEnvironment);
-	        const baseEnemyTeam = Array.isArray(baseSnapshot.enemyTeam) ? baseSnapshot.enemyTeam : [];
+	        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+	        const phaseBattleEnvironment = hydratedBattleSnapshot.battleEnvironment;
+	        const battleEventCompletion = hydratedBattleSnapshot.battleEventCompletion;
+	        const committedSnapshot = hydratedBattleSnapshot.snapshot;
+	        const baseEnemyTeam = Array.isArray(committedSnapshot.enemyTeam) ? committedSnapshot.enemyTeam : [];
 	        const baseNextEnemy = baseEnemyTeam.find((mon) => mon.id === nextEnemy.id && hasBattleHp(mon));
         if (!baseNextEnemy) {
           return abortCloudSnapshotCommit('对手状态已变化，请重新读取。');
         }
         const liveLogs = Array.isArray(logsRef.current) && logsRef.current.length > 0
           ? logsRef.current
-          : appendSnapshotLogs(baseSnapshot, [recallLog]);
+          : appendSnapshotLogs(committedSnapshot, [recallLog]);
         const nextLogs = liveLogs[liveLogs.length - 1] === sendLog
           ? liveLogs
           : [...liveLogs, sendLog];
         return {
-          ...baseSnapshot,
+          ...committedSnapshot,
           activeEnemyId: baseNextEnemy.id,
+          battleEnvironment: phaseBattleEnvironment,
           turn: 'player',
           battlePhase: 'sendout',
           battlePhaseData: {
             enemyMon: baseNextEnemy,
-	            leadMonId: baseSnapshot.activePlayerId,
+	            leadMonId: committedSnapshot.activePlayerId,
 	            message: sendLog,
 	            sendOutSide: 'enemy',
 	            battleEnvironment: phaseBattleEnvironment,
@@ -13511,6 +13619,7 @@ export default function OriginalGame({ user, onLogout }) {
     battleKind,
     commitCloudSnapshot,
     hasLoadedCloudSave,
+    hydrateCommittedBattleSnapshot,
     resolveTrackedActiveBattleEnergyCost,
     user?.id
   ]);
@@ -13520,41 +13629,90 @@ export default function OriginalGame({ user, onLogout }) {
     const move = MOVES[moveKey];
     if (!move) return { actorFainted: false, targetFainted: false };
 
-    const turnStart = resolveTurnStart(enemyMon);
-    updateBattleMonBySide({
-      side: 'enemy',
-      monId: enemyMon.id,
-      setPlayerTeam,
-      setEnemyTeam,
-      updater: (mon) => ({ ...mon, ...turnStart.mon })
-    });
-    await addBattleLogsSequentially(addLog, turnStart.messages);
+    const turnStart = resolveTurnStart(enemyMon, moveKey);
+    const resolvedEnemyAfterTurnStart = turnStart.events.length > 0
+      ? (await playBattleStatusEvents({
+        side: 'enemy',
+        monId: enemyMon.id,
+        events: turnStart.events
+      })) || turnStart.mon
+      : turnStart.mon;
     if (turnStart.fainted) {
       const checkpointReady = await commitBattleRuntimeCheckpoint({
-        enemyMon: turnStart.mon,
+        enemyMon: resolvedEnemyAfterTurnStart,
         playerMon
       });
-      if (!checkpointReady) return { actorFainted: true, targetFainted: false, commitFailed: true };
-      await finishEnemyDefeat(turnStart.mon);
-      return { actorFainted: true, targetFainted: false };
+      if (!checkpointReady) {
+        return {
+          actorFainted: true,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedEnemyAfterTurnStart,
+          defender: playerMon
+        };
+      }
+      await finishEnemyDefeat(resolvedEnemyAfterTurnStart);
+      return {
+        actorFainted: true,
+        targetFainted: false,
+        attacker: resolvedEnemyAfterTurnStart,
+        defender: playerMon
+      };
     }
     if (!turnStart.canAct) {
       const checkpointReady = await commitBattleRuntimeCheckpoint({
-        enemyMon: turnStart.mon,
+        enemyMon: resolvedEnemyAfterTurnStart,
         playerMon
       });
-      if (!checkpointReady) return { actorFainted: false, targetFainted: false, commitFailed: true };
-      return { actorFainted: false, targetFainted: false };
+      if (!checkpointReady) {
+        return {
+          actorFainted: false,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedEnemyAfterTurnStart,
+          defender: playerMon
+        };
+      }
+      return {
+        actorFainted: false,
+        targetFainted: false,
+        attacker: resolvedEnemyAfterTurnStart,
+        defender: playerMon
+      };
     }
 
-    const isChargingRelease = turnStart.mon.volatileStatuses?.chargingMove === moveKey;
+    const userStatusRequirementMessage = getUserStatusRequirementFailureMessage(move, resolvedEnemyAfterTurnStart.name);
+    if (userStatusRequirementMessage && resolvedEnemyAfterTurnStart.status !== move.requiresUserStatus) {
+      await addBattleLogAndWait(addLog, userStatusRequirementMessage);
+      const checkpointReady = await commitBattleRuntimeCheckpoint({
+        enemyMon: resolvedEnemyAfterTurnStart,
+        playerMon
+      });
+      if (!checkpointReady) {
+        return {
+          actorFainted: false,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedEnemyAfterTurnStart,
+          defender: playerMon
+        };
+      }
+      return {
+        actorFainted: false,
+        targetFainted: false,
+        attacker: resolvedEnemyAfterTurnStart,
+        defender: playerMon
+      };
+    }
+
+    const isChargingRelease = resolvedEnemyAfterTurnStart.volatileStatuses?.chargingMove === moveKey;
     const moveCost = getMoveMpCost(move);
     const nextEnemyAfterCost = {
-      ...turnStart.mon,
-      currentMp: isChargingRelease ? turnStart.mon.currentMp : Math.max(0, turnStart.mon.currentMp - moveCost)
+      ...resolvedEnemyAfterTurnStart,
+      currentMp: isChargingRelease ? resolvedEnemyAfterTurnStart.currentMp : Math.max(0, resolvedEnemyAfterTurnStart.currentMp - moveCost)
     };
     setEnemyTeam((prev) => prev.map((m) => m.id === enemyMon.id ? { ...m, currentMp: nextEnemyAfterCost.currentMp } : m));
-    addLog(getBattleMoveUseMessage(`敌方 ${turnStart.mon.name}`, move.name, isChargingRelease));
+    addLog(getBattleMoveUseMessage(`敌方 ${resolvedEnemyAfterTurnStart.name}`, move.name, isChargingRelease));
 
     const result = await executeBattleMove({
       attacker: nextEnemyAfterCost,
@@ -13567,7 +13725,18 @@ export default function OriginalGame({ user, onLogout }) {
     const committedPlayer = withBattleRuntimeDefaults(result.defender || playerMon);
     const checkpointReady = await commitBattleRuntimeCheckpoint({
       enemyMon: committedEnemy,
-      playerMon: committedPlayer
+      playerMon: committedPlayer,
+      turn: result.escaped ? 'player' : 'resolving',
+      snapshotPatch: result.escaped
+        ? {
+          battlePhase: 'escape',
+          battlePhaseData: {
+            reason: 'teleport',
+            side: result.escapeSide || 'enemy',
+            actorName: committedEnemy.name
+          }
+        }
+        : {}
     });
     if (!checkpointReady) {
       return {
@@ -13578,26 +13747,26 @@ export default function OriginalGame({ user, onLogout }) {
         defender: committedPlayer
       };
     }
-
-    if (result.actorFainted) {
-      await finishEnemyDefeat(committedEnemy);
-      return { actorFainted: true, targetFainted: result.targetFainted };
-    }
-
-    if (result.targetFainted) {
-      const latestPlayerTeam = playerTeam.map((m) => m.id === playerMon.id ? committedPlayer : m);
-      if (await handlePlayerDefeatCheck(committedPlayer, latestPlayerTeam)) {
-        return { actorFainted: false, targetFainted: true };
-      }
+    if (result.escaped) {
+      setBattlePhase('escape');
+      setBattlePhaseData({
+        reason: 'teleport',
+        side: result.escapeSide || 'enemy',
+        actorName: committedEnemy.name
+      });
+      setTurn('player');
+      setBattleEnergyRefundEligible(false);
     }
 
     return {
       actorFainted: result.actorFainted,
       targetFainted: result.targetFainted,
+      escaped: Boolean(result.escaped),
+      escapeSide: result.escapeSide,
       attacker: committedEnemy,
       defender: committedPlayer
     };
-  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playerTeam]);
+  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
 
   const runPlayerAction = useCallback(async ({ playerMon, enemyMon, moveKey, canTargetStillAct = false }) => {
     if (!playerMon || !enemyMon || !moveKey) return { actorFainted: false, targetFainted: false };
@@ -13608,42 +13777,91 @@ export default function OriginalGame({ user, onLogout }) {
       return { actorFainted: true, targetFainted: false };
     }
 
-    const turnStart = resolveTurnStart(playerMon);
-    updateBattleMonBySide({
-      side: 'player',
-      monId: playerMon.id,
-      setPlayerTeam,
-      setEnemyTeam,
-      updater: (mon) => ({ ...mon, ...turnStart.mon })
-    });
-    await addBattleLogsSequentially(addLog, turnStart.messages);
+    const turnStart = resolveTurnStart(playerMon, moveKey);
+    const resolvedPlayerAfterTurnStart = turnStart.events.length > 0
+      ? (await playBattleStatusEvents({
+        side: 'player',
+        monId: playerMon.id,
+        events: turnStart.events
+      })) || turnStart.mon
+      : turnStart.mon;
     if (turnStart.fainted) {
       const checkpointReady = await commitBattleRuntimeCheckpoint({
-        playerMon: turnStart.mon,
+        playerMon: resolvedPlayerAfterTurnStart,
         enemyMon
       });
-      if (!checkpointReady) return { actorFainted: true, targetFainted: false, commitFailed: true };
-      await handlePlayerDefeatCheck(turnStart.mon);
-      return { actorFainted: true, targetFainted: false };
+      if (!checkpointReady) {
+        return {
+          actorFainted: true,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedPlayerAfterTurnStart,
+          defender: enemyMon
+        };
+      }
+      await handlePlayerDefeatCheck(resolvedPlayerAfterTurnStart);
+      return {
+        actorFainted: true,
+        targetFainted: false,
+        attacker: resolvedPlayerAfterTurnStart,
+        defender: enemyMon
+      };
     }
     if (!turnStart.canAct) {
       const checkpointReady = await commitBattleRuntimeCheckpoint({
-        playerMon: turnStart.mon,
+        playerMon: resolvedPlayerAfterTurnStart,
         enemyMon
       });
-      if (!checkpointReady) return { actorFainted: false, targetFainted: false, commitFailed: true };
-      return { actorFainted: false, targetFainted: false };
+      if (!checkpointReady) {
+        return {
+          actorFainted: false,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedPlayerAfterTurnStart,
+          defender: enemyMon
+        };
+      }
+      return {
+        actorFainted: false,
+        targetFainted: false,
+        attacker: resolvedPlayerAfterTurnStart,
+        defender: enemyMon
+      };
     }
 
-    const isChargingRelease = turnStart.mon.volatileStatuses?.chargingMove === moveKey;
+    const userStatusRequirementMessage = getUserStatusRequirementFailureMessage(move, resolvedPlayerAfterTurnStart.name);
+    if (userStatusRequirementMessage && resolvedPlayerAfterTurnStart.status !== move.requiresUserStatus) {
+      await addBattleLogAndWait(addLog, userStatusRequirementMessage);
+      const checkpointReady = await commitBattleRuntimeCheckpoint({
+        playerMon: resolvedPlayerAfterTurnStart,
+        enemyMon
+      });
+      if (!checkpointReady) {
+        return {
+          actorFainted: false,
+          targetFainted: false,
+          commitFailed: true,
+          attacker: resolvedPlayerAfterTurnStart,
+          defender: enemyMon
+        };
+      }
+      return {
+        actorFainted: false,
+        targetFainted: false,
+        attacker: resolvedPlayerAfterTurnStart,
+        defender: enemyMon
+      };
+    }
+
+    const isChargingRelease = resolvedPlayerAfterTurnStart.volatileStatuses?.chargingMove === moveKey;
     const moveCost = getMoveMpCost(move);
-    const nextMp = isChargingRelease ? turnStart.mon.currentMp : Math.max(0, turnStart.mon.currentMp - moveCost);
-    const actingPlayer = { ...turnStart.mon, currentMp: nextMp };
+    const nextMp = isChargingRelease ? resolvedPlayerAfterTurnStart.currentMp : Math.max(0, resolvedPlayerAfterTurnStart.currentMp - moveCost);
+    const actingPlayer = { ...resolvedPlayerAfterTurnStart, currentMp: nextMp };
     setPlayerTeam((prev) => prev.map((m) => {
       if (m.id !== playerMon.id) return m;
       return { ...m, currentMp: nextMp };
     }));
-    addLog(getBattleMoveUseMessage(turnStart.mon.name, move.name, isChargingRelease));
+    addLog(getBattleMoveUseMessage(resolvedPlayerAfterTurnStart.name, move.name, isChargingRelease));
 
     const result = await executeBattleMove({
       attacker: actingPlayer,
@@ -13656,7 +13874,18 @@ export default function OriginalGame({ user, onLogout }) {
     const committedEnemy = withBattleRuntimeDefaults(result.defender || enemyMon);
     const checkpointReady = await commitBattleRuntimeCheckpoint({
       playerMon: committedPlayer,
-      enemyMon: committedEnemy
+      enemyMon: committedEnemy,
+      turn: result.escaped ? 'player' : 'resolving',
+      snapshotPatch: result.escaped
+        ? {
+          battlePhase: 'escape',
+          battlePhaseData: {
+            reason: 'teleport',
+            side: result.escapeSide || 'player',
+            actorName: committedPlayer.name
+          }
+        }
+        : {}
     });
     if (!checkpointReady) {
       return {
@@ -13667,26 +13896,205 @@ export default function OriginalGame({ user, onLogout }) {
         defender: committedEnemy
       };
     }
-
-    if (result.targetFainted) {
-      await finishEnemyDefeat(committedEnemy);
-      return { actorFainted: result.actorFainted, targetFainted: true };
-    }
-
-    if (result.actorFainted) {
-      const latestPlayerTeam = playerTeam.map((m) => m.id === playerMon.id ? committedPlayer : m);
-      if (await handlePlayerDefeatCheck(committedPlayer, latestPlayerTeam)) {
-        return { actorFainted: true, targetFainted: false };
-      }
+    if (result.escaped) {
+      setBattlePhase('escape');
+      setBattlePhaseData({
+        reason: 'teleport',
+        side: result.escapeSide || 'player',
+        actorName: committedPlayer.name
+      });
+      setTurn('player');
+      setBattleEnergyRefundEligible(false);
     }
 
     return {
       actorFainted: result.actorFainted,
-      targetFainted: false,
+      targetFainted: result.targetFainted,
+      escaped: Boolean(result.escaped),
+      escapeSide: result.escapeSide,
       attacker: committedPlayer,
       defender: committedEnemy
     };
-  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playerTeam]);
+  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
+
+  const runEndOfTurnStatusResolution = useCallback(async ({ side, mon, opposingMon }) => {
+    if (!mon) {
+      return { mon, fainted: false, commitFailed: false };
+    }
+
+    const endOfTurn = resolveTurnEnd(mon);
+    if (!endOfTurn.events.length) {
+      return {
+        mon: endOfTurn.mon || withBattleRuntimeDefaults(mon),
+        fainted: Boolean(endOfTurn.fainted),
+        commitFailed: false
+      };
+    }
+
+    const resolvedMon = (await playBattleStatusEvents({
+      side,
+      monId: mon.id,
+      events: endOfTurn.events
+    })) || endOfTurn.mon || withBattleRuntimeDefaults(mon);
+
+    const resolvedSelf = withBattleRuntimeDefaults(resolvedMon);
+    const resolvedOpponent = withBattleRuntimeDefaults(opposingMon);
+    const checkpointReady = await commitBattleRuntimeCheckpoint({
+      playerMon: side === 'player' ? resolvedSelf : resolvedOpponent,
+      enemyMon: side === 'enemy' ? resolvedSelf : resolvedOpponent,
+    });
+
+    if (!checkpointReady) {
+      return {
+        mon: resolvedSelf,
+        fainted: resolvedSelf.currentHp <= 0,
+        commitFailed: true
+      };
+    }
+
+    return { mon: resolvedSelf, fainted: resolvedSelf.currentHp <= 0, commitFailed: false };
+  }, [
+    commitBattleRuntimeCheckpoint,
+    playBattleStatusEvents
+  ]);
+
+  const resolveTurnAfterFaint = useCallback(async ({
+    playerMon = null,
+    enemyMon = null,
+    playerFainted = false,
+    enemyFainted = false,
+  } = {}) => {
+    let latestPlayer = playerMon ? withBattleRuntimeDefaults(playerMon) : null;
+    let latestEnemy = enemyMon ? withBattleRuntimeDefaults(enemyMon) : null;
+    let pendingPlayerFaint = Boolean(playerFainted || latestPlayer?.currentHp <= 0);
+    let pendingEnemyFaint = Boolean(enemyFainted || latestEnemy?.currentHp <= 0);
+
+    const finalizeResolvedFaints = async () => {
+      if (pendingPlayerFaint && pendingEnemyFaint && latestPlayer && latestEnemy) {
+        const latestPlayerTeam = playerTeam.map((teamMon) => (
+          teamMon.id === latestPlayer.id ? latestPlayer : teamMon
+        ));
+        const playerHasBench = getAliveBattleBench(latestPlayerTeam, latestPlayer.id).length > 0;
+        const latestEnemyTeam = enemyTeam.map((teamMon) => (
+          teamMon.id === latestEnemy.id ? latestEnemy : teamMon
+        ));
+        const enemyHasBench = latestEnemyTeam.some((teamMon) => teamMon.id !== latestEnemy.id && hasBattleHp(teamMon));
+
+        if (!playerHasBench) {
+          await handlePlayerDefeatCheck(latestPlayer, latestPlayerTeam);
+        } else if (!enemyHasBench) {
+          await finishEnemyDefeat(latestEnemy);
+        } else {
+          const nextEnemy = latestEnemyTeam.find((teamMon) => teamMon.id !== latestEnemy.id && hasBattleHp(teamMon)) || null;
+          await handlePlayerDefeatCheck(latestPlayer, latestPlayerTeam, {
+            delayedEnemySendOutMon: nextEnemy
+          });
+        }
+
+        return {
+          commitFailed: false,
+          playerMon: latestPlayer,
+          enemyMon: latestEnemy,
+          playerFainted: true,
+          enemyFainted: true
+        };
+      }
+
+      if (pendingEnemyFaint && latestEnemy) {
+        await finishEnemyDefeat(latestEnemy);
+        return {
+          commitFailed: false,
+          playerMon: latestPlayer,
+          enemyMon: latestEnemy,
+          playerFainted: pendingPlayerFaint,
+          enemyFainted: true
+        };
+      }
+
+      if (pendingPlayerFaint && latestPlayer) {
+        const latestPlayerTeam = playerTeam.map((teamMon) => (
+          teamMon.id === latestPlayer.id ? latestPlayer : teamMon
+        ));
+        await handlePlayerDefeatCheck(latestPlayer, latestPlayerTeam);
+        return {
+          commitFailed: false,
+          playerMon: latestPlayer,
+          enemyMon: latestEnemy,
+          playerFainted: true,
+          enemyFainted: pendingEnemyFaint
+        };
+      }
+
+      return {
+        commitFailed: false,
+        playerMon: latestPlayer,
+        enemyMon: latestEnemy,
+        playerFainted: false,
+        enemyFainted: false
+      };
+    };
+
+    if (!pendingPlayerFaint && !pendingEnemyFaint && latestPlayer && latestEnemy) {
+      const endOfTurnOrder = determineBattleEndOfTurnSideOrder(latestPlayer, latestEnemy);
+      for (const side of endOfTurnOrder) {
+        if (side === 'player' && !pendingPlayerFaint && latestPlayer.currentHp > 0) {
+          const playerEndResult = await runEndOfTurnStatusResolution({
+            side: 'player',
+            mon: latestPlayer,
+            opposingMon: latestEnemy
+          });
+          if (playerEndResult.commitFailed) {
+            return { commitFailed: true };
+          }
+          latestPlayer = playerEndResult.mon || latestPlayer;
+          pendingPlayerFaint = playerEndResult.fainted || latestPlayer.currentHp <= 0;
+        }
+
+        if (side === 'enemy' && !pendingEnemyFaint && latestEnemy.currentHp > 0) {
+          const enemyEndResult = await runEndOfTurnStatusResolution({
+            side: 'enemy',
+            mon: latestEnemy,
+            opposingMon: latestPlayer
+          });
+          if (enemyEndResult.commitFailed) {
+            return { commitFailed: true };
+          }
+          latestEnemy = enemyEndResult.mon || latestEnemy;
+          pendingEnemyFaint = enemyEndResult.fainted || latestEnemy.currentHp <= 0;
+        }
+      }
+
+      return finalizeResolvedFaints();
+    }
+
+    if (!pendingPlayerFaint && latestPlayer) {
+      const playerEndResult = await runEndOfTurnStatusResolution({
+        side: 'player',
+        mon: latestPlayer,
+        opposingMon: latestEnemy
+      });
+      if (playerEndResult.commitFailed) {
+        return { commitFailed: true };
+      }
+      latestPlayer = playerEndResult.mon || latestPlayer;
+      pendingPlayerFaint = playerEndResult.fainted || latestPlayer.currentHp <= 0;
+    }
+
+    if (!pendingEnemyFaint && latestEnemy) {
+      const enemyEndResult = await runEndOfTurnStatusResolution({
+        side: 'enemy',
+        mon: latestEnemy,
+        opposingMon: latestPlayer
+      });
+      if (enemyEndResult.commitFailed) {
+        return { commitFailed: true };
+      }
+      latestEnemy = enemyEndResult.mon || latestEnemy;
+      pendingEnemyFaint = enemyEndResult.fainted || latestEnemy.currentHp <= 0;
+    }
+
+    return finalizeResolvedFaints();
+  }, [enemyTeam, finishEnemyDefeat, handlePlayerDefeatCheck, playerTeam, runEndOfTurnStatusResolution]);
 
   const handleTurn = useCallback(async (moveKey) => {
     if (turn !== 'player' || gameOver) return;
@@ -13798,7 +14206,45 @@ export default function OriginalGame({ user, onLogout }) {
       return;
     }
 
-      const enemyMoveKey = chooseEnemyMove(currentEnemy, currentPlayer);
+      const enemyAction = chooseEnemyAction(currentEnemy, currentPlayer);
+      if (enemyAction.type === 'switch' && enemyAction.target) {
+        const intentMessage = getEnemyAiSwitchIntentMessage(enemyAction);
+        if (intentMessage) {
+          await addBattleLogAndWait(addLog, intentMessage, {
+            minMs: 620,
+            maxMs: 1120,
+            extraMs: 60,
+          });
+        }
+        const switchResult = await runEnemyTrainerSwitch({
+          enemyMon: currentEnemy,
+          nextEnemy: enemyAction.target,
+          playerMon: currentPlayer
+        });
+        if (switchResult.commitFailed) return;
+        const switchedEnemy = switchResult.enemy || enemyAction.target;
+        const playerResult = await runPlayerAction({
+          playerMon: currentPlayer,
+          enemyMon: switchedEnemy,
+          moveKey: playerMoveKey,
+          canTargetStillAct: false
+        });
+        if (playerResult.commitFailed) return;
+        if (playerResult.escaped) return;
+        const postSwitchTurnResult = await resolveTurnAfterFaint({
+          playerMon: playerResult.attacker || currentPlayer,
+          enemyMon: playerResult.defender || switchedEnemy,
+          playerFainted: playerResult.actorFainted,
+          enemyFainted: playerResult.targetFainted
+        });
+        if (postSwitchTurnResult.commitFailed || postSwitchTurnResult.playerFainted || postSwitchTurnResult.enemyFainted) return;
+        if (!gameOver) {
+          await restorePlayerTurn();
+        }
+        return;
+      }
+
+      const enemyMoveKey = enemyAction.moveKey;
       if (!enemyMoveKey) {
         const playerResult = await runPlayerAction({
           playerMon: currentPlayer,
@@ -13806,7 +14252,14 @@ export default function OriginalGame({ user, onLogout }) {
           moveKey: playerMoveKey
         });
         if (playerResult.commitFailed) return;
-        if (!playerResult.targetFainted && !playerResult.actorFainted) {
+        if (playerResult.escaped) return;
+        const noEnemyActionTurnResult = await resolveTurnAfterFaint({
+          playerMon: playerResult.attacker || currentPlayer,
+          enemyMon: playerResult.defender || currentEnemy,
+          playerFainted: playerResult.actorFainted,
+          enemyFainted: playerResult.targetFainted
+        });
+        if (!noEnemyActionTurnResult.commitFailed && !noEnemyActionTurnResult.playerFainted && !noEnemyActionTurnResult.enemyFainted) {
           if (!gameOver) {
             await restorePlayerTurn(`敌方 ${currentEnemy.name} 技能值不足，无法行动!`);
           }
@@ -13822,6 +14275,9 @@ export default function OriginalGame({ user, onLogout }) {
       });
       let latestPlayer = currentPlayer;
       let latestEnemy = currentEnemy;
+      let playerFaintedThisTurn = false;
+      let enemyFaintedThisTurn = false;
+      let battleEscapedThisTurn = false;
 
       for (const side of actionOrder) {
         if (side === 'player') {
@@ -13832,27 +14288,18 @@ export default function OriginalGame({ user, onLogout }) {
             canTargetStillAct: actionOrder.indexOf('enemy') > actionOrder.indexOf('player')
           });
           if (playerResult.commitFailed) return;
-          if (playerResult.actorFainted || playerResult.targetFainted) return;
+          if (playerResult.escaped) {
+            battleEscapedThisTurn = true;
+            break;
+          }
           latestPlayer = playerResult.attacker || latestPlayer;
           latestEnemy = playerResult.defender || latestEnemy;
-        } else {
-          const suppressReactiveEnemySwitch = didPlayerJustSwitchOnLastBattleLog(logsRef.current, latestPlayer);
-          const switchTarget = suppressReactiveEnemySwitch
-            ? null
-            : chooseEnemySwitchTarget(latestEnemy, latestPlayer);
-          if (switchTarget) {
-            const switchResult = await runEnemyTrainerSwitch({
-              enemyMon: latestEnemy,
-              nextEnemy: switchTarget,
-              playerMon: latestPlayer
-            });
-            if (switchResult.commitFailed) return;
-            if (switchResult.switched) {
-              latestEnemy = switchResult.enemy || switchTarget;
-              continue;
-            }
+          if (playerResult.actorFainted || playerResult.targetFainted) {
+            playerFaintedThisTurn = playerResult.actorFainted;
+            enemyFaintedThisTurn = playerResult.targetFainted;
+            break;
           }
-
+        } else {
           const enemyResult = await runEnemyAction({
             enemyMon: latestEnemy,
             playerMon: latestPlayer,
@@ -13860,11 +14307,28 @@ export default function OriginalGame({ user, onLogout }) {
             canTargetStillAct: actionOrder.indexOf('player') > actionOrder.indexOf('enemy')
           });
           if (enemyResult.commitFailed) return;
-          if (enemyResult.actorFainted || enemyResult.targetFainted) return;
+          if (enemyResult.escaped) {
+            battleEscapedThisTurn = true;
+            break;
+          }
           latestEnemy = enemyResult.attacker || latestEnemy;
           latestPlayer = enemyResult.defender || latestPlayer;
+          if (enemyResult.actorFainted || enemyResult.targetFainted) {
+            enemyFaintedThisTurn = enemyResult.actorFainted;
+            playerFaintedThisTurn = enemyResult.targetFainted;
+            break;
+          }
         }
       }
+      if (battleEscapedThisTurn) return;
+
+      const postTurnResult = await resolveTurnAfterFaint({
+        playerMon: latestPlayer,
+        enemyMon: latestEnemy,
+        playerFainted: playerFaintedThisTurn,
+        enemyFainted: enemyFaintedThisTurn
+      });
+      if (postTurnResult.commitFailed || postTurnResult.playerFainted || postTurnResult.enemyFainted) return;
 
       if (!gameOver) {
         await restorePlayerTurn();
@@ -13877,7 +14341,7 @@ export default function OriginalGame({ user, onLogout }) {
     } finally {
       battleTurnInFlightRef.current = false;
     }
-  }, [activeEnemyMon, activePlayerMon, addLog, addNotification, chooseEnemyMove, chooseEnemySwitchTarget, commitCloudSnapshot, gameOver, handlePlayerDefeatCheck, hasLoadedCloudSave, playerTeam, resolveTrackedActiveBattleEnergyCost, runEnemyAction, runEnemyTrainerSwitch, runPlayerAction, turn, user?.id]);
+  }, [activeEnemyMon, activePlayerMon, addLog, addNotification, chooseEnemyAction, commitCloudSnapshot, gameOver, handlePlayerDefeatCheck, hasLoadedCloudSave, playerTeam, resolveTrackedActiveBattleEnergyCost, resolveTurnAfterFaint, runEnemyAction, runEnemyTrainerSwitch, runPlayerAction, turn, user?.id]);
 
 const handleEncounter = useCallback(async (encounterPayload) => {
     const payload =
@@ -13979,6 +14443,11 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       energyReason: `战斗消耗（${getMapConfig(currentMapName).displayName}）`
     });
     if (atomicResult.success) {
+      gameAudio.playEncounter({
+        boss: Boolean(rareEncounter?.bossRare),
+        challenge: Boolean(rareEncounter?.challengeRare),
+        rare: Boolean(rareEncounter?.rare)
+      });
       activeBattleEnergyCostRef.current = energyCost;
       setActiveBattleEnergyCost(energyCost);
       setBattleEnergyRefundEligible(true);
@@ -14062,7 +14531,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         goldDelta: -totalPrice,
         goldReason: `购买${itemDetails.name}`
       });
-      if (atomicResult.success) return purchaseSuccess;
+      if (atomicResult.success) {
+        gameAudio.playItemUse({ category: 'shop' });
+        return purchaseSuccess;
+      }
       addLog(`商店: ${atomicResult.message || '购买失败。'}`);
       addNotification(
         atomicResult.message || '购买失败，请重试。',
@@ -14288,6 +14760,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         quantity
       });
       addNotification(rewardMessage, 'item');
+      gameAudio.playItemUse({ category: 'pickup' });
       return true;
     }
 
@@ -14420,6 +14893,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       }
 
       addNotification('甜甜蜜果已采集，全队恢复。', 'item');
+      gameAudio.playItemUse({ category: 'berry' });
       return true;
     }
 
@@ -14486,8 +14960,34 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         eventId: battleEventId,
         eventRole: battleEventRole
       });
+      const localCompletedBattleEventVisualState = getCompletedBattleEventVisualOverride(
+        completedBattleEventVisualOverridesRef.current,
+        {
+          world: interactionWorld,
+          mapName: currentMapName,
+          eventId: battleEventId
+        }
+      );
+      const completedBattleEventInfoText = getConfiguredBattleEventInfoMessage({
+        mapName: currentMapName,
+        world: interactionWorld,
+        event: battleMapEvent || mapEvent,
+        visualState: localCompletedBattleEventVisualState
+      });
+
+      if (['daily_complete', 'cleared', 'completed'].includes(localCompletedBattleEventVisualState?.status)) {
+        addNotification(completedBattleEventInfoText || `${eventName}已完成。`, 'info');
+        return false;
+      }
 
       if (battleEventCompletedLockKeys.some((key) => completedBattleEventLockRef.current.has(key))) {
+        markCompletedBattleEventLocally({
+          world: interactionWorld,
+          mapName: currentMapName,
+          eventType: battleEventType,
+          eventId: battleEventId,
+          eventRole: battleEventRole
+        });
         worldRef.current = mergeMonotonicWorldProgress(worldRef.current, interactionWorld, {
           currentMapName,
           playerPos: playerPosRef.current || playerPos
@@ -14504,11 +15004,25 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       }
 
       if (isDailyVariantBattle && battleEventId && hasDailyTrainerBattleEvent(interactionWorld, currentMapName, battleEventId)) {
+        markCompletedBattleEventLocally({
+          world: interactionWorld,
+          mapName: currentMapName,
+          eventType: battleEventType,
+          eventId: battleEventId,
+          eventRole: battleEventRole
+        });
         addNotification(getDailyTrainerBlockedText({ eventName, properties: battleEventProps }), 'info');
         return false;
       }
 
       if (!isDailyScalingTrainer && battleEventType !== 'challenge' && isCompletedBattleEvent) {
+        markCompletedBattleEventLocally({
+          world: interactionWorld,
+          mapName: currentMapName,
+          eventType: battleEventType,
+          eventId: battleEventId,
+          eventRole: battleEventRole
+        });
         const completedWorld = mergeMonotonicWorldProgress(worldRef.current, interactionWorld, {
           currentMapName,
           playerPos: playerPosRef.current || playerPos
@@ -14536,16 +15050,33 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           return false;
         }
       }
-      const resolvedTeamConfig = isDailyVariantBattle
+      const currentMapConfig = getMapConfig(currentMapName);
+      const bossLevelCap = getMapBossLevelCap(currentMapName);
+      const playerAvgLevel = getPlayerAverageLevel(playerTeam);
+      const battleLeadId = resolveBattleLeadId(playerTeam);
+      const battleLeadMon = playerTeam.find((mon) => mon.id === battleLeadId) || playerTeam[0];
+      const playerPressureLevel = getTrainerBattlePressureLevel({
+        playerAverageLevel: playerAvgLevel,
+        leadLevel: battleLeadMon?.level
+      });
+      const baseResolvedTeamConfig = isDailyVariantBattle
         ? resolveDailyBattleTeamConfig(battleEventProps.team, {
           mapName: currentMapName,
           world: interactionWorld,
           eventId: battleEventId,
           eventType: battleEventType,
           role: battleEventRole,
-          challengeRarePool: battleEventProps.challengeRarePool
+          challengeRarePool: battleEventProps.challengeRarePool,
+          dailyVariantSpeciesIds: battleEventProps.dailyVariantSpeciesIds,
+          dailyVariantLevelJitter: battleEventProps.dailyVariantLevelJitter
         })
         : battleEventProps.team;
+      const resolvedTeamConfig = rebalanceTrainerBattleTeamLevels(baseResolvedTeamConfig, {
+        role: battleEventRole,
+        mapConfig: currentMapConfig,
+        bossLevelCap,
+        playerLevel: playerPressureLevel
+      });
       const energyCost = getBattleEnergyCost({ battleKind: 'trainer', mapLevel });
       const shouldStartBattleImmediately = battleEventType !== 'challenge' || context.skipBattleConfirm;
       let battleEventStartLockHeld = false;
@@ -14619,9 +15150,6 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
-      const playerAvgLevel = getPlayerAverageLevel(playerTeam);
-      const battleLeadId = resolveBattleLeadId(playerTeam);
-      const battleLeadMon = playerTeam.find((mon) => mon.id === battleLeadId) || playerTeam[0];
       let newTeam = buildConfiguredOpponentTeam(resolvedTeamConfig, battleEventId || battleEventType);
       if (newTeam.length === 0) {
         const fallbackLevelBonus = isDailyVariantBattle
@@ -14630,16 +15158,16 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         const fallbackLevelCap = isDailyVariantBattle
           ? getTrainerDifficultyBounds({
             role: battleEventRole,
-            mapConfig: getMapConfig(currentMapName),
-            bossLevelCap: getMapBossLevelCap(currentMapName)
+            mapConfig: currentMapConfig,
+            bossLevelCap
           }).maxLevel
           : 100;
         newTeam = buildFallbackOpponentTeam({
           role: battleEventRole,
           eventId: battleEventId || battleEventType,
           currentMapName,
-          playerAverageLevel: playerAvgLevel,
-          mapRecommendedLevel: getMapConfig(currentMapName).recommendedLevel || mapLevel,
+          playerAverageLevel: playerPressureLevel,
+          mapRecommendedLevel: currentMapConfig.recommendedLevel || mapLevel,
           levelBonus: fallbackLevelBonus,
           levelCap: fallbackLevelCap
         });
@@ -14657,7 +15185,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       const battleEnvironment = createBattleEnvironment({
         battleKind: 'trainer',
         currentMapName,
-        mapInfo: getMapConfig(currentMapName).displayName,
+        mapInfo: currentMapConfig.displayName,
         zoneId: battleEventId || 'trainer_challenge',
         zoneName: eventName,
         terrainType: battleEventType,
@@ -14665,6 +15193,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         eventId: battleEventId,
         eventType: battleEventType,
         eventRole: battleEventRole,
+        trainerStyle: battleEventProps.battleStyle || null,
         eventName,
         eventTitle: battleEventProps.title || roleBalance.label,
         introText: battleIntroText,
@@ -14702,6 +15231,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       energyReason: `战斗消耗（${eventName}）`
       });
       if (atomicResult.success) {
+        gameAudio.playEncounter({ trainer: true, challenge: battleEventType === 'challenge', boss: battleEventType === 'boss' });
         activeBattleEnergyCostRef.current = energyCost;
         setActiveBattleEnergyCost(energyCost);
         setBattleEnergyRefundEligible(false);
@@ -14719,7 +15249,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     return false;
-  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, hasLoadedCloudSave, mapLevel, pendingFastTravel, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
+  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, hasLoadedCloudSave, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
 
   const handleCancelBattleEventConfirm = useCallback(() => {
     if (battleEventConfirmBusy) return;
@@ -14803,7 +15333,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
               })
             )),
             mapGrid: baseSnapshot.mapGrid,
-            logs: appendSnapshotLogs(baseSnapshot, [`地图: ${springName}消耗 ${healCost} 金币，队伍全员体力与技能值已恢复。`])
+            logs: appendSnapshotLogs(baseSnapshot, [`地图: ${springName}消耗 ${healCost} 金币，队伍全员体力、技能值与异常状态已恢复。`])
           };
         },
         goldDelta: -healCost,
@@ -14814,6 +15344,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(commitResult.message || '恢复失败，请重试。', commitResult.requiresReload ? 'error' : 'warning');
         return;
       }
+      gameAudio.playHeal({ strong: true });
 
       setPendingSpringRestoreConfirm(null);
       const nextAnimation = {
@@ -14829,7 +15360,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       springRestoreAnimationTimerRef.current = window.setTimeout(() => {
         setSpringRestoreAnimation((current) => current?.id === nextAnimation.id ? null : current);
       }, 2600);
-      addNotification(`${springName}已恢复全队。`, 'info');
+      addNotification(`${springName}已恢复全队并解除异常。`, 'info');
     } finally {
       setSpringRestoreBusy(false);
     }
@@ -14872,8 +15403,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       playerTeam
     });
     if (lockState.locked) {
-      setPendingFastTravel((current) => current ? { ...current, error: lockState.reason || '该区域暂未解锁。' } : current);
-      addNotification(lockState.reason || '该区域暂未解锁。', 'warning');
+      setPendingFastTravel((current) => current ? { ...current, error: lockState.reason || '未解锁' } : current);
+      addNotification(lockState.reason || '未解锁', 'warning');
       return;
     }
     if (!user?.id || !hasLoadedCloudSave) {
@@ -14966,6 +15497,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(message, commitResult.requiresReload ? 'error' : 'warning');
         return;
       }
+      gameAudio.playTravel({ kind: 'fast' });
 
       setFastTravelTransitTarget((current) => current?.id === transitId ? {
         ...current,
@@ -15055,6 +15587,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (notificationMessage) {
         addNotification(notificationMessage, notificationType);
       }
+      gameAudio.playUiConfirm();
       return true;
     }
 
@@ -15168,6 +15701,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
+      gameAudio.playItemUse({ category: 'potion' });
       return true;
     }
 
@@ -15197,7 +15731,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
 
       const commitResult = await commitCloudSnapshot({
         buildSnapshot: (baseSnapshot) => {
-          const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam.map(clearTemporaryBattleRuntime) : [];
+          const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam.map(clearBattleExitRuntime) : [];
           const baseStorageBox = Array.isArray(baseSnapshot.storageBox) ? baseSnapshot.storageBox : [];
           const baseActivePlayerId = resolveDefaultActivePlayerId(baseTeam, baseSnapshot.activePlayerId);
           const rosterResult = acquireMonster({
@@ -15232,6 +15766,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (commitResult.success) {
         activeBattleEnergyCostRef.current = 0;
         setBattleEnergyRefundEligible(false);
+        gameAudio.playCaptureSuccess();
         if (result.pokemonName && !commitResult.saveRow?.game_data?.pendingMonsterAcquisition) {
           addNotification(`${result.pokemonName} 已加入队伍。`, 'item');
         }
@@ -15264,6 +15799,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
+      gameAudio.playCaptureFail();
       return;
     }
 
@@ -15286,15 +15822,18 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     let completedBattleEventLockKeys = [];
     let completedBattleEventWorld = null;
     let completedBattleEventMapName = null;
+    let completedBattleEventLocalOverrideMeta = null;
 
     const commitResult = await commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => {
+        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+        const committedSnapshot = hydratedBattleSnapshot.snapshot;
         const completionMeta = getConfiguredBattleCompletionMeta({
-          snapshot: baseSnapshot,
-          battleEnvironment,
+          snapshot: committedSnapshot,
+          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
           fallbackMapName: currentMapName
         });
-        const completionResult = applyConfiguredBattleCompletionToWorld(baseSnapshot.world, completionMeta);
+        const completionResult = applyConfiguredBattleCompletionToWorld(committedSnapshot.world, completionMeta);
         completedBattleEventWorld = completionResult.world;
         completedBattleEventMapName = completionMeta.mapName;
         completedBattleEventLockKeys = getBattleEventCompletedLockKeys({
@@ -15304,17 +15843,25 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           eventId: completionMeta.eventId,
           eventRole: completionMeta.eventRole
         });
-
-        return buildExitedBattleSnapshot(baseSnapshot, {
+        completedBattleEventLocalOverrideMeta = {
           world: completionResult.world,
-          playerTeam: (Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : []).map(clearTemporaryBattleRuntime),
-          logs: appendSnapshotLogs(baseSnapshot, [exitLog])
+          mapName: completionMeta.mapName,
+          eventType: completionMeta.eventType,
+          eventId: completionMeta.eventId,
+          eventRole: completionMeta.eventRole
+        };
+
+        return buildExitedBattleSnapshot(committedSnapshot, {
+          world: completionResult.world,
+          playerTeam: (Array.isArray(committedSnapshot.playerTeam) ? committedSnapshot.playerTeam : []).map(clearBattleExitRuntime),
+          logs: appendSnapshotLogs(committedSnapshot, [exitLog])
         });
       }
     });
 
     if (commitResult.success) {
       completedBattleEventLockKeys.forEach((key) => completedBattleEventLockRef.current.add(key));
+      markCompletedBattleEventLocally(completedBattleEventLocalOverrideMeta || {});
       if (completedBattleEventWorld) {
         const syncedWorld = mergeMonotonicWorldProgress(worldRef.current, completedBattleEventWorld, {
           currentMapName: completedBattleEventMapName || currentMapName,
@@ -15337,7 +15884,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
       );
     }
-  }, [addLog, addNotification, battleEnvironment, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, playerPos, refreshPlayerResources, user?.id]);
+  }, [addLog, addNotification, battleEnvironment, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, markCompletedBattleEventLocally, playerPos, refreshPlayerResources, user?.id]);
 
   // 逃跑过场结束后返回地图（成功逃跑退回本场已扣能量）
   const handleEscapeContinue = useCallback(async () => {
@@ -15349,7 +15896,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       ? ['逃跑成功，已退回战斗消耗的能量。', '你回到了地图上。']
       : ['你回到了地图上。'];
     const buildEscapeExitSnapshot = (baseSnapshot) => buildExitedBattleSnapshot(baseSnapshot, {
-      playerTeam: (Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : []).map(clearTemporaryBattleRuntime),
+      playerTeam: (Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : []).map(clearBattleExitRuntime),
       logs: escapeLogs
     });
 
@@ -15365,6 +15912,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (commitResult.success) {
         activeBattleEnergyCostRef.current = 0;
         setBattleEnergyRefundEligible(false);
+        gameAudio.playEscape({ success: true });
         return;
       }
 
@@ -15388,6 +15936,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       energyReason: '逃跑成功退回能量',
     });
     if (atomicResult.success) {
+      gameAudio.playEscape({ success: true });
       activeBattleEnergyCostRef.current = 0;
       setBattleEnergyRefundEligible(false);
       return;
@@ -15429,6 +15978,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const escapeSucceeded = Math.random() < escapeChance;
 
     if (escapeSucceeded) {
+      gameAudio.playEscape({ success: true });
       const commitResult = await commitCloudSnapshot({
         buildSnapshot: (baseSnapshot) => ({
           ...baseSnapshot,
@@ -15450,6 +16000,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       return;
     }
 
+    gameAudio.playEscape({ success: false });
     const commitResult = await commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => ({
         ...baseSnapshot,
@@ -15496,7 +16047,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const recoveryProfile = getPotionRecoveryProfile(potion);
     const hpRestoreAmount = Math.max(0, Math.min(recoveryProfile.hp, maxHp - currentHp));
     const mpRestoreAmount = Math.max(0, Math.min(recoveryProfile.mp, maxMp - currentMp));
-    if (hpRestoreAmount <= 0 && mpRestoreAmount <= 0) {
+    const curesStatus = hasPotionCurableStatus(targetMon);
+    if (hpRestoreAmount <= 0 && mpRestoreAmount <= 0 && !curesStatus) {
       addNotification(`${targetMon.name} 状态已满。`, 'info');
       return false;
     }
@@ -15522,7 +16074,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         const baseCurrentMp = getMonsterCurrentMp(baseTarget, baseMaxMp);
         const baseHpRestoreAmount = Math.max(0, Math.min(recoveryProfile.hp, baseMaxHp - baseCurrentHp));
         const baseMpRestoreAmount = Math.max(0, Math.min(recoveryProfile.mp, baseMaxMp - baseCurrentMp));
-        if (baseHpRestoreAmount <= 0 && baseMpRestoreAmount <= 0) {
+        const baseCuresStatus = hasPotionCurableStatus(baseTarget);
+        if (baseHpRestoreAmount <= 0 && baseMpRestoreAmount <= 0 && !baseCuresStatus) {
           return abortCloudSnapshotCommit(`${baseTarget.name} 状态已满。`, 'info');
         }
 
@@ -15535,11 +16088,11 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           ...baseSnapshot,
           playerTeam: baseTeam.map((mon) => (
             mon.id === monsterId
-              ? {
+              ? clearPotionCurableStatus({
                 ...mon,
                 currentHp: Math.min(baseMaxHp, baseCurrentHp + recoveryProfile.hp),
                 currentMp: Math.min(baseMaxMp, baseCurrentMp + recoveryProfile.mp)
-              }
+              })
               : mon
           )),
           playerInventory: nextInventory,
@@ -15549,7 +16102,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
             : baseSnapshot.activeBattleEnergyCost,
           battleEnergyRefundEligible: shouldYieldTurnToEnemy ? false : baseSnapshot.battleEnergyRefundEligible,
           logs: appendSnapshotLogs(baseSnapshot, [
-            `${baseTarget.name} 使用了 ${potion.name}，${getRecoveryBehaviorText({ hp: baseHpRestoreAmount, mp: baseMpRestoreAmount })}！`
+            `${baseTarget.name} 使用了 ${potion.name}，${getRecoveryBehaviorText({ hp: baseHpRestoreAmount, mp: baseMpRestoreAmount, curedStatus: baseCuresStatus })}！`
           ])
         };
       }
@@ -15669,6 +16222,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     releaseGrowthModalDelay(EXP_ANIMATION_DURATION_MS);
+    gameAudio.playItemUse({ category: 'exp' });
     scheduleLevelUpCelebration(
       committedGrowthPreview.levelUps,
       committedGrowthPreview.updatedMon || targetMon,
@@ -15929,25 +16483,26 @@ const handleReorderTeam = useCallback((newTeam) => {
       return;
     }
 
-      if (payablePenalty <= 0) {
-        const commitResult = await commitCloudSnapshot({
-          buildSnapshot: buildDefeatExitSnapshot
-        });
-        if (commitResult.success) {
-          activeBattleEnergyCostRef.current = 0;
-          setBattleEnergyRefundEligible(false);
-          return;
-        }
-
-        if (commitResult.message) {
-          addLog(`战斗结算: ${commitResult.message}`);
-          addNotification(
-            commitResult.message,
-            commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-          );
-        }
+    if (payablePenalty <= 0) {
+      const commitResult = await commitCloudSnapshot({
+        buildSnapshot: buildDefeatExitSnapshot
+      });
+      if (commitResult.success) {
+        activeBattleEnergyCostRef.current = 0;
+        setBattleEnergyRefundEligible(false);
+        gameAudio.playDefeat();
         return;
       }
+
+      if (commitResult.message) {
+        addLog(`战斗结算: ${commitResult.message}`);
+        addNotification(
+          commitResult.message,
+          commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
+        );
+      }
+      return;
+    }
 
       const goldReason = battleKind === 'trainer' ? '训练家对战失败损失' : '野外战斗失败损失';
       const atomicResult = await commitCloudSnapshotWithResources({
@@ -15955,22 +16510,24 @@ const handleReorderTeam = useCallback((newTeam) => {
         goldDelta: -payablePenalty,
         goldReason,
       });
-      if (atomicResult.success) {
-        activeBattleEnergyCostRef.current = 0;
-        setBattleEnergyRefundEligible(false);
-        return;
-      }
+	      if (atomicResult.success) {
+	        activeBattleEnergyCostRef.current = 0;
+	        setBattleEnergyRefundEligible(false);
+          gameAudio.playDefeat();
+	        return;
+	      }
       if (isInsufficientGoldMessage(atomicResult.message)) {
         const noPenaltySummary = createDefeatSummary(0, rawPenalty);
         const commitResult = await commitCloudSnapshot({
           buildSnapshot: createBuildDefeatExitSnapshot(noPenaltySummary)
         });
-        if (commitResult.success) {
-          refreshPlayerResources();
-          activeBattleEnergyCostRef.current = 0;
-          setBattleEnergyRefundEligible(false);
-          return;
-        }
+	        if (commitResult.success) {
+	          refreshPlayerResources();
+	          activeBattleEnergyCostRef.current = 0;
+	          setBattleEnergyRefundEligible(false);
+            gameAudio.playDefeat();
+	          return;
+	        }
         if (commitResult.message) {
           addLog(`战斗结算: ${commitResult.message}`);
           addNotification(
@@ -16252,7 +16809,6 @@ const handleReorderTeam = useCallback((newTeam) => {
 
 	  useEffect(() => {
 	    if (view !== 'battle' || gameOver || battlePhase !== 'active') return undefined;
-	    if (!hasBattleHp(activeEnemyMon)) return undefined;
 	    if (!user?.id || !hasLoadedCloudSave) return undefined;
 
 	    if (isThrowingPokeball && !captureSequenceData) {
@@ -16300,6 +16856,29 @@ const handleReorderTeam = useCallback((newTeam) => {
     const timer = window.setTimeout(() => {
       const recoverResolvingTurn = async () => {
         const normalizedPendingSwitch = normalizePendingBattleSwitch(pendingBattleSwitch);
+        const activePendingSwitchKey = getPendingBattleSwitchKey(normalizedPendingSwitch);
+        if (
+          activePendingSwitchKey &&
+          localBattleSwitchInFlightRef.current?.key === activePendingSwitchKey &&
+          localBattleSwitchInFlightRef.current?.source === 'live'
+        ) {
+          return;
+        }
+
+        const resolvedPlayerMon = withBattleRuntimeDefaults(activePlayerMon);
+        const resolvedEnemyMon = withBattleRuntimeDefaults(activeEnemyMon);
+        const playerFainted = isBattleMonFainted(resolvedPlayerMon);
+        const enemyFainted = isBattleMonFainted(resolvedEnemyMon);
+        if ((playerFainted || enemyFainted) && resolvedPlayerMon && resolvedEnemyMon) {
+          await resolveTurnAfterFaint({
+            playerMon: resolvedPlayerMon,
+            enemyMon: resolvedEnemyMon,
+            playerFainted,
+            enemyFainted
+          });
+          return;
+        }
+
         if (
           normalizedPendingSwitch &&
           normalizedPendingSwitch.nextActivePlayerId &&
@@ -16347,14 +16926,27 @@ const handleReorderTeam = useCallback((newTeam) => {
                   };
                 }
                 if (baseSnapshot.activePlayerId === targetMon.id) {
+                  const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+                  const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
+                    enemyMon: basePendingSwitch?.followUpEnemyMon || null,
+                    leadMonId: targetMon.id,
+                    message: basePendingSwitch?.followUpEnemyMessage || '',
+                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+                  });
                   return {
                     ...baseSnapshot,
                     view: 'battle',
-                    battlePhase: 'active',
-                    battlePhaseData: null,
+                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+                    battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
+                    battlePhaseData: queuedEnemySendOut,
                     turn: nextTurn,
                     pendingBattleSwitch: null,
-                    logs: appendSnapshotLogs(baseSnapshot, [`上吧，${targetMon.name}！`])
+                    logs: appendSnapshotLogs(baseSnapshot, [
+                      `上吧，${targetMon.name}！`,
+                      ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
+                    ])
                   };
                 }
 
@@ -16364,17 +16956,31 @@ const handleReorderTeam = useCallback((newTeam) => {
                     : mon
                 ));
 
+                const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+                const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
+                  enemyMon: basePendingSwitch?.followUpEnemyMon || null,
+                  leadMonId: targetMon.id,
+                  message: basePendingSwitch?.followUpEnemyMessage || '',
+                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+                });
                 return {
                   ...baseSnapshot,
                   view: 'battle',
-                  battlePhase: 'active',
-                  battlePhaseData: null,
+                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+                  battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
+                  battlePhaseData: queuedEnemySendOut,
                   turn: nextTurn,
                   playerTeam: cleanedTeam,
                   activePlayerId: targetMon.id,
                   pendingBattleSwitch: null,
                   participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, targetMon.id].filter(Boolean))],
-                  logs: appendSnapshotLogs(baseSnapshot, ['换人状态已恢复，已继续完成换人。', `上吧，${targetMon.name}！`])
+                  logs: appendSnapshotLogs(baseSnapshot, [
+                    '换人状态已恢复，已继续完成换人。',
+                    `上吧，${targetMon.name}！`,
+                    ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
+                  ])
                 };
               }
             });
@@ -16427,8 +17033,10 @@ const handleReorderTeam = useCallback((newTeam) => {
     return () => window.clearTimeout(timer);
   }, [
     activeEnemyMon,
+    activePlayerMon,
     addLog,
     battlePhase,
+    battleEnvironment,
     captureSequenceData,
     gameOver,
     isThrowingPokeball,
@@ -16439,13 +17047,14 @@ const handleReorderTeam = useCallback((newTeam) => {
     hasLoadedCloudSave,
     pendingBattleSwitch,
     playerTeam,
+    resolveTurnAfterFaint,
     turn,
     user?.id,
     view
   ]);
 
 		  useEffect(() => {
-		    if (!cloudBlocked && user?.id && hasLoadedCloudSave && turn === 'enemy' && !gameOver && hasBattleHp(activeEnemyMon) && !isThrowingPokeball) {
+		    if (!cloudBlocked && user?.id && hasLoadedCloudSave && turn === 'enemy' && !gameOver && !isThrowingPokeball) {
 		      const enemyActionDelayMs = getEnemyTurnDelayMs(logsRef.current);
 		      const timer = setTimeout(async () => {
 		        if (cloudBlockedRef.current || enemyTurnInFlightRef.current) return;
@@ -16470,17 +17079,31 @@ const handleReorderTeam = useCallback((newTeam) => {
 	          }
 	          return;
 	        }
-        // 安全网：我方宝可梦已阵亡但玩家还未换人，暂停等待
-        if (isBattleMonFainted(currentPlayerMon)) return;
+        const playerFainted = isBattleMonFainted(currentPlayerMon);
+        const enemyFainted = isBattleMonFainted(currentEnemyMon);
+        if (playerFainted || enemyFainted) {
+          await resolveTurnAfterFaint({
+            playerMon: currentPlayerMon,
+            enemyMon: currentEnemyMon,
+            playerFainted,
+            enemyFainted
+          });
+          return;
+        }
 
-        const suppressReactiveEnemySwitch = didPlayerJustSwitchOnLastBattleLog(logsRef.current, currentPlayerMon);
-        const switchTarget = suppressReactiveEnemySwitch
-          ? null
-          : chooseEnemySwitchTarget(currentEnemyMon, currentPlayerMon);
-        if (switchTarget) {
+        const enemyAction = chooseEnemyAction(currentEnemyMon, currentPlayerMon);
+        if (enemyAction.type === 'switch' && enemyAction.target) {
+          const intentMessage = getEnemyAiSwitchIntentMessage(enemyAction);
+          if (intentMessage) {
+            await addBattleLogAndWait(addLog, intentMessage, {
+              minMs: 620,
+              maxMs: 1120,
+              extraMs: 60,
+            });
+          }
           const switchResult = await runEnemyTrainerSwitch({
             enemyMon: currentEnemyMon,
-            nextEnemy: switchTarget,
+            nextEnemy: enemyAction.target,
             playerMon: currentPlayerMon
           });
           if (switchResult.commitFailed) return;
@@ -16501,7 +17124,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           return;
         }
 
-        const randomMoveKey = chooseEnemyMove(currentEnemyMon, currentPlayerMon);
+        const randomMoveKey = enemyAction.moveKey;
 	        if (!randomMoveKey) {
 	          addLog(`敌方 ${currentEnemyMon.name} 技能值不足，无法行动!`);
 	          if (!gameOver) {
@@ -16528,7 +17151,16 @@ const handleReorderTeam = useCallback((newTeam) => {
           moveKey: randomMoveKey
         });
 	        if (result.commitFailed) return;
-	        if (result.actorFainted || result.targetFainted) return;
+	        if (result.escaped) return;
+	        if (result.actorFainted || result.targetFainted) {
+          await resolveTurnAfterFaint({
+            playerMon: result.defender || currentPlayerMon,
+            enemyMon: result.attacker || currentEnemyMon,
+            playerFainted: result.targetFainted,
+            enemyFainted: result.actorFainted
+          });
+          return;
+        }
 	        if (!gameOver) {
 	          const commitResult = await commitCloudSnapshot({
 	            buildSnapshot: (baseSnapshot) => ({
@@ -16549,7 +17181,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       }, enemyActionDelayMs);
       return () => clearTimeout(timer);
     }
-	  }, [turn, cloudBlocked, gameOver, playerTeam, enemyTeam, activePlayerId, activeEnemyId, activeEnemyMon, isThrowingPokeball, addLog, addNotification, chooseEnemyMove, chooseEnemySwitchTarget, commitCloudSnapshot, hasLoadedCloudSave, runEnemyAction, runEnemyTrainerSwitch, user?.id]);
+	  }, [turn, cloudBlocked, gameOver, playerTeam, enemyTeam, activePlayerId, activeEnemyId, activeEnemyMon, isThrowingPokeball, addLog, addNotification, chooseEnemyAction, commitCloudSnapshot, hasLoadedCloudSave, resolveTurnAfterFaint, runEnemyAction, runEnemyTrainerSwitch, user?.id]);
 
   const handleSwitch = useCallback(async (newId) => {
     const isForced = activePlayerMon && isBattleMonFainted(activePlayerMon);
@@ -16562,10 +17194,15 @@ const handleReorderTeam = useCallback((newTeam) => {
       addNotification('云端未就绪，暂不能换人。', 'error');
       return false;
     }
+    const queuedEnemySendOutData = isForced && battlePhase === 'sendout' && battlePhaseData?.enemyMon && battlePhaseData?.sendOutSide === 'enemy'
+      ? normalizeBattlePhaseData('sendout', battlePhaseData)
+      : null;
     const pendingSwitch = buildPendingBattleSwitch({
       previousActivePlayerId: activePlayerId,
       nextActivePlayerId: newId,
-      forced: isForced
+      forced: isForced,
+      followUpEnemyMon: queuedEnemySendOutData?.enemyMon || null,
+      followUpEnemyMessage: queuedEnemySendOutData?.message || ''
     });
     const pendingSwitchKey = getPendingBattleSwitchKey(pendingSwitch);
     localBattleSwitchInFlightRef.current = pendingSwitchKey
@@ -16635,9 +17272,23 @@ const handleReorderTeam = useCallback((newTeam) => {
     const nextTurn = isForced ? 'player' : 'enemy';
     const commitResult = await commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => {
+        const basePendingSwitch = normalizePendingBattleSwitch(baseSnapshot.pendingBattleSwitch);
         const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
         const targetMon = baseTeam.find((mon) => mon.id === newId);
         const currentMon = baseTeam.find((mon) => mon.id === baseSnapshot.activePlayerId);
+        const followUpEnemyMon = basePendingSwitch?.followUpEnemyMon || null;
+        const followUpEnemyMessage = basePendingSwitch?.followUpEnemyMessage || '';
+        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+        const queuedBattlePhaseData = isForced
+          ? buildQueuedEnemySendOutPhaseData({
+              enemyMon: followUpEnemyMon,
+              leadMonId: newId,
+              message: followUpEnemyMessage,
+              battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+              battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+            })
+          : null;
+        const queuedLogs = queuedBattlePhaseData?.message ? [queuedBattlePhaseData.message] : [];
         if (!targetMon || isBattleMonFainted(targetMon)) {
           return abortCloudSnapshotCommit('目标无法上场，请重选。', 'warning');
         }
@@ -16645,12 +17296,15 @@ const handleReorderTeam = useCallback((newTeam) => {
           return {
             ...baseSnapshot,
             view: 'battle',
-            battlePhase: 'active',
-            battlePhaseData: null,
+            battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+            battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+            battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
+            battlePhaseData: queuedBattlePhaseData,
             turn: nextTurn,
             pendingBattleSwitch: null,
             activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
-            battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false
+            battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false,
+            logs: queuedLogs.length > 0 ? appendSnapshotLogs(baseSnapshot, queuedLogs) : baseSnapshot.logs
           };
         }
 
@@ -16663,8 +17317,10 @@ const handleReorderTeam = useCallback((newTeam) => {
         return {
           ...baseSnapshot,
           view: 'battle',
-          battlePhase: 'active',
-          battlePhaseData: null,
+          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+          battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+          battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
+          battlePhaseData: queuedBattlePhaseData,
           turn: nextTurn,
           playerTeam: cleanedTeam,
           activePlayerId: newId,
@@ -16673,7 +17329,8 @@ const handleReorderTeam = useCallback((newTeam) => {
           battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false,
           participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, newId].filter(Boolean))],
           logs: appendSnapshotLogs(baseSnapshot, [
-            `上吧，${targetMon.name}！`
+            `上吧，${targetMon.name}！`,
+            ...queuedLogs
           ])
         };
       }
@@ -16687,8 +17344,8 @@ const handleReorderTeam = useCallback((newTeam) => {
       )));
       setActivePlayerId(newId);
       setView('battle');
-      setBattlePhase('active');
-      setBattlePhaseData(null);
+      setBattlePhase(queuedEnemySendOutData ? 'sendout' : 'active');
+      setBattlePhaseData(queuedEnemySendOutData || null);
       setTurn(nextTurn);
       setPendingBattleSwitch(null);
       localBattleSwitchInFlightRef.current = null;
@@ -16699,22 +17356,25 @@ const handleReorderTeam = useCallback((newTeam) => {
     localBattleSwitchInFlightRef.current = null;
     const rollbackCommit = await commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => {
+        const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
         const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
         const currentMon = baseTeam.find((mon) => mon.id === baseSnapshot.activePlayerId);
         const shouldForceTeam = isForced && isBattleMonFainted(currentMon) && getAliveBattleBench(baseTeam, baseSnapshot.activePlayerId).length > 0;
         return {
           ...baseSnapshot,
           view: shouldForceTeam ? 'team' : 'battle',
-          battlePhase: 'active',
-          battlePhaseData: null,
+          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+          battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+          battlePhase: shouldForceTeam && queuedEnemySendOutData ? 'sendout' : 'active',
+          battlePhaseData: shouldForceTeam && queuedEnemySendOutData ? queuedEnemySendOutData : null,
           turn: 'player',
           pendingBattleSwitch: null
         };
       }
     });
     setView(isForced ? 'team' : 'battle');
-    setBattlePhase('active');
-    setBattlePhaseData(null);
+    setBattlePhase(isForced && queuedEnemySendOutData ? 'sendout' : 'active');
+    setBattlePhaseData(isForced && queuedEnemySendOutData ? queuedEnemySendOutData : null);
     setTurn('player');
     setPendingBattleSwitch(null);
     setSwitchVisualEvent(null);
@@ -16732,7 +17392,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       );
     }
     return false;
-  }, [activePlayerId, activePlayerMon, addLog, addNotification, commitCloudSnapshot, hasLoadedCloudSave, playerTeam, resolveTrackedActiveBattleEnergyCost, user?.id]);
+  }, [activePlayerId, activePlayerMon, addLog, addNotification, battleEnvironment, battlePhase, battlePhaseData, commitCloudSnapshot, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, playerTeam, resolveTrackedActiveBattleEnergyCost, user?.id]);
 
   const handleStartGame = useCallback(async (selectedMonster) => {
     if (!selectedMonster) return false;
@@ -16753,8 +17413,9 @@ const handleReorderTeam = useCallback((newTeam) => {
     const startLogs = [
       `初始补给已放入背包：精灵球 x5、超级球 x3、高级球 x1、伤药 x5、好伤药 x3、厉害伤药 x1。`,
       `${starterInstance.name} 站到了你的身旁。`,
-      '沿着营地旁的路牌前进，熟悉移动、探索和野外遭遇。',
-      `目标：先查看${getMapConfig(startMapName).displayName}营地旁的路牌，再进入第一片草丛。`
+      '先沿着营地土路往上走，熟悉移动、探索和第一场野外遭遇。',
+      `目标：先查看${getMapConfig(startMapName).displayName}营地旁的路牌，再去上方的阳光草坡。`,
+      starterMeta.earlyRouteHint || '觉得有压力时，就先回营地附近的阳光草坡稳稳练级。'
     ];
     const startWorld = normalizeWorldState({
       collectedEventIds: [],
@@ -16843,7 +17504,11 @@ const handleReorderTeam = useCallback((newTeam) => {
     }
   }, [addLog, addNotification, clearNotifications, commitCloudSnapshot, hasLoadedCloudSave, user?.id]);
 
-  const handleZoneEnter = useCallback((zoneName) => {
+  const handleZoneEnter = useCallback((zoneName, zoneMeta = {}) => {
+    if (zoneMeta?.locked && zoneMeta?.lockReason) {
+      addNotification(zoneMeta.lockReason, 'info');
+      return;
+    }
     if (zoneName) {
       addNotification(`已进入${zoneName}。`, 'info');
     }
@@ -16864,20 +17529,34 @@ const handleReorderTeam = useCallback((newTeam) => {
       targetMapName,
       world
     });
+    const warpGate = getWarpEventLockState({
+      currentMapName,
+      warpEvent: warp,
+      world,
+      playerTeam
+    });
     const levelLocked = isMapLockedForLevel(mapConfig, playerAvgLevel);
 
+    if (warpGate.locked) {
+      addNotification(warpGate.reason || '暂不能进入。', 'warning');
+      return;
+    }
+
     if (bossGate && levelLocked) {
-      addNotification(`前往${mapConfig.displayName}需要击败${bossGate.mapName}的${bossGate.bossName}，并提升队伍等级。`, 'warning');
+      addNotification(`先击败${bossGate.mapName}的${bossGate.bossName}，再来${mapConfig.displayName}。`, 'warning');
       return;
     }
 
     if (bossGate) {
-      addNotification(`前往${mapConfig.displayName}需要击败${bossGate.mapName}的${bossGate.bossName}。`, 'warning');
+      addNotification(`先击败${bossGate.mapName}的${bossGate.bossName}。`, 'warning');
       return;
     }
 
     if (levelLocked) {
-      addNotification('等级不足，暂不能进入。', 'warning');
+      addNotification(
+        `平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))} 后可进入。`,
+        'warning'
+      );
       return;
     }
 
@@ -16973,9 +17652,25 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   const currentMapBossCompleted = hasCompletedBossEvent(world, currentMapName);
   const currentMapEventVisualState = useMemo(
-    () => buildMapEventVisualState(currentMapName, world),
-    [currentMapName, world]
+    () => buildMapEventVisualState(currentMapName, world, completedBattleEventVisualOverrides),
+    [completedBattleEventVisualOverrides, currentMapName, world]
   );
+  const currentMapEncounterZoneLocks = useMemo(
+    () => buildEncounterZoneLocks(currentMapName, world, playerTeam),
+    [currentMapName, playerTeam, world]
+  );
+
+  if (!assetsReady) {
+    const loaded = Number(assetLoadSummary?.loaded) || 0;
+    const total = Number(assetLoadSummary?.total) || getCriticalGameImageAssetUrls().length;
+    return (
+      <CloudGateScreen
+        title="正在准备本地素材"
+        message={`正在预解码宝可梦、训练家和战斗素材。${loaded > 0 ? `已准备 ${loaded}/${total}。` : '马上就好。'}`}
+        busy
+      />
+    );
+  }
 
   if (cloudLoading) {
     return (
@@ -17000,6 +17695,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
+  const hideAdventureTopBar = view === 'bag' || view === 'team' || view === 'dex' || view === 'shop';
 
   return (
     <>
@@ -17019,26 +17715,31 @@ const handleReorderTeam = useCallback((newTeam) => {
         <div className="game-app-bg"><div className="game-card p-5 font-black text-slate-700">遭遇战...</div></div>
       ) : (
     <div className="game-app-bg">
-      <div className="game-console-shell">
-        <AdventureTopBar
-          user={user}
-          activeMon={activePlayerMon}
-          playerGold={playerGold}
-          playerEnergy={playerEnergy}
-          maxEnergy={maxEnergy}
-          onLogout={onLogout}
-          onResetGame={() => setResetConfirmOpen(true)}
-          resetDisabled={!hasLoadedCloudSave || isResettingProgress}
-          saveProps={{
-            disabled: !hasLoadedCloudSave,
-            isOnline,
-            lastSavedAt,
-            saveStatus,
-            syncError,
-            requiresReload: requiresCloudReload,
-            onSave: handleManualSave
-          }}
-        />
+      <div className={`game-console-shell${view === 'map' ? ' game-console-shell--map-overlay' : ''}${hideAdventureTopBar ? ' game-console-shell--panel-full' : ''}`}>
+        {!hideAdventureTopBar && (
+          <AdventureTopBar
+            user={user}
+            activeMon={activePlayerMon}
+            playerGold={playerGold}
+            playerEnergy={playerEnergy}
+            maxEnergy={maxEnergy}
+            onLogout={onLogout}
+            onResetGame={() => setResetConfirmOpen(true)}
+            resetDisabled={!hasLoadedCloudSave || isResettingProgress}
+            audioSettings={audioSettings}
+            onToggleAudio={handleToggleAudio}
+            onVolumeChange={handleAudioVolumeChange}
+            saveProps={{
+              disabled: !hasLoadedCloudSave,
+              isOnline,
+              lastSavedAt,
+              saveStatus,
+              syncError,
+              requiresReload: requiresCloudReload,
+              onSave: handleManualSave
+            }}
+          />
+        )}
       <div className="game-screen-frame">
       <div className="flex-1 min-h-0 flex flex-col relative z-10 h-full">
         {!showLaunchScreen && (
@@ -17047,7 +17748,7 @@ const handleReorderTeam = useCallback((newTeam) => {
               key={`${currentMapName}-${WORLD_MAP_CONTENT_VERSION}-${PLAYER_VISUAL_VERSION}`}
               playerTeam={playerTeam}
               onEncounter={handleEncounter}
-              onNavigate={setView}
+              onNavigate={handleNavigateView}
               onCollect={handleCollect}
               playerPos={playerPos}
               onPlayerMove={handlePlayerMove}
@@ -17066,10 +17767,11 @@ const handleReorderTeam = useCallback((newTeam) => {
 	              springRestoreAnimation={springRestoreAnimation}
                 currentMapBossCompleted={currentMapBossCompleted}
                 mapEventVisualState={currentMapEventVisualState}
+                encounterZoneLocks={currentMapEncounterZoneLocks}
 	            />
           </div>
         )}
-        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={setView} onRun={handleRun} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} addLog={addLog} isThrowingPokeball={isThrowingPokeball} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
+        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} addLog={addLog} isThrowingPokeball={isThrowingPokeball} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
 
         {/* ── 战斗过场 Overlay ────────────────────────────────────── */}
         {view === 'battle' && (
@@ -17099,6 +17801,7 @@ const handleReorderTeam = useCallback((newTeam) => {
             onComplete={handleEscapeContinue}
             paused={cloudBlocked}
             refundEligible={battleEnergyRefundEligible}
+            phaseData={battlePhaseData}
           />
         )}
         {pendingMonsterAcquisition && (
@@ -17111,32 +17814,66 @@ const handleReorderTeam = useCallback((newTeam) => {
             onReleasePending={handleReleasePendingMonster}
           />
         )}
-        {view === 'team' && <TeamScreen
-          team={playerTeam}
-          storageBox={storageBox}
-          activeId={activePlayerId}
-          onSelect={activeEnemyMon ? async (id) => {
-            await handleSwitch(id);
-            return false;
-          } : undefined}
-          onBack={() => {
-            // 阵亡强制换人时禁止直接返回战场，必须选择替补宝可梦
-            if (activeEnemyMon && isBattleMonFainted(activePlayerMon)) {
-              addNotification('宝可梦倒下了，请选择下一只。', 'error');
-              return;
-            }
-            setView(activeEnemyMon ? 'battle' : 'map');
-          }}
-          onReorderTeam={handleReorderTeam}
-          onRelease={handleReleaseMonster}
-          onReleaseStorage={(monsterId) => handleReleaseMonster(monsterId, 'storage')}
-          onDeposit={handleDepositToStorage}
-          onWithdraw={handleWithdrawFromStorage}
-          onSwapWithStorage={handleSwapPartyAndStorage}
-        />}
-        {view === 'dex' && <DexScreen onBack={() => setView('map')} />}
-        {view === 'shop' && <ShopScreen playerGold={playerGold} playerInventory={playerInventory} onPurchase={handlePurchase} onBack={() => setView('map')} />}
-        {view === 'bag' && <BagScreen playerInventory={playerInventory} playerTeam={playerTeam} activePlayerMon={activePlayerMon} activeEnemyMon={activeEnemyMon} canUsePokeballs={battleKind !== 'trainer'} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} onBack={() => setView(activeEnemyMon ? 'battle' : 'map')} addLog={addLog} turn={turn} />}
+        {view === 'team' && (
+          <Suspense fallback={<DeferredPanelFallback title="队伍加载中..." />}>
+            <DeferredTeamScreen
+              team={playerTeam}
+              storageBox={storageBox}
+              activeId={activePlayerId}
+              onSelect={activeEnemyMon ? async (id) => {
+                await handleSwitch(id);
+                return false;
+              } : undefined}
+              onBack={() => {
+                // 阵亡强制换人时禁止直接返回战场，必须选择替补宝可梦
+                if (activeEnemyMon && isBattleMonFainted(activePlayerMon)) {
+                  addNotification('宝可梦倒下了，请选择下一只。', 'error');
+                  return;
+                }
+                handleNavigateView(activeEnemyMon ? 'battle' : 'map');
+              }}
+              onReorderTeam={handleReorderTeam}
+              onRelease={handleReleaseMonster}
+              onReleaseStorage={(monsterId) => handleReleaseMonster(monsterId, 'storage')}
+              onDeposit={handleDepositToStorage}
+              onWithdraw={handleWithdrawFromStorage}
+              onSwapWithStorage={handleSwapPartyAndStorage}
+            />
+          </Suspense>
+        )}
+        {view === 'dex' && (
+          <Suspense fallback={<DeferredPanelFallback title="图鉴加载中..." />}>
+            <DeferredDexScreen onBack={() => handleNavigateView('map')} />
+          </Suspense>
+        )}
+        {view === 'shop' && (
+          <Suspense fallback={<DeferredPanelFallback title="商店加载中..." />}>
+            <DeferredShopScreen
+              playerGold={playerGold}
+              playerInventory={playerInventory}
+              onPurchase={handlePurchase}
+              onBack={() => handleNavigateView('map')}
+              getInventoryItemQuantity={getInventoryItemQuantity}
+              getPotionEffectText={getPotionEffectText}
+            />
+          </Suspense>
+        )}
+        {view === 'bag' && (
+          <Suspense fallback={<DeferredPanelFallback title="背包加载中..." />}>
+            <DeferredBagScreen
+              playerInventory={playerInventory}
+              playerTeam={playerTeam}
+              activePlayerMon={activePlayerMon}
+              activeEnemyMon={activeEnemyMon}
+              canUsePokeballs={battleKind !== 'trainer'}
+              onUseItem={handleUseItem}
+              onUsePotion={handleUsePotion}
+              onUseExpPotion={handleUseExpPotion}
+              onBack={() => handleNavigateView(activeEnemyMon ? 'battle' : 'map')}
+              addLog={addLog}
+            />
+          </Suspense>
+        )}
         {gameOver && <div className="absolute inset-0 bg-black/80 flex items-center justify-center flex-col z-50 animate-bounce-in">
           <div className="game-card p-6 text-center">
             <h2 className="text-2xl font-bold mb-4">{playerTeam.some((m) => hasBattleHp(m)) ? '胜利!' : '失败'}</h2>

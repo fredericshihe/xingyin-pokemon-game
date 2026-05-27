@@ -3,7 +3,7 @@ export const MOVE_DURATION_MS = 240
 export const WORLD_DEPTH_BASE = 1000
 export const PLAYER_DEPTH_OFFSET = 10
 
-/** 旧 mapGrid 数字 -> Phaser 瓦片索引（与 TextureFactory 顺序一致） */
+/** 旧 mapGrid 数字 -> 历史瓦片索引映射（保留给当前 legacy grid 兼容层） */
 export const LEGACY_TILE_TO_INDEX = {
   0: 0, // grass
   1: 1, // tree / wall

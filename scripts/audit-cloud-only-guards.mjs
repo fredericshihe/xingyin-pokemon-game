@@ -69,15 +69,9 @@ const canUseLocalStorage = (relativeFile, lines, index) => {
   return false
 }
 
-const canReferencePlainPassword = (relativeFile) => {
-  return [
-    'src/utils/authService.js',
-    'src/components/Teacher/Dashboard.jsx',
-  ].includes(relativeFile)
-}
-
 const requiredOriginalGameMarkers = [
   'load_cloud_game_save',
+  'load_cloud_game_state_with_resources',
   'save_cloud_game_save',
   'save_cloud_game_state_with_resources',
   'begin_teacher_reward_claim',
@@ -99,7 +93,9 @@ const stats = {
   criticalCloudSaveHelperReferences: 0,
   localMapContentResetReferences: 0,
   directMapRuntimeSetterReferences: 0,
+  directUsersTableReadReferences: 0,
   trainerDailyCloudMarkers: 0,
+  atomicLoadMarkers: 0,
 }
 
 for (const file of files) {
@@ -148,18 +144,28 @@ for (const file of files) {
       )
     }
 
+    if (line.includes(".from('users')") || line.includes('.from("users")')) {
+      stats.directUsersTableReadReferences += 1
+      addViolation(
+        violations,
+        'DIRECT_USERS_TABLE_READ_FORBIDDEN',
+        relativeFile,
+        lineNumber,
+        '前端不应直接读取 users 表；请改走受控 RPC，避免重新依赖公开读策略。',
+        line
+      )
+    }
+
     if (line.includes('plain_password')) {
       stats.plainPasswordReferences += 1
-      if (!canReferencePlainPassword(relativeFile)) {
-        addViolation(
-          violations,
-          'PLAIN_PASSWORD_SCOPE',
-          relativeFile,
-          lineNumber,
-          'plain_password 只能出现在用户表登录 fallback 或教师查看学生密码的界面，不能进入其它前端链路。',
-          line
-        )
-      }
+      addViolation(
+        violations,
+        'PLAIN_PASSWORD_SCOPE',
+        relativeFile,
+        lineNumber,
+        '前端源码不应再直接引用 plain_password；登录校验和教师密码管理必须走后端 RPC。',
+        line
+      )
     }
 
     if (line.includes('claim_teacher_rewards')) {
@@ -329,6 +335,21 @@ const trainerDailyCloudMarkers = [
   },
 ]
 
+const atomicLoadMarkers = [
+  {
+    marker: "supabase.rpc('load_cloud_game_state_with_resources'",
+    message: '主游戏读档应优先走原子 load_cloud_game_state_with_resources，避免进度和资源分两次查询产生读偏。',
+  },
+  {
+    marker: "atomicCloudLoadUnavailableRef.current = true",
+    message: '若远端还没部署原子读档 RPC，前端应显式记录兼容回退状态，避免每次读档都重复触发缺失 RPC 报错。',
+  },
+  {
+    marker: "supabase.rpc('get_user_resources'",
+    message: '兼容旧后端时仍应保留受控资源 fallback 查询；但这条链路只能作为原子读档缺失时的兜底。',
+  },
+]
+
 for (const { marker, message } of trainerDailyCloudMarkers) {
   if (originalGameSource.includes(marker)) {
     stats.trainerDailyCloudMarkers += 1
@@ -344,6 +365,21 @@ for (const { marker, message } of trainerDailyCloudMarkers) {
   }
 }
 
+for (const { marker, message } of atomicLoadMarkers) {
+  if (originalGameSource.includes(marker)) {
+    stats.atomicLoadMarkers += 1
+  } else {
+    addViolation(
+      violations,
+      'ATOMIC_LOAD_MARKER_MISSING',
+      'src/components/Game/OriginalGame.jsx',
+      1,
+      message,
+      marker
+    )
+  }
+}
+
 const summary = {
   ok: violations.length === 0,
   stats,
@@ -351,7 +387,8 @@ const summary = {
     'no unauthorized localStorage',
     'no sessionStorage',
     'no select(*) in src',
-    'plain_password limited to auth fallback and teacher dashboard',
+    'no direct users table reads in src',
+    'no plain_password references in src',
     'no legacy claim_teacher_rewards calls in src',
     'no atomic resource half-transaction fallback',
     'no local-first inventory/reward/exp helpers',
@@ -361,6 +398,7 @@ const summary = {
     'no direct map runtime setter passthrough in main game',
     'old auth/save hooks absent',
     'main game still references required cloud save/reward RPCs',
+    'main game prefers atomic cloud load with guarded fallback',
     'daily trainer lock and victory count are cloud snapshot fields',
   ],
   violations,

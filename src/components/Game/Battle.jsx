@@ -10,8 +10,10 @@ import {
 } from '../../utils/battleLogic'
 import { getTypeEffectivenessMessage } from '../../utils/battleDamage'
 import { getCatchAttemptWarning, getPlayerAverageLevel } from '../../utils/gameBalance'
+import { applyImageFallback } from '../../utils/localAssetPreloader'
+import { assetUrl } from '../../utils/assetUrl'
 
-const POKEMON_LOCAL_PLACEHOLDER = '/assets/pokemon/placeholder.svg'
+const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
 
 const extractPokedexIdFromSpriteUrl = (url) => {
   if (typeof url !== 'string') return null
@@ -22,7 +24,7 @@ const extractPokedexIdFromSpriteUrl = (url) => {
 
 const getLocalPokemonSprite = (monster, preferredUrl) => {
   const pokedexId = Number(monster?.pokedexId || monster?.dexNo) || extractPokedexIdFromSpriteUrl(preferredUrl) || extractPokedexIdFromSpriteUrl(monster?.sprite)
-  return pokedexId ? `/assets/pokemon/official-artwork/${pokedexId}.png` : (preferredUrl || POKEMON_LOCAL_PLACEHOLDER)
+  return pokedexId ? assetUrl(`/assets/pokemon/official-artwork/${pokedexId}.png`) : (preferredUrl || POKEMON_LOCAL_PLACEHOLDER)
 }
 
 const normalizeBattleMonsterAsset = (monster) => {
@@ -37,10 +39,7 @@ const normalizeBattleMonsterAsset = (monster) => {
 }
 
 const handlePokemonImageError = (event) => {
-  const image = event.currentTarget
-  if (image.dataset.fallbackApplied === 'true') return
-  image.dataset.fallbackApplied = 'true'
-  image.src = POKEMON_LOCAL_PLACEHOLDER
+  applyImageFallback(event, POKEMON_LOCAL_PLACEHOLDER)
 }
 
 const getHpBarColorClass = (current, max) => {

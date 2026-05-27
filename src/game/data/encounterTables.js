@@ -6,28 +6,41 @@ export const ENCOUNTER_TABLES = {
   valley_safe_grass: {
     baseRate: 0.08,
     tallGrassRate: 0.14,
-    safeStepsAfterBattle: 7,
+    safeStepsAfterBattle: 8,
     pokemon: [
-      { id: 1, minLevel: 2, maxLevel: 4, weight: 24 },    // 妙蛙种子
-      { id: 114, minLevel: 2, maxLevel: 4, weight: 22 },  // 宝宝丁
-      { id: 98, minLevel: 2, maxLevel: 4, weight: 20 },   // 尼多朗
-      { id: 13, minLevel: 2, maxLevel: 4, weight: 16 },   // 伊布
-      { id: 39, minLevel: 3, maxLevel: 4, weight: 12 },   // 大葱鸭
-      { id: 4, minLevel: 3, maxLevel: 4, weight: 6 }      // 皮卡丘
+      { id: 114, minLevel: 2, maxLevel: 3, weight: 24 },  // 宝宝丁
+      { id: 98, minLevel: 2, maxLevel: 3, weight: 20 },   // 尼多朗
+      { id: 13, minLevel: 2, maxLevel: 3, weight: 18 },   // 伊布
+      { id: 119, minLevel: 2, maxLevel: 3, weight: 18 },  // 喵喵
+      { id: 16, minLevel: 2, maxLevel: 3, weight: 12 },   // 鲤鱼王
+      { id: 110, minLevel: 2, maxLevel: 3, weight: 8 }    // 凯西
     ]
   },
-  /** 新手山谷花丘：轻微进阶，补充可爱系与稀有电系 */
+  /** 新手山谷花丘：轻微进阶，仍以中性练手对局为主 */
   valley_flower_meadow: {
     baseRate: 0.09,
     tallGrassRate: 0.16,
     safeStepsAfterBattle: 7,
     pokemon: [
-      { id: 13, minLevel: 3, maxLevel: 5, weight: 24 },
-      { id: 114, minLevel: 3, maxLevel: 5, weight: 22 },
-      { id: 119, minLevel: 3, maxLevel: 5, weight: 18 },
-      { id: 1, minLevel: 3, maxLevel: 5, weight: 16 },
-      { id: 39, minLevel: 3, maxLevel: 5, weight: 12 },
-      { id: 4, minLevel: 4, maxLevel: 5, weight: 8 }
+      { id: 13, minLevel: 3, maxLevel: 4, weight: 26 },
+      { id: 114, minLevel: 3, maxLevel: 4, weight: 24 },
+      { id: 119, minLevel: 3, maxLevel: 4, weight: 14 },
+      { id: 98, minLevel: 3, maxLevel: 4, weight: 18 },
+      { id: 110, minLevel: 4, maxLevel: 5, weight: 12 },
+      { id: 20, minLevel: 4, maxLevel: 5, weight: 6 }
+    ]
+  },
+  /** 新手山谷湖北浅滩：更适合练手与补经验，先让孩子熟悉湖边草丛节奏 */
+  valley_lake_shallows: {
+    baseRate: 0.08,
+    tallGrassRate: 0.15,
+    safeStepsAfterBattle: 7,
+    pokemon: [
+      { id: 16, minLevel: 3, maxLevel: 4, weight: 42 },
+      { id: 114, minLevel: 3, maxLevel: 4, weight: 18 },
+      { id: 13, minLevel: 3, maxLevel: 4, weight: 16 },
+      { id: 119, minLevel: 3, maxLevel: 4, weight: 14 },
+      { id: 110, minLevel: 3, maxLevel: 4, weight: 10 }
     ]
   },
   /** 新手山谷湖边芦草：水系教学区，等级低但生态有差异 */
@@ -36,25 +49,26 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.16,
     safeStepsAfterBattle: 7,
     pokemon: [
-      { id: 16, minLevel: 3, maxLevel: 5, weight: 36 },
-      { id: 14, minLevel: 3, maxLevel: 6, weight: 28 },
-      { id: 13, minLevel: 3, maxLevel: 5, weight: 14 },
-      { id: 39, minLevel: 3, maxLevel: 6, weight: 12 },
-      { id: 4, minLevel: 4, maxLevel: 6, weight: 10 }
+      { id: 16, minLevel: 4, maxLevel: 5, weight: 36 },
+      { id: 14, minLevel: 4, maxLevel: 5, weight: 14 },
+      { id: 13, minLevel: 4, maxLevel: 5, weight: 16 },
+      { id: 119, minLevel: 4, maxLevel: 5, weight: 14 },
+      { id: 114, minLevel: 4, maxLevel: 5, weight: 12 },
+      { id: 110, minLevel: 4, maxLevel: 5, weight: 8 }
     ]
   },
-  /** 新手山谷密林：第一次有挑战感的练级区，但不超过 Lv.7 */
+  /** 新手山谷密林：在上方教学线之后开放，作为第一片进阶练级区 */
   valley_training_thicket: {
-    baseRate: 0.10,
-    tallGrassRate: 0.18,
+    baseRate: 0.09,
+    tallGrassRate: 0.16,
     safeStepsAfterBattle: 6,
     pokemon: [
-      { id: 1, minLevel: 4, maxLevel: 7, weight: 24 },
-      { id: 98, minLevel: 4, maxLevel: 7, weight: 22 },
-      { id: 13, minLevel: 4, maxLevel: 7, weight: 18 },
-      { id: 39, minLevel: 4, maxLevel: 7, weight: 16 },
-      { id: 110, minLevel: 5, maxLevel: 7, weight: 10 },
-      { id: 20, minLevel: 5, maxLevel: 7, weight: 10 }
+      { id: 13, minLevel: 4, maxLevel: 4, weight: 28 },
+      { id: 119, minLevel: 4, maxLevel: 6, weight: 16 },
+      { id: 110, minLevel: 4, maxLevel: 6, weight: 20 },
+      { id: 20, minLevel: 4, maxLevel: 6, weight: 8 },
+      { id: 114, minLevel: 4, maxLevel: 5, weight: 18 },
+      { id: 98, minLevel: 4, maxLevel: 4, weight: 10 }
     ]
   },
   /** 新手山谷东南草坡：当前图最高等级区，作为去下一张图前的准备区 */
@@ -519,46 +533,46 @@ export const ENCOUNTER_TABLES = {
     ]
   },
 
-  /** 星雾高地西高地草丛：御三家与龙/岩混合，当前最高 Lv.50 区域 */
-  region_peak_47_50: {
+  /** 星雾高地西高地草丛：御三家与龙/岩混合，终局 Lv.52-60 区域 */
+  region_peak_52_60: {
     baseRate: 0.14,
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 72, minLevel: 47, maxLevel: 50, weight: 22 },
-      { id: 129, minLevel: 47, maxLevel: 50, weight: 20 },
-      { id: 131, minLevel: 47, maxLevel: 50, weight: 18 },
-      { id: 143, minLevel: 47, maxLevel: 50, weight: 16 },
-      { id: 74, minLevel: 47, maxLevel: 50, weight: 12 },
-      { id: 76, minLevel: 47, maxLevel: 50, weight: 12 }
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 22 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 18 },
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 16 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 12 }
     ]
   },
   /** 星雾高地南高地草丛：火/水强敌练级位 */
-  region_peak_south_47_50: {
+  region_peak_south_52_60: {
     baseRate: 0.14,
     tallGrassRate: 0.28,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 76, minLevel: 47, maxLevel: 50, weight: 22 },
-      { id: 74, minLevel: 47, maxLevel: 50, weight: 20 },
-      { id: 131, minLevel: 47, maxLevel: 50, weight: 18 },
-      { id: 129, minLevel: 47, maxLevel: 50, weight: 16 },
-      { id: 143, minLevel: 47, maxLevel: 50, weight: 12 },
-      { id: 72, minLevel: 47, maxLevel: 50, weight: 12 }
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 22 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 18 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 16 },
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 12 }
     ]
   },
   /** 星雾高地东高地草丛：电/龙/终盘混合位，遇敌率最高 */
-  region_peak_east_47_50: {
+  region_peak_east_52_60: {
     baseRate: 0.14,
     tallGrassRate: 0.30,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 143, minLevel: 47, maxLevel: 50, weight: 22 },
-      { id: 129, minLevel: 47, maxLevel: 50, weight: 20 },
-      { id: 74, minLevel: 47, maxLevel: 50, weight: 18 },
-      { id: 76, minLevel: 47, maxLevel: 50, weight: 16 },
-      { id: 72, minLevel: 47, maxLevel: 50, weight: 12 },
-      { id: 131, minLevel: 47, maxLevel: 50, weight: 12 }
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 22 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 18 },
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 16 },
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 12 }
     ]
   }
 }

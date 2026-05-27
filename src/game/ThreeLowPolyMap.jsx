@@ -54,6 +54,30 @@ const DIRS = {
 const BLOCKING_INTERACTIONS = new Set(['exit', 'heal', 'trainer', 'boss', 'challenge', 'info'])
 const MUTED_EVENT_VISUAL_STATES = new Set(['locked', 'daily_complete', 'cleared', 'completed'])
 const NON_BATTLE_INFO_VISUAL_STATES = new Set(['daily_complete', 'cleared', 'completed', 'locked'])
+const IS_HOT_RELOAD_ENV = Boolean(import.meta?.hot)
+
+let activeThreeMapRendererLease = null
+
+function disposeActiveThreeMapRenderer(reason = 'handoff') {
+  const lease = activeThreeMapRendererLease
+  if (!lease?.teardown) return
+  activeThreeMapRendererLease = null
+  try {
+    lease.teardown(reason)
+  } catch (error) {
+    console.warn('[ThreeLowPolyMap] Failed to dispose active renderer lease:', error)
+  }
+}
+
+function registerActiveThreeMapRenderer(host, teardown) {
+  activeThreeMapRendererLease = { host, teardown }
+}
+
+function clearActiveThreeMapRenderer(host, teardown) {
+  if (activeThreeMapRendererLease?.host === host && activeThreeMapRendererLease?.teardown === teardown) {
+    activeThreeMapRendererLease = null
+  }
+}
 
 function isBlockingInteraction(interaction) {
   return BLOCKING_INTERACTIONS.has(interaction)
@@ -1385,7 +1409,8 @@ export default function ThreeLowPolyMap({
   collectedEventIds = [],
   springRestoreAnimation = null,
   currentMapBossCompleted = false,
-  mapEventVisualState = {}
+  mapEventVisualState = {},
+  encounterZoneLocks = {}
 }) {
   const hostRef = useRef(null)
   const stateRef = useRef(null)
@@ -1407,6 +1432,10 @@ export default function ThreeLowPolyMap({
   const normalizedMapEventVisualState = useMemo(
     () => (mapEventVisualState && typeof mapEventVisualState === 'object' ? mapEventVisualState : {}),
     [mapEventVisualState]
+  )
+  const normalizedEncounterZoneLocks = useMemo(
+    () => (encounterZoneLocks && typeof encounterZoneLocks === 'object' ? encounterZoneLocks : {}),
+    [encounterZoneLocks]
   )
   const collectedEventAnimationStateRef = useRef({
     mapName: currentMapName,
@@ -1434,12 +1463,15 @@ export default function ThreeLowPolyMap({
     const host = hostRef.current
     if (!host || !mapGrid?.length) return undefined
 
+    disposeActiveThreeMapRenderer('effect-remount')
+
     let disposed = false
     let frameId = 0
     let renderer = null
     let resizeObserver = null
     let healthTimerId = 0
     let recoveryTimerId = 0
+    const perfProbeEnabled = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('perf') === '1'
 
     const reportRenderIssue = (message, error) => {
       if (disposed) return
@@ -1480,7 +1512,7 @@ export default function ThreeLowPolyMap({
       return undefined
     }
 
-    host.querySelectorAll('canvas').forEach((canvas) => canvas.remove())
+    host.replaceChildren()
     renderer.domElement.className = 'three-map-canvas'
     host.appendChild(renderer.domElement)
 
@@ -2081,14 +2113,20 @@ export default function ThreeLowPolyMap({
         return addInstance(key, pos.x + offsetX, y, pos.z + offsetZ, rotation, scale)
       }
 
-      const placeForestUndergrowth = (x, y, pos, { edge = false, heavy = false } = {}) => {
+      const placeForestUndergrowth = (x, y, pos, {
+        edge = false,
+        heavy = false,
+        force = false,
+        preferClearance = false
+      } = {}) => {
         const onBlockedTile = !isLegacyTileWalkableValue(getRenderedTile(x, y))
+        const blockedEdgeTile = onBlockedTile && hasWalkableCardinalNeighbor(mapGrid, x, y)
         const decorationChance = onBlockedTile
           ? heavy ? 0.52 : edge ? 0.26 : 0.1
           : heavy ? 0.58 : edge ? 0.34 : 0.14
-        if (seededRandom(x, y, 121) > decorationChance) return
+        if (!force && seededRandom(x, y, 121) > decorationChance) return
 
-        if (!onBlockedTile && seededRandom(x, y, 117) < (edge ? 0.22 : 0.08)) {
+        if (!force && !onBlockedTile && seededRandom(x, y, 117) < (edge ? 0.22 : 0.08)) {
           const floor = makeSoftTileBlob(
             {
               x: pos.x + (seededRandom(x, y, 118) - 0.5) * CELL * 0.26,
@@ -2102,29 +2140,41 @@ export default function ThreeLowPolyMap({
           root.add(floor)
         }
 
-        const count = heavy && seededRandom(x, y, 122) > 0.72 ? 2 : 1
-        const choices = onBlockedTile
+        const count = force
+          ? 1
+          : heavy && seededRandom(x, y, 122) > 0.72 ? 2 : 1
+        const choices = force
+          ? preferClearance
+            ? ['stone', 'stone', 'rock']
+            : ['bush', 'stone', 'rock']
+          : onBlockedTile
           ? (edge ? ['bush', 'bush', 'stone', 'rock'] : ['bush', 'stone', 'rock'])
           : edge
             ? ['bush', 'grassLarge', 'stone', 'mushroom', 'flowerYellow']
             : ['bush', 'grassLarge', 'stone', 'mushroom']
+        const edgeNudge = blockedEdgeTile ? getForestEdgeNudge(x, y) : { x: 0, z: 0 }
+        const baseSpread = force
+          ? preferClearance ? 0.12 : 0.22
+          : heavy ? 0.72 : 0.58
 
         for (let i = 0; i < count; i += 1) {
           const roll = seededRandom(x, y, 125 + i)
           const key = choices[Math.floor(roll * choices.length) % choices.length]
-          const offsetX = (seededRandom(x, y, 132 + i) - 0.5) * CELL * (heavy ? 0.72 : 0.58)
-          const offsetZ = (seededRandom(x, y, 139 + i) - 0.5) * CELL * (heavy ? 0.72 : 0.58)
+          const offsetX = edgeNudge.x * (force ? 0.45 : 0.2) + (seededRandom(x, y, 132 + i) - 0.5) * CELL * baseSpread
+          const offsetZ = edgeNudge.z * (force ? 0.45 : 0.2) + (seededRandom(x, y, 139 + i) - 0.5) * CELL * baseSpread
           const rotation = seededRandom(x, y, 146 + i) * Math.PI * 2
           const baseScale = key === 'rock'
-            ? 0.82
+            ? preferClearance ? 0.74 : 0.82
             : key === 'stone'
-              ? 0.66
+              ? preferClearance ? 0.62 : 0.66
               : key.includes('flower')
                 ? 0.74
                 : key === 'mushroom'
                   ? 0.76
-                  : onBlockedTile ? 1.02 : 0.9
-          const scale = baseScale + seededRandom(x, y, 153 + i) * (heavy ? 0.38 : 0.22)
+                  : force ? 0.9 : onBlockedTile ? 1.02 : 0.9
+          const scale = force
+            ? baseScale + seededRandom(x, y, 153 + i) * 0.12
+            : baseScale + seededRandom(x, y, 153 + i) * (heavy ? 0.38 : 0.22)
           placeForestModel(key, pos, scale, rotation, offsetX, offsetZ, key.includes('flower') || key === 'mushroom' ? 0.14 : 0.13)
         }
       }
@@ -2373,6 +2423,7 @@ export default function ThreeLowPolyMap({
           const insidePlayableArea = x >= 0 && x < width && y >= 0 && y < height
           const legacy = insidePlayableArea ? mapGrid[y][x] : getVisualTile(mapGrid, x, y)
           const pos = worldFromTile(x, y, width, height)
+          const blockedEdgeTile = !isLegacyTileWalkableValue(legacy) && hasWalkableCardinalNeighbor(mapGrid, x, y)
 
           if (!useSmoothRoads && (legacy === 12 || legacy === 2)) {
             const isJunction = isRoadJunctionTile(x, y)
@@ -2420,7 +2471,17 @@ export default function ThreeLowPolyMap({
           }
 
           if (legacy === 1) {
-            if (isInRoadClearance(mapInfo, x, y, 0.7)) continue
+            if (isInRoadClearance(mapInfo, x, y, 0.7)) {
+              if (blockedEdgeTile) {
+                placeForestUndergrowth(x, y, pos, {
+                  edge: true,
+                  heavy: true,
+                  force: true,
+                  preferClearance: true
+                })
+              }
+              continue
+            }
             const edge = isForestEdge(x, y)
             const treeRoll = seededRandom(x, y, 12)
             const shouldRenderTree = insidePlayableArea
@@ -2428,7 +2489,11 @@ export default function ThreeLowPolyMap({
               : treeRoll < 0.9
 
             if (!shouldRenderTree) {
-              placeForestUndergrowth(x, y, pos, { edge, heavy: true })
+              placeForestUndergrowth(x, y, pos, {
+                edge,
+                heavy: true,
+                force: blockedEdgeTile
+              })
               continue
             }
 
@@ -2450,6 +2515,15 @@ export default function ThreeLowPolyMap({
             if (seededRandom(x, y, 8) > (edge ? 0.78 : 0.9)) {
               placeForestUndergrowth(x, y, pos, { edge, heavy: false })
             }
+          }
+
+          if (legacy === 20 && blockedEdgeTile) {
+            placeForestUndergrowth(x, y, pos, {
+              edge: true,
+              heavy: true,
+              force: true,
+              preferClearance: isInRoadClearance(mapInfo, x, y, 0.68)
+            })
           }
         }
       }
@@ -2600,9 +2674,14 @@ export default function ThreeLowPolyMap({
       state.onPlayerMove?.({ x: step.tileX, y: step.tileY, direction: step.direction })
       state.syncCameraTargetToTile?.(step.tileX, step.tileY)
       const zone = getEncounterZoneAt(state.currentMapName, step.tileX, step.tileY)
+      const zoneLock = zone?.id ? state.encounterZoneLocks?.[zone.id] : null
       if (zone?.name && state.lastZoneId !== zone.id) {
         state.lastZoneId = zone.id
-        state.onZoneEnter?.(zone.name)
+        state.onZoneEnter?.(zone.name, {
+          zoneId: zone.id,
+          locked: Boolean(zoneLock?.blocked),
+          lockReason: zoneLock?.reason || ''
+        })
       }
 
       const grass = grassObjects.get(`${step.tileX},${step.tileY}`)
@@ -2896,6 +2975,8 @@ export default function ThreeLowPolyMap({
 
       if (!ENCOUNTER_LEGACY_TILES.has(legacyTile)) return true
       const zone = getEncounterZoneAt(currentMapName, tileX, tileY)
+      const zoneLock = zone?.id ? stateRef.current?.encounterZoneLocks?.[zone.id] : null
+      if (zoneLock?.blocked) return true
       const rate = zone?.tallGrassRate ?? mapConfig?.tallGrassRate ?? 0.2
 
       if (cooldownRef.current > 0) {
@@ -3031,17 +3112,40 @@ export default function ThreeLowPolyMap({
       // 用相机投影矩阵构建 Frustum，逐 chunk 测 AABB；视野外的 chunk.group.visible = false。
       // 整组挂掉的 chunk 不再产生任何 draw call，使 GPU 负担从 O(地图) 降到 O(屏幕)。
       const mapChunks = state?.mapChunks
+      let visibleChunkCount = 0
       if (mapChunks && mapChunks.length > 0) {
         _frustumMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
         _viewFrustum.setFromProjectionMatrix(_frustumMat)
         for (let i = 0; i < mapChunks.length; i += 1) {
           const ch = mapChunks[i]
           ch.group.visible = _viewFrustum.intersectsBox(ch.boundingBox)
+          if (ch.group.visible) visibleChunkCount += 1
         }
       }
 
       if (!renderer.getContext?.()?.isContextLost?.()) {
         renderer.render(scene, camera)
+      }
+      if (perfProbeEnabled && typeof window !== 'undefined') {
+        window.__THREE_LOW_POLY_MAP_PERF__ = {
+          mapName: currentMapName,
+          canvasWidth: renderer.domElement.width,
+          canvasHeight: renderer.domElement.height,
+          cssWidth: renderer.domElement.clientWidth,
+          cssHeight: renderer.domElement.clientHeight,
+          devicePixelRatio: window.devicePixelRatio || 1,
+          pixelRatio: renderer.getPixelRatio(),
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+          points: renderer.info.render.points,
+          lines: renderer.info.render.lines,
+          geometries: renderer.info.memory.geometries,
+          textures: renderer.info.memory.textures,
+          sceneChildren: scene.children.length,
+          rootChildren: root.children.length,
+          visibleChunks: visibleChunkCount,
+          totalChunks: mapChunks?.length || 0
+        }
       }
       frameId = requestAnimationFrame(animate)
     }
@@ -3081,8 +3185,10 @@ export default function ThreeLowPolyMap({
     stateRef.current.beginPress = beginPress
     stateRef.current.endPress = endPress
 
-    return () => {
+    const cleanupRenderer = (reason = 'effect-cleanup') => {
+      if (disposed) return
       disposed = true
+      clearActiveThreeMapRenderer(host, cleanupRenderer)
       clearMoveDelayTimer()
       cancelAnimationFrame(frameId)
       window.clearTimeout(healthTimerId)
@@ -3095,11 +3201,14 @@ export default function ThreeLowPolyMap({
       renderer?.domElement?.removeEventListener('webglcontextrestored', handleContextRestored, false)
       const gl = renderer?.getContext?.()
       const contextAlreadyLost = typeof gl?.isContextLost === 'function' ? gl.isContextLost() : false
-      renderer?.dispose?.()
-      if (!contextAlreadyLost) {
+      if (!IS_HOT_RELOAD_ENV && !contextAlreadyLost && reason !== 'effect-remount' && reason !== 'handoff') {
         renderer?.forceContextLoss?.()
       }
+      renderer?.dispose?.()
       renderer?.domElement?.remove()
+      if (perfProbeEnabled && typeof window !== 'undefined') {
+        delete window.__THREE_LOW_POLY_MAP_PERF__
+      }
       root.traverse((child) => {
         if (child.isMesh) {
           child.geometry?.dispose?.()
@@ -3108,6 +3217,12 @@ export default function ThreeLowPolyMap({
         }
       })
       stateRef.current = null
+    }
+
+    registerActiveThreeMapRenderer(host, cleanupRenderer)
+
+    return () => {
+      cleanupRenderer('effect-cleanup')
     }
   }, [currentMapBossCompleted, currentMapName, renderNonce, requestRendererRestart])
 
@@ -3158,6 +3273,7 @@ export default function ThreeLowPolyMap({
     stateRef.current.mapConfig = mapConfig
     stateRef.current.currentMapBossCompleted = currentMapBossCompleted
     stateRef.current.mapEventVisualState = normalizedMapEventVisualState
+    stateRef.current.encounterZoneLocks = normalizedEncounterZoneLocks
     stateRef.current.onPlayerMove = onPlayerMove
     stateRef.current.onEncounter = onEncounter
     stateRef.current.onCollect = onCollect
@@ -3173,6 +3289,7 @@ export default function ThreeLowPolyMap({
     currentMapName,
     mapActive,
     mapConfig,
+    normalizedEncounterZoneLocks,
     normalizedMapEventVisualState,
     mapGrid,
     mapInfo,
@@ -3231,7 +3348,7 @@ export default function ThreeLowPolyMap({
   }
 
   return (
-    <div className="map-screen-v2">
+    <div className="map-screen-v2 map-screen-v2--immersive">
       <div className="map-scene-area">
         <div className="map-viewport-shell">
           <div
@@ -3251,10 +3368,9 @@ export default function ThreeLowPolyMap({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="map-controls-v2">
-        <div className="dpad">
+      <div className="map-controls-v2 map-controls-v2--float">
+        <div className="dpad dpad--minimal">
           <button
             type="button"
             disabled={cloudBlocked}
@@ -3263,8 +3379,9 @@ export default function ThreeLowPolyMap({
             onPointerLeave={() => endMovePress('up')}
             onPointerCancel={() => endMovePress('up')}
             className="dpad-button dpad-up"
+            aria-label="向上移动"
           >
-            <i className="fas fa-arrow-up text-lg"></i>
+            <i className="fas fa-arrow-up"></i>
           </button>
           <button
             type="button"
@@ -3274,8 +3391,9 @@ export default function ThreeLowPolyMap({
             onPointerLeave={() => endMovePress('down')}
             onPointerCancel={() => endMovePress('down')}
             className="dpad-button dpad-down"
+            aria-label="向下移动"
           >
-            <i className="fas fa-arrow-down text-lg"></i>
+            <i className="fas fa-arrow-down"></i>
           </button>
           <button
             type="button"
@@ -3285,8 +3403,9 @@ export default function ThreeLowPolyMap({
             onPointerLeave={() => endMovePress('left')}
             onPointerCancel={() => endMovePress('left')}
             className="dpad-button dpad-left"
+            aria-label="向左移动"
           >
-            <i className="fas fa-arrow-left text-lg"></i>
+            <i className="fas fa-arrow-left"></i>
           </button>
           <button
             type="button"
@@ -3296,25 +3415,26 @@ export default function ThreeLowPolyMap({
             onPointerLeave={() => endMovePress('right')}
             onPointerCancel={() => endMovePress('right')}
             className="dpad-button dpad-right"
+            aria-label="向右移动"
           >
-            <i className="fas fa-arrow-right text-lg"></i>
+            <i className="fas fa-arrow-right"></i>
           </button>
-          <div className="dpad-center"></div>
         </div>
-        <div className="map-action-grid">
-          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('bag')} className="map-action-button">
+        <div className="map-action-grid map-action-rail">
+          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('bag')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="背包" aria-label="背包">
             <i className="fa-solid fa-bag-shopping"></i><span>背包</span>
           </button>
-          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('team')} className="map-action-button">
+          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('team')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="宝可梦" aria-label="宝可梦">
             <i className="fa-solid fa-paw"></i><span>宝可梦</span>
           </button>
-          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('dex')} className="map-action-button">
+          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('dex')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="图鉴" aria-label="图鉴">
             <i className="fa-solid fa-book-open"></i><span>图鉴</span>
           </button>
-          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('shop')} className="map-action-button">
+          <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('shop')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="商店" aria-label="商店">
             <i className="fa-solid fa-store"></i><span>商店</span>
           </button>
         </div>
+      </div>
       </div>
     </div>
   )

@@ -83,6 +83,30 @@ supabase db push \
 
 这些占位文件只用于迁移历史对齐，不包含实际 SQL 变更。
 
+## 2026-05-24 新增迁移提醒
+
+本地新增了云端原子读档迁移：
+
+```text
+supabase/migrations/202605240001_atomic_cloud_load.sql
+```
+
+这条迁移会新增 `load_cloud_game_state_with_resources(UUID)`，让前端一次读取云存档和金币/能量，减少“进度和资源分两次查询读偏”的窗口。拉到这次代码后，需要再执行一次本文的 `supabase db push`。
+
+同一轮还新增了密码暴露面收口迁移：
+
+```text
+supabase/migrations/202605240002_reduce_password_exposure.sql
+```
+
+这条迁移会：
+
+- 让 `login_with_table_password` 不再把 `plain_password` 返回给前端
+- 新增 `teacher_reset_student_password(UUID, UUID, TEXT)`，供老师后台直接重设学生密码
+- 缩小 `register_table_user` 返回的 profile 字段范围
+
+如果你拉到这版前端代码但没执行这条迁移，老师后台的“更新学生密码”会失败，登录页在缺少新 RPC 时也会提示先同步数据库。
+
 ## 验证命令
 
 查看本地/远端迁移是否对齐：

@@ -1,5 +1,7 @@
 /** 道具立绘本地路径（与宝可梦 official-artwork 同级，由 cache-game-assets 生成） */
-export const ITEM_ARTWORK_DIR = '/assets/items/official-artwork'
+import { assetUrl } from './assetUrl.js'
+
+export const ITEM_ARTWORK_DIR = assetUrl('/assets/items/official-artwork')
 
 /** 下载后长边目标像素（宝可梦立绘约 475px，道具插画源图较小，放大后供 UI 缩放） */
 export const ITEM_ARTWORK_TARGET_MAX = 384

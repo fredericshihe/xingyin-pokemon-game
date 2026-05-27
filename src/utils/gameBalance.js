@@ -21,12 +21,15 @@ export const ENERGY_BALANCE = {
 
 export const BATTLE_REWARD_BALANCE = {
   baseExpYield: 54,
-  trainerMultiplier: 1.35,
+  trainerMultiplier: 1.12,
   participantTotalExpExponent: 0.7,
   underLevelBonusPerLevel: 0.08,
   overLevelPenaltyPerLevel: 0.04,
   maxLevelFactor: 1.45,
   minLevelFactor: 0.45,
+  earlyWildExpBoostLevel5: 1.3,
+  earlyWildExpBoostLevel7: 1.22,
+  earlyWildExpBoostLevel9: 1.12,
   baseGold: 4,
   goldPerLevel: 1.15,
   trainerGoldMultiplier: 1.45,
@@ -41,13 +44,13 @@ export const TRAINER_ROLE_BALANCE = {
     minTeamSize: 2,
     maxTeamSize: 3,
     levelOffset: 0,
-    rewardMultiplier: 1,
+    rewardMultiplier: 0.72,
     goldMultiplier: 1,
     goldCapMultiplier: 1,
     aiSkill: 0.5,
-    switchChance: 0.14,
-    switchScoreGap: 30,
-    switchHpRatio: 0.32
+    switchChance: 0.08,
+    switchScoreGap: 34,
+    switchHpRatio: 0.26
   },
   lieutenant: {
     label: '部下训练家',
@@ -55,13 +58,13 @@ export const TRAINER_ROLE_BALANCE = {
     minTeamSize: 3,
     maxTeamSize: 4,
     levelOffset: 1,
-    rewardMultiplier: 1.18,
+    rewardMultiplier: 1.14,
     goldMultiplier: 1.25,
     goldCapMultiplier: 1.2,
     aiSkill: 0.72,
-    switchChance: 0.28,
-    switchScoreGap: 24,
-    switchHpRatio: 0.42
+    switchChance: 0.18,
+    switchScoreGap: 30,
+    switchHpRatio: 0.34
   },
   boss: {
     label: 'Boss训练家',
@@ -69,13 +72,13 @@ export const TRAINER_ROLE_BALANCE = {
     minTeamSize: 5,
     maxTeamSize: 6,
     levelOffset: 2,
-    rewardMultiplier: 1.42,
+    rewardMultiplier: 1.5,
     goldMultiplier: 1.75,
     goldCapMultiplier: 1.8,
     aiSkill: 0.92,
-    switchChance: 0.48,
-    switchScoreGap: 18,
-    switchHpRatio: 0.52
+    switchChance: 0.26,
+    switchScoreGap: 24,
+    switchHpRatio: 0.4
   },
   challenge: {
     label: '试炼守护者',
@@ -83,13 +86,13 @@ export const TRAINER_ROLE_BALANCE = {
     minTeamSize: 3,
     maxTeamSize: 6,
     levelOffset: 1,
-    rewardMultiplier: 1.24,
+    rewardMultiplier: 1.2,
     goldMultiplier: 1.35,
     goldCapMultiplier: 1.35,
     aiSkill: 0.78,
-    switchChance: 0.34,
-    switchScoreGap: 22,
-    switchHpRatio: 0.44
+    switchChance: 0.2,
+    switchScoreGap: 28,
+    switchHpRatio: 0.36
   }
 }
 
@@ -259,6 +262,15 @@ export const calculateBattleRewards = ({
   const trainerMultiplier = battleKind === 'trainer'
     ? BATTLE_REWARD_BALANCE.trainerMultiplier * trainerRoleBalance.rewardMultiplier
     : 1
+  const earlyWildExpMultiplier = battleKind !== 'wild'
+    ? 1
+    : avgLevel <= 5
+      ? BATTLE_REWARD_BALANCE.earlyWildExpBoostLevel5
+      : avgLevel <= 7
+        ? BATTLE_REWARD_BALANCE.earlyWildExpBoostLevel7
+        : avgLevel <= 9
+          ? BATTLE_REWARD_BALANCE.earlyWildExpBoostLevel9
+          : 1
   const participantFactor = Math.max(1, Math.min(3, Number(participants) || 1))
   const baseExpYield = getOfficialBaseExperience(defeatedMon) || BATTLE_REWARD_BALANCE.baseExpYield
 
@@ -270,6 +282,7 @@ export const calculateBattleRewards = ({
       7 *
       levelFactor *
       trainerMultiplier *
+      earlyWildExpMultiplier *
       Math.pow(participantFactor, BATTLE_REWARD_BALANCE.participantTotalExpExponent)
     )
   )

@@ -1602,6 +1602,19 @@ await withViteAuditServer(async ({ loadModule }) => {
       })
       const forwardWarp = warps.find((event) => event.target?.mapName === 'GodotMapV2')
       if (!forwardWarp) add(errors, '新手山谷缺少进入星音草径的传送点')
+      if (forwardWarp) {
+        const forwardWarpProps = eventProps(forwardWarp)
+        const requiredAverageLevel = Math.trunc(Number(forwardWarpProps.requiredAverageLevel) || 0)
+        const requiredTrainerIds = Array.isArray(forwardWarpProps.requiredTrainerIds)
+          ? forwardWarpProps.requiredTrainerIds
+          : []
+        if (requiredAverageLevel < 6) {
+          add(errors, `新手山谷进入星音草径的传送点门槛过低，requiredAverageLevel=${requiredAverageLevel}`)
+        }
+        if (!requiredTrainerIds.includes('valley_trainer_camp_path')) {
+          add(errors, '新手山谷进入星音草径前必须要求完成营地练习生训练')
+        }
+      }
       if ((config.maxLevel || 0) < 8) add(errors, '新手山谷最高野生等级应覆盖到 Lv.8，保证去下一张图前可练级')
     } else {
       if (normalTrainers.length < 4) add(errors, `${mapId} 普通训练师少于 4 个，当前 ${normalTrainers.length}`)

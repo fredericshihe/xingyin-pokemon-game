@@ -46,6 +46,25 @@ const ROLE_VARIANT_RULES = {
   }
 }
 
+const ROLE_PLAYER_CATCH_UP_RULES = {
+  normal: {
+    overlevelFactor: 0.75,
+    maxBonus: 4
+  },
+  lieutenant: {
+    overlevelFactor: 0.9,
+    maxBonus: 5
+  },
+  challenge: {
+    overlevelFactor: 0,
+    maxBonus: 0
+  },
+  boss: {
+    overlevelFactor: 0.45,
+    maxBonus: 3
+  }
+}
+
 const clampLevel = (level, fallback = 1) => {
   const normalized = Math.trunc(Number(level))
   return Math.max(1, Math.min(100, Number.isFinite(normalized) ? normalized : fallback))
@@ -200,6 +219,71 @@ export const getTrainerDifficultyBounds = ({
   }
 }
 
+export const getTrainerBattlePressureLevel = ({
+  playerAverageLevel = 5,
+  leadLevel = playerAverageLevel
+} = {}) => {
+  const safeAverageLevel = clampLevel(Math.round(Number(playerAverageLevel) || 5), 5)
+  const safeLeadLevel = clampLevel(Math.round(Number(leadLevel) || safeAverageLevel), safeAverageLevel)
+  return clampLevel(
+    Math.round(Math.max(safeAverageLevel, (safeAverageLevel + safeLeadLevel) / 2)),
+    safeAverageLevel
+  )
+}
+
+export const getTrainerCatchUpBonus = ({
+  role = 'normal',
+  mapConfig = {},
+  bossLevelCap = null,
+  playerLevel = 5
+} = {}) => {
+  const normalizedRole = normalizeTrainerRole(role)
+  const rule = ROLE_PLAYER_CATCH_UP_RULES[normalizedRole] || ROLE_PLAYER_CATCH_UP_RULES.normal
+  if (!rule || rule.maxBonus <= 0 || rule.overlevelFactor <= 0) return 0
+
+  const bounds = getTrainerDifficultyBounds({
+    role: normalizedRole,
+    mapConfig,
+    bossLevelCap
+  })
+  const safePlayerLevel = clampLevel(playerLevel, bounds.recommendedLevel)
+  const overRecommendedLevels = Math.max(0, safePlayerLevel - bounds.recommendedLevel)
+  return Math.max(
+    0,
+    Math.min(rule.maxBonus, Math.round(overRecommendedLevels * rule.overlevelFactor))
+  )
+}
+
+export const rebalanceTrainerBattleTeamLevels = (teamConfig = [], {
+  role = 'normal',
+  mapConfig = {},
+  bossLevelCap = null,
+  playerLevel = 5
+} = {}) => {
+  const normalizedTeam = normalizeTeamConfig(teamConfig)
+  if (normalizedTeam.length === 0) return []
+
+  const bonus = getTrainerCatchUpBonus({
+    role,
+    mapConfig,
+    bossLevelCap,
+    playerLevel
+  })
+  if (bonus <= 0) return normalizedTeam
+
+  const bounds = getTrainerDifficultyBounds({
+    role,
+    mapConfig,
+    bossLevelCap
+  })
+  const hardCap = Math.max(bounds.minLevel, Math.min(100, bounds.maxLevel))
+
+  return normalizedTeam.map((entry) => ({
+    ...entry,
+    level: Math.max(bounds.minLevel, Math.min(hardCap, entry.level + bonus))
+  }))
+}
+
 export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   role = 'normal',
   eventType = 'trainer',
@@ -209,6 +293,8 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   victoryCount = 0,
   mapConfig = {},
   mapWildPokemon = [],
+  dailyVariantSpeciesIds = [],
+  dailyVariantLevelJitter = null,
   bossTeamConfig = [],
   challengeRarePool = [],
   enableDailyVariant = true
@@ -244,6 +330,9 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
     roleBalance.minTeamSize,
     Math.min(roleBalance.maxTeamSize, baseTeam.length || roleBalance.fallbackTeamSize)
   )
+  const levelJitter = Number.isInteger(Math.trunc(Number(dailyVariantLevelJitter)))
+    ? Math.max(0, Math.min(3, Math.trunc(Number(dailyVariantLevelJitter))))
+    : rule.levelJitter
   const progressionBaseTargetSize = isChallengeBattle ? roleBalance.minTeamSize : baseTargetSize
   const canAddMember = progressionBaseTargetSize < roleBalance.maxTeamSize && safeVictoryCount >= rule.extraTeamVictoryFloor
   const targetSize = isChallengeBattle
@@ -253,12 +342,17 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
       : progressionBaseTargetSize
   const teamPoolEntries = normalizePokemonPoolEntries(baseTeam, 18)
   const challengePoolEntries = normalizePokemonPoolEntries(challengeRarePool, 24)
-  const wildPoolEntries = normalizePokemonPoolEntries(mapWildPokemon, 10)
+  const variantPoolEntries = normalizePokemonPoolEntries(
+    Array.isArray(dailyVariantSpeciesIds) && dailyVariantSpeciesIds.length > 0
+      ? dailyVariantSpeciesIds
+      : mapWildPokemon,
+    10
+  )
   const bossCandidateTeam = rule.bossCandidateCount > 0 ? bossTeam.slice(-rule.bossCandidateCount) : []
   const bossPoolEntries = normalizePokemonPoolEntries(bossCandidateTeam, 7)
   const speciesPool = isChallengeBattle && challengePoolEntries.length > 0
     ? challengePoolEntries
-    : [...teamPoolEntries, ...wildPoolEntries, ...bossPoolEntries]
+    : [...teamPoolEntries, ...variantPoolEntries, ...bossPoolEntries]
   const localPoolIds = Array.from(new Set(speciesPool.map((entry) => entry.pokemonId)))
   const victoryBonus = Math.floor(safeVictoryCount / Math.max(1, rule.victoryStepEvery))
   const usedSpeciesIds = new Set()
@@ -273,7 +367,7 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   return Array.from({ length: targetSize }, (_, index) => {
     const baseEntry = baseTeam[index % Math.max(1, baseTeam.length)] || null
     const fallbackLevel = bounds.minLevel + Math.floor(index / 2)
-    const jitter = rule.levelJitter > 0 ? randomInt(random, -rule.levelJitter, rule.levelJitter) : 0
+    const jitter = levelJitter > 0 ? randomInt(random, -levelJitter, levelJitter) : 0
     const addMemberLevelBonus = index >= baseTeam.length ? Math.floor(index / 2) : 0
     const lateGameFloor = isLateGameNormalTrainer
       ? Math.max(

@@ -1,6 +1,10 @@
 -- Verifies the remote Supabase RPCs that protect cloud-save consistency:
 -- - save_cloud_game_save rejects same-revision different payloads.
 -- - save_cloud_game_state_with_resources is atomic for resource + save updates.
+-- - load_cloud_game_state_with_resources returns a coherent save + resource snapshot.
+-- - get_table_user_profile / get_user_resources / get_teacher_students stay usable after users public reads are removed.
+-- - login_with_table_password no longer returns plain_password to the client.
+-- - teacher_reset_student_password rotates student credentials without exposing old passwords.
 -- - same-revision same-payload retries do not reapply resource deltas.
 -- - teacher reward claim handshake reserves, then confirms, a reward batch.
 --
@@ -16,6 +20,12 @@ DECLARE
   v_atomic_insufficient RECORD;
   v_atomic_ok RECORD;
   v_atomic_retry RECORD;
+  v_atomic_load RECORD;
+  v_login_payload JSONB;
+  v_reset_password_result JSONB;
+  v_login_count INT;
+  v_student_count INT;
+  v_pending_count INT;
   v_saved JSONB;
   v_gold INT;
   v_energy INT;
@@ -38,6 +48,7 @@ BEGIN
     username,
     nickname,
     role,
+    teacher_id,
     gold,
     energy,
     max_energy,
@@ -52,6 +63,7 @@ BEGIN
     'audit_rpc_teacher',
     'RPC 审计老师',
     'teacher',
+    NULL,
     0,
     0,
     0,
@@ -65,6 +77,7 @@ BEGIN
     'audit_rpc_student',
     'RPC 审计学生',
     'student',
+    v_teacher_id,
     10,
     5,
     10,
@@ -83,6 +96,22 @@ BEGIN
     ),
     5
   );
+
+  SELECT COUNT(*)
+  INTO v_student_count
+  FROM get_teacher_students(v_teacher_id);
+
+  IF v_student_count IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION 'Expected teacher student roster to return 1 student, got %', v_student_count;
+  END IF;
+
+  SELECT COUNT(*)
+  INTO v_pending_count
+  FROM get_teacher_pending_students(v_teacher_id);
+
+  IF v_pending_count IS DISTINCT FROM 0 THEN
+    RAISE EXCEPTION 'Expected no pending students in audit roster, got %', v_pending_count;
+  END IF;
 
   SELECT *
   INTO v_plain_same
@@ -196,6 +225,48 @@ BEGIN
   END IF;
 
   SELECT *
+  INTO v_atomic_load
+  FROM load_cloud_game_state_with_resources(v_student_id);
+
+  IF v_atomic_load.save_revision IS DISTINCT FROM 6
+    OR v_atomic_load.gold IS DISTINCT FROM 7
+    OR v_atomic_load.energy IS DISTINCT FROM 3
+    OR v_atomic_load.max_energy IS DISTINCT FROM 10
+    OR v_atomic_load.game_data #>> '{marker}' IS DISTINCT FROM 'atomic-ok' THEN
+    RAISE EXCEPTION
+      'Expected atomic load snapshot to match latest committed save, revision=%, gold=%, energy=%, max_energy=%, marker=%',
+      v_atomic_load.save_revision,
+      v_atomic_load.gold,
+      v_atomic_load.energy,
+      v_atomic_load.max_energy,
+      v_atomic_load.game_data #>> '{marker}';
+  END IF;
+
+  SELECT to_jsonb(p)
+  INTO v_login_payload
+  FROM get_table_user_profile(v_student_id) AS p;
+
+  IF v_login_payload IS NULL OR (v_login_payload ? 'plain_password') THEN
+    RAISE EXCEPTION
+      'Expected profile RPC payload without plain_password, got %',
+      v_login_payload;
+  END IF;
+
+  SELECT *
+  INTO v_atomic_load
+  FROM get_user_resources(v_student_id);
+
+  IF v_atomic_load.gold IS DISTINCT FROM 7
+    OR v_atomic_load.energy IS DISTINCT FROM 3
+    OR v_atomic_load.max_energy IS DISTINCT FROM 10 THEN
+    RAISE EXCEPTION
+      'Expected resources RPC to match latest balances, gold=%, energy=%, max_energy=%',
+      v_atomic_load.gold,
+      v_atomic_load.energy,
+      v_atomic_load.max_energy;
+  END IF;
+
+  SELECT *
   INTO v_atomic_retry
   FROM save_cloud_game_state_with_resources(
     v_student_id,
@@ -220,6 +291,41 @@ BEGIN
       v_atomic_retry.accepted,
       v_gold,
       v_energy;
+  END IF;
+
+  SELECT to_jsonb(t)
+  INTO v_login_payload
+  FROM login_with_table_password('audit_rpc_student', 'audit-only') AS t;
+
+  IF v_login_payload IS NULL OR (v_login_payload ? 'plain_password') THEN
+    RAISE EXCEPTION
+      'Expected login payload without plain_password, got %',
+      v_login_payload;
+  END IF;
+
+  SELECT teacher_reset_student_password(v_teacher_id, v_student_id, 'audit-new-pass')
+  INTO v_reset_password_result;
+
+  IF COALESCE((v_reset_password_result ->> 'success')::BOOLEAN, FALSE) IS DISTINCT FROM TRUE THEN
+    RAISE EXCEPTION
+      'Expected teacher password reset success, got %',
+      v_reset_password_result;
+  END IF;
+
+  SELECT COUNT(*)
+  INTO v_login_count
+  FROM login_with_table_password('audit_rpc_student', 'audit-only');
+
+  IF v_login_count IS DISTINCT FROM 0 THEN
+    RAISE EXCEPTION 'Expected old password to fail after reset, got count=%', v_login_count;
+  END IF;
+
+  SELECT COUNT(*)
+  INTO v_login_count
+  FROM login_with_table_password('audit_rpc_student', 'audit-new-pass');
+
+  IF v_login_count IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION 'Expected new password to succeed after reset, got count=%', v_login_count;
   END IF;
 
   INSERT INTO teacher_rewards (

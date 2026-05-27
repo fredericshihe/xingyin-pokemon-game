@@ -160,6 +160,9 @@ export default function TeacherDashboard({ profile }) {
   const [rewardPokemonId, setRewardPokemonId] = useState(String(OFFICIAL_DEX_MONSTERS[0]?.id || 1))
   const [rewardPokemonLevel, setRewardPokemonLevel] = useState('5')
   const [rewardReason, setRewardReason] = useState('')
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('')
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false)
 
   const goldWarning = getGoldRewardWarning(goldAmount)
   const energyWarning = getEnergyRewardWarning(energyAmount) || getMaxEnergyWarning(energyMax)
@@ -214,6 +217,12 @@ export default function TeacherDashboard({ profile }) {
     }
   }, [selectedStudentId, students])
 
+  useEffect(() => {
+    setResetPassword('')
+    setResetPasswordConfirm('')
+    setPasswordResetLoading(false)
+  }, [selectedStudentId])
+
   const selectStudent = useCallback((student) => {
     if (!student?.id) return
     setSelectedStudentId(String(student.id))
@@ -245,13 +254,9 @@ export default function TeacherDashboard({ profile }) {
 
   const loadStudents = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, username, nickname, gold, energy, max_energy, created_at, plain_password, registration_status, registration_requested_at, registration_reviewed_at, registration_rejection_reason')
-        .eq('role', 'student')
-        .eq('teacher_id', profile.id)
-        .or('registration_status.is.null,registration_status.eq.approved')
-        .order('nickname')
+      const { data, error } = await supabase.rpc('get_teacher_students', {
+        p_teacher_id: profile.id
+      })
 
       if (error) throw error
       setStudents(data || [])
@@ -262,13 +267,9 @@ export default function TeacherDashboard({ profile }) {
 
   const loadPendingStudents = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, username, nickname, created_at, teacher_id, registration_status, registration_requested_at')
-        .eq('role', 'student')
-        .eq('teacher_id', profile.id)
-        .eq('registration_status', 'pending')
-        .order('registration_requested_at', { ascending: true })
+      const { data, error } = await supabase.rpc('get_teacher_pending_students', {
+        p_teacher_id: profile.id
+      })
 
       if (error) throw error
       setPendingStudents(data || [])
@@ -521,6 +522,54 @@ export default function TeacherDashboard({ profile }) {
     }
   }
 
+  const handleResetStudentPassword = async () => {
+    if (!selectedStudent) {
+      setMessage({ type: 'error', text: '请先选择学生' })
+      return
+    }
+
+    const nextPassword = String(resetPassword || '').trim()
+    const confirmPassword = String(resetPasswordConfirm || '').trim()
+    if (nextPassword.length < 6) {
+      setMessage({ type: 'error', text: '新密码至少 6 位' })
+      return
+    }
+    if (nextPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: '两次输入的新密码不一致' })
+      return
+    }
+    if (!window.confirm(`确认更新 ${selectedStudent.nickname || selectedStudent.username} 的登录密码吗？\n\n旧密码会立即失效。`)) {
+      return
+    }
+
+    setPasswordResetLoading(true)
+    setMessage(null)
+    try {
+      const { data, error } = await supabase.rpc('teacher_reset_student_password', {
+        p_teacher_id: profile.id,
+        p_student_id: selectedStudent.id,
+        p_new_password: nextPassword
+      })
+      if (error) throw error
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      if (result?.success) {
+        setResetPassword('')
+        setResetPasswordConfirm('')
+        setMessage({
+          type: 'success',
+          text: `${selectedStudent.nickname || selectedStudent.username} 的登录密码已更新，旧密码立即失效。`
+        })
+      } else {
+        setMessage({ type: 'error', text: result?.error || '密码更新失败' })
+      }
+    } catch (error) {
+      console.error('Error resetting student password:', error)
+      setMessage({ type: 'error', text: `密码更新失败: ${error.message}` })
+    } finally {
+      setPasswordResetLoading(false)
+    }
+  }
+
   const panelTitle = PANEL_TABS.find((t) => t.id === activePanel)?.label
 
   return (
@@ -652,8 +701,8 @@ export default function TeacherDashboard({ profile }) {
                       <div className="teacher-student-card__body">
                         <span className="teacher-student-card__name">{student.nickname}</span>
                         <span className="teacher-student-card__user">@{student.username}</span>
-                        <span className="teacher-student-card__pwd">
-                          密码 {student.plain_password || '未设置'}
+                        <span className="teacher-student-card__meta">
+                          建档 {formatDate(student.created_at)}
                         </span>
                       </div>
                       <div className="teacher-student-card__stats">
@@ -688,8 +737,8 @@ export default function TeacherDashboard({ profile }) {
                 </div>
                 <dl className="teacher-profile__grid">
                   <div>
-                    <dt>登录密码</dt>
-                    <dd>{selectedStudent.plain_password || '未设置'}</dd>
+                    <dt>创建时间</dt>
+                    <dd>{formatDate(selectedStudent.created_at)}</dd>
                   </div>
                   <div>
                     <dt>金币</dt>
@@ -702,6 +751,47 @@ export default function TeacherDashboard({ profile }) {
                     </dd>
                   </div>
                 </dl>
+                <form
+                  className="teacher-profile__password"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleResetStudentPassword()
+                  }}
+                >
+                  <div className="teacher-profile__password-copy">
+                    <strong>重设学生登录密码</strong>
+                    <span>后台不再显示旧密码。设置成功后，学生需要使用新密码重新登录。</span>
+                  </div>
+                  <div className="teacher-form-row">
+                    <Field label="新密码" hint="至少 6 位，提交后旧密码立即失效">
+                      <input
+                        type="password"
+                        value={resetPassword}
+                        onChange={(e) => setResetPassword(e.target.value)}
+                        autoComplete="new-password"
+                        placeholder="输入新的登录密码"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="确认新密码">
+                      <input
+                        type="password"
+                        value={resetPasswordConfirm}
+                        onChange={(e) => setResetPasswordConfirm(e.target.value)}
+                        autoComplete="new-password"
+                        placeholder="再次输入新密码"
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={passwordResetLoading}
+                    className="game-primary-button teacher-profile__password-btn"
+                  >
+                    {passwordResetLoading ? '更新中…' : '更新学生密码'}
+                  </button>
+                </form>
               </section>
 
               <nav className="teacher-tabs" aria-label="操作分类">

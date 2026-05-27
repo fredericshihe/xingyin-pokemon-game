@@ -963,6 +963,8 @@ const LOW_VEGETATION_DECORATION_TYPES = new Set([
   'wetland_reed_clump'
 ])
 const LOW_VEGETATION_TAGS = new Set(['grass', 'flower', 'mushroom', 'reed'])
+const SOFTENABLE_BOUNDARY_BLOCKER_TYPES = new Set(['nature_stone_large', 'nature_rock_large'])
+const BOUNDARY_BLOCKER_FLAT_DECOR_TYPES = ['nature_stone_flat_a', 'nature_stone_flat_b', 'nature_stone_flat_c']
 
 const DECORATIVE_FOOTPRINT_OVERRIDES = {
   nature_fence_simple: { width: 2, height: 1 },
@@ -1081,6 +1083,55 @@ const DECORATION_BLOCKER_PROTECTED_TILES = new Set([
   TILE.road,
   TILE.bridge
 ])
+const BOUNDARY_VISUAL_BLOCKER_TILES = new Set([TILE.wall, TILE.objectBlocker])
+const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
+  default: {
+    primary: ['tree-default', 'tree-pine', 'rock-large', 'bush-large'],
+    compact: ['rock-large', 'bush-large', 'stone-large'],
+    primaryScale: [0.74, 0.92],
+    compactScale: [0.72, 0.9]
+  },
+  farmTown: {
+    primary: ['town_tree', 'town_tree_high', 'town_rock_small'],
+    compact: ['town_tree', 'town_rock_small', 'town_hedge'],
+    primaryScale: [0.82, 0.98],
+    compactScale: [0.78, 0.92]
+  },
+  pirateShore: {
+    primary: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c'],
+    compact: ['pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c'],
+    primaryScale: [0.84, 1.02],
+    compactScale: [0.8, 0.94]
+  },
+  graveyard: {
+    primary: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_rocks'],
+    compact: ['grave_gravestone_broken', 'grave_cross_wood', 'grave_rocks'],
+    primaryScale: [0.9, 1.08],
+    compactScale: [0.88, 1.02]
+  },
+  hexRuins: {
+    primary: ['hex_stone_hill', 'hex_stone_rocks', 'hex_grass_forest', 'hex_unit_tree'],
+    compact: ['hex_stone_rocks', 'hex_water_rocks', 'hex_unit_tree'],
+    primaryScale: [0.94, 1.1],
+    compactScale: [0.9, 1.04]
+  },
+  survivalRidge: {
+    primary: ['platformer_tree_pine', 'survival_rock_a', 'survival_rock_b', 'survival_rock_c'],
+    compact: ['survival_rock_a', 'survival_rock_b', 'ridge_block_grass_edge'],
+    primaryScale: [0.88, 1.04],
+    compactScale: [0.84, 0.98]
+  },
+  bossHighland: {
+    primary: ['hex_stone_hill', 'platformer_rocks', 'platformer_stones', 'platformer_tree_pine'],
+    compact: ['platformer_rocks', 'platformer_stones', 'ridge_block_grass_edge'],
+    primaryScale: [0.92, 1.08],
+    compactScale: [0.86, 1.02]
+  }
+}
+const BOUNDARY_FIXED_LANDMARK_CLEARANCE_RADIUS = {
+  heal: 2.25,
+  challenge: 2.25
+}
 
 function getDecorationAssetMeta(type) {
   return MAP_ASSET_CATALOG[type] || MAP_ASSET_CATALOG[DECORATIVE_ASSET_ALIASES[type]] || null
@@ -1171,6 +1222,230 @@ function getDecorationFootprintCells(object, padding = 0) {
   }
 
   return cells
+}
+
+function decorationTouchesBlockedRuntimeTiles(grid, object, padding = 0) {
+  return getDecorationFootprintCells(object, padding)
+    .some((cell) => !isRuntimeGridWalkable(grid[cell.y]?.[cell.x]))
+}
+
+function softenBoundaryVisualBlockerObject(object, canonicalType) {
+  const x = Math.round(Number(object?.x) || 0)
+  const y = Math.round(Number(object?.y) || 0)
+  const variantIndex = Math.floor(seededRandom(x, y, 1047) * BOUNDARY_BLOCKER_FLAT_DECOR_TYPES.length) % BOUNDARY_BLOCKER_FLAT_DECOR_TYPES.length
+  const nextType = BOUNDARY_BLOCKER_FLAT_DECOR_TYPES[variantIndex]
+  const scaleFactor = canonicalType === 'nature_rock_large' ? 0.68 : 0.82
+
+  return {
+    ...object,
+    type: nextType,
+    scale: Number((Math.max(0.58, Number(object?.scale) || 0.8) * scaleFactor).toFixed(2)),
+    softenedFrom: object?.type || canonicalType
+  }
+}
+
+function splitBoundaryVisualBlockersByCollision(grid, decorations) {
+  const blocking = []
+  const visual = []
+
+  ;(decorations || []).forEach((object) => {
+    const canonicalType = getDecorationAssetMeta(object?.type)?.id || object?.type
+    const isSoftenableBoundaryBlocker = (
+      typeof object?.sourceId === 'string' &&
+      object.sourceId.startsWith('boundary_visual_blocker_') &&
+      SOFTENABLE_BOUNDARY_BLOCKER_TYPES.has(canonicalType)
+    )
+
+    if (isSoftenableBoundaryBlocker && !decorationTouchesBlockedRuntimeTiles(grid, object, 0)) {
+      visual.push(softenBoundaryVisualBlockerObject(object, canonicalType))
+      return
+    }
+
+    blocking.push(object)
+    visual.push(object)
+  })
+
+  return { blocking, visual }
+}
+
+function isCoveredByPathBlockingDecoration(decorations, x, y, padding = 0.12) {
+  return (decorations || []).some((object) => (
+    isPathBlockingDecoration(object) &&
+    isInsideDecorationFootprint(object, x, y, padding)
+  ))
+}
+
+function distanceToVisualPathSegment(tileX, tileY, start, end) {
+  const [ax, ay] = start
+  const [bx, by] = end
+  const dx = bx - ax
+  const dy = by - ay
+  const lenSq = dx * dx + dy * dy
+  const t = lenSq <= 0
+    ? 0
+    : Math.max(0, Math.min(1, ((tileX - ax) * dx + (tileY - ay) * dy) / lenSq))
+  const px = ax + dx * t
+  const py = ay + dy * t
+  return Math.hypot(tileX - px, tileY - py)
+}
+
+function distanceToVisualPaths(visualPaths, tileX, tileY) {
+  return (visualPaths || []).reduce((best, path) => {
+    const points = Array.isArray(path?.points) ? path.points : []
+    for (let index = 0; index < points.length - 1; index += 1) {
+      best = Math.min(best, distanceToVisualPathSegment(tileX, tileY, points[index], points[index + 1]))
+    }
+    return best
+  }, Infinity)
+}
+
+function distanceToRuntimeEvents(runtimeEvents, tileX, tileY) {
+  return (runtimeEvents || []).reduce((best, entry) => {
+    const eventX = Number(entry?.position?.x)
+    const eventY = Number(entry?.position?.y)
+    if (!Number.isFinite(eventX) || !Number.isFinite(eventY)) return best
+    return Math.min(best, Math.hypot(tileX - eventX, tileY - eventY))
+  }, Infinity)
+}
+
+function resolveBoundaryVisualBlockerProfile(mapId) {
+  if (mapId === 'GodotMapV2_FarmTown') return BOUNDARY_VISUAL_BLOCKER_PROFILES.farmTown
+  if (mapId === 'GodotMapV2_PirateShore') return BOUNDARY_VISUAL_BLOCKER_PROFILES.pirateShore
+  if (mapId === 'GodotMapV2_Graveyard') return BOUNDARY_VISUAL_BLOCKER_PROFILES.graveyard
+  if (mapId === 'GodotMapV2_HexRuins') return BOUNDARY_VISUAL_BLOCKER_PROFILES.hexRuins
+  if (mapId === 'GodotMapV2_SurvivalRidge') return BOUNDARY_VISUAL_BLOCKER_PROFILES.survivalRidge
+  if (mapId === 'GodotMapV2_BossHighland') return BOUNDARY_VISUAL_BLOCKER_PROFILES.bossHighland
+  return BOUNDARY_VISUAL_BLOCKER_PROFILES.default
+}
+
+function resolveBoundaryVisualBlockerOffset(grid, x, y, depth = 0.58) {
+  const vectors = []
+  if (isRuntimeGridWalkable(grid[y - 1]?.[x])) vectors.push({ x: 0, y: 1 })
+  if (isRuntimeGridWalkable(grid[y + 1]?.[x])) vectors.push({ x: 0, y: -1 })
+  if (isRuntimeGridWalkable(grid[y]?.[x - 1])) vectors.push({ x: 1, y: 0 })
+  if (isRuntimeGridWalkable(grid[y]?.[x + 1])) vectors.push({ x: -1, y: 0 })
+  if (vectors.length === 0) return { x: 0, y: 0 }
+
+  const total = vectors.reduce((sum, vector) => ({
+    x: sum.x + vector.x,
+    y: sum.y + vector.y
+  }), { x: 0, y: 0 })
+  const length = Math.hypot(total.x, total.y) || 1
+
+  return {
+    x: Number(((total.x / length) * depth).toFixed(2)),
+    y: Number(((total.y / length) * depth).toFixed(2))
+  }
+}
+
+function resolveBoundaryVisualBlockerScale(type, [minFactor, maxFactor], x, y, salt = 0) {
+  const asset = getDecorationAssetMeta(type)
+  const baseScale = Number(asset?.defaultScale ?? 1) || 1
+  const factor = minFactor + seededRandom(x, y, 910 + salt) * (maxFactor - minFactor)
+  return Number((baseScale * factor).toFixed(2))
+}
+
+function createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+  type,
+  scale,
+  depth,
+  jitterRange,
+  saltBase = 0
+}) {
+  const offset = resolveBoundaryVisualBlockerOffset(grid, x, y, depth)
+  const jitterX = (seededRandom(x, y, 940 + saltBase) - 0.5) * jitterRange
+  const jitterY = (seededRandom(x, y, 970 + saltBase) - 0.5) * jitterRange
+
+  return {
+    type,
+    x: Number((x + offset.x + jitterX).toFixed(2)),
+    y: Number((y + offset.y + jitterY).toFixed(2)),
+    scale,
+    rotation: Number((seededRandom(x, y, 1000 + saltBase) * Math.PI * 2).toFixed(4)),
+    sourceId: `boundary_visual_blocker_${mapId}_${x}_${y}`
+  }
+}
+
+function overlapsBoundaryVisualPathClearance(object, clearanceCells, padding = 0.28) {
+  return getDecorationFootprintCells(object, padding)
+    .some((cell) => clearanceCells.has(`${cell.x},${cell.y}`))
+}
+
+function overlapsBoundaryFixedLandmarkClearance(object, runtimeEvents) {
+  const x = Number(object?.x)
+  const y = Number(object?.y)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return false
+
+  return (runtimeEvents || []).some((entry) => {
+    const radius = BOUNDARY_FIXED_LANDMARK_CLEARANCE_RADIUS[entry?.type]
+    if (!radius) return false
+    const eventX = Number(entry?.position?.x)
+    const eventY = Number(entry?.position?.y)
+    if (!Number.isFinite(eventX) || !Number.isFinite(eventY)) return false
+    return Math.hypot(x - eventX, y - eventY) < radius
+  })
+}
+
+function buildBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths) {
+  const profile = resolveBoundaryVisualBlockerProfile(mapId)
+  const clearanceCells = collectPathClearanceCells(grid, runtimeEvents)
+  const added = []
+
+  for (let y = 0; y < HEIGHT; y += 1) {
+    for (let x = 0; x < WIDTH; x += 1) {
+      const tile = grid[y]?.[x]
+      if (!BOUNDARY_VISUAL_BLOCKER_TILES.has(tile)) continue
+      if (!hasWalkableCardinalNeighbor(grid, x, y)) continue
+      if (isCoveredByPathBlockingDecoration([...decorations, ...added], x, y, 0.16)) continue
+
+      const roadDistance = distanceToVisualPaths(visualPaths, x, y)
+      const eventDistance = distanceToRuntimeEvents(runtimeEvents, x, y)
+      const nearCriticalPath = roadDistance <= 2.75 || eventDistance <= 3
+      const primaryTypes = nearCriticalPath ? profile.compact : profile.primary
+      const primaryType = primaryTypes[Math.floor(seededRandom(x, y, 860) * primaryTypes.length) % primaryTypes.length]
+      const fallbackType = profile.compact[Math.floor(seededRandom(x, y, 875) * profile.compact.length) % profile.compact.length]
+      const tertiaryType = profile.compact[(Math.floor(seededRandom(x, y, 892) * profile.compact.length) + 1) % profile.compact.length]
+
+      const attempts = [
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: primaryType,
+          scale: resolveBoundaryVisualBlockerScale(
+            primaryType,
+            nearCriticalPath ? profile.compactScale : profile.primaryScale,
+            x,
+            y,
+            0
+          ),
+          depth: nearCriticalPath ? 0.86 : 0.64,
+          jitterRange: nearCriticalPath ? 0.05 : 0.1,
+          saltBase: 0
+        }),
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: fallbackType,
+          scale: resolveBoundaryVisualBlockerScale(fallbackType, profile.compactScale, x, y, 1),
+          depth: nearCriticalPath ? 0.96 : 0.78,
+          jitterRange: 0.04,
+          saltBase: 31
+        }),
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: tertiaryType,
+          scale: resolveBoundaryVisualBlockerScale(tertiaryType, [0.7, 0.84], x, y, 2),
+          depth: nearCriticalPath ? 1.04 : 0.88,
+          jitterRange: 0.02,
+          saltBase: 63
+        })
+      ]
+
+      const candidate = attempts.find((entry) => (
+        !overlapsBoundaryVisualPathClearance(entry, clearanceCells) &&
+        !overlapsBoundaryFixedLandmarkClearance(entry, runtimeEvents)
+      ))
+      if (!candidate) continue
+      added.push(candidate)
+    }
+  }
+
+  return added
 }
 
 function collectEventAccessCorridorCells(grid, runtimeEvents) {
@@ -2575,7 +2850,7 @@ const REGION_GAMEPLAY_PROFILES = {
     bossName: '雾湖首领',
     ecologyHint: '西岸芦草偏可达鸭与鲤鱼王，南岸有大舌贝，东岸潮草偏墨海马与海星星；击败首领后会出现呆呆兽气息。',
     bossRarePokemon: { pokemonId: 128, weight: 18 },
-    challengeRarePool: [33, 40, 71, 73, 75, 90, 91, 93],
+    challengeRarePool: [33, 71, 40, 73, 90, 91, 93, 75],
     signMessages: [
       '雾湖试炼：击败3名巡守，首领开启。',
       '苇岸生态：西水系可达鸭，南大舌贝，东海星星。',
@@ -2606,6 +2881,7 @@ const REGION_GAMEPLAY_PROFILES = {
       { pokemonId: 52, minLevel: 20, maxLevel: 24 },
       { pokemonId: 56, minLevel: 20, maxLevel: 24 }
     ],
+    bossSupportSpeciesIds: [15, 48, 52, 56, 22],
     signMessages: [
       '农庄试炼：击败3名巡守，首领开启。',
       '田垄生态：北草普，西普斗，东岩斗。',
@@ -2628,10 +2904,10 @@ const REGION_GAMEPLAY_PROFILES = {
     bossRarePokemon: { pokemonId: 24, weight: 18 },
     challengeRarePool: [
       { pokemonId: 8, minLevel: 23, maxLevel: 30 },
+      { pokemonId: 32, minLevel: 28, maxLevel: 30 },
       { pokemonId: 18, minLevel: 28, maxLevel: 30 },
       { pokemonId: 28, minLevel: 30, maxLevel: 30 },
       { pokemonId: 31, minLevel: 28, maxLevel: 30 },
-      { pokemonId: 32, minLevel: 28, maxLevel: 30 },
       { pokemonId: 42, minLevel: 30, maxLevel: 30 },
       { pokemonId: 55, minLevel: 30, maxLevel: 30 },
       { pokemonId: 115, minLevel: 30, maxLevel: 30 }
@@ -2659,16 +2935,16 @@ const REGION_GAMEPLAY_PROFILES = {
     challengeRarePool: [
       7,
       29,
-      { pokemonId: 17, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 19, minLevel: 31, maxLevel: 36 },
-      { pokemonId: 30, minLevel: 30, maxLevel: 36 },
       { pokemonId: 46, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 17, minLevel: 30, maxLevel: 36 },
       { pokemonId: 50, minLevel: 35, maxLevel: 36 },
       { pokemonId: 54, minLevel: 32, maxLevel: 36 },
-      { pokemonId: 70, minLevel: 33, maxLevel: 36 },
       { pokemonId: 132, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 19, minLevel: 31, maxLevel: 36 },
       { pokemonId: 134, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 144, minLevel: 30, maxLevel: 36 }
+      { pokemonId: 144, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 30, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 70, minLevel: 33, maxLevel: 36 }
     ],
     signMessages: [
       '墓园试炼：击败3名守卫，首领现身。',
@@ -2693,16 +2969,16 @@ const REGION_GAMEPLAY_PROFILES = {
     challengeRarePool: [
       { pokemonId: 37, minLevel: 37, maxLevel: 42 },
       { pokemonId: 41, minLevel: 38, maxLevel: 42 },
-      57,
-      58,
-      59,
-      { pokemonId: 62, minLevel: 35, maxLevel: 42 },
-      { pokemonId: 63, minLevel: 35, maxLevel: 42 },
-      { pokemonId: 64, minLevel: 35, maxLevel: 42 },
       { pokemonId: 66, minLevel: 40, maxLevel: 42 },
+      57,
+      { pokemonId: 62, minLevel: 35, maxLevel: 42 },
+      { pokemonId: 138, minLevel: 37, maxLevel: 42 },
       { pokemonId: 67, minLevel: 40, maxLevel: 42 },
+      135,
+      { pokemonId: 63, minLevel: 35, maxLevel: 42 },
       { pokemonId: 86, minLevel: 40, maxLevel: 42 },
-      { pokemonId: 138, minLevel: 37, maxLevel: 42 }
+      58,
+      59
     ],
     signMessages: [
       '遗迹试炼：击败3名守卫，首领开启。',
@@ -2744,6 +3020,7 @@ const REGION_GAMEPLAY_PROFILES = {
       141,
       { pokemonId: 133, minLevel: 41, maxLevel: 47 }
     ],
+    bossSupportSpeciesIds: [34, 35, 51, 104, 109],
     signMessages: [
       '营地试炼：击败3名巡守，首领开启。',
       '营地生态：北斗岩，南岩地，东钢普。',
@@ -2766,21 +3043,22 @@ const REGION_GAMEPLAY_PROFILES = {
     bossRarePokemon: { pokemonId: 68, weight: 18 },
     challengeRareChance: 0.36,
     challengeRarePool: [
-      9,
       10,
       { pokemonId: 12, minLevel: 55, maxLevel: 55 },
-      25,
-      26,
-      27,
-      69,
       { pokemonId: 94, minLevel: 47, maxLevel: 50 },
+      25,
+      63,
       { pokemonId: 104, minLevel: 50, maxLevel: 50 },
+      146,
       { pokemonId: 122, minLevel: 47, maxLevel: 50 },
-      { pokemonId: 136, minLevel: 47, maxLevel: 50 },
       { pokemonId: 142, minLevel: 55, maxLevel: 55 },
+      69,
       { pokemonId: 145, minLevel: 47, maxLevel: 50 },
-      { pokemonId: 146, minLevel: 47, maxLevel: 50 }
+      9,
+      26,
+      27
     ],
+    bossSupportSpeciesIds: [63, 122, 104, 146, 142],
     signMessages: [
       '高地试炼：击败3名巡守，唤醒首领。',
       '高地生态：西草龙岩，南火水，东电龙。',
@@ -2803,11 +3081,11 @@ const REGION_TRAINER_ROSTERS = {
     trainers: [
       { name: '草径露营客', speciesIds: [1, 13] },
       { name: '南坡飞羽客', speciesIds: [39, 98] },
-      { name: '花田采集员', speciesIds: [114, 119] },
+      { name: '花田采集员', speciesIds: [114, 119], dailyVariantSpeciesIds: [114, 119, 4], levels: [7, 7] },
       { name: '东岗电气迷', speciesIds: [4, 1] }
     ],
     lieutenants: [
-      { name: '苔坡巡队长', speciesIds: [98, 39, 4] },
+      { name: '苔坡巡队长', speciesIds: [98, 39, 119] },
       { name: '花径哨卫', speciesIds: [114, 119, 13] },
       { name: '湖畔督导员', speciesIds: [1, 4, 39] }
     ]
@@ -2817,7 +3095,7 @@ const REGION_TRAINER_ROSTERS = {
       { name: '雾岸观测员', speciesIds: [14, 16] },
       { name: '潮滩潜水客', speciesIds: [77, 78] },
       { name: '湖心占星者', speciesIds: [80, 13] },
-      { name: '苇湾垂钓者', speciesIds: [5, 14] }
+      { name: '苇湾垂钓者', speciesIds: [5, 14], levels: [14, 14] }
     ],
     lieutenants: [
       { name: '芦苇巡队长', speciesIds: [77, 78, 80] },
@@ -2834,7 +3112,7 @@ const REGION_TRAINER_ROSTERS = {
     ],
     lieutenants: [
       { name: '田垄巡队长', speciesIds: [96, 106, 22] },
-      { name: '仓场守备员', speciesIds: [119, 88, 30] },
+      { name: '仓场守备员', speciesIds: [119, 88, 96] },
       { name: '坡地监督员', speciesIds: [87, 102, 96] }
     ]
   },
@@ -2854,12 +3132,12 @@ const REGION_TRAINER_ROSTERS = {
   GodotMapV2_Graveyard: {
     trainers: [
       { name: '墓道夜巡者', speciesIds: [20, 100] },
-      { name: '梦魇占卜师', speciesIds: [43, 137] },
+      { name: '梦魇占卜师', speciesIds: [20, 100], dailyVariantSpeciesIds: [20, 100, 43] },
       { name: '毒雾拾荒者', speciesIds: [101, 21] },
-      { name: '灵灯看守人', speciesIds: [6, 137] }
+      { name: '灵灯看守人', speciesIds: [21, 101], dailyVariantSpeciesIds: [20, 21, 43, 101] }
     ],
     lieutenants: [
-      { name: '墓园巡队长', speciesIds: [21, 43, 137] },
+      { name: '墓园巡队长', speciesIds: [21, 43, 100] },
       { name: '黑雾守备员', speciesIds: [100, 101, 43] },
       { name: '夜巡督导员', speciesIds: [6, 137, 100] }
     ]
@@ -2867,9 +3145,9 @@ const REGION_TRAINER_ROSTERS = {
   GodotMapV2_HexRuins: {
     trainers: [
       { name: '线圈维护员', speciesIds: [90, 45] },
-      { name: '终端勘测员', speciesIds: [108, 111] },
-      { name: '岩层修复师', speciesIds: [103, 105] },
-      { name: '幻象记录员', speciesIds: [135, 91] }
+      { name: '终端勘测员', speciesIds: [105, 135], dailyVariantSpeciesIds: [105, 135, 45], levels: [36, 36] },
+      { name: '岩层修复师', speciesIds: [45, 105], dailyVariantSpeciesIds: [45, 105, 135] },
+      { name: '幻象记录员', speciesIds: [135, 105], dailyVariantSpeciesIds: [135, 105, 45], levels: [38, 38] }
     ],
     lieutenants: [
       { name: '电枢巡队长', speciesIds: [38, 45, 108] },
@@ -2879,10 +3157,10 @@ const REGION_TRAINER_ROSTERS = {
   },
   GodotMapV2_SurvivalRidge: {
     trainers: [
-      { name: '峡口力士', speciesIds: [34, 35] },
+      { name: '峡口力士', speciesIds: [35, 51], dailyVariantSpeciesIds: [35, 51, 131], levels: [41, 42] },
       { name: '岩壁猎手', speciesIds: [51, 131] },
-      { name: '营地技师', speciesIds: [109, 139] },
-      { name: '高坡驯兽员', speciesIds: [143, 104] }
+      { name: '营地技师', speciesIds: [131, 139], dailyVariantSpeciesIds: [131, 139, 104], levels: [43, 44] },
+      { name: '高坡驯兽员', speciesIds: [139, 35], dailyVariantSpeciesIds: [139, 35, 131], levels: [44, 45] }
     ],
     lieutenants: [
       { name: '山脊巡队长', speciesIds: [34, 51, 131] },
@@ -2892,15 +3170,15 @@ const REGION_TRAINER_ROSTERS = {
   },
   GodotMapV2_BossHighland: {
     trainers: [
-      { name: '天幕园艺师', speciesIds: [72, 74] },
-      { name: '峰顶潜修者', speciesIds: [76, 129] },
-      { name: '岩龙勘察员', speciesIds: [131, 143] },
-      { name: '云海看守人', speciesIds: [9, 10] }
+      { name: '天幕园艺师', speciesIds: [104, 131], dailyVariantSpeciesIds: [104, 131, 63], dailyVariantLevelJitter: 0, levels: [52, 52] },
+      { name: '峰顶潜修者', speciesIds: [131, 104], dailyVariantSpeciesIds: [131, 104, 63], levels: [52, 52] },
+      { name: '岩龙勘察员', speciesIds: [104, 131], dailyVariantSpeciesIds: [104, 131, 63], levels: [52, 53] },
+      { name: '云海看守人', speciesIds: [131, 104], dailyVariantSpeciesIds: [131, 104, 63], levels: [52, 53] }
     ],
     lieutenants: [
-      { name: '高地巡队长', speciesIds: [74, 76, 12] },
-      { name: '星雾守备员', speciesIds: [131, 143, 9] },
-      { name: '天穹监理员', speciesIds: [72, 10, 129] }
+      { name: '高地巡队长', speciesIds: [122, 145, 104], levels: [54, 55, 56] },
+      { name: '星雾守备员', speciesIds: [122, 146, 104], levels: [55, 56, 57] },
+      { name: '天穹监理员', speciesIds: [10, 122, 104], levels: [55, 56, 57] }
     ]
   }
 }
@@ -2983,19 +3261,88 @@ function makeTeam(speciesIds, levels, fallbackPool = speciesIds) {
   })
 }
 
+function makeBossTeam(speciesIds, levels, bossAceId, fallbackPool = speciesIds) {
+  const normalizedBossAceId = Math.trunc(Number(bossAceId))
+  if (!Number.isInteger(normalizedBossAceId)) {
+    return makeTeam(speciesIds, levels, fallbackPool)
+  }
+
+  const normalizedSpeciesIds = Array.from(new Set(
+    (Array.isArray(speciesIds) ? speciesIds : [])
+      .map((value) => Math.trunc(Number(value)))
+      .filter(Number.isInteger)
+  ))
+  const supportSpeciesIds = normalizedSpeciesIds.filter((pokemonId) => pokemonId !== normalizedBossAceId)
+  const aceLevel = clampLevel(levels?.[levels.length - 1] ?? levels?.[levels.length - 2] ?? levels?.[0] ?? 1)
+  const supportLevels = Array.isArray(levels) ? levels.slice(0, Math.max(0, levels.length - 1)) : []
+  const localPoolIds = Array.from(new Set([
+    ...supportSpeciesIds,
+    ...(Array.isArray(fallbackPool) ? fallbackPool : [])
+  ].map((value) => Math.trunc(Number(value))).filter(Number.isInteger).filter((value) => value !== normalizedBossAceId)))
+
+  const usedSpeciesIds = new Set([normalizedBossAceId])
+  const usedFamilyKeys = new Set()
+  const bossFamilyKey = getEvolutionFamilyKey(normalizedBossAceId)
+  if (bossFamilyKey.length > 0) usedFamilyKeys.add(bossFamilyKey)
+
+  const supportTeam = supportSpeciesIds.map((pokemonId, index) => {
+    const level = clampLevel(supportLevels[index] ?? supportLevels[supportLevels.length - 1] ?? aceLevel)
+    const resolvedId = resolveSpeciesForLevelWithVariety({
+      preferredIds: [pokemonId],
+      level,
+      localPoolIds,
+      usedSpeciesIds,
+      usedFamilyKeys
+    }) || resolveSpeciesForLevelWithVariety({
+      preferredIds: [pokemonId],
+      level,
+      localPoolIds,
+      usedSpeciesIds: new Set(),
+      usedFamilyKeys: new Set()
+    }) || pokemonId || localPoolIds[0]
+
+    usedSpeciesIds.add(resolvedId)
+    const familyKey = getEvolutionFamilyKey(resolvedId)
+    if (familyKey.length > 0) usedFamilyKeys.add(familyKey)
+
+    return {
+      pokemonId: resolvedId,
+      level
+    }
+  })
+
+  return [
+    ...supportTeam,
+    {
+      pokemonId: normalizedBossAceId,
+      level: aceLevel
+    }
+  ]
+}
+
 function makePickupReward(regionOrder, index) {
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
+  const isUpperMid = regionOrder >= 5
   const ballKey = isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic'
   const potionKey = isLate ? 'hyper_potion' : isMid ? 'super_potion' : 'potion'
-  const expKey = isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small'
+  const pickupExpKey = isLate ? 'exp_potion_large' : isUpperMid ? 'exp_potion_medium' : 'exp_potion_small'
+  const earlyPickupFallback = isMid
+    ? { itemType: 'potion', itemKey: potionKey, quantity: 1 }
+    : { itemType: 'pokeball', itemKey: ballKey, quantity: 1 }
+  const primaryPickupReward = regionOrder <= 4
+    ? earlyPickupFallback
+    : { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
+  const secondaryPickupReward = isUpperMid
+    ? { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
+    : { itemType: 'potion', itemKey: potionKey, quantity: 1 }
   const rewards = [
     { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
     { itemType: 'potion', itemKey: potionKey, quantity: 1 },
-    { itemType: 'expPotion', itemKey: expKey, quantity: 1 },
+    primaryPickupReward,
     { itemType: 'pokeball', itemKey: ballKey, quantity: 2 },
     { itemType: 'potion', itemKey: potionKey, quantity: 2 },
-    { itemType: 'expPotion', itemKey: expKey, quantity: 1 },
+    secondaryPickupReward,
     { itemType: 'potion', itemKey: potionKey, quantity: 1, hidden: true },
     { itemType: 'pokeball', itemKey: ballKey, quantity: 1, hidden: true }
   ]
@@ -3005,6 +3352,14 @@ function makePickupReward(regionOrder, index) {
 function makeBossReward(regionOrder) {
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
+  const rewardExpKey = isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small'
+  const bossExpReward = regionOrder <= 1
+    ? null
+    : {
+        itemType: 'expPotion',
+        itemKey: regionOrder === 3 ? 'exp_potion_small' : rewardExpKey,
+        quantity: 1
+      }
   return [
     {
       itemType: 'pokeball',
@@ -3016,11 +3371,7 @@ function makeBossReward(regionOrder) {
       itemKey: isLate ? 'hyper_potion' : isMid ? 'super_potion' : 'potion',
       quantity: 1
     },
-    {
-      itemType: 'expPotion',
-      itemKey: isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small',
-      quantity: 1
-    }
+    ...(bossExpReward ? [bossExpReward] : [])
   ]
 }
 
@@ -3184,17 +3535,152 @@ function pickChallengeTrialSpecies(challengeRarePool, levels, fallbackPool = [])
     .filter(Number.isInteger)
 }
 
+const LIEUTENANT_STYLE_TEMPLATES = [
+  {
+    key: 'pressure',
+    label: '速攻压制',
+    titleSuffix: '速攻压制',
+    difficultyLabel: '部下训练家 · 速攻压制',
+    sourcePattern: ['wild', 'wild', 'trial'],
+    openingText: '先压节奏，再谈胜负',
+    beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
+      `${lieutenantName}：先压住你的节奏，再去见${bossName}这位首领。`
+    ),
+    defeatedText: (lieutenantName) => `${lieutenantName}的速攻阵型被你拆开了，印记交给你。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：今天先到这里，印记已经交给你，继续去找${bossName}吧。`
+  },
+  {
+    key: 'control',
+    label: '控场消耗',
+    titleSuffix: '控场消耗',
+    difficultyLabel: '部下训练家 · 控场消耗',
+    sourcePattern: ['wild', 'trial', 'wild'],
+    openingText: '先磨住局面，再慢慢推进',
+    beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
+      `${lieutenantName}：我会把场面稳住，别想轻松见到${bossName}这位首领。`
+    ),
+    defeatedText: (lieutenantName) => `${lieutenantName}的控场节奏被你打断了，印记给你。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：这套磨法今天不管用了，印记已经交给你，去挑战${bossName}吧。`
+  },
+  {
+    key: 'elite',
+    label: '试炼精英',
+    titleSuffix: '试炼精英',
+    difficultyLabel: '部下训练家 · 试炼精英',
+    sourcePattern: ['trial', 'wild', 'trial'],
+    openingText: '压轴登场，别掉以轻心',
+    beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
+      `${lieutenantName}：能走到这里，说明你该认真面对压轴阵容了，首领就在前方。`
+    ),
+    defeatedText: (lieutenantName) => `${lieutenantName}的精英阵容被你击破了，印记收下。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：今天的试炼到这里结束，印记已经给你，去见${bossName}吧。`
+  }
+]
+
+function normalizeIntegerPoolIds(pool = []) {
+  return Array.from(new Set(
+    (Array.isArray(pool) ? pool : [])
+      .map((value) => Math.trunc(Number(value)))
+      .filter(Number.isInteger)
+  ))
+}
+
+function rotatePoolIds(poolIds, offset = 0) {
+  return rotateEntries(normalizeIntegerPoolIds(poolIds), offset)
+}
+
+function pickLieutenantStyleTemplate(definition, index) {
+  const rotation = Math.max(0, (Math.trunc(Number(definition?.regionOrder)) || 1) - 1 + index)
+  return LIEUTENANT_STYLE_TEMPLATES[rotation % LIEUTENANT_STYLE_TEMPLATES.length]
+}
+
+function buildLieutenantBattleTeam({
+  definition,
+  profile,
+  lieutenantConfig = {},
+  lieutenantIndex = 0,
+  challengeRarePool = [],
+  bossRarePokemon = null,
+  usedSpeciesIds = new Set(),
+  usedFamilyKeys = new Set()
+} = {}) {
+  const styleTemplate = pickLieutenantStyleTemplate(definition, lieutenantIndex) || LIEUTENANT_STYLE_TEMPLATES[0]
+  const [minLevel, maxLevel] = definition.levelRange
+  const midLevel = clampLevel(Math.round((minLevel + maxLevel) / 2))
+  const baseLevels = Array.isArray(lieutenantConfig.levels) && lieutenantConfig.levels.length > 0
+    ? lieutenantConfig.levels
+    : [midLevel, midLevel + 1, midLevel + 2]
+  const manualSpeciesIds = normalizeIntegerPoolIds(lieutenantConfig.speciesIds)
+  const wildPoolIds = rotatePoolIds(profile.speciesPool, lieutenantIndex)
+  const trialPoolIds = rotatePoolIds(
+    normalizeRarePoolEntries(challengeRarePool)
+      .map((entry) => entry.pokemonId)
+      .filter((pokemonId) => pokemonId !== bossRarePokemon?.pokemonId),
+    lieutenantIndex + 1
+  )
+  const wildPreferredIds = rotatePoolIds(
+    manualSpeciesIds.filter((pokemonId) => wildPoolIds.includes(pokemonId)),
+    lieutenantIndex
+  )
+  const trialPreferredIds = rotatePoolIds(
+    manualSpeciesIds.filter((pokemonId) => trialPoolIds.includes(pokemonId)),
+    lieutenantIndex + 1
+  )
+
+  const team = styleTemplate.sourcePattern.map((sourceKind, slotIndex) => {
+    const sourcePoolIds = sourceKind === 'trial' ? trialPoolIds : wildPoolIds
+    const preferredSourceIds = sourceKind === 'trial'
+      ? (trialPreferredIds.length > 0 ? trialPreferredIds : trialPoolIds)
+      : (wildPreferredIds.length > 0 ? wildPreferredIds : wildPoolIds)
+    const level = clampLevel(baseLevels[slotIndex] ?? baseLevels[baseLevels.length - 1] ?? midLevel)
+    const resolvedId = resolveSpeciesForLevelWithVariety({
+      preferredIds: [...preferredSourceIds, ...sourcePoolIds],
+      level,
+      localPoolIds: sourcePoolIds,
+      usedSpeciesIds,
+      usedFamilyKeys
+    }) || resolveSpeciesForLevelWithVariety({
+      preferredIds: sourcePoolIds,
+      level,
+      localPoolIds: sourcePoolIds,
+      usedSpeciesIds: new Set(),
+      usedFamilyKeys: new Set()
+    }) || sourcePoolIds[0] || null
+
+    if (Number.isInteger(resolvedId)) {
+      usedSpeciesIds.add(resolvedId)
+      const familyKey = getEvolutionFamilyKey(resolvedId)
+      if (familyKey.length > 0) usedFamilyKeys.add(familyKey)
+    }
+
+    return {
+      pokemonId: resolvedId,
+      level,
+      sourceTag: sourceKind
+    }
+  }).filter((entry) => Number.isInteger(entry.pokemonId))
+
+  return {
+    styleTemplate,
+    team
+  }
+}
+
 function makeChallengeReward(regionOrder, chainLength = getChallengeChainLength(regionOrder)) {
   const length = Math.max(3, Math.min(MAX_CHALLENGE_CHAIN_BATTLES, Math.trunc(Number(chainLength)) || 3))
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
   const isFinal = regionOrder >= 8
+  const rewardExpKey = isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small'
+  const challengeExpReward = regionOrder <= 4
+    ? null
+    : {
+        itemType: 'expPotion',
+        itemKey: rewardExpKey,
+        quantity: length >= 6 ? 2 : 1
+      }
   return [
-    {
-      itemType: 'expPotion',
-      itemKey: isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small',
-      quantity: length >= 6 ? 2 : 1
-    },
+    ...(challengeExpReward ? [challengeExpReward] : []),
     {
       itemType: 'pokeball',
       itemKey: isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic',
@@ -3242,6 +3728,8 @@ function buildRegionGameplayEvents(definition) {
   const lieutenantIds = profile.positions.lieutenants.map((_, index) => `${prefix}_lieutenant_${index + 1}`)
   const rosterConfig = REGION_TRAINER_ROSTERS[definition.id] || {}
   const events = []
+  const lieutenantUsedSpeciesIds = new Set()
+  const lieutenantUsedFamilyKeys = new Set()
 
   profile.positions.trainers.forEach(([x, y], index) => {
     const trainerConfig = rosterConfig.trainers?.[index] || {}
@@ -3249,6 +3737,9 @@ function buildRegionGameplayEvents(definition) {
     const trainerSpecies = Array.isArray(trainerConfig.speciesIds) && trainerConfig.speciesIds.length > 0
       ? trainerConfig.speciesIds
       : pickSpecies(profile.speciesPool, index * 2, 2)
+    const trainerLevels = Array.isArray(trainerConfig.levels) && trainerConfig.levels.length > 0
+      ? trainerConfig.levels
+      : [minLevel + index, minLevel + index + 1]
     const facing = inferEventFacing(definition, x, y, 'normal', index)
     events.push(event('trainer', `${prefix}_trainer_${index + 1}`, x, y, {
       properties: {
@@ -3258,9 +3749,15 @@ function buildRegionGameplayEvents(definition) {
         title: `${trainerName} · ${definition.displayName}`,
         difficultyLabel: '普通训练家 · 区域巡游',
         battleTier: 'normal',
+        dailyVariantSpeciesIds: Array.isArray(trainerConfig.dailyVariantSpeciesIds) && trainerConfig.dailyVariantSpeciesIds.length > 0
+          ? trainerConfig.dailyVariantSpeciesIds
+          : undefined,
+        dailyVariantLevelJitter: Number.isInteger(Math.trunc(Number(trainerConfig.dailyVariantLevelJitter)))
+          ? Math.max(0, Math.trunc(Number(trainerConfig.dailyVariantLevelJitter)))
+          : undefined,
         team: makeTeam(
           trainerSpecies,
-          [minLevel + index, minLevel + index + 1],
+          trainerLevels,
           profile.speciesPool
         ),
         beforeBattleText: `${trainerName}作为普通训练家挡住了你的去路：想继续探索，就来一场认真对战吧！`,
@@ -3273,27 +3770,36 @@ function buildRegionGameplayEvents(definition) {
   profile.positions.lieutenants.forEach(([x, y], index) => {
     const lieutenantConfig = rosterConfig.lieutenants?.[index] || {}
     const lieutenantName = lieutenantConfig.name || `区域部下 ${index + 1}`
-    const lieutenantSpecies = Array.isArray(lieutenantConfig.speciesIds) && lieutenantConfig.speciesIds.length > 0
-      ? lieutenantConfig.speciesIds
-      : pickSpecies(profile.speciesPool, index * 3 + 1, 3)
+    const lieutenantBattle = buildLieutenantBattleTeam({
+      definition,
+      profile,
+      lieutenantConfig,
+      lieutenantIndex: index,
+      challengeRarePool: profile.challengeRarePool,
+      bossRarePokemon: normalizeBossRareForRegion(profile.bossRarePokemon, definition),
+      usedSpeciesIds: lieutenantUsedSpeciesIds,
+      usedFamilyKeys: lieutenantUsedFamilyKeys
+    })
+    const lieutenantStyle = lieutenantBattle.styleTemplate
+    const lieutenantTeam = lieutenantBattle.team
     const facing = inferEventFacing(definition, x, y, 'lieutenant', index)
     events.push(event('trainer', lieutenantIds[index], x, y, {
       properties: {
         role: 'lieutenant',
         facing,
         name: lieutenantName,
-        title: `${lieutenantName} · ${profile.chapterTitle}`,
-        difficultyLabel: '部下训练家 · 区域门禁',
+        title: `${lieutenantName} · ${lieutenantStyle.titleSuffix}`,
+        difficultyLabel: lieutenantStyle.difficultyLabel,
         battleTier: 'lieutenant',
         requiredForBoss: true,
-        team: makeTeam(
-          lieutenantSpecies,
-          [midLevel, midLevel + 1, midLevel + 2],
-          profile.speciesPool
-        ),
-        beforeBattleText: `${lieutenantName}作为部下训练家守着试炼印记：想见${profile.bossName}，先拿到我的认可。`,
-        defeatedText: `你击败了${lieutenantName}，获得了一枚试炼印记。`,
-        dailyDefeatedText: `${lieutenantName}：印记已经交给你了，继续前往首领挑战吧！`
+        battleStyle: lieutenantStyle.key,
+        battleStyleLabel: lieutenantStyle.label,
+        teamSourceTags: lieutenantTeam.map((member) => member.sourceTag),
+        teamSourceSummary: lieutenantTeam.map((member) => member.sourceTag).join('/'),
+        team: lieutenantTeam.map(({ sourceTag, ...member }) => member),
+        beforeBattleText: lieutenantStyle.beforeBattleText(lieutenantName, profile.chapterTitle, profile.bossName),
+        defeatedText: lieutenantStyle.defeatedText(lieutenantName),
+        dailyDefeatedText: lieutenantStyle.dailyDefeatedText(lieutenantName, profile.bossName)
       }
     }))
   })
@@ -3306,11 +3812,18 @@ function buildRegionGameplayEvents(definition) {
   const bossRareChanceText = `${Math.round(Math.max(0, Math.min(1, bossRareChance)) * 100)}%`
   const challengeRarePool = normalizeChallengeRarePoolForRegion(profile.challengeRarePool, definition)
     .filter((entry) => entry.pokemonId !== bossRarePokemon?.pokemonId)
-  const bossTeamSpecies = pickBossTeamSpeciesFromChallengeFinalThreeBatches(
-    challengeRarePool,
-    bossRarePokemon,
-    profile.speciesPool
-  )
+  const preferredBossSupports = normalizeRarePoolEntries(profile.bossSupportSpeciesIds)
+    .map((entry) => entry.pokemonId)
+    .filter((pokemonId) => pokemonId !== bossRarePokemon?.pokemonId)
+  const bossTeamSpecies = preferredBossSupports.length > 0
+    ? (Number.isInteger(bossRarePokemon?.pokemonId)
+        ? [...pickUniqueFamilyPoolIds(preferredBossSupports, 5), bossRarePokemon.pokemonId]
+        : pickUniqueFamilyPoolIds(preferredBossSupports, 6))
+    : pickBossTeamSpeciesFromChallengeFinalThreeBatches(
+        challengeRarePool,
+        bossRarePokemon,
+        profile.speciesPool
+      )
   const bossTeamSourceIds = getChallengeFinalThreeRareEntries(challengeRarePool).map((entry) => entry.pokemonId)
   const bossFacing = inferEventFacing(definition, profile.positions.boss[0], profile.positions.boss[1], 'boss', 0)
   events.push(event('boss', `${prefix}_boss`, profile.positions.boss[0], profile.positions.boss[1], {
@@ -3324,13 +3837,20 @@ function buildRegionGameplayEvents(definition) {
       teamSource: 'challengeFinalThreeBatches',
       challengeFinalThreeBatchPokemonIds: bossTeamSourceIds,
       requiredTrainerIds: lieutenantIds,
-      team: makeTeam(
-        bossTeamSpecies,
-        [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3]
-      ),
+      team: Number.isInteger(bossRarePokemon?.pokemonId)
+        ? makeBossTeam(
+            bossTeamSpecies,
+            [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3],
+            bossRarePokemon.pokemonId,
+            profile.speciesPool
+          )
+        : makeTeam(
+            bossTeamSpecies,
+            [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3]
+          ),
       lockedText: `这里有一股强大的气息。先击败${definition.displayName}里的 3 名部下训练师，${profile.bossName}才会接受挑战。`,
       beforeBattleText: bossRarePokemon
-        ? `${profile.bossName}：三枚试炼印记已经发光。来吧，见识最终三批试炼守护者与${bossRareName}的力量！`
+        ? `${profile.bossName}：三枚试炼印记已经发光。先击败最终三批守护者，最后再面对${bossRareName}的压轴力量！`
         : `${profile.bossName}：三枚试炼印记已经发光。来吧，证明你能穿过${definition.displayName}的最终试炼。`,
       defeatedText: `${profile.bossName}收起了气势：这片区域已经认可你了。`,
       rewardItems: makeBossReward(definition.regionOrder),
@@ -3887,6 +4407,21 @@ export function buildGodotRegionMap(rawDefinition) {
       .map((evt) => [`${evt.position.x},${evt.position.y}`, evt.properties.message])
   )
 
+  const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
+  const boundaryVisualBlockers = buildBoundaryVisualBlockers(
+    definition.id,
+    grid,
+    decorations,
+    runtimeEvents,
+    visualPaths
+  )
+  const {
+    blocking: blockingBoundaryVisualBlockers,
+    visual: boundaryVisualDecorations
+  } = splitBoundaryVisualBlockersByCollision(grid, boundaryVisualBlockers)
+  paintBlockingDecorationFootprints(grid, blockingBoundaryVisualBlockers, runtimeEvents)
+  paintRuntimeEventTiles(grid, runtimeEvents)
+
   return {
     id: definition.id,
     name: definition.id,
@@ -3902,13 +4437,13 @@ export function buildGodotRegionMap(rawDefinition) {
     levelRange: definition.levelRange,
     startPosition: definition.startPosition,
     mapGrid: grid,
-    visualPaths: deriveVisualPathsFromGrid(grid, definition.roadPaths),
+    visualPaths,
     roadPathEndpoints: deriveRoadPathEndpoints(definition.roadPaths),
     forestTrails: [],
     roadJunctions: definition.roadJunctions || [],
     waterBodies: definition.waterBodies || [],
     bridges,
-    decorativeObjects: decorations,
+    decorativeObjects: [...decorations, ...boundaryVisualDecorations],
     encounterZones: definition.encounterZones,
     runtimeEvents,
     signs,
@@ -4252,8 +4787,8 @@ const REGIONS = [
     id: 'GodotMapV2_BossHighland',
     displayName: '星雾高地',
     regionOrder: 8,
-    recommendedLevel: 50,
-    levelRange: [47, 50],
+    recommendedLevel: 56,
+    levelRange: [52, 60],
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
       { shape: 'rect', x1: 1, y1: 12, x2: 38, y2: 20, tile: TILE.paleGrass },
@@ -4276,12 +4811,12 @@ const REGIONS = [
     runtimeEvents: [
       warp('warp_peak_to_ridge', 1, 16, 'GodotMapV2_SurvivalRidge', { x: 36, y: 16, direction: 'left' }, '返回铁木营地'),
       heal('heal_peak_spring', 17, 12, '星雾泉水'),
-      sign('sign_peak_final', 2, 14, '星雾高地 Lv.47-50：北侧 Boss。')
+      sign('sign_peak_final', 2, 14, '星雾高地 Lv.52-60：北侧 Boss。')
     ],
     encounterZones: [
-      { id: 'peak_west_grass', name: '西高地草丛', x: 4, y: 5, width: 12, height: 6, encounterTableId: 'region_peak_47_50', tallGrassRate: 0.27 },
-      { id: 'peak_south_grass', name: '南高地草丛', x: 5, y: 23, width: 12, height: 7, encounterTableId: 'region_peak_south_47_50', tallGrassRate: 0.28 },
-      { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_47_50', tallGrassRate: 0.3 }
+      { id: 'peak_west_grass', name: '西高地草丛', x: 4, y: 5, width: 12, height: 6, encounterTableId: 'region_peak_52_60', tallGrassRate: 0.27 },
+      { id: 'peak_south_grass', name: '南高地草丛', x: 5, y: 23, width: 12, height: 7, encounterTableId: 'region_peak_south_52_60', tallGrassRate: 0.28 },
+      { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 }
     ],
     decorativeObjects: [
       { type: 'hex_stone_hill', x: 31, y: 9, scale: 1.25 },
@@ -4293,7 +4828,7 @@ const REGIONS = [
       { idPrefix: 'peak_supplies', types: ['mine_crate_strong', 'survival_metal_panel', 'survival_workbench', 'platformer_chest', 'pirate_cannon'], count: 36, allowedTiles: [TILE.wall], salt: 818, scale: [0.78, 1.12] }
     ],
     expansionSlots: [
-      { direction: 'east', recommendedLevel: 55, note: 'Reserved for post-50 expansion.' }
+      { direction: 'east', recommendedLevel: 65, note: 'Reserved for post-60 expansion.' }
     ]
   }
 ]

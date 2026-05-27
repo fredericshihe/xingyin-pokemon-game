@@ -25,6 +25,9 @@ const requiredMarkers = [
   ['challenge victory count keeps map scope', 'setTrainerVictoryCount(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName);'],
   ['challenge unlock lookup keeps map scope', 'getChallengeRareUnlockStage(interactionWorld, battleMapEvent, currentMapName)'],
   ['challenge same-day visual state uses daily lock', "status: hasDailyTrainerBattleEvent(world, mapName, event.id) ? 'daily_complete' : 'available'"],
+  ['local completed override helper exists', 'const appendCompletedBattleEventVisualOverride = (overrides, {'],
+  ['map visual state merges local completed override', 'const buildMapEventVisualState = (mapName, world, completedBattleEventVisualOverrides = null) =>'],
+  ['battle start reads local completed override before reopening battle', 'const localCompletedBattleEventVisualState = getCompletedBattleEventVisualOverride('],
   ['muted battle events route to info on map', 'function shouldRouteBattleEventToInfo(mapEvent, mapEventVisualState, currentMapBossCompleted = false) {'],
   ['configured battle info messages resolved centrally', 'const getConfiguredBattleEventInfoMessage = ({'],
   ['accepted cloud snapshot is applied locally', 'applyLocalCommittedCloudSnapshot(normalizedSnapshot);']

@@ -30,6 +30,7 @@ const makeAsset = ({
   notes
 })
 
+// assetPath 在 GitHub Pages 等子路径部署时需要带 BASE_URL 前缀，这里只存“逻辑路径”，由加载器统一补前缀。
 export const MAP_ASSET_CATALOG = {
   nature_grass_small: makeAsset({
     id: 'nature_grass_small',

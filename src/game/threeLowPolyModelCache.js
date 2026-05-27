@@ -1,17 +1,18 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { getAdventureMapInfo } from './data/overworldMaps'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
+import { assetUrl } from '../utils/assetUrl'
 
-const MODEL_BASE = '/assets/3d/kenney-nature/'
-const SURVIVAL_MODEL_BASE = '/assets/3d/kenney-survival/'
-const PIRATE_MODEL_BASE = '/assets/3d/kenney-pirate/'
-const FANTASY_TOWN_MODEL_BASE = '/assets/3d/kenney-fantasy-town/'
-const GRAVEYARD_MODEL_BASE = '/assets/3d/kenney-graveyard/'
-const PLATFORMER_MODEL_BASE = '/assets/3d/kenney-platformer/'
+const MODEL_BASE = assetUrl('/assets/3d/kenney-nature/')
+const SURVIVAL_MODEL_BASE = assetUrl('/assets/3d/kenney-survival/')
+const PIRATE_MODEL_BASE = assetUrl('/assets/3d/kenney-pirate/')
+const FANTASY_TOWN_MODEL_BASE = assetUrl('/assets/3d/kenney-fantasy-town/')
+const GRAVEYARD_MODEL_BASE = assetUrl('/assets/3d/kenney-graveyard/')
+const PLATFORMER_MODEL_BASE = assetUrl('/assets/3d/kenney-platformer/')
 const CATALOG_MODEL_URLS = Object.fromEntries(
   Object.values(MAP_ASSET_CATALOG)
     .filter((asset) => asset.assetPath)
-    .map((asset) => [asset.id, asset.assetPath])
+    .map((asset) => [asset.id, assetUrl(asset.assetPath)])
 )
 
 const MODEL_URLS = {

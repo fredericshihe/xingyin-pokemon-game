@@ -23,6 +23,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     isDailyVariantBattleEvent,
     resolveTrainerBattleTeamConfig
   } = await loadModule('/src/utils/trainerBattleScaling.js')
+  const { MONSTERS } = await loadModule('/src/utils/gameData.js')
 
   const maps = MAP_IDS.map((mapId) => getMapInfo(mapId)).filter(Boolean)
   const trainerEvents = maps.flatMap((map) => (
@@ -51,7 +52,10 @@ await withViteAuditServer(async ({ loadModule }) => {
   let lieutenantCount = 0
   const dailyVariantSignatures = new Set()
   const trainerNameOwners = new Map()
+  const speciesNameById = new Map(MONSTERS.map((monster) => [monster.id, monster.name]))
+  const lieutenantGroupsByMap = new Map()
 
+  const getSpeciesName = (pokemonId) => speciesNameById.get(pokemonId) || `#${pokemonId}`
   const collectDuplicateFamilyKeys = (team = []) => {
     const seen = new Map()
     const duplicates = new Set()
@@ -78,6 +82,11 @@ await withViteAuditServer(async ({ loadModule }) => {
     const isDailyVariantBattle = isDailyVariantBattleEvent(event.type, role)
     if (isNormalTrainer) normalTrainerCount += 1
     if (isLieutenant) lieutenantCount += 1
+    if (isLieutenant) {
+      const currentGroup = lieutenantGroupsByMap.get(map.id) || []
+      currentGroup.push(event)
+      lieutenantGroupsByMap.set(map.id, currentGroup)
+    }
 
     if (!FACINGS.has(facing) && event.type !== 'challenge') {
       addError(`${map.id}/${event.id} 缺少合理朝向: ${String(facing)}`)
@@ -90,6 +99,41 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
     if ((isNormalTrainer || isLieutenant) && collectDuplicateFamilyKeys(team).length > 0) {
       addError(`${map.id}/${event.id} 基础队伍存在同进化家族重复`)
+    }
+    if (isLieutenant) {
+      const styleKey = event.properties?.battleStyle
+      if (!['pressure', 'control', 'elite'].includes(styleKey)) {
+        addError(`${map.id}/${event.id} 部下缺少明确风格标签`)
+      }
+      const sourceTags = Array.isArray(event.properties?.teamSourceTags) ? event.properties.teamSourceTags : []
+      const sourceSummary = typeof event.properties?.teamSourceSummary === 'string' ? event.properties.teamSourceSummary : ''
+      if (sourceTags.length !== team.length) {
+        addError(`${map.id}/${event.id} 部下缺少队伍来源标记`)
+      }
+      if (!sourceSummary.includes('wild') || !sourceSummary.includes('trial')) {
+        addError(`${map.id}/${event.id} 部下队伍必须混合本地图野生与试炼池`)
+      }
+      const sourceKinds = new Set(sourceTags)
+      if (!(sourceKinds.has('wild') && sourceKinds.has('trial'))) {
+        addError(`${map.id}/${event.id} 部下队伍必须同时包含野生池与试炼池宝可梦`)
+      }
+      const uniquePokemonIds = new Set(team.map((member) => member.pokemonId))
+      if (uniquePokemonIds.size < 3) {
+        addError(`${map.id}/${event.id} 部下队伍不能出现重复宝可梦`)
+      }
+      const leadNames = team.map((member) => getSpeciesName(member.pokemonId)).join('、')
+      if (typeof event.properties?.difficultyLabel !== 'string' || !event.properties.difficultyLabel.includes('部下训练家')) {
+        addError(`${map.id}/${event.id} 部下难度标签异常`)
+      }
+      if (typeof event.properties?.title !== 'string' || !event.properties.title.includes(event.properties?.battleStyleLabel || '')) {
+        addError(`${map.id}/${event.id} 部下标题没有体现风格`)
+      }
+      if (typeof event.properties?.beforeBattleText === 'string' && !event.properties.beforeBattleText.includes('boss') && !event.properties.beforeBattleText.includes('首领')) {
+        addError(`${map.id}/${event.id} 部下开场文案未明确首领目标`)
+      }
+      if (leadNames.length === 0) {
+        addError(`${map.id}/${event.id} 部下队伍缺少可读名字`)
+      }
     }
     if (!hasNpcDecoration) {
       addError(`${map.id}/${event.id} 缺少地图实体装饰: ${npcSourceId}`)
@@ -174,6 +218,8 @@ await withViteAuditServer(async ({ loadModule }) => {
             victoryCount,
             mapConfig,
             mapWildPokemon: mapConfig.wildPokemon,
+            dailyVariantSpeciesIds: event.properties?.dailyVariantSpeciesIds,
+            dailyVariantLevelJitter: event.properties?.dailyVariantLevelJitter,
             bossTeamConfig: bossTeam,
             challengeRarePool: event.properties?.challengeRarePool,
             enableDailyVariant: true
@@ -233,6 +279,24 @@ await withViteAuditServer(async ({ loadModule }) => {
   }
 
   const expectedDailyScalingTrainerCount = normalTrainerCount
+  lieutenantGroupsByMap.forEach((events, mapId) => {
+    if (events.length !== 3) {
+      addError(`${mapId} 部下训练师数量异常，当前 ${events.length}`)
+      return
+    }
+    const styleKeys = events.map((event) => event.properties?.battleStyle).filter(Boolean)
+    if (new Set(styleKeys).size !== events.length) {
+      addError(`${mapId} 的 3 名部下风格必须互不重复`)
+    }
+    const leadIds = events.map((event) => Number(event.properties?.team?.[0]?.pokemonId)).filter(Number.isInteger)
+    if (new Set(leadIds).size !== leadIds.length) {
+      addError(`${mapId} 的 3 名部下首发宝可梦必须互不重复`)
+    }
+    const styleLabels = events.map((event) => event.properties?.battleStyleLabel).filter(Boolean)
+    if (new Set(styleLabels).size !== styleLabels.length) {
+      addError(`${mapId} 的 3 名部下风格标签必须互不重复`)
+    }
+  })
   if (dailyScalingTrainerCount !== expectedDailyScalingTrainerCount) {
     addError(`每日成长训练家数量异常，当前 ${dailyScalingTrainerCount}，预期 ${expectedDailyScalingTrainerCount}`)
   }

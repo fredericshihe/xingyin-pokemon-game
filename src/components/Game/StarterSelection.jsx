@@ -1,15 +1,14 @@
 import React, { useState } from 'react'
 import { MONSTERS } from '../../utils/gameData'
+import { applyImageFallback } from '../../utils/localAssetPreloader'
+import { assetUrl } from '../../utils/assetUrl'
 
 const getHighResPokemonSprite = (starter) => {
-  return starter?.sprite || '/assets/pokemon/placeholder.svg'
+  return starter?.sprite || assetUrl('/assets/pokemon/placeholder.svg')
 }
 
 const handlePokemonImageError = (event) => {
-  const image = event.currentTarget
-  if (image.dataset.fallbackApplied === 'true') return
-  image.dataset.fallbackApplied = 'true'
-  image.src = '/assets/pokemon/placeholder.svg'
+  applyImageFallback(event, assetUrl('/assets/pokemon/placeholder.svg'))
 }
 
 export default function StarterSelection({ onSelect }) {

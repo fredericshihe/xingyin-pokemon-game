@@ -1,7 +1,6 @@
 import { supabase } from '../supabaseClient'
 
 const SESSION_KEY = 'pokemon_game_profile'
-const TEACHER_REGISTRATION_CODE = '198985'
 const SESSION_PROFILE_COLUMNS = [
   'id',
   'email',
@@ -36,6 +35,14 @@ const getApprovalBlockedMessage = (profile) => {
       : '教师已拒绝该账号的注册申请，请联系老师确认后重新处理。'
   }
   return ''
+}
+
+const fetchProfileById = async (userId) => {
+  const { data, error } = await supabase.rpc('get_table_user_profile', {
+    p_user_id: userId
+  })
+  if (error) throw error
+  return Array.isArray(data) ? data[0] : data
 }
 
 const sanitizeProfileSession = (profile) => {
@@ -92,15 +99,7 @@ export const authService = {
     if (!storedProfile?.id) return null
 
     try {
-      const { data: latestProfiles, error } = await supabase
-        .from('users')
-        .select(SESSION_PROFILE_SELECT)
-        .eq('id', storedProfile.id)
-        .limit(1)
-
-      if (error) throw error
-
-      const latestProfile = latestProfiles?.[0]
+      const latestProfile = await fetchProfileById(storedProfile.id)
       if (!latestProfile?.id) {
         clearProfileSession()
         return null
@@ -127,10 +126,6 @@ export const authService = {
       const cleanUsername = normalizeUsername(username)
       const cleanTeacherUsername = normalizeUsername(teacherUsername || '')
       const cleanRole = role === 'teacher' ? 'teacher' : 'student'
-
-      if (cleanRole === 'teacher' && normalizePassword(teacherRegisterPassword) !== TEACHER_REGISTRATION_CODE) {
-        return { success: false, error: '老师注册密码不正确，无法创建教师账号' }
-      }
 
       if (cleanRole === 'student' && !cleanTeacherUsername) {
         return { success: false, error: '学生必须填写老师用户名' }
@@ -198,22 +193,10 @@ export const authService = {
           console.error('Login query error:', rpcError)
           return { success: false, error: `登录查询失败: ${rpcError.message}` }
         }
-
-        console.warn('login_with_table_password is not available yet; falling back to direct users lookup.')
-        const { data: fallbackProfiles, error: fallbackError } = await supabase
-          .from('users')
-          .select(`${SESSION_PROFILE_SELECT}, plain_password`)
-          .eq('username', cleanUsername)
-          .limit(1)
-
-        if (fallbackError) {
-          console.error('Login fallback query error:', fallbackError)
-          return { success: false, error: `登录查询失败: ${fallbackError.message}` }
+        return {
+          success: false,
+          error: '登录函数尚未部署，请先执行最新 Supabase 数据库迁移后再登录。'
         }
-
-        profiles = fallbackProfiles?.filter((profile) =>
-          normalizePassword(profile.plain_password) === cleanPassword
-        )
       }
 
       let profile = profiles?.[0]
@@ -221,14 +204,13 @@ export const authService = {
         return { success: false, error: '用户名或密码错误' }
       }
 
-      const { data: latestProfiles, error: latestProfileError } = await supabase
-        .from('users')
-        .select(SESSION_PROFILE_SELECT)
-        .eq('id', profile.id)
-        .limit(1)
-
-      if (!latestProfileError && latestProfiles?.[0]) {
-        profile = latestProfiles[0]
+      try {
+        const latestProfile = await fetchProfileById(profile.id)
+        if (latestProfile?.id) {
+          profile = latestProfile
+        }
+      } catch (latestProfileError) {
+        console.warn('Profile refresh after login failed:', latestProfileError)
       }
 
       const approvalMessage = profile.role === 'student' ? getApprovalBlockedMessage(profile) : ''

@@ -66,6 +66,11 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
   }
 
+  const getHpRatio = (mon) => (
+    Math.max(0, Number(mon?.currentHp ?? mon?.maxHp ?? 0) || 0) /
+    Math.max(1, Number(mon?.maxHp ?? 1) || 1)
+  )
+
   const getDamageOutcome = (attacker, defender, moveKey) => {
     const move = MOVES[moveKey]
     if (!move || !(Number(move.power) > 0) || move.category === 'status') {
@@ -91,6 +96,25 @@ await withViteAuditServer(async ({ loadModule }) => {
       .sort((left, right) => right.damage - left.damage || right.effectiveness - left.effectiveness)[0] || null
   )
 
+  const getTopMoveForRole = ({ attacker, defender, battleKind = 'trainer', trainerRole = 'normal' }) => {
+    const candidates = getCandidates(attacker, defender)
+    if (candidates.length === 0) return null
+    return candidates
+      .map((moveKey) => ({
+        moveKey,
+        score: scoreEnemyMove({
+          moveKey,
+          enemyMon: attacker,
+          targetMon: defender,
+          battleKind,
+          trainerRole,
+          candidates
+        }),
+        ...getDamageOutcome(attacker, defender, moveKey)
+      }))
+      .sort((left, right) => right.score - left.score)[0] || null
+  }
+
   const aiIssues = {
     immuneTopMove: [],
     missedFinish: [],
@@ -98,6 +122,16 @@ await withViteAuditServer(async ({ loadModule }) => {
     noDamagingMove: []
   }
   const sameLevelTurnRows = []
+  const rolePreferenceMetrics = {
+    typeEdge: {
+      samples: 0,
+      picks: { wild: 0, normal: 0, lieutenant: 0, boss: 0 }
+    },
+    healWhenLow: {
+      samples: 0,
+      picks: { wild: 0, normal: 0, lieutenant: 0, boss: 0 }
+    }
+  }
 
   for (const level of CHECK_LEVELS) {
     const pool = MONSTERS
@@ -118,7 +152,14 @@ await withViteAuditServer(async ({ loadModule }) => {
         const scored = candidates
           .map((moveKey) => ({
             moveKey,
-            score: scoreEnemyMove({ moveKey, enemyMon: attacker, targetMon: defender, battleKind: 'trainer', candidates }),
+            score: scoreEnemyMove({
+              moveKey,
+              enemyMon: attacker,
+              targetMon: defender,
+              battleKind: 'trainer',
+              trainerRole: 'normal',
+              candidates
+            }),
             ...getDamageOutcome(attacker, defender, moveKey)
           }))
           .sort((left, right) => right.score - left.score)
@@ -141,7 +182,14 @@ await withViteAuditServer(async ({ loadModule }) => {
         const lowHpScored = candidates
           .map((moveKey) => ({
             moveKey,
-            score: scoreEnemyMove({ moveKey, enemyMon: attacker, targetMon: lowHpDefender, battleKind: 'trainer', candidates }),
+            score: scoreEnemyMove({
+              moveKey,
+              enemyMon: attacker,
+              targetMon: lowHpDefender,
+              battleKind: 'trainer',
+              trainerRole: 'normal',
+              candidates
+            }),
             ...getDamageOutcome(attacker, lowHpDefender, moveKey)
           }))
           .sort((left, right) => right.score - left.score)
@@ -172,6 +220,55 @@ await withViteAuditServer(async ({ loadModule }) => {
             superMove: bestSuper.moveKey
           })
         }
+
+        const superEffectiveOptions = scored.filter((entry) => entry.effectiveness > 1 && entry.damage > 0)
+        if (
+          superEffectiveOptions.length > 0 &&
+          top.damage > 0 &&
+          superEffectiveOptions[0].damage >= defender.maxHp * 0.18
+        ) {
+          rolePreferenceMetrics.typeEdge.samples += 1
+          for (const roleName of ['wild', 'normal', 'lieutenant', 'boss']) {
+            const roleTop = getTopMoveForRole({
+              attacker,
+              defender,
+              battleKind: roleName === 'wild' ? 'wild' : 'trainer',
+              trainerRole: roleName === 'wild' ? 'normal' : roleName
+            })
+            if (roleTop?.effectiveness > 1) {
+              rolePreferenceMetrics.typeEdge.picks[roleName] += 1
+            }
+          }
+        }
+
+        const healMoves = candidates.filter((moveKey) => MOVES[moveKey]?.effect === 'heal')
+        if (healMoves.length > 0) {
+          const lowHpAttacker = {
+            ...attacker,
+            currentHp: Math.max(1, Math.ceil(attacker.maxHp * 0.28))
+          }
+          const lowHpCandidates = getCandidates(lowHpAttacker, defender)
+          const bestLowHpDamage = getBestDamage(lowHpAttacker, defender)
+          if (
+            lowHpCandidates.length > 1 &&
+            bestLowHpDamage &&
+            bestLowHpDamage.damage < defender.maxHp * 0.7 &&
+            getHpRatio(defender) >= 0.6
+          ) {
+            rolePreferenceMetrics.healWhenLow.samples += 1
+            for (const roleName of ['wild', 'normal', 'lieutenant', 'boss']) {
+              const roleTop = getTopMoveForRole({
+                attacker: lowHpAttacker,
+                defender,
+                battleKind: roleName === 'wild' ? 'wild' : 'trainer',
+                trainerRole: roleName === 'wild' ? 'normal' : roleName
+              })
+              if (MOVES[roleTop?.moveKey]?.effect === 'heal') {
+                rolePreferenceMetrics.healWhenLow.picks[roleName] += 1
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -187,6 +284,39 @@ await withViteAuditServer(async ({ loadModule }) => {
   }
   if (aiIssues.ignoredClearTypeEdge.length > 0) {
     addWarning(`AI 存在可优化的克制招式选择样本: ${aiIssues.ignoredClearTypeEdge.length}`)
+  }
+
+  const getRate = (metric, roleName) => (
+    metric.samples > 0 ? metric.picks[roleName] / metric.samples : null
+  )
+  const isNonDecreasing = (values, tolerance = 0) => (
+    values.every((value, index) => index === 0 || values[index - 1] <= value + tolerance)
+  )
+
+  const typeEdgeRates = {
+    wild: getRate(rolePreferenceMetrics.typeEdge, 'wild'),
+    normal: getRate(rolePreferenceMetrics.typeEdge, 'normal'),
+    lieutenant: getRate(rolePreferenceMetrics.typeEdge, 'lieutenant'),
+    boss: getRate(rolePreferenceMetrics.typeEdge, 'boss')
+  }
+  const healRates = {
+    wild: getRate(rolePreferenceMetrics.healWhenLow, 'wild'),
+    normal: getRate(rolePreferenceMetrics.healWhenLow, 'normal'),
+    lieutenant: getRate(rolePreferenceMetrics.healWhenLow, 'lieutenant'),
+    boss: getRate(rolePreferenceMetrics.healWhenLow, 'boss')
+  }
+
+  if (
+    rolePreferenceMetrics.typeEdge.samples >= 20 &&
+    !isNonDecreasing([typeEdgeRates.wild, typeEdgeRates.normal, typeEdgeRates.lieutenant, typeEdgeRates.boss], 0.005)
+  ) {
+    addError(`角色 AI 的克制偏好未形成递进: ${JSON.stringify(typeEdgeRates)}`)
+  }
+  if (
+    rolePreferenceMetrics.healWhenLow.samples >= 8 &&
+    !isNonDecreasing([healRates.wild, healRates.normal, healRates.lieutenant, healRates.boss], 0.02)
+  ) {
+    addError(`角色 AI 的低血治疗偏好未形成递进: ${JSON.stringify(healRates)}`)
   }
 
   const wildTableIssues = []
@@ -285,6 +415,16 @@ await withViteAuditServer(async ({ loadModule }) => {
       noDamagingMoveCount: aiIssues.noDamagingMove.length,
       wildTableIssueCount: wildTableIssues.length,
       sameLevelPace,
+      rolePreferenceMetrics: {
+        typeEdge: {
+          samples: rolePreferenceMetrics.typeEdge.samples,
+          rates: typeEdgeRates
+        },
+        healWhenLow: {
+          samples: rolePreferenceMetrics.healWhenLow.samples,
+          rates: healRates
+        }
+      },
       warningCount: warnings.length,
       errorCount: errors.length
     },

@@ -1,7 +1,7 @@
 import { BLOCKED_LEGACY_TILES, LEGACY_TILE_TO_INDEX } from './constants'
 
 /**
- * 将现有 React mapGrid（数字矩阵）转为 Phaser 可用的层数据
+ * 处理当前仍在使用的 legacy mapGrid（数字矩阵）兼容逻辑
  */
 export function legacyGridToTileIndices(mapGrid) {
   if (!mapGrid?.length) return { width: 0, height: 0, ground: [], collision: [], grass: [] }

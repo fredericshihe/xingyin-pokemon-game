@@ -91,7 +91,7 @@ export const SUPPORTED_HIT_REACTIONS = [
 export const SUPPORTED_MOVE_VARIANTS = [
   'physical', 'special', 'status', 'light', 'heavy', 'priority', 'delayed',
   'multi', 'recoil', 'self-destruct', 'dynamic', 'charge', 'precise', 'heal',
-  'drain', 'copy', 'fizzle', 'buff', 'debuff', 'stat-shift', 'status-sleep',
+  'drain', 'copy', 'teleport', 'fizzle', 'buff', 'debuff', 'stat-shift', 'status-sleep',
   'status-poison', 'status-burn', 'status-paralysis', 'status-freeze',
   'volatile-flinch', 'volatile-confusion'
 ];
@@ -910,7 +910,7 @@ const getHintedVisual = (moveKey, move = {}, fallbackVisual) => {
 };
 
 const getSelfTargetingStatusMove = (move = {}, statChanges = []) => {
-  if (['heal', 'mimic', 'nothing'].includes(move.effect)) return true;
+  if (['heal', 'mimic', 'nothing', 'teleport'].includes(move.effect)) return true;
   if (move.status || move.volatileStatus) return false;
   return statChanges.length > 0 && statChanges.every((statChange) => statChange.target === 'attacker');
 };
@@ -919,6 +919,7 @@ const getMoveVariant = (move = {}, category, power, statChanges = []) => {
   if (move.selfDestruct) return 'self-destruct';
   if (move.effect === 'heal') return 'heal';
   if (move.effect === 'mimic') return 'copy';
+  if (move.effect === 'teleport') return 'teleport';
   if (move.effect === 'nothing') return 'fizzle';
   if (move.effect === 'drain') return 'drain';
   if (move.recoilPercent) return 'recoil';
@@ -963,6 +964,7 @@ const getGeneratedMoveEffectConfig = (moveKey, move = {}) => {
   if ((category === 'status' || power <= 0) && move.volatileStatus === 'flinch') visual = 'speed';
   if (move.effect === 'heal') visual = 'recover';
   if (move.effect === 'mimic') visual = 'mimic';
+  if (move.effect === 'teleport') visual = 'mimic';
   if (move.effect === 'nothing') visual = 'flail';
   if (move.effect === 'drain' && (category === 'status' || power <= 0 || ['ghost', 'psychic', 'dark'].includes(type))) visual = 'dream';
   if (move.multiHit) visual = getHintedVisual(normalizedMoveKey, move, pickByMoveKey(['fury', 'double-kick', 'poison-sting', 'rock-slide', 'leaves'], normalizedMoveKey));

@@ -5,7 +5,7 @@ import { withViteAuditServer } from './load-vite-module.mjs'
 
 const PRIMARY_STATUSES = new Set(['sleep', 'poison', 'burn', 'paralysis', 'freeze'])
 const VOLATILE_STATUSES = new Set(['flinch', 'confusion'])
-const MOVE_EFFECTS = new Set(['heal', 'drain', 'mimic', 'nothing'])
+const MOVE_EFFECTS = new Set(['heal', 'drain', 'mimic', 'nothing', 'teleport'])
 const STAT_CHANGE_KEYS = new Set(['atk', 'def', 'spAtk', 'spDef', 'spd', 'accuracy', 'evasion'])
 const STAT_CHANGE_TARGETS = new Set(['attacker', 'defender'])
 
@@ -33,6 +33,7 @@ const EXPECTED_MOVE_EFFECTS = {
   shadowball: { statChange: { target: 'defender', stat: 'spDef', stages: -1, chance: 20 } },
   iron_tail: { statChange: { target: 'defender', stat: 'def', stages: -1, chance: 30 } },
   moonblast: { statChange: { target: 'defender', stat: 'spAtk', stages: -1, chance: 30 } },
+  snore: { requiresUserStatus: 'sleep', usableWhileAsleep: true, volatileStatus: 'flinch', volatileChance: 30 },
 }
 
 const SOURCE_CONTRACTS = [
@@ -78,13 +79,63 @@ const SOURCE_CONTRACTS = [
   },
   {
     file: 'src/components/Game/OriginalGame.jsx',
+    label: '睡眠中可用招式不会被睡眠回合开始判定挡住',
+    pattern: /nextMon\.status === 'sleep'[\s\S]*?attemptedMove\?\.usableWhileAsleep[\s\S]*?还在睡梦中/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
     label: '冰冻会在行动前判定解冻',
     pattern: /nextMon\.status === 'freeze'[\s\S]*?rollChance\(20\)/,
   },
   {
     file: 'src/components/Game/OriginalGame.jsx',
     label: '麻痹会在行动前有概率无法行动',
-    pattern: /nextMon\.status === 'paralysis' && rollChance\(25\)/,
+    pattern: /nextMon\.status === 'paralysis'[\s\S]*?rollChance\(25\)[\s\S]*?因麻痹无法行动/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '满麻不会白白消耗混乱回合',
+    pattern: /const pendingConfusionTurns = Math\.max\(0,\s*Number\(volatileStatuses\.confusion\) \|\| 0\)[\s\S]*?nextMon\.status === 'paralysis'[\s\S]*?pendingConfusionTurns > 0/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '冰冻中的特定破冰招式会直接解冻并继续行动',
+    pattern: /attemptedMove && isFreezeSelfThawingMove\(attemptedMove\)[\s\S]*?破冰而出，准备使出/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '敌方被状态阻止行动后仍返回更新后的自身状态',
+    pattern: /const runEnemyAction[\s\S]*?if \(!turnStart\.canAct\)[\s\S]*?attacker:\s*resolvedEnemyAfterTurnStart[\s\S]*?defender:\s*playerMon/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '我方被状态阻止行动后仍返回更新后的自身状态',
+    pattern: /const runPlayerAction[\s\S]*?if \(!turnStart\.canAct\)[\s\S]*?attacker:\s*resolvedPlayerAfterTurnStart[\s\S]*?defender:\s*enemyMon/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '同回合后续行动使用上一动作返回的最新双方状态',
+    pattern: /latestPlayer = playerResult\.attacker \|\| latestPlayer;[\s\S]*?latestEnemy = playerResult\.defender \|\| latestEnemy;[\s\S]*?latestEnemy = enemyResult\.attacker \|\| latestEnemy;[\s\S]*?latestPlayer = enemyResult\.defender \|\| latestPlayer/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '使用者自身状态要求会在扣 MP 前阻止无效招式',
+    pattern: /getUserStatusRequirementFailureMessage\(move,\s*resolved\w+AfterTurnStart\.name\)[\s\S]*?resolved\w+AfterTurnStart\.status !== move\.requiresUserStatus[\s\S]*?commitBattleRuntimeCheckpoint/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '回合末中毒灼伤会按速度顺序结算',
+    pattern: /const determineBattleEndOfTurnSideOrder =[\s\S]*?getEffectiveBattleStat\(playerMon, 'spd'\)[\s\S]*?getEffectiveBattleStat\(enemyMon, 'spd'\)[\s\S]*?Math\.random\(\) < 0\.5/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '双方都存活进入回合末时会先完整结算残余伤害再统一处理击倒',
+    pattern: /if \(!pendingPlayerFaint && !pendingEnemyFaint && latestPlayer && latestEnemy\)[\s\S]*?determineBattleEndOfTurnSideOrder[\s\S]*?return finalizeResolvedFaints\(\)/,
+  },
+  {
+    file: 'src/utils/battleAi.js',
+    label: 'AI 不会选择使用者自身状态不满足的招式',
+    pattern: /const hasUserStatusRequirement[\s\S]*?user\?\.status === move\.requiresUserStatus[\s\S]*?hasUserStatusRequirement\(move, enemyMon\)/,
   },
   {
     file: 'src/components/Game/OriginalGame.jsx',
@@ -105,6 +156,11 @@ const SOURCE_CONTRACTS = [
     file: 'src/components/Game/OriginalGame.jsx',
     label: '模仿效果已接入',
     pattern: /move\.effect === 'mimic'/,
+  },
+  {
+    file: 'src/components/Game/OriginalGame.jsx',
+    label: '瞬间移动脱离战斗效果已接入',
+    pattern: /move\.effect === 'teleport'[\s\S]*?escaped: teleportEscaped/,
   },
   {
     file: 'src/utils/battleDamage.js',
@@ -143,6 +199,8 @@ const describeMoveEffect = (moveKey, move) => ({
   statChanges: move.statChanges || null,
   effect: move.effect || null,
   requiresTargetStatus: move.requiresTargetStatus || null,
+  requiresUserStatus: move.requiresUserStatus || null,
+  usableWhileAsleep: Boolean(move.usableWhileAsleep),
 })
 
 await withViteAuditServer(async ({ rootDir, loadModule }) => {
@@ -245,6 +303,22 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
         moveKey,
         issue: 'unsupported_required_status',
         requiresTargetStatus: move.requiresTargetStatus,
+      })
+    }
+
+    if (move.requiresUserStatus && !PRIMARY_STATUSES.has(move.requiresUserStatus)) {
+      issues.push({
+        moveKey,
+        issue: 'unsupported_required_user_status',
+        requiresUserStatus: move.requiresUserStatus,
+      })
+    }
+
+    if (move.usableWhileAsleep && move.requiresUserStatus !== 'sleep') {
+      issues.push({
+        moveKey,
+        issue: 'usable_while_asleep_without_sleep_requirement',
+        requiresUserStatus: move.requiresUserStatus ?? null,
       })
     }
 

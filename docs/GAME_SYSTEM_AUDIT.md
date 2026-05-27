@@ -14,11 +14,83 @@
 | 阶段 5：商店、背包、道具 | 已修复并复验 | 商店购买、战斗奖励、开战扣能量已接入原子提交流程；地图道具/回血点/果实/商人奖励也已改为云快照先提交 |
 | 阶段 6：云存档与“回退一秒”专项 | 持续进行中 | 成长事件、战斗阶段、回合内行动检查点、地图事件位置、地图版本迁移、捕捉结算、奖励握手、地图网格、传送切图、逃跑退款资格、训练家/区域试炼每日锁与刷新时间已接入云端确认链路；界面级手测留到最后 |
 | 阶段 7：动画与品质补充点 | 部分完成 | 战斗换人动画与新手首次进入过场已补；成长/捕捉/地图反馈仍需最终视觉手测与补强 |
-| 阶段 8：最终产物 | 进行中 | 审计脚本已创建并复跑；正式问题清单持续补充 |
+| 阶段 8：最终产物 | 持续推进中 | `audit:core` 已全绿；Phaser 旧地图路径已删除；工具链漏洞已清零；正式问题清单持续补充 |
 
 ## 本轮已完成
 
 > 说明：下方 0.xx 分录保留当时排查现场；若旧分录里出现“待本轮复验”“当时构建阻塞”“EPERM 噪音”等历史状态，以最新的 0.66 复验结果和“当前问题清单”为准。
+
+### 0.74 Phaser 旧地图路径、AI 梯度与工具链安全已一起收口
+
+这轮做的是一组“不会立刻体现在一张截图上，但会让项目明显更干净、更稳、更好维护”的真收尾，不只是继续堆功能。
+
+本轮修复：
+
+- `GameCanvas` 已彻底收敛成单一路径：所有冒险地图只走 `ThreeLowPolyMap`，不再保留运行时 Phaser 回退分支：[GameCanvas.jsx](/Users/shihe/Documents/宝可梦养成/src/game/GameCanvas.jsx:1)
+- 删除已经失活的旧地图兼容层与相关死代码：`phaserGame.js`、`BootScene.js`、`WorldScene.js`、`EncounterSystem.js`、`PlayerController.js`、`eventBus.js` 已从仓库移除。
+- `TextureFactory` 不再承担整套旧地图贴图工厂，只保留当前仍被传送/过场 fallback 使用的玩家 figure 预览导出，避免 `OriginalGame` 挂着已经不用的 Phaser 贴图链路：[TextureFactory.js](/Users/shihe/Documents/宝可梦养成/src/game/world/TextureFactory.js:1)
+- `ThreeLowPolyMap` 新增活动 renderer lease 机制；在 effect remount / 热更新恢复前会先接管并清理旧 renderer，同时在 HMR 环境下不再强制 `forceContextLoss`，降低你之前遇到的 WebGL context 堆积与恢复抖动风险：[ThreeLowPolyMap.jsx](/Users/shihe/Documents/宝可梦养成/src/game/ThreeLowPolyMap.jsx:53) [ThreeLowPolyMap.jsx](/Users/shihe/Documents/宝可梦养成/src/game/ThreeLowPolyMap.jsx:1458)
+- `battleAi` 已补上更明确的角色纪律加权。现在普通训练师、部下、Boss 在“看到克制招式时更果断”“残血时更愿意治疗”这两条上终于形成递进，而不是名字分层、行为却几乎一样：[battleAi.js](/Users/shihe/Documents/宝可梦养成/src/utils/battleAi.js:97) [battleAi.js](/Users/shihe/Documents/宝可梦养成/src/utils/battleAi.js:166) [battleAi.js](/Users/shihe/Documents/宝可梦养成/src/utils/battleAi.js:267)
+- 新增 `build:check`，并让 `audit:core` 改走临时输出目录，避开本地 `dist/assets` 被占用时的 `ENOTEMPTY` 构建假失败：[package.json](/Users/shihe/Documents/宝可梦养成/package.json:7)
+- Vite / React 插件已升级到安全版本，`npm audit` 当前归零；同时 README 与构建配置也已同步去掉 Phaser 旧入口描述：[package.json](/Users/shihe/Documents/宝可梦养成/package.json:57) [vite.config.js](/Users/shihe/Documents/宝可梦养成/vite.config.js:1) [README.md](/Users/shihe/Documents/宝可梦养成/README.md:166)
+
+本轮验证结果：
+
+- `npm audit --json`：`0` 漏洞。
+- `npm run build:check`：通过；`vendor-phaser` 已消失，构建主告警只剩 `vendor-three` chunk 体积偏大。
+- `npm run audit:difficulty`：通过；角色递进结果已变为 `wild < normal < lieutenant < boss`。
+- `npm run audit:core`：通过；构建检查、数据、成长、难度、云存档守卫、地图验证全部跑通。
+
+当前结论：
+
+- Phaser 现在不再是“也许还会回来的备用路径”，而是已经从实际运行链路和依赖面里退出。
+- 地图渲染主链路更单纯了，工具链安全面也更干净了，后续继续优化体验时不必再背着双地图引擎和老 dev-server 漏洞一起前进。
+
+### 0.73 前端与教师后台已移除明文密码暴露，并补上学生密码重置 RPC
+
+这轮继续收系统里最不该继续存在的一块风险面：前端登录 fallback 以前会直接查 `plain_password`，老师后台也会直接把学生旧密码展示出来。这个状态下，哪怕玩法和同步都收得不错，账号安全也依然是个洞。
+
+本轮修复：
+
+- `login_with_table_password` 不再返回 `plain_password`；`register_table_user` 返回的 `profile` 也改成了字段白名单，不再把整行用户记录直接透给前端：[supabase-setup.sql](/Users/shihe/Documents/宝可梦养成/supabase-setup.sql:285)
+- 新增 `teacher_reset_student_password(UUID, UUID, TEXT)`，老师仍可管理学生账号，但方式从“查看旧密码”改成“直接设置新密码”： [202605240002_reduce_password_exposure.sql](/Users/shihe/Documents/宝可梦养成/supabase/migrations/202605240002_reduce_password_exposure.sql:106)
+- `authService` 已删除“登录 RPC 缺失时直接查 `users.plain_password`”的前端 fallback；现在缺迁移会明确提示先同步数据库，而不是继续在浏览器里摸明文密码：[authService.js](/Users/shihe/Documents/宝可梦养成/src/utils/authService.js:180)
+- 教师后台已去掉学生列表与详情里的旧密码展示，改成“重设学生登录密码”表单；学生密码更新后，旧密码立即失效：[Dashboard.jsx](/Users/shihe/Documents/宝可梦养成/src/components/Teacher/Dashboard.jsx:129) [index.css](/Users/shihe/Documents/宝可梦养成/src/index.css:20394)
+- `audit:cloud` 已升级成更严格规则：当前 `src/` 中不允许再出现任何 `plain_password` 直接引用：[audit-cloud-only-guards.mjs](/Users/shihe/Documents/宝可梦养成/scripts/audit-cloud-only-guards.mjs:145)
+
+本轮验证结果：
+
+- `npm run build`：通过，仅保留 Vite 大 chunk 体积警告。
+- `npm run audit:cloud`：通过，`plainPasswordReferences = 0`。
+- 远端已执行 `202605240002_reduce_password_exposure.sql`。
+- 远端 RPC 校验脚本通过：已确认登录结果不再带 `plain_password`，老师重置学生密码后旧密码失效、新密码可登录。[verify-cloud-save-atomic-and-reward-rpcs.sql](/Users/shihe/Documents/宝可梦养成/scripts/verify-cloud-save-atomic-and-reward-rpcs.sql:1)
+
+仍需你最后手测：
+
+- 老师后台选择学生后，应看不到旧密码，只能设置新密码。
+- 设置新密码后，学生旧密码应立即无法登录，新密码可正常登录。
+- 若本地或其他环境数据库还没推到这条迁移，登录界面应提示先同步 Supabase，而不是出现模糊的“用户名或密码错误”。
+
+### 0.72 云端读档改为“原子快照优先”，并清理根目录误生成垃圾文件
+
+这轮继续往“不会莫名回退、不会读到互相打架的数据”这个目标上补了一层真正有价值的保护：前端读云存档时，不再默认分两次分别读取 `game_saves` 和 `users`，而是优先走单个 RPC 一次性取回存档快照与金币/能量，减少并发写入时读偏到“旧存档 + 新资源”这类混搭状态的窗口。
+
+本轮修复：
+
+- Supabase 新增 `load_cloud_game_state_with_resources(UUID)`，会在同一条查询里返回 `game_data`、`save_revision`、`gold`、`energy`、`max_energy`，并已补进仓库迁移与总 SQL 文件：[202605240001_atomic_cloud_load.sql](/Users/shihe/Documents/宝可梦养成/supabase/migrations/202605240001_atomic_cloud_load.sql) [supabase-setup.sql](/Users/shihe/Documents/宝可梦养成/supabase-setup.sql:487)
+- `OriginalGame` 读档时会优先调用这个原子读 RPC；如果远端数据库还没推到这条迁移，前端会自动退回旧的双查询兼容路径，不会因此直接读档失败：[OriginalGame.jsx](/Users/shihe/Documents/宝可梦养成/src/components/Game/OriginalGame.jsx:9432)
+- 清理了根目录 6 个 0 字节、文件名被命令片段污染的误生成文件，避免仓库继续堆积无意义噪音。
+
+本轮验证结果：
+
+- `npm run build`：通过，仅保留 Vite 大 chunk 体积警告。
+- `npm run audit:cloud`：通过。
+- `npm run audit:battle-scenes`、`npm run audit:battle-visual`、`npm run audit:growth-battle-guards`、`npm run audit:trainer-daily-scope`、`npm run map:audit-gameplay`：通过。
+
+仍需你最后手测：
+
+- 推送数据库迁移后，登录学生账号，确认首次进入、刷新重进、战斗后回图、商店购买后刷新，金币/能量/地图状态不会出现“资源是新的、队伍还是旧的”错位感。
+- 若远端暂时没推这条迁移，确认旧兼容路径仍能正常登录和读档；完成 `supabase db push` 后再复验一次同样流程。
 
 ### 0.68 地图上的训练家 / 试炼 / Boss 完成态已接入可视反馈
 
@@ -2791,7 +2863,7 @@ npm run audit:battle
 当前结论：
 
 - 现在保留“可以失去 0 MP 技能”的设计时，链路已经更自洽了：提示是真的、风险是真的、死局也有收尾，不会再靠隐形补丁撑场面。
-- `audit:data` 里仍会看到 `missingZeroCostCoverageCount: 45`，这在当前产品口径下属于“已知设计差异”，不再等同于漏洞；真正要守的是提示、恢复、失败收尾三条保护链路。
+- `audit:data` 里仍会看到 `missingZeroCostCoverageCount: 25`，这在当前产品口径下属于“已知设计差异”，不再等同于漏洞；真正要守的是提示、恢复、失败收尾三条保护链路。
 
 ## 当前问题清单
 
@@ -2809,10 +2881,11 @@ npm run audit:battle
 - 经验药水、普通药水、精灵球、放生、队伍/仓库整理已改为云端优先提交；最终仍要手工确认动画中刷新、弹窗中刷新、同步冲突后的界面恢复表现。
 - 多级升级时实例重算仍以初始 `displayBase` 为准，而事件判定会切到进化后的 `growthBase`；当前脚本已验证不出 P0，但这是一个仍应保留观察的 `P1` 结构风险。
 - 地图运行时生成文件本轮已通过 `npm run map:build` 重新同步；后续只要改 `godotMapV2.source.json`，必须同时跑 `map:build` 与 `map:audit-runtime`。
+- `map:audit-runtime` 当前仍有 4 条非阻断装饰密度告警（区域 `C/E/G/I`），不会影响可走性和事件触发，但如果你继续细抠地图观感，这是最自然的一批下一轮优化点。
 
 ### P2
 
-- 暂无已确认 P2。原审计脚本 Vite WebSocket `EPERM` 噪音已在 0.51 清理。
+- 构建主告警目前只剩 `vendor-three` chunk 仍大于 `500 kB`。这不会影响规则正确性，但如果后面继续做首屏/弱机型体验，可以考虑再拆 `ThreeLowPolyMap` 相关 chunk 或继续压缩共享渲染代码。
 
 ## 下一步执行顺序
 
@@ -2820,7 +2893,7 @@ npm run audit:battle
 2. 做双标签页冲突和老师奖励领取浏览器手测，确认旧标签页不能覆盖新进度，奖励领取后刷新不会丢也不会重复领。
 3. 做真实账号的新手首次进入与重置后二次进入视觉手测，确认抵达阶段叠在真实地图上，且通知不会压住过场。
 4. 在真实 Chrome/Safari 中复验返回地图后的 3D 地图渲染，确认不会出现 headless 测试中观察到的地图恢复提示。
-5. 如果上述手测稳定，再进入结构治理：拆分 `OriginalGame.jsx`、收敛 `index.css`、决定是否删除 Phaser 旧地图路径。
+5. 如果上述手测稳定，再进入结构治理：继续拆分 `OriginalGame.jsx`、收敛 `index.css`，并视需要继续处理 `vendor-three` chunk 与地图装饰密度告警。
 
 ## 最终手工回归清单（待最后执行）
 

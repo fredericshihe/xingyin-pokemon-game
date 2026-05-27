@@ -154,11 +154,6 @@ DROP POLICY IF EXISTS "Teachers can view student rewards" ON teacher_rewards;
 DROP POLICY IF EXISTS "Teachers can insert student rewards" ON teacher_rewards;
 DROP POLICY IF EXISTS "System can manage rewards" ON teacher_rewards;
 
--- Users表策略
-CREATE POLICY "Public read access for auth"
-  ON users FOR SELECT
-  USING (true);
-
 CREATE POLICY "Allow user registration"
   ON users FOR INSERT
   WITH CHECK (true);
@@ -259,8 +254,14 @@ DROP FUNCTION IF EXISTS grant_energy(UUID, UUID, INT, TEXT, BOOLEAN, INT);
 DROP FUNCTION IF EXISTS register_table_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS review_student_registration(UUID, UUID, BOOLEAN, TEXT);
 DROP FUNCTION IF EXISTS login_with_table_password(TEXT, TEXT);
+DROP FUNCTION IF EXISTS teacher_reset_student_password(UUID, UUID, TEXT);
+DROP FUNCTION IF EXISTS get_table_user_profile(UUID);
+DROP FUNCTION IF EXISTS get_user_resources(UUID);
+DROP FUNCTION IF EXISTS get_teacher_students(UUID);
+DROP FUNCTION IF EXISTS get_teacher_pending_students(UUID);
 DROP FUNCTION IF EXISTS load_cloud_game_save();
 DROP FUNCTION IF EXISTS load_cloud_game_save(UUID);
+DROP FUNCTION IF EXISTS load_cloud_game_state_with_resources(UUID);
 DROP FUNCTION IF EXISTS save_cloud_game_save(JSONB);
 DROP FUNCTION IF EXISTS save_cloud_game_save(UUID, JSONB);
 DROP FUNCTION IF EXISTS save_cloud_game_state_with_resources(UUID, JSONB, INT, TEXT, INT, TEXT);
@@ -365,7 +366,22 @@ BEGIN
       WHEN v_role = 'student' THEN '注册申请已提交，请尽快通知老师登录教师工作台确认。老师通过后，你就可以使用该账号登录。'
       ELSE '注册成功！'
     END,
-    'profile', to_jsonb(v_profile)
+    'profile', jsonb_build_object(
+      'id', v_profile.id,
+      'email', v_profile.email,
+      'username', v_profile.username,
+      'nickname', v_profile.nickname,
+      'role', v_profile.role,
+      'teacher_id', v_profile.teacher_id,
+      'gold', v_profile.gold,
+      'energy', v_profile.energy,
+      'max_energy', v_profile.max_energy,
+      'registration_status', COALESCE(v_profile.registration_status, 'approved'),
+      'registration_rejection_reason', v_profile.registration_rejection_reason,
+      'registration_requested_at', v_profile.registration_requested_at,
+      'registration_reviewed_at', v_profile.registration_reviewed_at,
+      'created_at', v_profile.created_at
+    )
   );
 EXCEPTION
   WHEN unique_violation THEN
@@ -424,6 +440,53 @@ $$;
 
 GRANT EXECUTE ON FUNCTION review_student_registration(UUID, UUID, BOOLEAN, TEXT) TO anon, authenticated;
 
+CREATE OR REPLACE FUNCTION teacher_reset_student_password(
+  p_teacher_id UUID,
+  p_student_id UUID,
+  p_new_password TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_clean_password TEXT := TRIM(COALESCE(p_new_password, ''));
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM users
+    WHERE id = p_teacher_id
+      AND role = 'teacher'
+      AND COALESCE(registration_status, 'approved') = 'approved'
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', '只有已通过的老师账号可以重置学生密码');
+  END IF;
+
+  IF LENGTH(v_clean_password) < 6 THEN
+    RETURN jsonb_build_object('success', false, 'error', '新密码至少6位');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM users
+    WHERE id = p_student_id
+      AND role = 'student'
+      AND teacher_id = p_teacher_id
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'error', '找不到该学生，无法重置密码');
+  END IF;
+
+  UPDATE users
+  SET plain_password = v_clean_password
+  WHERE id = p_student_id;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'message', '学生密码已更新，旧密码立即失效。'
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION teacher_reset_student_password(UUID, UUID, TEXT) TO anon, authenticated;
+
 -- 函数0-1: 课堂系统登录。只验证 public.users 表中的用户名和 plain_password。
 CREATE OR REPLACE FUNCTION login_with_table_password(
   p_username TEXT,
@@ -439,7 +502,6 @@ RETURNS TABLE (
   gold INT,
   energy INT,
   max_energy INT,
-  plain_password TEXT,
   registration_status TEXT,
   registration_rejection_reason TEXT,
   registration_requested_at TIMESTAMP WITH TIME ZONE,
@@ -465,7 +527,6 @@ BEGIN
     u.gold,
     u.energy,
     u.max_energy,
-    u.plain_password,
     COALESCE(u.registration_status, 'approved') AS registration_status,
     u.registration_rejection_reason,
     u.registration_requested_at,
@@ -501,6 +562,44 @@ BEGIN
   FROM game_saves gs
   JOIN users u ON u.id = gs.user_id
   WHERE gs.user_id = p_user_id
+  AND u.role = 'student';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION load_cloud_game_state_with_resources(
+  p_user_id UUID
+)
+RETURNS TABLE (
+  game_data JSONB,
+  last_saved TIMESTAMP WITH TIME ZONE,
+  save_revision BIGINT,
+  gold INT,
+  energy INT,
+  max_energy INT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM users
+    WHERE id = p_user_id
+    AND role = 'student'
+  ) THEN
+    RAISE EXCEPTION 'Student not found';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    gs.game_data,
+    gs.last_saved,
+    COALESCE(gs.save_revision, 0),
+    COALESCE(u.gold, 0),
+    COALESCE(u.energy, 0),
+    COALESCE(u.max_energy, 0)
+  FROM users u
+  LEFT JOIN game_saves gs ON gs.user_id = u.id
+  WHERE u.id = p_user_id
   AND u.role = 'student';
 END;
 $$;
@@ -799,6 +898,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION load_cloud_game_save(UUID) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION load_cloud_game_state_with_resources(UUID) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION save_cloud_game_save(UUID, JSONB) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION save_cloud_game_state_with_resources(UUID, JSONB, INT, TEXT, INT, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION clear_cloud_game_save(UUID) TO anon, authenticated;
@@ -1094,6 +1194,175 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION grant_energy(UUID, UUID, INT, TEXT, BOOLEAN, INT) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION get_table_user_profile(
+  p_user_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  email TEXT,
+  username TEXT,
+  nickname TEXT,
+  role TEXT,
+  teacher_id UUID,
+  gold INT,
+  energy INT,
+  max_energy INT,
+  registration_status TEXT,
+  registration_rejection_reason TEXT,
+  registration_requested_at TIMESTAMP WITH TIME ZONE,
+  registration_reviewed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    u.id,
+    u.email,
+    u.username,
+    u.nickname,
+    u.role,
+    u.teacher_id,
+    u.gold,
+    u.energy,
+    u.max_energy,
+    COALESCE(u.registration_status, 'approved') AS registration_status,
+    u.registration_rejection_reason,
+    u.registration_requested_at,
+    u.registration_reviewed_at,
+    u.created_at
+  FROM users u
+  WHERE u.id = p_user_id
+  LIMIT 1;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_table_user_profile(UUID) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION get_user_resources(
+  p_user_id UUID
+)
+RETURNS TABLE (
+  gold INT,
+  energy INT,
+  max_energy INT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    COALESCE(u.gold, 0),
+    COALESCE(u.energy, 0),
+    COALESCE(u.max_energy, 0)
+  FROM users u
+  WHERE u.id = p_user_id
+    AND u.role = 'student'
+  LIMIT 1;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_user_resources(UUID) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION get_teacher_students(
+  p_teacher_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  username TEXT,
+  nickname TEXT,
+  gold INT,
+  energy INT,
+  max_energy INT,
+  created_at TIMESTAMP WITH TIME ZONE,
+  registration_status TEXT,
+  registration_requested_at TIMESTAMP WITH TIME ZONE,
+  registration_reviewed_at TIMESTAMP WITH TIME ZONE,
+  registration_rejection_reason TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM users teacher
+    WHERE teacher.id = p_teacher_id
+      AND teacher.role = 'teacher'
+      AND COALESCE(teacher.registration_status, 'approved') = 'approved'
+  ) THEN
+    RAISE EXCEPTION 'Teacher role required';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    u.id,
+    u.username,
+    u.nickname,
+    u.gold,
+    u.energy,
+    u.max_energy,
+    u.created_at,
+    COALESCE(u.registration_status, 'approved') AS registration_status,
+    u.registration_requested_at,
+    u.registration_reviewed_at,
+    u.registration_rejection_reason
+  FROM users u
+  WHERE u.role = 'student'
+    AND u.teacher_id = p_teacher_id
+    AND (u.registration_status IS NULL OR u.registration_status = 'approved')
+  ORDER BY u.nickname, u.created_at;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_teacher_students(UUID) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION get_teacher_pending_students(
+  p_teacher_id UUID
+)
+RETURNS TABLE (
+  id UUID,
+  username TEXT,
+  nickname TEXT,
+  created_at TIMESTAMP WITH TIME ZONE,
+  teacher_id UUID,
+  registration_status TEXT,
+  registration_requested_at TIMESTAMP WITH TIME ZONE
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM users teacher
+    WHERE teacher.id = p_teacher_id
+      AND teacher.role = 'teacher'
+      AND COALESCE(teacher.registration_status, 'approved') = 'approved'
+  ) THEN
+    RAISE EXCEPTION 'Teacher role required';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    u.id,
+    u.username,
+    u.nickname,
+    u.created_at,
+    u.teacher_id,
+    COALESCE(u.registration_status, 'approved') AS registration_status,
+    u.registration_requested_at
+  FROM users u
+  WHERE u.role = 'student'
+    AND u.teacher_id = p_teacher_id
+    AND u.registration_status = 'pending'
+  ORDER BY u.registration_requested_at ASC;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_teacher_pending_students(UUID) TO anon, authenticated;
 
 -- 函数3: 获取学生列表（老师专用）
 CREATE OR REPLACE FUNCTION get_my_students()

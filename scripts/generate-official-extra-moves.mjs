@@ -111,7 +111,7 @@ const VOLATILE_BY_AILMENT = {
   confusion: 'confusion',
 }
 
-const SIMPLE_NO_EFFECT_MOVES = new Set(['splash', 'teleport'])
+const SIMPLE_NO_EFFECT_MOVES = new Set(['splash'])
 const SELF_DESTRUCT_MOVES = new Set(['self-destruct', 'explosion'])
 const DYNAMIC_POWER_DEFAULTS = {
   'electro-ball': 60,
@@ -334,6 +334,7 @@ const buildMoveDefinition = (apiMove) => {
     }
   }
   if (SELF_DESTRUCT_MOVES.has(apiName)) move.selfDestruct = true
+  if (apiName === 'teleport') move.effect = 'teleport'
   if (SIMPLE_NO_EFFECT_MOVES.has(apiName)) move.effect = 'nothing'
 
   const hasRuntimeEffect = Boolean(

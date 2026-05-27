@@ -1,4 +1,12 @@
 import { useState } from 'react'
+import { applyImageFallback } from '../../utils/localAssetPreloader'
+import { assetUrl } from '../../utils/assetUrl'
+
+const AUTH_IMAGE_FALLBACK = assetUrl('/assets/pokemon/placeholder.svg')
+
+const handleAuthImageError = (event) => {
+  applyImageFallback(event, AUTH_IMAGE_FALLBACK)
+}
 
 export default function Register({ onRegister, onSwitchToLogin }) {
   const [formData, setFormData] = useState({
@@ -52,11 +60,6 @@ export default function Register({ onRegister, onSwitchToLogin }) {
       return
     }
 
-    if (formData.role === 'teacher' && formData.teacherRegisterPassword !== '198985') {
-      setError('老师注册密码不正确')
-      return
-    }
-
     setLoading(true)
 
     try {
@@ -78,9 +81,9 @@ export default function Register({ onRegister, onSwitchToLogin }) {
       <div className="auth-scenery" aria-hidden="true">
         <span className="auth-cloud auth-cloud--one" />
         <span className="auth-cloud auth-cloud--two" />
-        <img className="auth-pokemon auth-pokemon--charmander" src="/assets/pokemon/official-artwork/4.png" alt="" />
-        <img className="auth-pokemon auth-pokemon--squirtle" src="/assets/pokemon/official-artwork/7.png" alt="" />
-        <img className="auth-pokemon auth-pokemon--pikachu" src="/assets/pokemon/official-artwork/25.png" alt="" />
+        <img className="auth-pokemon auth-pokemon--charmander" src={assetUrl('/assets/pokemon/official-artwork/4.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+        <img className="auth-pokemon auth-pokemon--squirtle" src={assetUrl('/assets/pokemon/official-artwork/7.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+        <img className="auth-pokemon auth-pokemon--pikachu" src={assetUrl('/assets/pokemon/official-artwork/25.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
       </div>
 
       <main className="auth-shell auth-shell--register" aria-labelledby="register-title">
@@ -97,9 +100,9 @@ export default function Register({ onRegister, onSwitchToLogin }) {
             <span className="auth-stage-cloud auth-stage-cloud--right" />
             <span className="auth-scene-flowers auth-scene-flowers--left" />
             <span className="auth-scene-flowers auth-scene-flowers--right" />
-            <img className="auth-mascot auth-mascot--left" src="/assets/pokemon/official-artwork/4.png" alt="" />
-            <img className="auth-mascot auth-mascot--hero" src="/assets/pokemon/official-artwork/7.png" alt="" />
-            <img className="auth-mascot auth-mascot--right" src="/assets/pokemon/official-artwork/25.png" alt="" />
+            <img className="auth-mascot auth-mascot--left" src={assetUrl('/assets/pokemon/official-artwork/4.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+            <img className="auth-mascot auth-mascot--hero" src={assetUrl('/assets/pokemon/official-artwork/7.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
+            <img className="auth-mascot auth-mascot--right" src={assetUrl('/assets/pokemon/official-artwork/25.png')} alt="" loading="eager" decoding="async" draggable={false} onError={handleAuthImageError} />
           </div>
 
           <div className="auth-hero-copy">

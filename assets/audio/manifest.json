@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-05-28T04:15:08.046Z",
+  "format": "ogg",
+  "source": "OpenGameArt CC0 (GBA-style mapping, not Nintendo rips)",
+  "tracks": {
+    "maps/godot-map.ogg": {
+      "bytes": 850511,
+      "gbaRole": "新手村 / 城镇氛围（类似常磐）",
+      "title": "Summer Park 8bit tune",
+      "author": "Scribe (Daniel Stephens)",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/summer-park-8bit-tune-loop",
+      "cached": true
+    },
+    "maps/godot-map-v2.ogg": {
+      "bytes": 2396007,
+      "gbaRole": "草径 / 101号道路（类似未白）",
+      "title": "Meadow Thoughts",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/meadow-thoughts",
+      "cached": true
+    },
+    "maps/mist-lake.ogg": {
+      "bytes": 59861,
+      "gbaRole": "雾湖 / 水边路线",
+      "title": "Wind",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/wind",
+      "cached": true
+    },
+    "maps/farm-town.ogg": {
+      "bytes": 794380,
+      "gbaRole": "农庄 / 友好小镇",
+      "title": "Honey Bear Loop",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/honey-bear-loop",
+      "cached": true
+    },
+    "maps/pirate-shore.ogg": {
+      "bytes": 477929,
+      "gbaRole": "海岸 / 港口",
+      "title": "Sailor Waltz (water effects)",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/sailor-waltz-with-water-effects-c64-style",
+      "cached": true
+    },
+    "maps/graveyard.ogg": {
+      "bytes": 1202848,
+      "gbaRole": "墓园 / 洞窟",
+      "title": "Dungeon 002",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/dungeon002",
+      "cached": true
+    },
+    "maps/hex-ruins.ogg": {
+      "bytes": 633239,
+      "gbaRole": "遗迹 / 神秘区域",
+      "title": "Theme Loop",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/theme-loop",
+      "cached": true
+    },
+    "maps/survival-ridge.ogg": {
+      "bytes": 1434106,
+      "gbaRole": "营地 / 长途路线",
+      "title": "Melodic Adventure Theme",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/melodic-adventure-theme-and-rhythmic-variation-c64-style",
+      "cached": true
+    },
+    "maps/boss-highland.ogg": {
+      "bytes": 772842,
+      "gbaRole": "高地 / 冠军之路前段",
+      "title": "Flora",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/flora",
+      "cached": true
+    },
+    "battle/wild.ogg": {
+      "bytes": 2724366,
+      "gbaRole": "野生对战 BGM",
+      "title": "Chiptune Battle Music (loop)",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/chiptune-battle-music",
+      "cached": true
+    },
+    "battle/trainer.ogg": {
+      "bytes": 502111,
+      "gbaRole": "普通训练家对战",
+      "title": "Fight",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/fight",
+      "cached": true
+    },
+    "battle/lieutenant.ogg": {
+      "bytes": 1233496,
+      "gbaRole": "部下 / 精英训练家对战",
+      "title": "Prepare Your Swords",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/prepare-your-swords",
+      "cached": true
+    },
+    "battle/boss.ogg": {
+      "bytes": 1497000,
+      "gbaRole": "Boss / 馆主级对战",
+      "title": "Bang Bang",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/bangbang",
+      "cached": true
+    },
+    "battle/challenge.ogg": {
+      "bytes": 1663599,
+      "gbaRole": "挑战 / 强敌对战",
+      "title": "Swordfight",
+      "author": "OpenGameArt contributor",
+      "license": "CC0",
+      "sourcePage": "https://opengameart.org/content/swordfight",
+      "cached": true
+    }
+  }
+}

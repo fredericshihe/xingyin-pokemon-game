@@ -6,18 +6,22 @@
     <title>Redirecting…</title>
     <script>
       (function () {
-        var base = '/xingyin-pokemon-game/';
         var path = location.pathname || '/';
-        if (path.indexOf(base) !== 0) {
-          location.replace(base);
+        var search = location.search || '';
+        var hash = location.hash || '';
+        if (path.indexOf('/xingyin-pokemon-game') === 0) {
+          var rest = path.slice('/xingyin-pokemon-game'.length) || '/';
+          if (!rest.startsWith('/')) rest = '/' + rest;
+          location.replace(rest + search + hash);
           return;
         }
-        var subPath = path.slice(base.length);
-        var target = base + '?p=' + encodeURIComponent('/' + subPath + location.search + location.hash);
-        location.replace(target);
+        if (path === '/' || path === '/index.html') {
+          location.replace('/' + search + hash);
+          return;
+        }
+        location.replace('/?p=' + encodeURIComponent(path + search + hash));
       })();
     </script>
   </head>
   <body></body>
 </html>
-

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <script>(function(){var p=location.pathname||"";if(p.indexOf("/xingyin-pokemon-game")===0){var r=p.slice("/xingyin-pokemon-game".length)||"/";if(r.charAt(0)!=="/")r="/"+r;location.replace(r+location.search+location.hash)}})();</script>
+  <script>(function(){var h=location.hostname||"";var p=location.pathname||"";if(h==="pokemongame.site"||h==="www.pokemongame.site"){if(p.indexOf("/xingyin-pokemon-game")===0){var r=p.slice("/xingyin-pokemon-game".length)||"/";if(r.charAt(0)!=="/")r="/"+r;location.replace(r+location.search+location.hash)}}})();</script>
   <script>(function(){var B="/",G="game:cache-flush-once";try{fetch(B+"version.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(v){if(!v||!v.buildId)return;var k="game:app-build-id",s=localStorage.getItem(k);if(sessionStorage.getItem(G)==="1"){localStorage.setItem(k,v.buildId);return}if(s&&s!==v.buildId){sessionStorage.setItem(G,"1");var p=[];if("serviceWorker"in navigator)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}));if("caches"in window)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(n){return caches.delete(n)}))}));Promise.all(p).then(function(){location.reload()});return}localStorage.setItem(k,v.buildId)}).catch(function(){})}catch(e){}})();</script>
 
   <meta charset="UTF-8">
@@ -11,15 +11,15 @@
   <link rel="dns-prefetch" href="https://cdn.staticfile.org">
   <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css"></noscript>
-  <script type="module" crossorigin src="/assets/index-B6s1Hjlt.js"></script>
+  <script type="module" crossorigin src="/assets/index-DovqHDFs.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-QTnfLwEv.js">
   <link rel="modulepreload" crossorigin href="/assets/preload-helper-zJ_50EbN.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor-react-CMlYVY7Y.js">
   <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-DM0-I9SR.js">
-  <link rel="modulepreload" crossorigin href="/assets/game-data-DOFqoxqn.js">
-  <link rel="modulepreload" crossorigin href="/assets/overworld-maps-D4sLIH0T.js">
-  <link rel="modulepreload" crossorigin href="/assets/mapConfig-AicUYy4j.js">
-  <link rel="modulepreload" crossorigin href="/assets/localAssetPreloader-DQZgBfRs.js">
+  <link rel="modulepreload" crossorigin href="/assets/game-data-syIdICUT.js">
+  <link rel="modulepreload" crossorigin href="/assets/overworld-maps-2Cmg2o9P.js">
+  <link rel="modulepreload" crossorigin href="/assets/mapConfig-xem_tr6w.js">
+  <link rel="modulepreload" crossorigin href="/assets/localAssetPreloader-Cgmnic9T.js">
   <link rel="stylesheet" crossorigin href="/assets/index-aNtw2sfk.css">
 <link rel="manifest" href="/manifest.webmanifest"></head>
 <body>

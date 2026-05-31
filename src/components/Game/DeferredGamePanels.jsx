@@ -12,9 +12,10 @@ import {
 } from '../../utils/inventoryItems'
 import { getEvolutionLevelForBranch } from '../../utils/pokemonGrowth'
 import { MAX_PARTY_SIZE, MAX_STORAGE_SIZE } from '../../utils/pokemonRoster'
-import { applyImageFallback } from '../../utils/localAssetPreloader'
+import { applyImageFallback, handlePokemonImageError } from '../../utils/localAssetPreloader'
 import { CollectionCard, CollectionGrid, TypeBadge } from './gameUiPrimitives'
 import { assetUrl } from '../../utils/assetUrl'
+import { gameAudio } from '../../utils/gameAudio'
 
 const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
 const SHOP_PURCHASE_FEEDBACK_MS = 1250
@@ -152,10 +153,6 @@ const DEX_EVOLUTION_METHOD_LABELS = {
   trade_item: '使用道具',
   level_up_item_day: '白天道具',
   move_known: '学会招式'
-}
-
-const handlePokemonImageError = (event) => {
-  applyImageFallback(event, POKEMON_LOCAL_PLACEHOLDER)
 }
 
 const handleItemImageError = (event) => {
@@ -330,10 +327,12 @@ export function DexScreen({ onBack }) {
     rememberDexListScroll()
     shouldRestoreDexListScrollRef.current = true
     setSelectedMon(mon)
+    gameAudio.playUiSelect()
   }, [rememberDexListScroll])
 
   const handleDexDetailBack = useCallback(() => {
     setSelectedMon(null)
+    gameAudio.playUiBack()
   }, [])
 
   if (selectedMon) {
@@ -417,7 +416,7 @@ export function DexScreen({ onBack }) {
               </div>
               <div className="dex-evolution-flow">
                 {evolutionLinks.previous.map((link) => (
-                  <button key={`prev-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => setSelectedMon(link.mon)}>
+                  <button key={`prev-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => { setSelectedMon(link.mon); gameAudio.playUiSelect(); }}>
                     <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
                     <span>No.{formatDexNo(link.mon)}</span>
                     <b>{link.mon.name}</b>
@@ -429,7 +428,7 @@ export function DexScreen({ onBack }) {
                   <b>{selectedMon.name}</b>
                 </div>
                 {evolutionLinks.next.map((link) => (
-                  <button key={`next-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => setSelectedMon(link.mon)}>
+                  <button key={`next-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => { setSelectedMon(link.mon); gameAudio.playUiSelect(); }}>
                     <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
                     <span>{link.condition}</span>
                     <b>{link.mon.name}</b>
@@ -504,7 +503,7 @@ export function DexScreen({ onBack }) {
           {OFFICIAL_DEX_MONSTERS.map((mon) => (
             <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)}>
               <div className="game-collection-card__sprite-wrap">
-                <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                <img src={mon.sprite} decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
               </div>
               <div className="game-collection-card__dexno">No.{formatDexNo(mon)}</div>
               <div className="game-collection-card__name">{mon.name}</div>
@@ -1246,7 +1245,7 @@ export function TeamScreen({
                   active={selectedStorageMonsterId === mon.id}
                 >
                   <div className="game-collection-card__sprite-wrap">
-                    <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                    <img src={mon.sprite} loading="lazy" decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
                   </div>
                   <div className="game-collection-card__name">{mon.name}</div>
                   <div className="game-collection-card__meta">Lv.{mon.level}</div>
@@ -1396,7 +1395,7 @@ export function TeamScreen({
                 {team.map((mon) => (
                   <CollectionCard key={mon.id} onClick={() => handleSwapChoice(mon.id)}>
                     <div className="game-collection-card__sprite-wrap">
-                      <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                      <img src={mon.sprite} loading="lazy" decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
                     </div>
                     <div className="game-collection-card__name">{mon.name}</div>
                     <div className="game-collection-card__meta">Lv.{mon.level}</div>

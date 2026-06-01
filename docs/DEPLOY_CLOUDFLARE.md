@@ -32,6 +32,13 @@ supabase db push
 
 `supabase/migrations/` 下的迁移会同步到线上，比单独跑 `supabase-setup.sql` 更可靠。
 
+### 能量系统说明（学生）
+
+- **默认能量上限**：学生账号默认 `max_energy = 10`（老师端可修改上限）。
+- **每日刷新**：每天 **0 点（Asia/Shanghai）** 自动把能量回满到 `max_energy`，不管前一天剩余多少。
+  - 优先使用 `pg_cron` 定时任务（若项目支持会自动创建作业 `daily-energy-refill-cn`）。
+  - 若环境不支持 `pg_cron`，则采用“首次交互懒刷新”：学生当天第一次登录/读档/存档/老师操作时会自动回满并写入日志。
+
 ### 2. 获取前端环境变量
 
 在 Supabase Dashboard → **Project Settings → API** 复制：

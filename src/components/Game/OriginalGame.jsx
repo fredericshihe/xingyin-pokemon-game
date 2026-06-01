@@ -67,6 +67,12 @@ import {
   resolveTrainerBattleTeamConfig
 } from "../../utils/trainerBattleScaling"
 import {
+  CHALLENGE_RARE_UNLOCK_STAGE_COUNT,
+  getChallengeRareUnlockStageCount as getChallengeRareUnlockStageCountForPool,
+  getChallengeRareUnlockedCountForStage as getChallengeRareUnlockedCountForPoolStage,
+  getChallengeRareUnlockBatch as getChallengeRareUnlockBatchFromPool
+} from "../../utils/challengeRareUnlock"
+import {
   findExpOverflowMonsters,
   normalizeRosterExpProgress,
   simulateMonsterExpGain
@@ -88,15 +94,23 @@ import {
   sortInventorySlots,
 } from "../../utils/inventoryItems"
 import { getMoveEffectConfig } from "../../utils/moveVisuals"
+import { BATTLE_EFFECT_FALLBACK_ANCHORS, measureBattleEffectAnchors } from "../../utils/battleEffectAnchors"
 import {
   appendLevelUpCelebrationsToQueue,
   buildLevelUpCelebrationPayload,
   buildLevelUpCelebrationsForRoster
 } from "../../utils/levelUpCelebrations"
 import { applyImageFallback } from "../../utils/localAssetPreloader"
-import { bootstrapGameSession } from "../../utils/gameSessionBootstrap"
+import { markAppReady } from "../../utils/clientUpdate"
+import { isEntryPreloadComplete, runGameEntryPreload, resetEntryPreloadSession, clearEntryPreloadMarks, bindEntryPreloadShouldContinue } from "../../utils/gameEntryPreload"
+import { scheduleIdleAssetWarmup } from "../../utils/gameAssetBootstrap"
+import { clearClientCaches } from "../../utils/recoverStaleClient"
+import { saveCloudGameWithLock, clearCloudSaveQueue } from "../../utils/cloudSaveLock"
+import UnifiedBootScreen from "../UnifiedBootScreen"
 import { pokemonArtUrl, pokemonArtPngUrl, POKEMON_PLACEHOLDER_URL, toPngFallbackUrl } from "../../utils/mediaAssetUrl"
-import { gameAudio, normalizeAudioSettings, readStoredAudioSettings, writeStoredAudioSettings } from "../../utils/gameAudio"
+import { gameAudio, getBgmSettings, getSfxSettings, normalizeAudioSettings, readStoredAudioSettings, writeStoredAudioSettings } from "../../utils/gameAudio"
+import { gameBgm } from "../../utils/gameBgm"
+import { getMapAmbientTrackLoadUrls } from "../../utils/gameBgmCatalog"
 import { CollectionCard, CollectionGrid, TypeBadge } from "./gameUiPrimitives"
 import { assetUrl } from "../../utils/assetUrl"
 
@@ -386,11 +400,20 @@ const isTransientCloudRequestError = (error) => {
   const message = getCloudRequestErrorMessage(error);
   return /load failed|failed to fetch|networkerror|network request failed|fetch failed|timeout|timed out|aborted|aborterror|cancelled/i.test(message);
 };
+const CLOUD_REQUEST_TIMEOUT_MS = 45000;
+const runCloudRequestWithTimeout = (requestFn, timeoutMs = CLOUD_REQUEST_TIMEOUT_MS) => (
+  Promise.race([
+    requestFn(),
+    new Promise((_, reject) => {
+      window.setTimeout(() => reject(new Error('云端请求超时，请检查网络后重试。')), timeoutMs);
+    })
+  ])
+);
 const runCloudRequestWithRetry = async (requestFn, retryDelaysMs = CLOUD_REQUEST_RETRY_DELAYS_MS) => {
   let lastTransientError = null;
   for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
     try {
-      const result = await requestFn();
+      const result = await runCloudRequestWithTimeout(requestFn);
       if (result?.error && isTransientCloudRequestError(result.error) && attempt < retryDelaysMs.length) {
         lastTransientError = result.error;
         await wait(retryDelaysMs[attempt]);
@@ -510,6 +533,13 @@ const didPlayerJustSwitchOnLastBattleLog = (logs = [], playerMon = null) => {
   if (playerName) return latestLog === `上吧，${playerName}！`;
   return /^上吧，.+！$/.test(latestLog);
 };
+// AI 用药日志固定以「对手使用了 」开头，统计整场战斗已消耗的伤药次数以约束配额。
+const ENEMY_POTION_LOG_PREFIX = '对手使用了 ';
+const countEnemyPotionsUsedFromLogs = (logs = []) => (
+  (Array.isArray(logs) ? logs : [])
+    .filter((message) => typeof message === 'string' && message.startsWith(ENEMY_POTION_LOG_PREFIX))
+    .length
+);
 const getEnemyAiSwitchIntentMessage = (action) => {
   const targetName = action?.target?.name;
   if (!targetName) return '';
@@ -522,6 +552,16 @@ const getEnemyAiSwitchIntentMessage = (action) => {
       return `对手想保留当前伙伴的体力，换上 ${targetName}。`;
     default:
       return `对手看准机会，换上 ${targetName}。`;
+  }
+};
+const getEnemyAiItemIntentMessage = (action) => {
+  switch (action?.reason) {
+    case 'emergency_heal':
+      return '对手眼看宝可梦快要倒下，急忙伸手去拿伤药。';
+    case 'sustain_heal':
+      return '对手不慌不忙地取出伤药，准备稳住战线。';
+    default:
+      return '对手准备使用道具。';
   }
 };
 const FLOATING_ENTRY_POKEDEX_IDS = new Set([65, 81, 82, 92, 93, 94, 122, 144, 145, 146, 149, 150, 462]);
@@ -1540,7 +1580,6 @@ const getConfiguredBattleLevels = (teamConfig = []) => (
 );
 
 const DAILY_SCALING_TRAINER_ROLES = new Set(['normal']);
-const CHALLENGE_RARE_UNLOCK_STAGE_COUNT = 4;
 
 const isDailyScalingTrainerRole = (role) => DAILY_SCALING_TRAINER_ROLES.has(normalizeTrainerRole(role));
 
@@ -1747,29 +1786,17 @@ const getChallengeRareUnlockStage = (world, event, mapName = null) => {
   return hasMapScopedWorldEventId(world, 'completedChallengeIds', mapName, event.id) ? 1 : 0;
 };
 
-const getChallengeRareUnlockStageCount = (event) => {
-  const poolSize = getChallengeRarePool(event).length;
-  if (poolSize <= 0) return 0;
-  return Math.min(CHALLENGE_RARE_UNLOCK_STAGE_COUNT, poolSize);
-};
+const getChallengeRareUnlockStageCount = (event) => (
+  getChallengeRareUnlockStageCountForPool(getChallengeRarePool(event).length)
+);
 
-const getChallengeRareUnlockedCountForStage = (event, stage) => {
-  const poolSize = getChallengeRarePool(event).length;
-  if (poolSize <= 0) return 0;
-  const stageCount = getChallengeRareUnlockStageCount(event);
-  const safeStage = Math.max(0, Math.min(stageCount, Math.trunc(Number(stage)) || 0));
-  if (safeStage <= 0) return 0;
-  if (safeStage >= stageCount) return poolSize;
-  return Math.max(1, Math.min(poolSize, Math.round((poolSize * safeStage) / stageCount)));
-};
+const getChallengeRareUnlockedCountForStage = (event, stage) => (
+  getChallengeRareUnlockedCountForPoolStage(getChallengeRarePool(event).length, stage)
+);
 
-const getChallengeRareUnlockBatch = (event, completedStage = 0) => {
-  const pool = getChallengeRarePool(event);
-  const stage = Math.max(0, Math.trunc(Number(completedStage)) || 0);
-  const start = getChallengeRareUnlockedCountForStage(event, stage);
-  const end = getChallengeRareUnlockedCountForStage(event, stage + 1);
-  return pool.slice(start, end);
-};
+const getChallengeRareUnlockBatch = (event, completedStage = 0) => (
+  getChallengeRareUnlockBatchFromPool(getChallengeRarePool(event), completedStage)
+);
 
 const getChallengeUnlockedRarePool = (event, world, mapName = null) => {
   const pool = getChallengeRarePool(event);
@@ -2125,6 +2152,12 @@ const LevelUpCelebrationModal = ({ celebration, onClose }) => {
   const statChanges = Array.isArray(celebration.statChanges) ? celebration.statChanges : [];
   const levelGain = Math.max(1, Math.trunc(Number(celebration.levelGain) || 1));
 
+  useEffect(() => {
+    if (celebration) {
+      gameAudio.playLevelUp();
+    }
+  }, [celebration]);
+
   return (
     <div className="growth-modal-overlay" role="dialog" aria-modal="true">
       <div className="growth-levelup-card">
@@ -2208,7 +2241,11 @@ const EvolutionCeremonyModal = ({
 
   useEffect(() => {
     if (phase !== 'transforming') return undefined;
-    const revealTimer = window.setTimeout(() => setPhase('revealed'), 3400);
+    gameAudio.playEvolutionStart();
+    const revealTimer = window.setTimeout(() => {
+      setPhase('revealed');
+      gameAudio.playEvolutionComplete();
+    }, 3400);
     return () => window.clearTimeout(revealTimer);
   }, [phase]);
 
@@ -2848,10 +2885,17 @@ const CaptureSequenceOverlay = ({ show, data, onComplete, paused = false }) => {
     setFinishing(false);
     const finishDelay = data.success ? 5100 : 4700;
     const completeDelay = data.success ? 6200 : 5600;
+
+    const shake1Timer = setTimeout(() => gameAudio.playCaptureShake(), 1200);
+    const shake2Timer = setTimeout(() => gameAudio.playCaptureShake(), 2400);
+    const shake3Timer = setTimeout(() => gameAudio.playCaptureShake(), 3600);
     const finishTimer = setTimeout(() => setFinishing(true), finishDelay);
     const completeTimer = setTimeout(() => onComplete?.(data), completeDelay);
 
     return () => {
+      clearTimeout(shake1Timer);
+      clearTimeout(shake2Timer);
+      clearTimeout(shake3Timer);
       clearTimeout(finishTimer);
       clearTimeout(completeTimer);
     };
@@ -3322,12 +3366,9 @@ const AttackEffect = ({ effect, onDone }) => {
   const glow = moveConfig.glow || 'rgba(255,255,255,0.7)';
   const actorSide = effect.attackerSide === 'enemy' ? 'enemy' : 'player';
   const targetSide = effect.target === 'player' ? 'player' : 'enemy';
-  const anchors = {
-    enemy: { x: '74%', y: '31%' },
-    player: { x: '25%', y: '69%' }
-  };
-  const source = anchors[actorSide];
-  const target = anchors[targetSide];
+  const anchors = effect.anchors || BATTLE_EFFECT_FALLBACK_ANCHORS;
+  const source = anchors[actorSide] || BATTLE_EFFECT_FALLBACK_ANCHORS[actorSide];
+  const target = anchors[targetSide] || BATTLE_EFFECT_FALLBACK_ANCHORS[targetSide];
   const targetMode = moveConfig.target === 'self' ? 'self' : 'foe';
   const particleCount = Math.max(6, Math.min(18, Number(moveConfig.particleCount) || (visual === 'blizzard' || visual === 'hurricane' || visual === 'rock-slide' || visual === 'fire-blast' ? 14 : 10)));
   const shardCount = Math.max(6, Math.min(16, Number(moveConfig.shardCount) || (visual === 'rock-slide' || visual === 'blizzard' || visual === 'quake' ? 12 : 8)));
@@ -4602,6 +4643,9 @@ const BattleScene = ({
   const [attackEffect, setAttackEffect] = useState(null);
   const [playerSwitchOverride, setPlayerSwitchOverride] = useState(null);
   const [enemySwitchOverride, setEnemySwitchOverride] = useState(null);
+  const battleStageRef = useRef(null);
+  const playerSpriteAnchorRef = useRef(null);
+  const enemySpriteAnchorRef = useRef(null);
 
   // New states for modal screens
   const [showBag, setShowBag] = useState(false);
@@ -4664,6 +4708,14 @@ const BattleScene = ({
     }
   }, []);
 
+  const resolveBattleEffectAnchors = useCallback(() => (
+    measureBattleEffectAnchors(
+      battleStageRef.current,
+      playerSpriteAnchorRef.current,
+      enemySpriteAnchorRef.current
+    )
+  ), []);
+
   const playBattleMoveVisual = useCallback((event) => {
     const moveKey = event?.moveKey;
     const attackerSide = event?.attackerSide;
@@ -4715,8 +4767,10 @@ const BattleScene = ({
           attackerSide,
           target: effectTarget,
           moveKey,
+          move,
           phase,
           durationMs: Math.max(520, durationMs - impactDelayMs),
+          anchors: resolveBattleEffectAnchors(),
         });
       }
     }, impactDelayMs));
@@ -4727,12 +4781,21 @@ const BattleScene = ({
       setEnemyAnim('');
       setAttackEffect(null);
     }, durationMs));
-  }, [clearBattleVisualTimers, isThrowingPokeball]);
+  }, [clearBattleVisualTimers, isThrowingPokeball, resolveBattleEffectAnchors]);
 
   useEffect(() => {
     if (!moveVisualEvent) return;
     playBattleMoveVisual(moveVisualEvent);
   }, [moveVisualEvent, playBattleMoveVisual]);
+
+  useLayoutEffect(() => {
+    if (!attackEffect?.id) return;
+    const refreshedAnchors = resolveBattleEffectAnchors();
+    setAttackEffect((prev) => {
+      if (!prev || prev.id !== attackEffect.id) return prev;
+      return { ...prev, anchors: refreshedAnchors };
+    });
+  }, [attackEffect?.id, resolveBattleEffectAnchors]);
 
   useEffect(() => {
     if (!switchVisualEvent) return undefined;
@@ -5140,7 +5203,7 @@ const BattleScene = ({
       }}
     >
       {/* ══ 战斗场景：吃掉剩余高度，底部面板不再挤出黑色空区 ══ */}
-      <div className={`anime-battle-bg ${battleSceneClass} ${battleSceneRoleClass} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
+      <div ref={battleStageRef} className={`anime-battle-bg ${battleSceneClass} ${battleSceneRoleClass} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
         <div className="battle-environment-props" aria-hidden="true">
           <span className="battle-env-prop battle-env-prop--horizon" />
           <span className="battle-env-prop battle-env-prop--left" />
@@ -5188,13 +5251,13 @@ const BattleScene = ({
         <div className="absolute inset-0 z-10">
           {/* 敌方精灵：右上 */}
           <div className={`battle-sprite-slot battle-sprite-enemy ${enemySpriteClass} ${battleFeedbackKind ? `battle-sprite-slot--feedback battle-sprite-slot--feedback-${battleFeedbackKind}` : ''}`}>
-            <div className={openingIntro ? 'battle-intro-enemy-stage' : 'battle-sprite-float'}>
+            <div ref={enemySpriteAnchorRef} className={openingIntro ? 'battle-intro-enemy-stage' : 'battle-sprite-float'}>
               <MonsterSprite monster={displayEnemyMon} isBattleContext={true} sizeMultiplier={BATTLE_ENEMY_SPRITE_MULTIPLIER} />
             </div>
           </div>
           {/* 我方精灵：左下（背面）*/}
           <div className={`battle-sprite-slot battle-sprite-player ${playerSpriteClass}`}>
-            <div className={openingSendOut ? 'battle-opening-send-stage' : 'battle-sprite-float battle-sprite-float-delayed'}>
+            <div ref={playerSpriteAnchorRef} className={openingSendOut ? 'battle-opening-send-stage' : 'battle-sprite-float battle-sprite-float-delayed'}>
               <MonsterSprite monster={displayPlayerMon} isBack={true} isBattleContext={true} sizeMultiplier={BATTLE_PLAYER_SPRITE_MULTIPLIER} />
             </div>
           </div>
@@ -5363,7 +5426,6 @@ const BattleScene = ({
                       <span>MP 不足</span>
                     </div>
                     <h3 className="battle-no-mp-overlay__title">{getNoMpOverlayTitle(battlePlayerMon)}</h3>
-                    <p className="battle-no-mp-overlay__body">{getNoMpOverlayBody()}</p>
                     <div className="battle-no-mp-overlay__meters" aria-label="当前魔力状态">
                       <span className="battle-no-mp-overlay__meter battle-no-mp-overlay__meter--mp">
                         MP {getMonsterCurrentMp(battlePlayerMon)} / {getMonsterMaxMp(battlePlayerMon)}
@@ -5374,6 +5436,7 @@ const BattleScene = ({
                         </span>
                       )}
                     </div>
+                    <p className="battle-no-mp-overlay__body">{getNoMpOverlayBody()}</p>
                     <div className="battle-no-mp-overlay__actions">
                       <button
                         type="button"
@@ -8470,9 +8533,35 @@ const formatSaveTime = (value) => {
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 };
 
+const CLOUD_BOOT_PERCENT = 12;
+
+const mergeBootProgress = (cloudLoading, assetProgress) => {
+  const assetPercent = Number.isFinite(assetProgress?.percent)
+    ? Math.min(100, Math.max(0, Number(assetProgress.percent)))
+    : 0;
+  if (cloudLoading) {
+    const assetDetail = assetProgress?.phase
+      ? `后台并行预热：${assetProgress.phase}`
+      : null;
+    return {
+      ...(assetProgress || {}),
+      phase: '正在读取云端进度',
+      detail: assetDetail || assetProgress?.detail || '正在从 Supabase 读取你的最新进度…',
+      percent: Math.min(CLOUD_BOOT_PERCENT, Math.max(4, 4 + Math.round(assetPercent * 0.08)))
+    };
+  }
+  return {
+    ...(assetProgress || {}),
+    percent: Math.min(
+      100,
+      CLOUD_BOOT_PERCENT + Math.round(assetPercent * (100 - CLOUD_BOOT_PERCENT) / 100)
+    )
+  };
+};
+
 const CloudGateScreen = ({ title, message, actionLabel, onAction, busy = false }) => (
   <div className="game-app-bg">
-    <div className="w-full max-w-sm game-card p-5 text-center">
+    <div className="game-gate-card game-card p-5 text-center relative z-[1]">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-lg">
         <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-cloud'}`}></i>
       </div>
@@ -8540,7 +8629,7 @@ const CloudSyncBlocker = ({ isOnline, syncError, saveStatus, onRetry, requiresRe
       aria-modal="true"
       aria-labelledby="cloud-sync-title"
     >
-      <div className="w-full max-w-sm game-card p-5 text-center">
+      <div className="w-full game-gate-card game-card p-5 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg">
           <i className="fa-solid fa-wifi"></i>
         </div>
@@ -9075,8 +9164,10 @@ const AdventureTopBar = ({
   onResetGame,
   resetDisabled = false,
   audioSettings = null,
-  onToggleAudio = null,
-  onVolumeChange = null
+  onToggleSfx = null,
+  onSfxVolumeChange = null,
+  onToggleBgm = null,
+  onBgmVolumeChange = null
 }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsPanelRef = useRef(null);
@@ -9088,9 +9179,14 @@ const AdventureTopBar = ({
   const goldValue = Number.isFinite(Number(playerGold)) ? Number(playerGold) : 0;
   const formattedGold = goldValue.toLocaleString('zh-CN');
   const resolvedAudioSettings = normalizeAudioSettings(audioSettings);
-  const audioEnabled = resolvedAudioSettings.enabled && resolvedAudioSettings.volume > 0;
-  const audioVolumePercent = Math.round(resolvedAudioSettings.volume * 100);
-  const audioButtonTitle = audioEnabled ? `音效已开 ${audioVolumePercent}%` : '音效已关闭';
+  const sfxSettings = getSfxSettings(resolvedAudioSettings);
+  const bgmSettings = getBgmSettings(resolvedAudioSettings);
+  const sfxEnabled = sfxSettings.enabled && sfxSettings.volume > 0;
+  const bgmEnabled = bgmSettings.enabled && bgmSettings.volume > 0;
+  const sfxVolumePercent = Math.round(sfxSettings.volume * 100);
+  const bgmVolumePercent = Math.round(bgmSettings.volume * 100);
+  const sfxButtonTitle = sfxEnabled ? `音效已开 ${sfxVolumePercent}%` : '音效已关闭';
+  const bgmButtonTitle = bgmEnabled ? `音乐已开 ${bgmVolumePercent}%` : '音乐已关闭';
 
   useEffect(() => {
     if (!settingsOpen) return undefined;
@@ -9112,6 +9208,28 @@ const AdventureTopBar = ({
     };
   }, [settingsOpen]);
 
+  // 键盘快捷键支持
+  useEffect(() => {
+    const handleGlobalKeyDown = (event) => {
+      // 如果在输入框中，不触发快捷键
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      // S键打开/关闭设置
+      if (event.key === 's' || event.key === 'S') {
+        event.preventDefault();
+        void gameAudio.unlock();
+        setSettingsOpen((current) => !current);
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
+
   const settingsOverlay = settingsOpen ? (
     <div
       className="reset-confirm-overlay topbar-settings-overlay topbar-settings-overlay--shell"
@@ -9132,44 +9250,80 @@ const AdventureTopBar = ({
         <div className="topbar-settings-card__header">
           <p className="reset-confirm-card__eyebrow">设置</p>
           <h2 id="topbar-settings-title">冒险控制台</h2>
-          <p>存档、音量与重置</p>
+          <p>存档、音乐、音效与重置</p>
         </div>
         <div className="topbar-settings-card__body">
           <section className="topbar-settings-card__section">
             <div className="topbar-settings-card__label">云端存档</div>
             <CloudSaveControls {...saveProps} />
           </section>
-          {onToggleAudio && (
-            <section className="topbar-settings-card__section">
-              <div className="topbar-settings-card__label">音量</div>
-              <div className="topbar-settings-card__row">
-                <button
-                  type="button"
-                  onClick={onToggleAudio}
-                  className={`game-icon-button ${audioEnabled ? '' : 'game-icon-button--muted'} topbar-volume-button`}
-                  title={audioButtonTitle}
-                  aria-label={audioButtonTitle}
-                  aria-pressed={audioEnabled}
-                >
-                  <i className={`fa-solid ${audioEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}`}></i>
-                </button>
-                {onVolumeChange && (
-                  <label className="topbar-audio-slider" aria-label="音效音量">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={audioVolumePercent}
-                      onChange={(event) => onVolumeChange?.(event.target.value)}
-                      title={`音效音量 ${audioVolumePercent}%`}
-                      aria-label={`音效音量 ${audioVolumePercent}%`}
-                    />
-                    <span>{audioVolumePercent}%</span>
-                  </label>
-                )}
-              </div>
-            </section>
+          {(onToggleBgm || onToggleSfx) && (
+            <>
+              {onToggleBgm && (
+                <section className="topbar-settings-card__section">
+                  <div className="topbar-settings-card__label">音乐</div>
+                  <div className="topbar-settings-card__row">
+                    <button
+                      type="button"
+                      onClick={onToggleBgm}
+                      className={`game-icon-button ${bgmEnabled ? '' : 'game-icon-button--muted'} topbar-volume-button`}
+                      title={bgmButtonTitle}
+                      aria-label={bgmButtonTitle}
+                      aria-pressed={bgmEnabled}
+                    >
+                      <i className={`fa-solid ${bgmEnabled ? 'fa-music' : 'fa-volume-off'}`}></i>
+                    </button>
+                    {onBgmVolumeChange && (
+                      <label className="topbar-audio-slider" aria-label="音乐音量">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={bgmVolumePercent}
+                          onChange={(event) => onBgmVolumeChange?.(event.target.value)}
+                          title={`音乐音量 ${bgmVolumePercent}%`}
+                          aria-label={`音乐音量 ${bgmVolumePercent}%`}
+                        />
+                        <span>{bgmVolumePercent}%</span>
+                      </label>
+                    )}
+                  </div>
+                </section>
+              )}
+              {onToggleSfx && (
+                <section className="topbar-settings-card__section">
+                  <div className="topbar-settings-card__label">音效</div>
+                  <div className="topbar-settings-card__row">
+                    <button
+                      type="button"
+                      onClick={onToggleSfx}
+                      className={`game-icon-button ${sfxEnabled ? '' : 'game-icon-button--muted'} topbar-volume-button`}
+                      title={sfxButtonTitle}
+                      aria-label={sfxButtonTitle}
+                      aria-pressed={sfxEnabled}
+                    >
+                      <i className={`fa-solid ${sfxEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}`}></i>
+                    </button>
+                    {onSfxVolumeChange && (
+                      <label className="topbar-audio-slider" aria-label="音效音量">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={sfxVolumePercent}
+                          onChange={(event) => onSfxVolumeChange?.(event.target.value)}
+                          title={`音效音量 ${sfxVolumePercent}%`}
+                          aria-label={`音效音量 ${sfxVolumePercent}%`}
+                        />
+                        <span>{sfxVolumePercent}%</span>
+                      </label>
+                    )}
+                  </div>
+                </section>
+              )}
+            </>
           )}
           {onResetGame && (
             <section className="topbar-settings-card__section">
@@ -9237,7 +9391,7 @@ const AdventureTopBar = ({
             setSettingsOpen((current) => !current);
           }}
           className={`map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted${settingsOpen ? ' map-hud-icon-button--active' : ''}`}
-          title="设置"
+          title="设置 (快捷键: S)"
           aria-label="设置"
           aria-haspopup="dialog"
           aria-expanded={settingsOpen}
@@ -9391,7 +9545,17 @@ const takeLatestNotificationItem = (queue) => {
 };
 
 export default function OriginalGame({ user, onLogout }) {
-  const sessionBootstrapRef = useRef(false);
+  // 组件卸载时清理音频
+  useEffect(() => {
+    return () => {
+      if (typeof gameAudio?.stopAll === 'function') {
+        gameAudio.stopAll();
+      }
+      if (typeof gameBgm?.stop === 'function') {
+        void gameBgm.stop({ immediate: true });
+      }
+    };
+  }, []);
 
   // 用 ref 锁住最新 user，避免 user 对象引用变化导致 applyCloudGameData / loadGameFromCloud
   // 被重建、useEffect 重跑、cloudLoading 反复 true → 画面闪"正在读取云端进度"。
@@ -9402,6 +9566,15 @@ export default function OriginalGame({ user, onLogout }) {
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState(null);
   const [hasLoadedCloudSave, setHasLoadedCloudSave] = useState(false);
+  const [entryAssetsReady, setEntryAssetsReady] = useState(false);
+  const [entryPreloadError, setEntryPreloadError] = useState(null);
+  const [entryPreloadProgress, setEntryPreloadProgress] = useState(null);
+  const [entryPreloadStalled, setEntryPreloadStalled] = useState(false);
+  const entryPreloadStallRecoveringRef = useRef(false);
+  const [entryPreloadRetryNonce, setEntryPreloadRetryNonce] = useState(0);
+  const entryPreloadRunIdRef = useRef(0);
+  const entryPreloadForceRetryRef = useRef(false);
+  const entryPreloadCompletedForUserRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('idle');
   const [syncError, setSyncError] = useState(null);
   const [requiresCloudReload, setRequiresCloudReload] = useState(false);
@@ -9455,6 +9628,8 @@ export default function OriginalGame({ user, onLogout }) {
 
   // Game State
   const [playerTeam, setPlayerTeam] = useState([]);
+  const playerTeamForPreloadRef = useRef(playerTeam);
+  playerTeamForPreloadRef.current = playerTeam;
   const [storageBox, setStorageBox] = useState([]);
   const [enemyTeam, setEnemyTeam] = useState([]);
   const [activePlayerId, setActivePlayerId] = useState(null);
@@ -9493,13 +9668,129 @@ export default function OriginalGame({ user, onLogout }) {
   const [currentMapName, setCurrentMapName] = useState(DEFAULT_WORLD_MAP_NAME);
 
   useEffect(() => {
-    if (!hasLoadedCloudSave || sessionBootstrapRef.current) return;
-    sessionBootstrapRef.current = true;
-    bootstrapGameSession({
-      mapName: currentMapName,
-      playerTeam
+    entryPreloadCompletedForUserRef.current = null;
+    entryPreloadRunIdRef.current += 1;
+    setEntryAssetsReady(false);
+    setEntryPreloadError(null);
+    setEntryPreloadProgress(null);
+  }, [user?.id]);
+
+  const recoverEntryPreloadFromStall = useCallback(async () => {
+    if (entryPreloadStallRecoveringRef.current) return;
+    entryPreloadStallRecoveringRef.current = true;
+    setEntryPreloadStalled(false);
+    try {
+      await clearClientCaches();
+      resetEntryPreloadSession({ clearImageCache: true });
+      clearEntryPreloadMarks();
+      entryPreloadCompletedForUserRef.current = null;
+      entryPreloadForceRetryRef.current = true;
+      setEntryPreloadRetryNonce((value) => value + 1);
+    } finally {
+      entryPreloadStallRecoveringRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedCloudSave || cloudLoading || cloudError) return;
+    const userId = user?.id ?? null;
+    const forceRetry = entryPreloadForceRetryRef.current;
+    entryPreloadForceRetryRef.current = false;
+
+    if (!forceRetry && entryPreloadCompletedForUserRef.current === userId) {
+      setEntryAssetsReady(true);
+      setEntryPreloadError(null);
+      setEntryPreloadStalled(false);
+      return;
+    }
+
+    const runId = entryPreloadRunIdRef.current + 1;
+    entryPreloadRunIdRef.current = runId;
+    setEntryAssetsReady(false);
+    setEntryPreloadError(null);
+    setEntryPreloadStalled(false);
+    setEntryPreloadProgress({
+      phase: forceRetry ? '正在重新加载游戏素材' : '正在准备冒险世界',
+      detail: '',
+      percent: 0,
+      loaded: 0,
+      total: 0
     });
-  }, [hasLoadedCloudSave, currentMapName, playerTeam]);
+
+    let cancelled = false;
+    let lastLoaded = -1;
+    let lastProgressAt = Date.now();
+    bindEntryPreloadShouldContinue(() => !cancelled && entryPreloadRunIdRef.current === runId);
+
+    const stallTimer = window.setInterval(() => {
+      if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+      if (Date.now() - lastProgressAt < 50000) return;
+      setEntryPreloadStalled(true);
+    }, 5000);
+
+    runGameEntryPreload({
+      mapName: currentMapName,
+      playerTeam: playerTeamForPreloadRef.current,
+      force: forceRetry,
+      skipIfComplete: !forceRetry,
+      onStall: () => {
+        if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+        if (entryPreloadStallRecoveringRef.current) return;
+        void recoverEntryPreloadFromStall();
+      },
+      onProgress: (progress) => {
+        if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+        if (Number.isFinite(progress?.loaded) && progress.loaded !== lastLoaded) {
+          lastLoaded = progress.loaded;
+          lastProgressAt = Date.now();
+          setEntryPreloadStalled(false);
+        }
+        setEntryPreloadProgress(progress);
+      }
+    }).then(() => {
+      if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+      entryPreloadCompletedForUserRef.current = userId;
+      setEntryAssetsReady(true);
+      setEntryPreloadError(null);
+      setEntryPreloadStalled(false);
+    }).catch((error) => {
+      if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+      if (error?.message === 'aborted') return;
+      console.error('[OriginalGame] 素材预加载异常，将自动重试', error);
+      window.setTimeout(() => {
+        if (cancelled || entryPreloadRunIdRef.current !== runId) return;
+        entryPreloadForceRetryRef.current = true;
+        setEntryPreloadRetryNonce((value) => value + 1);
+      }, 1500);
+    }).finally(() => {
+      window.clearInterval(stallTimer);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(stallTimer);
+      bindEntryPreloadShouldContinue(() => true);
+    };
+  }, [
+    cloudError,
+    cloudLoading,
+    currentMapName,
+    entryPreloadRetryNonce,
+    hasLoadedCloudSave,
+    recoverEntryPreloadFromStall,
+    user?.id
+  ]);
+
+  useEffect(() => {
+    if (entryAssetsReady) markAppReady()
+  }, [entryAssetsReady]);
+
+  useEffect(() => {
+    if (!entryAssetsReady) return undefined
+    scheduleIdleAssetWarmup({ mapName: currentMapName })
+    return undefined
+  }, [entryAssetsReady, currentMapName]);
+
   const currentMapNameRef = useRef(DEFAULT_WORLD_MAP_NAME);
   const [encounterCooldownSteps, setEncounterCooldownSteps] = useState(0);
   const [world, setWorld] = useState(() => normalizeWorldState(null, {
@@ -9753,58 +10044,137 @@ export default function OriginalGame({ user, onLogout }) {
   }, [user?.energy, user?.max_energy]);
 
   useEffect(() => {
+    gameAudio.prime();
     gameAudio.applySettings(audioSettings);
+    gameBgm.applySettings(audioSettings);
     writeStoredAudioSettings(audioSettings);
   }, [audioSettings]);
+
+  const resolvedAudioPrefs = useMemo(() => normalizeAudioSettings(audioSettings), [audioSettings]);
+  const bgmPrefs = useMemo(() => getBgmSettings(resolvedAudioPrefs), [resolvedAudioPrefs]);
+
+  useEffect(() => {
+    // 停止所有BGM，防止叠加
+    if (!bgmPrefs.enabled || bgmPrefs.volume <= 0) {
+      void gameBgm.stop({ immediate: true });
+      return undefined;
+    }
+
+    // 战斗期间：同时检查view和battleEnvironment，确保只在战斗场景播放战斗BGM
+    if (view === 'battle' && battleEnvironment) {
+      void gameBgm.playBattleBgm({
+        battleKind: battleEnvironment.battleKind,
+        eventRole: battleEnvironment.eventRole,
+        eventType: battleEnvironment.eventType
+      });
+      return undefined;
+    }
+
+    // 地图期间：确保不在战斗中，始终播放地图BGM（不会因右下角按钮打开面板而暂停）
+    if (view === 'map' && !showLaunchScreen && currentMapName) {
+      void gameBgm.playMapAmbient(currentMapName);
+      return undefined;
+    }
+
+    // 其他情况（如打开背包、队伍等非战斗非地图场景）停止BGM
+    void gameBgm.stop({ immediate: true });
+    return undefined;
+  }, [
+    bgmPrefs.enabled,
+    bgmPrefs.volume,
+    battleEnvironment,
+    currentMapName,
+    showLaunchScreen,
+    view
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const unlockAudioOnGesture = () => {
-      void gameAudio.unlock();
+      void gameAudio.unlock().then((unlocked) => {
+        if (unlocked) {
+          void gameBgm.resumeAfterUnlock();
+        }
+      });
     };
-    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true });
-    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
-    window.addEventListener('keydown', unlockAudioOnGesture);
+    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true, capture: true });
+    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true, capture: true });
+    window.addEventListener('keydown', unlockAudioOnGesture, { capture: true });
     return () => {
-      window.removeEventListener('pointerdown', unlockAudioOnGesture);
-      window.removeEventListener('touchstart', unlockAudioOnGesture);
-      window.removeEventListener('keydown', unlockAudioOnGesture);
+      window.removeEventListener('pointerdown', unlockAudioOnGesture, { capture: true });
+      window.removeEventListener('touchstart', unlockAudioOnGesture, { capture: true });
+      window.removeEventListener('keydown', unlockAudioOnGesture, { capture: true });
     };
   }, []);
 
   const primeGameAudio = useCallback(() => {
-    void gameAudio.unlock();
+    void gameAudio.unlock().then((unlocked) => {
+      if (unlocked) {
+        void gameBgm.resumeAfterUnlock();
+      }
+    });
   }, []);
 
-  const handleToggleAudio = useCallback(() => {
+  const handleToggleSfx = useCallback(() => {
     primeGameAudio();
     setAudioSettings((current) => {
       const normalizedCurrent = normalizeAudioSettings(current);
       const next = normalizeAudioSettings({
-        enabled: !normalizedCurrent.enabled,
-        volume: normalizedCurrent.volume > 0 ? normalizedCurrent.volume : 0.72
+        ...normalizedCurrent,
+        sfxEnabled: !normalizedCurrent.sfxEnabled,
+        sfxVolume: normalizedCurrent.sfxVolume > 0 ? normalizedCurrent.sfxVolume : 0.72
       });
       gameAudio.applySettings(next);
-      if (next.enabled) {
+      if (next.sfxEnabled) {
         gameAudio.playUiConfirm();
       }
       return next;
     });
   }, [primeGameAudio]);
 
-  const handleAudioVolumeChange = useCallback((value) => {
+  const handleSfxVolumeChange = useCallback((value) => {
     primeGameAudio();
     const normalizedValue = Math.max(0, Math.min(1, Number(value) / 100));
-    const nextSettings = normalizeAudioSettings({
-      enabled: normalizedValue > 0,
-      volume: normalizedValue
+    setAudioSettings((current) => {
+      const nextSettings = normalizeAudioSettings({
+        ...normalizeAudioSettings(current),
+        sfxEnabled: normalizedValue > 0,
+        sfxVolume: normalizedValue
+      });
+      gameAudio.applySettings(nextSettings);
+      if (nextSettings.sfxEnabled && nextSettings.sfxVolume > 0) {
+        gameAudio.playUiSelect();
+      }
+      return nextSettings;
     });
-    setAudioSettings(nextSettings);
-    gameAudio.applySettings(nextSettings);
-    if (nextSettings.enabled && nextSettings.volume > 0) {
-      gameAudio.playUiSelect();
-    }
-  }, [audioSettings.enabled, primeGameAudio]);
+  }, [primeGameAudio]);
+
+  const handleToggleBgm = useCallback(() => {
+    primeGameAudio();
+    setAudioSettings((current) => {
+      const normalizedCurrent = normalizeAudioSettings(current);
+      const next = normalizeAudioSettings({
+        ...normalizedCurrent,
+        bgmEnabled: !normalizedCurrent.bgmEnabled,
+        bgmVolume: normalizedCurrent.bgmVolume > 0 ? normalizedCurrent.bgmVolume : 0.72
+      });
+      return next;
+    });
+  }, [primeGameAudio]);
+
+  const handleBgmVolumeChange = useCallback((value) => {
+    primeGameAudio();
+    const normalizedValue = Math.max(0, Math.min(1, Number(value) / 100));
+    setAudioSettings((current) => {
+      const nextSettings = normalizeAudioSettings({
+        ...normalizeAudioSettings(current),
+        bgmEnabled: normalizedValue > 0,
+        bgmVolume: normalizedValue
+      });
+      gameBgm.applySettings(nextSettings);
+      return nextSettings;
+    });
+  }, [primeGameAudio]);
 
   const handleNavigateView = useCallback((nextView) => {
     if (typeof nextView !== 'string' || !nextView) return;
@@ -9833,6 +10203,8 @@ export default function OriginalGame({ user, onLogout }) {
         preloadThreeLowPolyMapModelsOnDemand(mapName).catch((error) => {
           console.warn(`[OriginalGame] Failed to preload map models for ${mapName}:`, error);
         });
+        const [primaryAmbientUrl, ...alternateAmbientUrls] = getMapAmbientTrackLoadUrls(mapName);
+        void gameBgm.preloadUrl(primaryAmbientUrl, { alternateUrls: alternateAmbientUrls });
       });
     }, 420);
     return () => window.clearTimeout(timerId);
@@ -10270,34 +10642,9 @@ export default function OriginalGame({ user, onLogout }) {
     if (typeof applyChanges !== 'function') return;
     clearDeferredPickupUiSync();
 
-    const flush = () => {
-      pickupUiSyncIdleHandleRef.current = null;
-      startTransition(() => {
-        applyChanges();
-      });
-    };
-
-    const queueIdle = () => {
-      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-        pickupUiSyncIdleHandleRef.current = window.requestIdleCallback(() => {
-          flush();
-        }, { timeout: 120 });
-        return;
-      }
-      pickupUiSyncIdleHandleRef.current = (typeof window !== 'undefined' ? window.setTimeout : setTimeout)(() => {
-        flush();
-      }, 32);
-    };
-
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-      pickupUiSyncFrameRef.current = window.requestAnimationFrame(() => {
-        pickupUiSyncFrameRef.current = 0;
-        queueIdle();
-      });
-      return;
-    }
-
-    queueIdle();
+    startTransition(() => {
+      applyChanges();
+    });
   }, [clearDeferredPickupUiSync]);
 
   useEffect(() => () => {
@@ -10895,10 +11242,12 @@ export default function OriginalGame({ user, onLogout }) {
         if (nextRequest.force || snapshotString !== lastSavedSnapshotRef.current) {
           const revision = cloudSaveRevisionRef.current + 1;
           const payload = withCloudSaveMeta(snapshot, revision, cloudSaveSessionIdRef.current);
-          const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
-            p_user_id: user.id,
-            p_game_data: payload
-          }));
+          const { data, error } = await saveCloudGameWithLock(async () => {
+            return await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
+              p_user_id: user.id,
+              p_game_data: payload
+            }));
+          });
 
           if (error) throw error;
 
@@ -10943,6 +11292,7 @@ export default function OriginalGame({ user, onLogout }) {
         pendingManualSaveNoticeRef.current = false;
         setSaveStatus('saved');
         addNotification('进度已保存。', 'info');
+        gameAudio.playUiConfirm();
       }
 
       return true;
@@ -10961,6 +11311,7 @@ export default function OriginalGame({ user, onLogout }) {
       if (manual || pendingManualSaveNoticeRef.current) {
         pendingManualSaveNoticeRef.current = false;
         addNotification(isConflict ? '云端已有新进度，请重新读取。' : '云端保存失败。', 'error');
+        gameAudio.playError();
       }
       return false;
     } finally {
@@ -11224,10 +11575,12 @@ export default function OriginalGame({ user, onLogout }) {
       const revision = cloudSaveRevisionRef.current + 1;
       const payload = withCloudSaveMeta(normalizedSnapshot, revision, cloudSaveSessionIdRef.current);
 
-      const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
-        p_user_id: user.id,
-        p_game_data: payload
-      }));
+      const { data, error } = await saveCloudGameWithLock(async () => {
+        return await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
+          p_user_id: user.id,
+          p_game_data: payload
+        }));
+      });
 
       if (error) throw error;
 
@@ -11299,13 +11652,24 @@ export default function OriginalGame({ user, onLogout }) {
       if (prev?.x === next.x && prev?.y === next.y && prev?.direction === next.direction) return prev;
       return next;
     });
+    setEncounterCooldownSteps((prev) => {
+      const next = encounterCooldownStepsRef.current;
+      return prev === next ? prev : next;
+    });
   }, []);
   const handlePlayerMove = useCallback((position) => {
     const nextPosition = normalizeWorldPosition(position, playerPosRef.current);
     playerPosRef.current = nextPosition;
 
-    if (!playerPosReactSyncRef.current) {
-      playerPosReactSyncRef.current = requestAnimationFrame(flushPlayerPosToReact);
+    if (position?.encounterCooldownSteps != null) {
+      encounterCooldownStepsRef.current = Math.max(
+        0,
+        Math.trunc(Number(position.encounterCooldownSteps) || 0)
+      );
+    }
+
+    if (position?.idle) {
+      flushPlayerPosToReact();
     }
 
     if (mapMovementSaveTimerRef.current) {
@@ -11330,9 +11694,7 @@ export default function OriginalGame({ user, onLogout }) {
   }, [currentMapName, flushPlayerPosToReact, view]);
 
   const handleEncounterCooldownChange = useCallback((value) => {
-    const nextValue = Math.max(0, Math.trunc(Number(value) || 0));
-    encounterCooldownStepsRef.current = nextValue;
-    setEncounterCooldownSteps(nextValue);
+    encounterCooldownStepsRef.current = Math.max(0, Math.trunc(Number(value) || 0));
   }, []);
 
   useEffect(() => {
@@ -12154,6 +12516,7 @@ export default function OriginalGame({ user, onLogout }) {
       });
 
       if (commitResult.success) {
+        gameAudio.playLearnMove();
         return true;
       }
       if (commitResult.message) {
@@ -12232,6 +12595,7 @@ export default function OriginalGame({ user, onLogout }) {
       });
 
       if (commitResult.success) {
+        gameAudio.playLearnMove();
         return true;
       }
       if (commitResult.message) {
@@ -12459,6 +12823,7 @@ export default function OriginalGame({ user, onLogout }) {
       );
       if (cancelled) return;
       addNotification(getNoMpBattleDeadlockHint(), 'warning');
+      gameAudio.playError();
       await handleRecoverFromDefeat();
     })();
 
@@ -13018,6 +13383,7 @@ export default function OriginalGame({ user, onLogout }) {
       minMs = 860,
       maxMs = 2300,
       extraMs = 130,
+      crit = false,
     } = {}) => {
       const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
       let loggedAtImpact = false;
@@ -13025,6 +13391,8 @@ export default function OriginalGame({ user, onLogout }) {
       await playMovePhase(phase, {
         targetSide,
         durationMs,
+        // 会心一击时叠加更强的命中反应，让受击精灵抖动更明显。
+        reactionClass: crit && phase === 'hit' ? 'crit' : null,
         onImpact: () => {
           onImpact?.();
           if (phase === 'heal' || phase === 'drain') {
@@ -13032,7 +13400,7 @@ export default function OriginalGame({ user, onLogout }) {
           } else if (phase === 'secondary' || phase === 'status') {
             gameAudio.playBattleStatus(move?.status || move?.volatileStatus || (move?.category === 'status' ? 'buff' : 'status'));
           } else if (phase === 'hit') {
-            gameAudio.playBattleImpact({ effectiveness, didHit: true, outcome: 'hit', targetFainted: updatedDefender?.currentHp <= 0 });
+            gameAudio.playBattleImpact({ effectiveness, didHit: true, outcome: 'hit', targetFainted: updatedDefender?.currentHp <= 0, crit });
           } else if (phase === 'fizzle') {
             gameAudio.playBattleImpact({ effectiveness, didHit: effectiveness > 0, outcome: 'fizzle', targetFainted: false });
           } else if (phase === 'miss') {
@@ -13279,6 +13647,7 @@ export default function OriginalGame({ user, onLogout }) {
     if (move.category !== 'status' && getDynamicBattleMovePower(moveKey, move, updatedAttacker, updatedDefender) > 0) {
       const hitCount = getBattleMoveHitCount(move);
       let capped = false;
+      let critHit = false;
       let resolvedHitCount = 0;
       for (let hitIndex = 0; hitIndex < hitCount && updatedDefender.currentHp > 0; hitIndex += 1) {
         const resolvedPower = getDynamicBattleMovePower(moveKey, move, updatedAttacker, updatedDefender);
@@ -13287,6 +13656,7 @@ export default function OriginalGame({ user, onLogout }) {
         damage += hitDamage;
         effectiveness = result.effectiveness;
         capped = capped || result.capped;
+        critHit = critHit || Boolean(result.crit);
         resolvedHitCount += 1;
         updatedDefender = { ...updatedDefender, currentHp: Math.max(0, updatedDefender.currentHp - hitDamage) };
         if (result.effectiveness === 0) break;
@@ -13300,6 +13670,7 @@ export default function OriginalGame({ user, onLogout }) {
         updatedDefender = { ...updatedDefender, volatileStatuses: defenderVolatileStatuses };
       }
       const damageMessages = [];
+      if (critHit && damage > 0) damageMessages.push('命中了要害！');
       const effectivenessMessage = getTypeEffectivenessMessage({
         moveType: move.type,
         defender,
@@ -13316,6 +13687,7 @@ export default function OriginalGame({ user, onLogout }) {
       if (effectiveness > 0 && damage > 0) {
         await playMovePhaseWithResult('hit', damageMessage, {
           targetSide: defenderSide,
+          crit: critHit,
           onImpact: () => {
             updateBattleMonBySide({
               side: defenderSide,
@@ -13551,15 +13923,23 @@ export default function OriginalGame({ user, onLogout }) {
   const chooseEnemyAction = useCallback((enemyMon, targetMon = activePlayerMon, options = {}) => {
     const battleLogs = Array.isArray(logsRef.current) ? logsRef.current : [];
     const allowSwitch = options.allowSwitch !== false && !didPlayerJustSwitchOnLastBattleLog(battleLogs, targetMon);
+    const trainerRole = battleEnvironment?.eventRole || 'normal';
+    // 伤药配额按整场战斗统计（从日志计数而非内存计数器），确保中途云端重载也不会刷新配额。
+    const potionBudget = battleKind === 'trainer'
+      ? (Number(getTrainerRoleBalance(trainerRole)?.potionBudget) || 0)
+      : 0;
+    const potionsUsed = countEnemyPotionsUsedFromLogs(battleLogs);
+    const potionsRemaining = Math.max(0, potionBudget - potionsUsed);
     return chooseTrainerBattleAction({
       enemyTeam,
       activeEnemyMon: enemyMon,
       targetMon,
       battleKind,
-      trainerRole: battleEnvironment?.eventRole || 'normal',
+      trainerRole,
       trainerStyle: battleEnvironment?.trainerStyle || null,
       battleLogs,
-      allowSwitch
+      allowSwitch,
+      potionsRemaining
     });
   }, [activePlayerMon, battleEnvironment?.eventRole, battleEnvironment?.trainerStyle, battleKind, enemyTeam]);
 
@@ -13723,6 +14103,72 @@ export default function OriginalGame({ user, onLogout }) {
     hydrateCommittedBattleSnapshot,
     resolveTrackedActiveBattleEnergyCost,
     user?.id
+  ]);
+
+  // 训练师 AI 使用伤药：镜像玩家用药的回血/回蓝/解异常逻辑，但消耗的是 AI 自身的配额（不动玩家背包）。
+  const runEnemyItem = useCallback(async ({ enemyMon, playerMon, itemKey }) => {
+    const fallback = { used: false, enemy: enemyMon };
+    if (battleKind !== 'trainer' || !enemyMon) return fallback;
+    const potion = POTIONS[itemKey];
+    if (!potion) return fallback;
+
+    const runtimeEnemy = withBattleRuntimeDefaults(enemyMon);
+    const maxHp = getMonsterMaxHp(runtimeEnemy);
+    const maxMp = getMonsterMaxMp(runtimeEnemy);
+    const currentHp = getMonsterCurrentHp(runtimeEnemy, maxHp);
+    const currentMp = getMonsterCurrentMp(runtimeEnemy, maxMp);
+    const recoveryProfile = getPotionRecoveryProfile(potion);
+    const hpRestoreAmount = Math.max(0, Math.min(recoveryProfile.hp, maxHp - currentHp));
+    const mpRestoreAmount = Math.max(0, Math.min(recoveryProfile.mp, maxMp - currentMp));
+    const curesStatus = hasPotionCurableStatus(runtimeEnemy);
+    if (hpRestoreAmount <= 0 && mpRestoreAmount <= 0 && !curesStatus) return fallback;
+
+    const healedEnemy = clearPotionCurableStatus({
+      ...runtimeEnemy,
+      currentHp: Math.min(maxHp, currentHp + recoveryProfile.hp),
+      currentMp: Math.min(maxMp, currentMp + recoveryProfile.mp)
+    });
+
+    const recoveryText = getRecoveryBehaviorText({
+      hp: hpRestoreAmount,
+      mp: mpRestoreAmount,
+      curedStatus: curesStatus
+    });
+    // 日志必须以 ENEMY_POTION_LOG_PREFIX（“对手使用了 ”）开头，配额统计依赖该前缀。
+    const itemLog = `${ENEMY_POTION_LOG_PREFIX}${potion.name}，${enemyMon.name}${recoveryText}！`;
+
+    gameAudio.playItemUse({ category: 'potion' });
+    gameAudio.playHeal({ strong: itemKey === 'hyper_potion' });
+
+    // 先更新场上显示，再落云端，让回血动画与玩家用药观感一致。
+    updateBattleMonBySide({
+      side: 'enemy',
+      monId: enemyMon.id,
+      setPlayerTeam,
+      setEnemyTeam,
+      updater: (mon) => ({
+        ...mon,
+        currentHp: healedEnemy.currentHp,
+        currentMp: healedEnemy.currentMp,
+        status: healedEnemy.status ?? null,
+        statusTurns: healedEnemy.statusTurns ?? 0
+      })
+    });
+    await addBattleLogAndWait(addLog, itemLog, { minMs: 760, maxMs: 1480, extraMs: 80 });
+
+    const checkpointReady = await commitBattleRuntimeCheckpoint({
+      enemyMon: healedEnemy,
+      playerMon,
+      turn: 'player'
+    });
+    if (!checkpointReady) {
+      return { used: false, enemy: healedEnemy, commitFailed: true };
+    }
+    return { used: true, enemy: healedEnemy };
+  }, [
+    addLog,
+    battleKind,
+    commitBattleRuntimeCheckpoint
   ]);
 
   const runEnemyAction = useCallback(async ({ enemyMon, playerMon, moveKey, canTargetStillAct = false }) => {
@@ -14264,6 +14710,7 @@ export default function OriginalGame({ user, onLogout }) {
           : getMoveMpShortageHint(currentPlayer, playerMove);
         await addBattleLogAndWait(addLog, shortageMessage);
         addNotification(shortageMessage, 'warning');
+        gameAudio.playError();
         return;
       }
       if (!user?.id || !hasLoadedCloudSave) {
@@ -14339,6 +14786,40 @@ export default function OriginalGame({ user, onLogout }) {
           enemyFainted: playerResult.targetFainted
         });
         if (postSwitchTurnResult.commitFailed || postSwitchTurnResult.playerFainted || postSwitchTurnResult.enemyFainted) return;
+        if (!gameOver) {
+          await restorePlayerTurn();
+        }
+        return;
+      }
+
+      if (enemyAction.type === 'item' && enemyAction.itemKey) {
+        const intentMessage = getEnemyAiItemIntentMessage(enemyAction);
+        if (intentMessage) {
+          await addBattleLogAndWait(addLog, intentMessage, { minMs: 620, maxMs: 1120, extraMs: 60 });
+        }
+        const itemResult = await runEnemyItem({
+          enemyMon: currentEnemy,
+          playerMon: currentPlayer,
+          itemKey: enemyAction.itemKey
+        });
+        if (itemResult.commitFailed) return;
+        const healedEnemy = itemResult.enemy || currentEnemy;
+        // 使用道具消耗了对手的回合，玩家本回合的招式照常结算。
+        const playerResult = await runPlayerAction({
+          playerMon: currentPlayer,
+          enemyMon: healedEnemy,
+          moveKey: playerMoveKey,
+          canTargetStillAct: false
+        });
+        if (playerResult.commitFailed) return;
+        if (playerResult.escaped) return;
+        const postItemTurnResult = await resolveTurnAfterFaint({
+          playerMon: playerResult.attacker || currentPlayer,
+          enemyMon: playerResult.defender || healedEnemy,
+          playerFainted: playerResult.actorFainted,
+          enemyFainted: playerResult.targetFainted
+        });
+        if (postItemTurnResult.commitFailed || postItemTurnResult.playerFainted || postItemTurnResult.enemyFainted) return;
         if (!gameOver) {
           await restorePlayerTurn();
         }
@@ -14472,6 +14953,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     if (resources.energy < energyCost) {
       addLog(INSUFFICIENT_BATTLE_ENERGY_LOG);
       addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+      gameAudio.playError();
       return;
     }
 
@@ -14557,8 +15039,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     addLog(atomicResult.message || '战斗开始失败。');
     if (atomicResult.message?.includes('能量')) {
       addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+      gameAudio.playError();
     } else {
       addNotification(atomicResult.message || '战斗开始失败，请重新读取。', atomicResult.requiresReload ? 'error' : 'warning');
+      if (atomicResult.requiresReload) {
+        gameAudio.playError();
+      }
     }
     return;
   }, [
@@ -14612,6 +15098,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (latestGold < totalPrice) {
         addLog("商店: 金币不足。");
         addNotification('金币不足。', 'warning');
+        gameAudio.playError();
         return { success: false, message: '金币不足。' };
       }
       const purchaseSuccess = {
@@ -14652,25 +15139,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const tileY = toMapTileCoordinate(context.tileY);
     const mapEvent = context.mapEvent || (tileX !== null && tileY !== null ? getMapEventAt(currentMapName, tileX, tileY) : null);
     const mapEventProps = getMapEventProperties(mapEvent);
-    const interactionWorldBase = normalizeWorldState(latestCloudSnapshotRef.current?.world || worldRef.current || world, {
-      currentMapName,
-      playerPos: playerPosRef.current || playerPos
-    });
-    const interactionWorld = mergeMonotonicWorldProgress(
-      mergeMonotonicWorldProgress(
-        interactionWorldBase,
-        worldRef.current,
-        {
-          currentMapName,
-          playerPos: playerPosRef.current || playerPos
-        }
-      ),
-      readCloudSnapshotFromString(lastSavedSnapshotRef.current)?.world,
-      {
-        currentMapName,
-        playerPos: playerPosRef.current || playerPos
-      }
-    );
+    const interactionWorld = worldRef.current || world;
     const effectiveType = (() => {
       if (!mapEvent?.type) return type;
       if (mapEvent.type === 'sign') return 'info';
@@ -14701,11 +15170,13 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       });
       if (battleEventInfoText) {
         addNotification(battleEventInfoText, 'info');
+        gameAudio.playUiSelect();
         return false;
       }
       const signText = getMapSignMessage(currentMapName, signX, signY);
       if (signText) {
         addNotification(signText, 'info');
+        gameAudio.playUiSelect();
       } else {
         const tips = [
           '深色高草丛里的野生宝可梦更多，不同区域种类不同。',
@@ -14716,6 +15187,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         ];
         const tip = tips[Math.floor(Math.random() * tips.length)];
         addNotification(`提示：${tip}`, 'info');
+        gameAudio.playUiSelect();
       }
       return false;
     }
@@ -14796,56 +15268,29 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         },
         onCommitted: ({ snapshot }) => {
           if (!committedPickupState) return;
-          const livePlayerPos = normalizeWorldPosition(
-            playerPosRef.current || playerPos || committedPickupState.nextPlayerPos,
-            committedPickupState.nextPlayerPos
-          );
-          const liveEncounterCooldown = Math.max(
-            0,
-            Math.trunc(
-              Number(
-                encounterCooldownStepsRef.current
-                ?? encounterCooldownSteps
-                ?? committedPickupState.nextEncounterCooldown
-              ) || 0
-            )
-          );
-          const mergedWorld = normalizeWorldState(committedPickupState.nextWorld, {
-            currentMapName,
-            playerPos: livePlayerPos
-          });
+          const livePlayerPos = playerPosRef.current || committedPickupState.nextPlayerPos;
+          const liveEncounterCooldown = encounterCooldownStepsRef.current ?? committedPickupState.nextEncounterCooldown;
 
-          committedPickupState.nextWorld = mergedWorld;
-          committedPickupState.nextPlayerPos = livePlayerPos;
-          committedPickupState.nextEncounterCooldown = liveEncounterCooldown;
           playerPosRef.current = livePlayerPos;
           encounterCooldownStepsRef.current = liveEncounterCooldown;
-          worldRef.current = mergedWorld;
+          worldRef.current = committedPickupState.nextWorld;
           logsRef.current = committedPickupState.nextLogs;
 
           if (snapshot && typeof snapshot === 'object') {
             snapshot.playerPos = livePlayerPos;
             snapshot.encounterCooldownSteps = liveEncounterCooldown;
-            snapshot.world = mergedWorld;
+            snapshot.world = committedPickupState.nextWorld;
           }
 
           scheduleDeferredPickupUiSync(() => {
-            setWorld(mergedWorld);
+            setWorld(committedPickupState.nextWorld);
             setMapGrid((current) => (
               areMapGridsEqual(current, committedPickupState.nextMapGrid)
                 ? current
                 : committedPickupState.nextMapGrid
             ));
-            setPlayerInventory((current) => (
-              JSON.stringify(current) === JSON.stringify(committedPickupState.nextInventory)
-                ? current
-                : committedPickupState.nextInventory
-            ));
-            setLogs((current) => (
-              arePrimitiveArraysEqual(current, committedPickupState.nextLogs)
-                ? current
-                : committedPickupState.nextLogs
-            ));
+            setPlayerInventory(committedPickupState.nextInventory);
+            setLogs(committedPickupState.nextLogs);
           });
         }
       });
@@ -16128,6 +16573,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
     if (getInventoryItemQuantity(playerInventory, 'potion', potionKey) <= 0) {
       addNotification(`${potion.name} 数量不足。`, 'warning');
+      gameAudio.playError();
       return false;
     }
     if (view === 'battle' && activeEnemyId && isBattleMonFainted(activePlayerMon)) {
@@ -16151,6 +16597,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const curesStatus = hasPotionCurableStatus(targetMon);
     if (hpRestoreAmount <= 0 && mpRestoreAmount <= 0 && !curesStatus) {
       addNotification(`${targetMon.name} 状态已满。`, 'info');
+      gameAudio.playError();
       return false;
     }
 
@@ -16231,6 +16678,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
     if (getInventoryItemQuantity(playerInventory, 'expPotion', potionKey) <= 0) {
       addNotification(`${potion.name} 数量不足。`, 'warning');
+      gameAudio.playError();
       return false;
     }
     if (view === 'battle' && activeEnemyId && isBattleMonFainted(activePlayerMon)) {
@@ -16245,6 +16693,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
     if (targetMon.level >= 100) {
       addNotification(`${targetMon.name} 已满级。`, 'info');
+      gameAudio.playError();
       return false;
     }
 
@@ -16375,7 +16824,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
 
   const handleDepositToStorage = useCallback(async (monsterId) => {
     const targetMon = playerTeam.find((mon) => mon.id === monsterId);
-    return commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
+    const result = await commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
       const result = depositToStorage({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }, monsterId);
       if (result.success) return result;
       if (result.error === 'min_party') {
@@ -16389,11 +16838,15 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       logMessage: `${targetMon?.name || '宝可梦'} 已存入仓库。`,
       notificationMessage: `${targetMon?.name || '宝可梦'} 已存入仓库。`
     });
+    if (result) {
+      gameAudio.playUiConfirm();
+    }
+    return result;
   }, [commitRosterMutation, playerTeam]);
 
   const handleWithdrawFromStorage = useCallback(async (monsterId) => {
     const targetMon = storageBox.find((mon) => mon.id === monsterId);
-    return commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
+    const result = await commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
       const result = withdrawToParty({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }, monsterId);
       if (result.success) return result;
       if (result.error === 'party_full') {
@@ -16404,12 +16857,16 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       logMessage: `${targetMon?.name || '宝可梦'} 已加入队伍。`,
       notificationMessage: `${targetMon?.name || '宝可梦'} 已加入队伍。`
     });
+    if (result) {
+      gameAudio.playUiConfirm();
+    }
+    return result;
   }, [commitRosterMutation, storageBox]);
 
   const handleSwapPartyAndStorage = useCallback(async (partyId, storageId) => {
     const oldPartyMon = playerTeam.find((mon) => mon.id === partyId);
     const oldStorageMon = storageBox.find((mon) => mon.id === storageId);
-    return commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
+    const result = await commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
       const result = swapPartyAndStorage({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }, partyId, storageId);
       if (result.success) return result;
       return { success: false, message: '目标已变化，请重试。', notificationType: 'warning' };
@@ -16417,6 +16874,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       logMessage: `${oldStorageMon?.name || '仓库宝可梦'} 与 ${oldPartyMon?.name || '队伍宝可梦'} 完成互换。`,
       notificationMessage: '队伍与仓库已互换。'
     });
+    if (result) {
+      gameAudio.playUiConfirm();
+    }
+    return result;
   }, [commitRosterMutation, playerTeam, storageBox]);
 
   const handleSendPendingMonsterToStorage = useCallback(async () => {
@@ -17225,6 +17686,35 @@ const handleReorderTeam = useCallback((newTeam) => {
           return;
         }
 
+        if (enemyAction.type === 'item' && enemyAction.itemKey) {
+          const intentMessage = getEnemyAiItemIntentMessage(enemyAction);
+          if (intentMessage) {
+            await addBattleLogAndWait(addLog, intentMessage, { minMs: 620, maxMs: 1120, extraMs: 60 });
+          }
+          const itemResult = await runEnemyItem({
+            enemyMon: currentEnemyMon,
+            playerMon: currentPlayerMon,
+            itemKey: enemyAction.itemKey
+          });
+          if (itemResult.commitFailed) return;
+          // runEnemyItem 已提交 turn:'player' 的检查点，使用道具即结束对手回合，交还玩家。
+          if (!itemResult.used && !gameOver) {
+            const commitResult = await commitCloudSnapshot({
+              buildSnapshot: (baseSnapshot) => ({
+                ...baseSnapshot,
+                turn: 'player'
+              })
+            });
+            if (!commitResult.success && commitResult.message) {
+              addNotification(
+                commitResult.message,
+                commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
+              );
+            }
+          }
+          return;
+        }
+
         const randomMoveKey = enemyAction.moveKey;
 	        if (!randomMoveKey) {
 	          addLog(`敌方 ${currentEnemyMon.name} 技能值不足，无法行动!`);
@@ -17692,6 +18182,8 @@ const handleReorderTeam = useCallback((newTeam) => {
       console.warn(`[OriginalGame] Failed to warm up map models for ${targetMapName}:`, error);
       return null;
     });
+    const [primaryAmbientUrl, ...alternateAmbientUrls] = getMapAmbientTrackLoadUrls(targetMapName);
+    void gameBgm.preloadUrl(primaryAmbientUrl, { alternateUrls: alternateAmbientUrls });
 
     mapWarpBusyRef.current = true;
     if (mapMovementSaveTimerRef.current) {
@@ -17776,30 +18268,26 @@ const handleReorderTeam = useCallback((newTeam) => {
     [currentMapName, playerTeam, world]
   );
 
-  if (cloudLoading) {
-    return (
-      <CloudGateScreen
-        title="正在读取云端进度"
-        message="游戏必须联网并连接后端。正在从后端读取你的最新进度。"
-        busy
-      />
-    );
-  }
-
-  if (cloudError) {
-    return (
-      <CloudGateScreen
-        title="无法进入游戏"
-        message={`必须联网并成功连接后端才能游戏。不支持本地游戏。${cloudError}`}
-        actionLabel="重新连接后端"
-        onAction={() => loadGameFromCloud({ force: true })}
-      />
-    );
-  }
-
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
-  const hideAdventureTopBar = view !== 'map';
+  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm);
+  const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress);
+  const showBootScreen = cloudLoading || Boolean(cloudError) || (hasLoadedCloudSave && !entryAssetsReady);
+
+  if (showBootScreen) {
+    return (
+      <UnifiedBootScreen
+        progress={bootProgress}
+        error={cloudError ? `必须联网并成功连接后端才能游戏。${cloudError}` : null}
+        actionLabel={cloudError ? '重新连接后端' : null}
+        onAction={cloudError ? () => loadGameFromCloud({ force: true }) : null}
+        secondaryActionLabel={!cloudError && entryPreloadStalled ? '加载卡住？清除缓存并重试' : null}
+        onSecondaryAction={!cloudError && entryPreloadStalled ? () => { void recoverEntryPreloadFromStall() } : null}
+        showProgressBar={!cloudError}
+      />
+    );
+  }
+
   const battleVictoryOverlayKey = (() => {
     if (view !== 'battle' || battlePhase !== 'victory') {
       battleVictoryOverlayKeyRef.current = '';
@@ -17813,31 +18301,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   return (
     <>
-      {showLaunchScreenUnderlay ? (
-        <LaunchScreen
-          onStartGame={handleStartGame}
-          user={user}
-          transition={launchDepartureTransition}
-          cloudReady={hasLoadedCloudSave}
-          cloudLoading={cloudLoading}
-          cloudError={cloudError}
-          syncError={syncError}
-          requiresCloudReload={requiresCloudReload}
-        >
-          <CloudSyncBlocker
-            isOnline={isOnline}
-            syncError={syncError}
-            saveStatus={saveStatus}
-            requiresReload={requiresCloudReload}
-            onRetry={handleManualSave}
-          />
-        </LaunchScreen>
-      ) : !activePlayerMon ? (
-        <div className="game-app-bg"><div className="game-card p-5 font-black text-slate-700">加载中...</div></div>
-      ) : view === 'battle' && !activeEnemyMon ? (
-        <div className="game-app-bg"><div className="game-card p-5 font-black text-slate-700">遭遇战...</div></div>
-      ) : (
-    <div className="game-app-bg">
+    <div className="game-app-bg game-app-bg--immersive">
       <div className={`game-console-shell${view === 'map' ? ' game-console-shell--map-overlay' : ''}${hideAdventureTopBar ? ' game-console-shell--panel-full' : ''}`}>
         {!hideAdventureTopBar && (
           <AdventureTopBar
@@ -17850,8 +18314,10 @@ const handleReorderTeam = useCallback((newTeam) => {
             onResetGame={() => setResetConfirmOpen(true)}
             resetDisabled={!hasLoadedCloudSave || isResettingProgress}
             audioSettings={audioSettings}
-            onToggleAudio={handleToggleAudio}
-            onVolumeChange={handleAudioVolumeChange}
+            onToggleSfx={handleToggleSfx}
+            onSfxVolumeChange={handleSfxVolumeChange}
+            onToggleBgm={handleToggleBgm}
+            onBgmVolumeChange={handleBgmVolumeChange}
             saveProps={{
               disabled: !hasLoadedCloudSave,
               isOnline,
@@ -17865,7 +18331,17 @@ const handleReorderTeam = useCallback((newTeam) => {
         )}
       <div className="game-screen-frame">
       <div className="flex-1 min-h-0 flex flex-col relative z-10 h-full">
-        {!showLaunchScreen && view === 'map' && (
+        {!activePlayerMon && !showLaunchScreenUnderlay ? (
+          <div className="game-app-bg flex flex-1 items-center justify-center">
+            <div className="game-gate-card game-card p-5 font-black text-slate-700">加载中...</div>
+          </div>
+        ) : view === 'battle' && !activeEnemyMon ? (
+          <div className="game-app-bg flex flex-1 items-center justify-center">
+            <div className="game-gate-card game-card p-5 font-black text-slate-700">遭遇战...</div>
+          </div>
+        ) : (
+          <>
+        {view === 'map' && (
           <div className="flex flex-1 min-h-0 flex-col">
             <GameCanvas
               key={currentMapName}
@@ -18003,8 +18479,6 @@ const handleReorderTeam = useCallback((newTeam) => {
             </button>
           </div>
         </div>}
-      </div>
-      </div>
       <div className="game-console-overlay-host" aria-live="polite">
         <LaunchDepartureOverlay transition={launchOverlayOnMap ? launchDepartureTransition : null} />
         <CloudSyncBlocker
@@ -18117,19 +18591,44 @@ const handleReorderTeam = useCallback((newTeam) => {
           );
         })()}
       </div>
+          </>
+        )}
+      </div>
       <NotificationToast
         notifications={notificationDisplayBlocked ? [] : notifications}
         mode={notificationDisplayMode}
       />
       </div>
     </div>
-      )}
-      {showLaunchScreenUnderlay && (
-        <NotificationToast
-          notifications={notificationDisplayBlocked ? [] : notifications}
-          mode="launch"
-        />
-      )}
+    </div>
+    {showLaunchScreenUnderlay && (
+      <div className="launch-screen-overlay" aria-modal="true" role="dialog">
+        <LaunchScreen
+          onStartGame={handleStartGame}
+          user={user}
+          transition={launchDepartureTransition}
+          cloudReady={hasLoadedCloudSave}
+          cloudLoading={cloudLoading}
+          cloudError={cloudError}
+          syncError={syncError}
+          requiresCloudReload={requiresCloudReload}
+        >
+          <CloudSyncBlocker
+            isOnline={isOnline}
+            syncError={syncError}
+            saveStatus={saveStatus}
+            requiresReload={requiresCloudReload}
+            onRetry={handleManualSave}
+          />
+        </LaunchScreen>
+      </div>
+    )}
+    {showLaunchScreenUnderlay && (
+      <NotificationToast
+        notifications={notificationDisplayBlocked ? [] : notifications}
+        mode="launch"
+      />
+    )}
     </>
   );
 };

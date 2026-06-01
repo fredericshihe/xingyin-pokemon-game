@@ -5,6 +5,11 @@ export const SAME_LEVEL_DAMAGE_CAP_RATIO = 0.65
 export const SAME_LEVEL_DAMAGE_CAP_MAX_DIFF = 3
 /** 非免疫命中时，至少造成目标最大 HP 的一定比例，避免极低攻击永久刮痧 */
 export const MIN_DAMAGE_HP_RATIO = 0.05
+/** 会心一击：官方标准 1/16 几率，伤害 ×1.5 */
+export const CRITICAL_HIT_CHANCE = 1 / 16
+export const CRITICAL_HIT_MULTIPLIER = 1.5
+
+export const rollCriticalHit = (chance = CRITICAL_HIT_CHANCE) => Math.random() < chance
 
 const clampStage = (stage) => Math.max(-6, Math.min(6, stage || 0))
 
@@ -185,17 +190,24 @@ export const getStabMultiplier = (attacker, moveType) => (
 
 /**
  * Gen 6+ 伤害公式（简化版，无天气/道具/特性）
- * @returns {{ damage: number, effectiveness: number, rawDamage: number, capped: boolean }}
+ *
+ * 会心一击：默认仅在「真实结算」（未显式传入 randomFactor）时随机判定，
+ * 这样 AI 评分用固定 randomFactor 调用时不会因随机爆击而抖动。可用 allowCrit / forceCrit 覆盖。
+ *
+ * @returns {{ damage: number, effectiveness: number, rawDamage: number, capped: boolean, crit: boolean }}
  */
 export function calculateBattleDamage(attacker, defender, move, options = {}) {
   const {
     randomFactor = null,
     applySameLevelCap = true,
-    burnHalvesPhysicalAtk = true
+    burnHalvesPhysicalAtk = true,
+    allowCrit = randomFactor === null,
+    forceCrit = false,
+    critChance = CRITICAL_HIT_CHANCE
   } = options
 
   if (!isDamagingBattleMove(move)) {
-    return { damage: 0, effectiveness: 1, rawDamage: 0, capped: false }
+    return { damage: 0, effectiveness: 1, rawDamage: 0, capped: false, crit: false }
   }
 
   const level = attacker?.level || 50
@@ -208,7 +220,7 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
 
   const effectiveness = getBattleMoveEffectivenessResult(move, defender, attacker).effectiveness
   if (effectiveness === 0) {
-    return { damage: 0, effectiveness: 0, rawDamage: 0, capped: false }
+    return { damage: 0, effectiveness: 0, rawDamage: 0, capped: false, crit: false }
   }
 
   let damage = ((2 * level / 5 + 2) * move.power * (attackStat / defenseStat) / 50 + 2)
@@ -218,15 +230,25 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
   const rng = randomFactor ?? ((Math.floor(Math.random() * 16) + 85) / 100)
   damage *= rng
 
-  let rawDamage = Math.floor(damage)
-  if (rawDamage < 1) rawDamage = 1
+  const crit = forceCrit || (allowCrit && rollCriticalHit(critChance))
+  if (crit) damage *= CRITICAL_HIT_MULTIPLIER
 
-  const minPracticalDamage = Math.max(1, Math.floor((defender?.maxHp || 1) * MIN_DAMAGE_HP_RATIO))
+  let rawDamage = Math.floor(damage)
+
+  // 绝对最小伤害保护
+  const ABSOLUTE_MIN_DAMAGE = 1
+  if (rawDamage < ABSOLUTE_MIN_DAMAGE) rawDamage = ABSOLUTE_MIN_DAMAGE
+
+  // 实际最小伤害（基于HP百分比）
+  const minPracticalDamage = Math.max(ABSOLUTE_MIN_DAMAGE, Math.floor((defender?.maxHp || 1) * MIN_DAMAGE_HP_RATIO))
   if (rawDamage < minPracticalDamage) rawDamage = minPracticalDamage
 
   let capped = false
   let finalDamage = rawDamage
-  if (applySameLevelCap) {
+  // 超效打击与会心一击可突破同级伤害上限，保留属性克制与爆发的策略价值；
+  // 其余普通/抵抗命中仍受 65% 上限约束，避免同级离谱秒杀。
+  const bypassCap = effectiveness > 1 || crit
+  if (applySameLevelCap && !bypassCap) {
     const levelDiff = Math.abs((attacker?.level || level) - (defender?.level || level))
     if (levelDiff <= SAME_LEVEL_DAMAGE_CAP_MAX_DIFF) {
       const cap = Math.max(1, Math.floor((defender?.maxHp || 1) * SAME_LEVEL_DAMAGE_CAP_RATIO))
@@ -237,7 +259,7 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
     }
   }
 
-  return { damage: finalDamage, effectiveness, rawDamage, capped }
+  return { damage: finalDamage, effectiveness, rawDamage, capped, crit }
 }
 
 export const rollDamageRandomFactor = () => (Math.floor(Math.random() * 16) + 85) / 100

@@ -3,10 +3,8 @@ import { getMapConfig } from '../data/maps/mapConfig'
 import { preloadImageAssets, warmImageAssets } from './localAssetPreloader'
 import { assetUrl } from './assetUrl'
 import {
-  pokemonArtPngUrl,
   pokemonArtUrl,
-  POKEMON_PLACEHOLDER_URL,
-  toPngFallbackUrl
+  POKEMON_PLACEHOLDER_URL
 } from './mediaAssetUrl'
 
 export function getMapWildDexNumbers(mapName) {
@@ -59,32 +57,33 @@ const toUniqueAssetUrls = (urls = []) => (
     .map((url) => url.trim()))]
 )
 
-const dexToArtUrls = (dexNumbers = []) => toUniqueAssetUrls(
-  dexNumbers.flatMap((dexNo) => [pokemonArtUrl(dexNo), pokemonArtPngUrl(dexNo)])
+/** 预加载只拉主格式（webp）；png 由 localAssetPreloader 在失败时自动回退，避免重复请求占满弱网带宽 */
+const dexToPreloadArtUrls = (dexNumbers = []) => toUniqueAssetUrls(
+  dexNumbers.map((dexNo) => pokemonArtUrl(dexNo))
 )
 
-const getInventoryImageAssetUrls = () => toUniqueAssetUrls([
-  ...Object.values(POKEBALLS).flatMap((item) => (item?.sprite ? [item.sprite, toPngFallbackUrl(item.sprite)] : [])),
-  ...Object.values(POTIONS).flatMap((item) => (item?.sprite ? [item.sprite, toPngFallbackUrl(item.sprite)] : [])),
-  ...Object.values(EXP_POTIONS).flatMap((item) => (item?.sprite ? [item.sprite, toPngFallbackUrl(item.sprite)] : [])),
-  ...Object.values(EVOLUTION_ITEMS).flatMap((item) => (item?.sprite ? [item.sprite, toPngFallbackUrl(item.sprite)] : []))
+const getInventoryPreloadAssetUrls = () => toUniqueAssetUrls([
+  ...Object.values(POKEBALLS).flatMap((item) => (item?.sprite ? [item.sprite] : [])),
+  ...Object.values(POTIONS).flatMap((item) => (item?.sprite ? [item.sprite] : [])),
+  ...Object.values(EXP_POTIONS).flatMap((item) => (item?.sprite ? [item.sprite] : [])),
+  ...Object.values(EVOLUTION_ITEMS).flatMap((item) => (item?.sprite ? [item.sprite] : []))
 ])
 
 export const getP0ImageAssetUrls = () => toUniqueAssetUrls([
   POKEMON_PLACEHOLDER_URL,
   BATTLE_SENDOUT_BALL_SPRITE,
   ...Object.values(TRAINER_PORTRAITS),
-  ...dexToArtUrls(STARTER_DEX_NUMBERS),
-  ...getInventoryImageAssetUrls()
+  ...dexToPreloadArtUrls(STARTER_DEX_NUMBERS),
+  ...getInventoryPreloadAssetUrls()
 ])
 
 export const getP1ImageAssetUrls = ({ mapName, playerTeam = [] } = {}) => {
   const wildDex = getMapWildDexNumbers(mapName)
   const teamDex = getTeamDexNumbers(playerTeam)
   return toUniqueAssetUrls([
-    ...dexToArtUrls(wildDex),
-    ...dexToArtUrls(teamDex),
-    ...dexToArtUrls(COMMON_BATTLE_DEX_NUMBERS)
+    ...dexToPreloadArtUrls(wildDex),
+    ...dexToPreloadArtUrls(teamDex),
+    ...dexToPreloadArtUrls(COMMON_BATTLE_DEX_NUMBERS)
   ])
 }
 
@@ -129,7 +128,7 @@ export const startGameAssetPreload = ({
 
   gameAssetPreloadPromise = (async () => {
     const critical = await preloadImageAssets(getP0ImageAssetUrls(), {
-      concurrency: 8,
+      concurrency: 4,
       timeoutMs: 4500
     })
     latestGameAssetPreloadSummary = critical

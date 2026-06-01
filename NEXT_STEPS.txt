@@ -1,0 +1,81 @@
+╔════════════════════════════════════════════════════════════╗
+║          音频替换项目 - 下一步操作指南                    ║
+╚════════════════════════════════════════════════════════════╝
+
+✅ 已完成:
+  • 创建自动化下载脚本
+  • 创建音频压缩脚本
+  • 下载所有9个地图BGM (8.3 MB)
+  • 配置所有48个技能音效
+  • 创建完整文档系统
+  • 更新 package.json
+
+⏳ 下一步操作:
+
+1. 安装 ffmpeg 并压缩音频 (30分钟)
+   ─────────────────────────────────────
+   brew install ffmpeg
+   npm run compress:audio
+   
+   预期: 文件大小从 8.3 MB 减少到 4-5 MB
+
+2. 测试地图BGM (20分钟)
+   ─────────────────────────────────────
+   npm run dev
+   
+   访问每个地图，确认BGM正常播放
+
+3. 下载技能音效 (2-4小时)
+   ─────────────────────────────────────
+   选项A: 使用现成音效包（推荐）
+   - 搜索 "pokemon gba sound effects pack"
+   - 下载并解压
+   - 复制到对应目录
+   
+   选项B: 手动搜索下载
+   - 访问 freesound.org
+   - 按照 AUDIO_RESOURCES_CONFIG.md 搜索
+   
+   选项C: AI生成
+   - 使用 ElevenLabs 或 Suno AI
+
+4. 压缩技能音效 (10分钟)
+   ─────────────────────────────────────
+   npm run compress:audio
+
+5. 更新代码集成 (30分钟)
+   ─────────────────────────────────────
+   在 src/utils/gameAudio.js 添加:
+   
+   async playMoveSfx(moveKey, options = {}) {
+     const move = MOVES[moveKey]
+     const typeFolder = move.type.toLowerCase()
+     const url = `/assets/audio/sfx/${typeFolder}/${moveKey}.ogg`
+     return this.playSfx(url, options)
+   }
+
+6. 更新 manifest.json (30分钟)
+   ─────────────────────────────────────
+   添加所有新音频文件的配置信息
+
+7. 最终测试 (1小时)
+   ─────────────────────────────────────
+   npm run dev
+   
+   测试所有地图BGM和技能音效
+
+📁 相关文档:
+  • AUDIO_README.md - 项目总览
+  • AUDIO_TODO_CHECKLIST.md - 详细清单
+  • AUDIO_QUICKSTART.md - 快速指南
+  • AUDIO_RESOURCES_CONFIG.md - 资源配置
+
+📊 当前进度: 55% (9/57 音频文件完成)
+
+预计剩余时间: 5-7小时
+
+🎯 优先级:
+  高: 步骤1-2 (压缩和测试BGM)
+  中: 步骤3-4 (下载和压缩音效)
+  低: 步骤5-7 (代码集成和测试)
+

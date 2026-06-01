@@ -1,6 +1,7 @@
 import { MONSTERS } from '../../../utils/gameData.js'
 import { isLevelValidForSpecies } from '../../../utils/wildEncounterRules.js'
 import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from '../../../utils/pokemonFamilyVariety.js'
+import { buildChallengeBattleTeamFromUnlockBatch } from '../../../utils/challengeRareUnlock.js'
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
 import { getMapEventTile } from '../mapEventTypes.js'
 import { MAP_ASSET_CATALOG } from '../mapAssetCatalog.js'
@@ -27,6 +28,698 @@ const TILE = {
 export const REGION_MAP_TILE = TILE
 
 const MAP_THEME = 'kenney-region-chain-v1'
+
+/** Per-map ground tint for ThreeLowPolyMap (layout unchanged). All nine adventure maps are unique. */
+const MAP_VISUAL_PALETTES = {
+  default: {
+    terrainTop: 0x79d16b,
+    terrainBase: 0x67b457,
+    forestFloor: 0x5fa85a,
+    sandPatch: 0xe8d4a8,
+    paleGrassPatch: 0xc8ddb8
+  },
+  GodotMap: {
+    terrainTop: 0x84e070,
+    terrainBase: 0x6fcb5c,
+    forestFloor: 0x65be54,
+    sandPatch: 0xf0d8a0,
+    paleGrassPatch: 0xd4ecc0
+  },
+  GodotMapV2: {
+    terrainTop: 0x72c960,
+    terrainBase: 0x5fb24e,
+    forestFloor: 0x58a848,
+    sandPatch: 0xe0cc98,
+    paleGrassPatch: 0xb8d8a8
+  },
+  GodotMapV2_MistLake: {
+    terrainTop: 0x62a888,
+    terrainBase: 0x4f9074,
+    forestFloor: 0x4a8570,
+    sandPatch: 0xb8ccc0,
+    paleGrassPatch: 0x98b8a8
+  },
+  GodotMapV2_FarmTown: {
+    terrainTop: 0x9ad048,
+    terrainBase: 0x82b838,
+    forestFloor: 0x78a830,
+    sandPatch: 0xd8b880,
+    paleGrassPatch: 0xc0d070
+  },
+  GodotMapV2_PirateShore: {
+    terrainTop: 0xe8d4a8,
+    terrainBase: 0xc9b07a,
+    forestFloor: 0xc4b48a,
+    sandPatch: 0xf2e2b8,
+    paleGrassPatch: 0xd9c99a
+  },
+  GodotMapV2_Graveyard: {
+    terrainTop: 0x7a8870,
+    terrainBase: 0x626858,
+    forestFloor: 0x5a6250,
+    sandPatch: 0x98a090,
+    paleGrassPatch: 0xa8b098
+  },
+  GodotMapV2_HexRuins: {
+    terrainTop: 0x94b060,
+    terrainBase: 0x7a9650,
+    forestFloor: 0x728c48,
+    sandPatch: 0xc8c890,
+    paleGrassPatch: 0xa8c878
+  },
+  GodotMapV2_SurvivalRidge: {
+    terrainTop: 0x588838,
+    terrainBase: 0x466c2c,
+    forestFloor: 0x406428,
+    sandPatch: 0xa8b868,
+    paleGrassPatch: 0x88b060
+  },
+  GodotMapV2_BossHighland: {
+    terrainTop: 0xc0b8c8,
+    terrainBase: 0xa098a8,
+    forestFloor: 0x9890a0,
+    sandPatch: 0xd8d0d8,
+    paleGrassPatch: 0xe0d8e8
+  }
+}
+
+export function getRegionMapVisualPalette(mapId) {
+  return MAP_VISUAL_PALETTES[mapId] || MAP_VISUAL_PALETTES.default
+}
+
+/**
+ * Hand-placed theme landmark render scales (ThreeLowPolyMap uses object.scale as world scale).
+ * Kenney building GLBs are authored small — these values are intentionally bold.
+ */
+export const THEME_LANDMARK_SCALES = {
+  nature_tree_oak: 1.85,
+  nature_lily_large: 1.65,
+  nature_canoe: 2.05,
+  nature_tent_detailed_open: 2.35,
+  town_windmill: 2.65,
+  town_watermill: 2.55,
+  town_fountain_round: 2.35,
+  farm_cart_high: 2.05,
+  hex_building_farm: 2.6,
+  hex_building_mine: 2.75,
+  hex_building_market: 2.55,
+  hex_building_cabin: 2.5,
+  hex_building_port: 2.7,
+  hex_building_watermill: 2.7,
+  hex_building_dock: 2.55,
+  hex_bridge: 2.25,
+  hex_stone_hill: 2.45,
+  hex_water_rocks: 1.95,
+  pirate_ship_wreck: 2.55,
+  pirate_boat_row_large: 2.2,
+  pirate_mast: 2.05,
+  pirate_cannon: 1.95,
+  shore_dock_small: 2.35,
+  grave_lantern_glass: 1.9,
+  grave_stone_wall_damaged: 2.0,
+  grave_character_ghost: 2.15,
+  grave_character_skeleton: 2.1,
+  grave_character_zombie: 2.1,
+  grave_coffin_old: 1.85,
+  grave_bench_damaged: 1.75,
+  survival_tent: 2.35,
+  survival_structure_canvas: 2.15,
+  survival_workbench: 1.9,
+  survival_campfire_fishing: 2.0,
+  survival_signpost: 1.85,
+  survival_tree_log: 2.05,
+  platformer_platform_overhang: 2.45,
+  platformer_flag: 2.05,
+  platformer_chest: 1.95,
+  platformer_lever: 1.9,
+  mine_crate_strong: 2.15,
+  ridge_block_grass_edge: 2.15,
+  nature_rock_large: 2.35,
+  nature_stone_large: 2.25,
+  nature_bush_large: 2.05,
+  nature_log_stack: 2.0,
+  wetland_reed_clump: 2.1,
+  town_hedge_large: 2.1,
+  town_cart: 2.0,
+  pirate_rocks_sand_a: 2.45,
+  pirate_rocks_sand_b: 2.5,
+  pirate_rocks_sand_c: 2.48,
+  pirate_palm_detailed_straight: 2.15,
+  grave_rocks: 2.2,
+  grave_iron_fence_border: 2.05,
+  grave_gravestone_round: 2.0,
+  grave_gravestone_cross: 2.0,
+  hex_stone_rocks: 2.35,
+  hex_unit_tree: 2.15,
+  hex_grass_forest: 2.35,
+  survival_rock_a: 2.2,
+  survival_rock_b: 2.2,
+  survival_rock_c: 2.2,
+  platformer_rocks: 2.25,
+  platformer_stones: 2.2,
+  platformer_hedge: 2.05
+}
+
+/** Dense forest-edge stacks — slightly larger than interior landmarks. */
+const BOUNDARY_THEME_SCALES = {
+  ...THEME_LANDMARK_SCALES,
+  nature_rock_large: 2.85,
+  nature_stone_large: 2.75,
+  nature_bush_large: 2.55,
+  nature_log_stack: 2.6,
+  wetland_reed_clump: 2.45,
+  hex_stone_hill: 3.15,
+  hex_stone_rocks: 2.95,
+  hex_unit_tree: 2.35,
+  hex_grass_forest: 2.75,
+  hex_water_rocks: 2.7,
+  grave_stone_wall_damaged: 2.8,
+  grave_rocks: 2.75,
+  grave_iron_fence_border: 2.5,
+  grave_iron_fence_broken: 2.45,
+  pirate_rocks_sand_a: 2.75,
+  pirate_rocks_sand_b: 2.8,
+  pirate_rocks_sand_c: 2.78,
+  survival_rock_a: 2.75,
+  survival_rock_b: 2.75,
+  survival_rock_c: 2.75,
+  survival_tree_log: 2.7,
+  survival_fence: 2.35,
+  ridge_block_grass_edge: 2.95,
+  platformer_rocks: 2.85,
+  platformer_stones: 2.75,
+  town_hedge_large: 2.65,
+  nature_fence_planks: 2.3,
+  farm_cart_high: 2.25
+}
+
+export function resolveThemeLandmarkRenderScale(type, objectScale) {
+  const explicit = Number(objectScale)
+  if (Number.isFinite(explicit) && explicit > 0) return explicit
+  return THEME_LANDMARK_SCALES[type] ?? 1
+}
+
+function themeLandmark(type, x, y, extra = {}) {
+  const { scale: scaleOverride, height, ...rest } = extra
+  return {
+    type,
+    x,
+    y,
+    scale: resolveThemeLandmarkRenderScale(type, scaleOverride),
+    landmark: true,
+    height: height ?? 0.2,
+    ...rest
+  }
+}
+
+const HEX_RUINS_PLAZA_SCATTER_TYPES = [
+  'hex_stone_rocks',
+  'hex_grass_forest',
+  'hex_unit_tree',
+  'hex_water_rocks',
+  'platformer_rocks',
+  'platformer_stones'
+]
+
+/** Dense plaza forest on paleGrass — visual only; must not block walkable grass. */
+const HEX_RUINS_PLAZA_TREE_TYPES = ['hex_unit_tree', 'hex_grass_forest', 'hex_unit_tree']
+const PLAZA_TREE_NON_BLOCKING_TILES = new Set([
+  TILE.road,
+  TILE.bridge,
+  TILE.water,
+  TILE.exit,
+  TILE.heal,
+  TILE.sign,
+  TILE.tallGrass
+])
+
+const OPEN_GROUND_FILLER_PROFILES = {
+  GodotMapV2: {
+    types: ['nature_bush_large', 'nature_rock_large', 'nature_stone_large', 'nature_log_stack', 'nature_plant_bush_detailed', 'nature_plant_bush_triangle'],
+    salt: 1200,
+    density: 0.85,
+    scale: [1.2, 1.6],
+    height: 0.18
+  },
+  GodotMapV2_MistLake: {
+    types: ['wetland_reed_clump', 'nature_lily_large', 'hex_water_rocks', 'nature_rock_large', 'nature_stone_large'],
+    salt: 1210,
+    density: 0.55,
+    scale: [1.3, 1.7],
+    height: 0.18
+  },
+  GodotMapV2_FarmTown: {
+    types: ['town_hedge_large', 'town_hedge', 'farm_cart_high', 'nature_fence_planks', 'town_cart', 'nature_log_stack'],
+    salt: 1220,
+    density: 0.62,
+    scale: [1.2, 1.55],
+    height: 0.18
+  },
+  GodotMapV2_PirateShore: {
+    types: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c', 'pirate_barrel', 'pirate_crate', 'pirate_flag'],
+    salt: 1215,
+    density: 0.58,
+    scale: [1.3, 1.65],
+    height: 0.18
+  },
+  GodotMapV2_Graveyard: {
+    types: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_rocks', 'grave_coffin_old', 'grave_bench_damaged'],
+    salt: 1230,
+    density: 0.58,
+    scale: [1.15, 1.5],
+    height: 0.18
+  },
+  GodotMapV2_HexRuins: {
+    types: ['hex_unit_tree', 'hex_grass_forest', 'hex_stone_rocks', 'hex_stone_hill'],
+    salt: 1240,
+    density: 0.65,
+    scale: [1.1, 1.4],
+    height: 0.22
+  },
+  GodotMapV2_SurvivalRidge: {
+    types: ['survival_tree_log', 'survival_rock_a', 'survival_rock_b', 'survival_rock_c', 'survival_fence', 'survival_barrel', 'survival_box'],
+    salt: 1250,
+    density: 0.58,
+    scale: [1.2, 1.5],
+    height: 0.2
+  },
+  GodotMapV2_BossHighland: {
+    types: ['ridge_block_grass_edge', 'platformer_rocks', 'platformer_stones', 'hex_stone_hill', 'platformer_hedge'],
+    salt: 1260,
+    density: 0.60,
+    scale: [1.25, 1.6],
+    height: 0.2
+  }
+}
+
+/** Hand-placed anchors for the large paleGrass wings (screenshot empty zones). */
+function buildHexRuinsPlazaLandmarks() {
+  const props = [
+    themeLandmark('hex_building_mine', 5.5, 14.2, { scale: 0.9 }),
+    themeLandmark('hex_building_cabin', 8.4, 17.4, { scale: 0.88, rotation: -0.12 }),
+    themeLandmark('hex_stone_rocks', 4.6, 16.2, { scale: 0.92 }),
+    themeLandmark('hex_building_market', 10.2, 15.2, { scale: 0.9 }),
+    themeLandmark('hex_building_farm', 16.4, 19.2, { scale: 0.94, rotation: 0.1 }),
+    themeLandmark('hex_building_watermill', 28.2, 10.2, { scale: 0.9 }),
+    themeLandmark('hex_building_port', 33.8, 14.6, { scale: 0.9, rotation: 0.18 }),
+    themeLandmark('hex_stone_rocks', 35.4, 17.2, { scale: 0.92, rotation: 0.24 }),
+    themeLandmark('hex_grass_forest', 31.6, 16.4),
+    themeLandmark('hex_unit_tree', 36.2, 15.4, { rotation: 0.3 }),
+    themeLandmark('hex_building_cabin', 21.8, 9.4, { scale: 0.88, rotation: 0.08 }),
+    themeLandmark('hex_stone_rocks', 18.6, 8.2, { scale: 0.9 }),
+    themeLandmark('hex_grass_forest', 22.8, 8.6)
+  ]
+
+  return props.map((object, index) => ({
+    height: 0.18,
+    sourceId: `hex_plaza_anchor_${index + 1}`,
+    ...object,
+    landmark: true,
+    blocksPath: /hex_building_|hex_bridge/.test(String(object?.type || ''))
+  }))
+}
+
+function addDensePlazaTreeForest({
+  grid,
+  output,
+  definition,
+  runtimeEvents = [],
+  area,
+  salt = 600,
+  idPrefix = 'hex_plaza_forest',
+  minEventDistance = 1.85
+}) {
+  const allowed = new Set([TILE.paleGrass, TILE.grass])
+  let index = 0
+
+  const pushTree = (x, y, layer) => {
+    const type = HEX_RUINS_PLAZA_TREE_TYPES[(x * 13 + y * 17 + salt + index + layer * 5) % HEX_RUINS_PLAZA_TREE_TYPES.length]
+    const jitterX = (seededRandom(x, y, salt + 11 + layer) - 0.5) * (layer === 0 ? 0.14 : 0.32)
+    const jitterY = (seededRandom(x, y, salt + 12 + layer) - 0.5) * (layer === 0 ? 0.14 : 0.32)
+    const scaleFloor = BOUNDARY_THEME_SCALES[type] ?? THEME_LANDMARK_SCALES[type] ?? 2.1
+    const scaleValue = scaleFloor * (0.94 + seededRandom(x, y, salt + 13 + layer) * 0.1)
+
+    output.push({
+      type,
+      x: Number((x + jitterX).toFixed(2)),
+      y: Number((y + jitterY).toFixed(2)),
+      scale: Number(scaleValue.toFixed(2)),
+      rotation: Number((seededRandom(x, y, salt + 14 + index + layer) * Math.PI * 2).toFixed(4)),
+      height: 0.22,
+      sourceId: `${idPrefix}_${index + 1}`,
+      plazaForest: true,
+      blocksPath: false
+    })
+    index += 1
+  }
+
+  for (let y = area.y1; y <= area.y2; y += 1) {
+    for (let x = area.x1; x <= area.x2; x += 1) {
+      if (!inBounds(x, y)) continue
+      const tile = grid[y][x]
+      if (!allowed.has(tile)) continue
+      if (PLAZA_TREE_NON_BLOCKING_TILES.has(tile)) continue
+      if (minEventDistance > 0 && distanceToRuntimeEvents(runtimeEvents, x, y) < minEventDistance) continue
+
+      pushTree(x, y, 0)
+      if (seededRandom(x, y, salt + 3) > 0.22) continue
+      pushTree(x, y, 1)
+    }
+  }
+}
+
+function addOpenGroundFiller({
+  grid,
+  output,
+  definition,
+  runtimeEvents = [],
+  mapId
+}) {
+  const profile = OPEN_GROUND_FILLER_PROFILES[mapId]
+  if (!profile?.types?.length) return
+
+  // For PirateShore, also allow sand tiles
+  const allowed = isPirateShoreMap(mapId)
+    ? new Set([TILE.grass, TILE.paleGrass, TILE.flowers, TILE.sand])
+    : new Set([TILE.grass, TILE.paleGrass, TILE.flowers])
+
+  const salt = profile.salt ?? 1000
+  const density = Math.max(0.05, Math.min(0.95, Number(profile.density ?? 0.5)))
+  const scaleRange = profile.scale ?? [1, 1.2]
+  const clearanceCells = collectPathClearanceCells(grid, runtimeEvents, definition)
+
+  let index = 0
+  for (let y = 1; y < HEIGHT - 1; y += 1) {
+    for (let x = 1; x < WIDTH - 1; x += 1) {
+      const tile = grid[y]?.[x]
+      if (!allowed.has(tile)) continue
+
+      // Keep roads, bridges, warps/heals/signs, and access corridors clean.
+      if (distanceToRoadPaths(x, y, definition) < 1.35) continue
+      if (distanceToRuntimeEvents(runtimeEvents, x, y) < 2.0) continue
+      if (isInsideDefinedWater(definition, x, y, 1.05)) continue
+      if (clearanceCells.has(`${x},${y}`)) continue
+      if (isInsideEncounterZoneBuffer(definition, x, y, 1.5)) continue
+      // Never block the edge of tallGrass so players can always step into grass tiles.
+      if (CARDINAL_DIRECTIONS.some(([, dx, dy]) => grid[y + dy]?.[x + dx] === TILE.tallGrass)) continue
+      if (seededRandom(x, y, salt) > density) continue
+
+      const type = profile.types[(x * 19 + y * 23 + salt + index) % profile.types.length]
+      const jitterX = (seededRandom(x, y, salt + 11) - 0.5) * 0.32
+      const jitterY = (seededRandom(x, y, salt + 12) - 0.5) * 0.32
+      const scaleValue = scaleRange[0] + seededRandom(x, y, salt + 13) * (scaleRange[1] - scaleRange[0])
+
+      output.push({
+        type,
+        x: Number((x + jitterX).toFixed(2)),
+        y: Number((y + jitterY).toFixed(2)),
+        scale: Number(scaleValue.toFixed(2)),
+        rotation: Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4)),
+        height: profile.height ?? 0.16,
+        sourceId: `${mapId}_openfill_${index + 1}`,
+        blocksPath: true
+      })
+      index += 1
+    }
+  }
+}
+
+function addGridPlazaScatter({
+  grid,
+  output,
+  definition,
+  runtimeEvents = [],
+  area,
+  types = HEX_RUINS_PLAZA_SCATTER_TYPES,
+  spacing = 2,
+  salt = 600,
+  scaleRange = [0.78, 0.98],
+  minRoadDistance = 1.1,
+  minEventDistance = 2,
+  idPrefix = 'hex_plaza_grid',
+  blocksPath = false
+}) {
+  const allowed = new Set([TILE.paleGrass, TILE.grass])
+  let index = 0
+
+  for (let y = area.y1; y <= area.y2; y += 1) {
+    for (let x = area.x1; x <= area.x2; x += 1) {
+      if (((x + y + salt) % spacing) !== 0) continue
+      if (!inBounds(x, y)) continue
+      if (!allowed.has(grid[y][x])) continue
+      if (definition && distanceToRoadPaths(x, y, definition) < minRoadDistance) continue
+      if (minEventDistance > 0 && distanceToRuntimeEvents(runtimeEvents, x, y) < minEventDistance) continue
+
+      const type = types[(x * 19 + y * 23 + salt + index) % types.length]
+      const jitterX = (seededRandom(x, y, salt + 11) - 0.5) * 0.38
+      const jitterY = (seededRandom(x, y, salt + 12) - 0.5) * 0.38
+      const scaleValue = scaleRange[0] + seededRandom(x, y, salt + 13) * (scaleRange[1] - scaleRange[0])
+
+      output.push({
+        type,
+        x: Number((x + jitterX).toFixed(2)),
+        y: Number((y + jitterY).toFixed(2)),
+        scale: Number(scaleValue.toFixed(2)),
+        rotation: Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4)),
+        height: 0.16,
+        sourceId: `${idPrefix}_${index + 1}`,
+        landmark: true,
+        blocksPath
+      })
+      index += 1
+    }
+  }
+}
+
+const REGION_OPEN_PLAZA_TYPES = {
+  GodotMapV2_HexRuins: HEX_RUINS_PLAZA_SCATTER_TYPES,
+  GodotMapV2_Graveyard: [
+    'grave_gravestone_round',
+    'grave_gravestone_broken',
+    'grave_gravestone_cross',
+    'grave_cross_wood',
+    'grave_pumpkin',
+    'grave_urn_round',
+    'grave_candle'
+  ],
+  GodotMapV2_BossHighland: [
+    'platformer_stones',
+    'platformer_rocks',
+    'platformer_flowers',
+    'platformer_flowers_tall',
+    'platformer_hedge',
+    'ridge_block_grass_edge'
+  ]
+}
+
+const REGION_OPEN_PLAZA_FILLS = {
+  GodotMapV2_HexRuins: [
+    { x1: 2, y1: 13, x2: 10, y2: 19, spacing: 2, salt: 640, idPrefix: 'hex_wing_w' },
+    { x1: 30, y1: 13, x2: 37, y2: 19, spacing: 2, salt: 641, idPrefix: 'hex_wing_e' },
+    { x1: 14, y1: 12, x2: 27, y2: 21, spacing: 2, salt: 642, idPrefix: 'hex_cross' },
+    { x1: 17, y1: 2, x2: 23, y2: 10, spacing: 2, salt: 643, idPrefix: 'hex_north' },
+    { x1: 12, y1: 23, x2: 27, y2: 28, spacing: 2, salt: 644, idPrefix: 'hex_south' }
+  ],
+  GodotMapV2_Graveyard: [
+    { x1: 5, y1: 13, x2: 14, y2: 22, spacing: 2, salt: 660, idPrefix: 'grave_wing_w' },
+    { x1: 22, y1: 13, x2: 35, y2: 22, spacing: 2, salt: 661, idPrefix: 'grave_wing_e' },
+    { x1: 13, y1: 2, x2: 26, y2: 9, spacing: 2, salt: 662, idPrefix: 'grave_north' }
+  ],
+  GodotMapV2_BossHighland: [
+    { x1: 2, y1: 13, x2: 11, y2: 19, spacing: 2, salt: 680, idPrefix: 'peak_wing_w' },
+    { x1: 29, y1: 13, x2: 37, y2: 19, spacing: 2, salt: 681, idPrefix: 'peak_wing_e' },
+    { x1: 17, y1: 13, x2: 26, y2: 19, spacing: 2, salt: 682, idPrefix: 'peak_cross' }
+  ]
+}
+
+function fillRegionOpenPlazas(grid, decorations, definition, runtimeEvents) {
+  const areas = REGION_OPEN_PLAZA_FILLS[definition.id]
+  if (!areas?.length) return
+
+  if (definition.id === 'GodotMapV2_HexRuins') {
+    const types = REGION_OPEN_PLAZA_TYPES[definition.id]
+    areas.forEach((rect) => {
+      const { x1, y1, x2, y2, spacing, salt, idPrefix } = rect
+      addGridPlazaScatter({
+        grid,
+        output: decorations,
+        definition,
+        runtimeEvents,
+        types,
+        area: { x1, y1, x2, y2 },
+        spacing: spacing ?? 3,
+        salt,
+        idPrefix: idPrefix || 'hex_plaza_grid',
+        minRoadDistance: 1.35,
+        minEventDistance: 2,
+        scaleRange: [0.72, 0.94],
+        blocksPath: false
+      })
+    })
+    return
+  }
+
+  const types = REGION_OPEN_PLAZA_TYPES[definition.id]
+  if (!types?.length) return
+
+  areas.forEach((rect) => {
+    const { x1, y1, x2, y2, spacing, salt, idPrefix } = rect
+    addGridPlazaScatter({
+      grid,
+      output: decorations,
+      definition,
+      runtimeEvents,
+      types,
+      area: { x1, y1, x2, y2 },
+      spacing,
+      salt,
+      idPrefix,
+      minRoadDistance: 1.1,
+      minEventDistance: 2,
+      scaleRange: [0.78, 1.0]
+    })
+  })
+}
+
+function boostThemeLandmarkScatterScale(type, sampledScale) {
+  const floor = THEME_LANDMARK_SCALES[type]
+  if (!floor) return sampledScale
+  return Math.max(sampledScale, Number((floor * 0.78).toFixed(2)))
+}
+
+function resolveThemeCorridorScatterTypes(mapId) {
+  return resolveBoundaryVisualBlockerProfile(mapId).primary
+}
+
+function isNearTallGrassTile(grid, x, y, radius = 2) {
+  for (let oy = -radius; oy <= radius; oy += 1) {
+    for (let ox = -radius; ox <= radius; ox += 1) {
+      if (ox === 0 && oy === 0) continue
+      if (Math.abs(ox) + Math.abs(oy) > radius + 1) continue
+      if (grid[y + oy]?.[x + ox] === TILE.tallGrass) return true
+    }
+  }
+  return false
+}
+
+function isInsideEncounterZoneBuffer(definition, x, y, padding = 2) {
+  return (definition.encounterZones || []).some((zone) => (
+    x >= zone.x - padding &&
+    x < zone.x + zone.width + padding &&
+    y >= zone.y - padding &&
+    y < zone.y + zone.height + padding
+  ))
+}
+
+const WALKABLE_GROUND_TILES = new Set([
+  TILE.grass,
+  TILE.sand,
+  TILE.flowers,
+  TILE.paleGrass,
+  TILE.tallGrass
+])
+
+/** Grass-like tiles where large scatter props should not sit (sand/road stay open). */
+const GRASS_DECOR_EXCLUDE_TILES = new Set([
+  TILE.grass,
+  TILE.tallGrass,
+  TILE.flowers,
+  TILE.paleGrass
+])
+
+const GRASS_BLOCKED_MODEL_TYPES = new Set([
+  'pirate_ship_wreck',
+  'pirate_boat_row_large'
+])
+
+function isWallBesideWalkableGround(grid, x, y) {
+  if (grid[y]?.[x] !== TILE.wall) return false
+  return CARDINAL_DIRECTIONS.some(([, dx, dy]) => WALKABLE_GROUND_TILES.has(grid[y + dy]?.[x + dx]))
+}
+
+/**
+ * Dense themed props beside roads / grass fields — placed on forest wall cells only (never on grass tiles).
+ */
+function addThemeCorridorScatter({
+  grid,
+  output,
+  definition,
+  mapId,
+  runtimeEvents = [],
+  count = 280,
+  layersPerCell = 3,
+  maxRoadDistance = 5.5,
+  salt = 900,
+  idPrefix = 'corridor_theme'
+}) {
+  const types = resolveThemeCorridorScatterTypes(mapId)
+  if (!types.length) return
+
+  const hotCells = new Map()
+
+  for (let y = 1; y < HEIGHT - 1; y += 1) {
+    for (let x = 1; x < WIDTH - 1; x += 1) {
+      if (!isWallBesideWalkableGround(grid, x, y)) continue
+
+      const roadDistance = distanceToRoadPaths(x, y, definition)
+      const nearRoad = roadDistance <= maxRoadDistance
+      const nearTallGrass = isNearTallGrassTile(grid, x, y, 2)
+      const inEncounterBuffer = isInsideEncounterZoneBuffer(definition, x, y, 2)
+
+      if (!nearRoad && !nearTallGrass && !inEncounterBuffer) continue
+
+      const eventDistance = distanceToRuntimeEvents(runtimeEvents, x, y)
+      if (eventDistance <= 1.85) continue
+
+      const priority = (
+        roadDistance * 10 +
+        (nearRoad ? -8 : 0) +
+        (nearTallGrass ? -6 : 0) +
+        (inEncounterBuffer ? -4 : 0) +
+        seededRandom(x, y, salt + 3) * 2.2
+      )
+      const key = `${x},${y}`
+      const existing = hotCells.get(key)
+      if (!existing || priority < existing.priority) {
+        hotCells.set(key, { x, y, priority })
+      }
+    }
+  }
+
+  const rankedCells = [...hotCells.values()]
+    .sort((left, right) => left.priority - right.priority)
+    .slice(0, count)
+
+  rankedCells.forEach((cell, cellIndex) => {
+    const activeTypes = types
+
+    for (let layer = 0; layer < layersPerCell; layer += 1) {
+      const type = activeTypes[
+        Math.floor(seededRandom(cell.x, cell.y, salt + cellIndex * 13 + layer * 7) * activeTypes.length) % activeTypes.length
+      ]
+      const spread = 0.34 + layer * 0.08
+      const jitterX = (seededRandom(cell.x, cell.y, salt + 101 + layer) - 0.5) * spread
+      const jitterY = (seededRandom(cell.x, cell.y, salt + 102 + layer) - 0.5) * spread
+      const scaleValue = resolveBoundaryVisualBlockerScale(
+        type,
+        layer === 0 ? [1.1, 1.3] : [1.0, 1.2],
+        cell.x,
+        cell.y,
+        layer
+      )
+
+      output.push({
+        type,
+        x: Number((cell.x + jitterX).toFixed(2)),
+        y: Number((cell.y + jitterY).toFixed(2)),
+        scale: scaleValue,
+        rotation: Number((seededRandom(cell.x, cell.y, salt + 104 + layer) * Math.PI * 2).toFixed(4)),
+        height: 0.2 + layer * 0.04,
+        sourceId: `${idPrefix}_${cellIndex + 1}_${layer + 1}`
+      })
+    }
+  })
+}
 const DEFAULT_BOSS_RARE_CHANCE = 0.18
 const DEFAULT_CHALLENGE_RARE_CHANCE = 0.3
 const SIGN_FACE_ROTATIONS = {
@@ -256,7 +949,12 @@ function addScatter({
   scale = [0.86, 1.18],
   height = 0.2,
   keepAwayTiles = [TILE.road, TILE.exit, TILE.heal, TILE.sign, TILE.water, TILE.bridge],
-  idPrefix = 'scatter'
+  idPrefix = 'scatter',
+  definition = null,
+  runtimeEvents = [],
+  minRoadDistance = 0,
+  minEventDistance = 0,
+  respectSampledScale = false
 }) {
   const allowed = new Set(allowedTiles)
   const blocked = new Set(keepAwayTiles)
@@ -265,6 +963,8 @@ function addScatter({
     for (let x = area.x1; x <= area.x2; x += 1) {
       if (!inBounds(x, y)) continue
       if (!allowed.has(grid[y][x])) continue
+      if (minRoadDistance > 0 && definition && distanceToRoadPaths(x, y, definition) < minRoadDistance) continue
+      if (minEventDistance > 0 && distanceToRuntimeEvents(runtimeEvents, x, y) < minEventDistance) continue
       let nearBlocked = false
       for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         if (blocked.has(grid[y + oy]?.[x + ox])) {
@@ -286,7 +986,10 @@ function addScatter({
     const type = types[index % types.length]
     const jitterX = (seededRandom(cell.x, cell.y, salt + 101) - 0.5) * 0.46
     const jitterY = (seededRandom(cell.x, cell.y, salt + 102) - 0.5) * 0.46
-    const scaleValue = scale[0] + seededRandom(cell.x, cell.y, salt + 103) * (scale[1] - scale[0])
+    let scaleValue = scale[0] + seededRandom(cell.x, cell.y, salt + 103) * (scale[1] - scale[0])
+    if (!respectSampledScale) {
+      scaleValue = boostThemeLandmarkScatterScale(type, scaleValue)
+    }
     output.push({
       type,
       x: Number((cell.x + jitterX).toFixed(2)),
@@ -917,6 +1620,67 @@ function filterFixedLandmarkOverlaps(decorations, runtimeEvents) {
   })
 }
 
+function filterLargeDecorationsOffGrassTiles(decorations, grid) {
+  return (decorations || []).filter((object) => {
+    // Always keep special decorations
+    if (object?.plazaForest || object?.landmark || object?.eventId || object?.eventType || object?.fixedSceneEventType) return true
+
+    // Allow open ground filler decorations (from addOpenGroundFiller)
+    if (object?.sourceId && String(object.sourceId).includes('_openfill_')) return true
+
+    // Allow corridor theme scatter decorations (from addThemeCorridorScatter)
+    if (object?.sourceId && String(object.sourceId).includes('corridor_theme')) return true
+
+    const tileX = Math.round(Number(object?.x))
+    const tileY = Math.round(Number(object?.y))
+    if (!inBounds(tileX, tileY)) return true
+    const tile = grid[tileY]?.[tileX]
+
+    // Only filter decorations on grass-like tiles
+    if (!GRASS_DECOR_EXCLUDE_TILES.has(tile)) return true
+
+    // Block specific problematic model types
+    if (GRASS_BLOCKED_MODEL_TYPES.has(object?.type)) return false
+
+    // Allow small decorations and path-blocking types
+    const scale = Number(object?.scale) || 0
+    if (scale <= 1.15 && !PATH_BLOCKING_DECORATION_TYPES.has(object?.type)) return true
+
+    // For large decorations, only keep if they are path-blocking types (intentional placement)
+    if (PATH_BLOCKING_DECORATION_TYPES.has(object?.type)) return true
+
+    return false
+  })
+}
+
+const PIRATE_SHORE_OVERSIZED_TYPES = new Set([
+  'pirate_ship_wreck',
+  'pirate_boat_row_large',
+  'pirate_palm_detailed_straight',
+  'pirate_rocks_sand_a',
+  'pirate_rocks_sand_b',
+  'pirate_rocks_sand_c'
+])
+
+function tunePirateShoreDecorationScales(decorations) {
+  return (decorations || []).map((object) => {
+    if (object?.eventId || object?.eventType || object?.fixedSceneEventType) return object
+    const scale = Number(object?.scale)
+    if (!Number.isFinite(scale) || scale <= 0) return object
+
+    let multiplier = 1
+    if (PIRATE_SHORE_OVERSIZED_TYPES.has(object?.type)) {
+      multiplier = 0.88
+    } else if (scale >= 1.05) {
+      multiplier = 0.9
+    } else if (scale >= 0.95) {
+      multiplier = 0.94
+    }
+    if (multiplier === 1) return object
+    return { ...object, scale: Number((scale * multiplier).toFixed(2)) }
+  })
+}
+
 function filterRuntimeEventTileOverlaps(decorations, runtimeEvents) {
   const eventKeys = new Set(
     (runtimeEvents || [])
@@ -963,7 +1727,7 @@ const LOW_VEGETATION_DECORATION_TYPES = new Set([
   'wetland_reed_clump'
 ])
 const LOW_VEGETATION_TAGS = new Set(['grass', 'flower', 'mushroom', 'reed'])
-const SOFTENABLE_BOUNDARY_BLOCKER_TYPES = new Set(['nature_stone_large', 'nature_rock_large'])
+const SOFTENABLE_BOUNDARY_BLOCKER_TYPES = new Set([])
 const BOUNDARY_BLOCKER_FLAT_DECOR_TYPES = ['nature_stone_flat_a', 'nature_stone_flat_b', 'nature_stone_flat_c']
 
 const DECORATIVE_FOOTPRINT_OVERRIDES = {
@@ -999,7 +1763,23 @@ const DECORATIVE_FOOTPRINT_OVERRIDES = {
   survival_rock_c: { width: 1.2, height: 1.2 },
   survival_metal_panel: { width: 1.4, height: 1 },
   survival_tool_axe: { width: 1.1, height: 0.9 },
-  survival_tool_pickaxe: { width: 1.1, height: 0.9 }
+  survival_tool_pickaxe: { width: 1.1, height: 0.9 },
+  grave_character_skeleton: { width: 2.2, height: 2.2 },
+  grave_character_zombie: { width: 2.2, height: 2.2 },
+  grave_lantern_glass: { width: 1.4, height: 1.6 },
+  hex_bridge: { width: 2.8, height: 2.2 },
+  hex_building_mine: { width: 3.2, height: 2.8 },
+  hex_stone_hill: { width: 2.8, height: 2.4 },
+  nature_tent_detailed_open: { width: 2.8, height: 2.4 },
+  pirate_mast: { width: 1.6, height: 3.2 },
+  pirate_cannon: { width: 1.8, height: 1.6 },
+  shore_dock_small: { width: 3, height: 2 },
+  hex_building_port: { width: 3.2, height: 2.8 },
+  hex_building_watermill: { width: 3, height: 2.8 },
+  platformer_lever: { width: 1.2, height: 1.2 },
+  survival_campfire_fishing: { width: 1.8, height: 1.6 },
+  survival_structure_canvas: { width: 2.4, height: 2 },
+  survival_signpost: { width: 1.2, height: 1.2 }
 }
 
 const PATH_BLOCKING_DECORATION_TYPES = new Set([
@@ -1071,7 +1851,20 @@ const PATH_BLOCKING_DECORATION_TYPES = new Set([
   'hex_building_farm',
   'hex_building_mine',
   'hex_building_cabin',
-  'hex_building_market'
+  'hex_building_market',
+  'hex_building_port',
+  'hex_building_watermill',
+  'hex_building_dock',
+  'hex_bridge',
+  'hex_stone_hill',
+  'grave_character_ghost',
+  'grave_character_skeleton',
+  'grave_character_zombie',
+  'grave_lantern_glass',
+  'nature_tent_detailed_open',
+  'pirate_ship_wreck',
+  'pirate_boat_row_large',
+  'shore_dock_small'
 ])
 
 const DECORATION_BLOCKER_PROTECTED_TILES = new Set([
@@ -1086,16 +1879,32 @@ const DECORATION_BLOCKER_PROTECTED_TILES = new Set([
 const BOUNDARY_VISUAL_BLOCKER_TILES = new Set([TILE.wall, TILE.objectBlocker])
 const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
   default: {
-    primary: ['tree-default', 'tree-pine', 'rock-large', 'bush-large'],
-    compact: ['rock-large', 'bush-large', 'stone-large'],
-    primaryScale: [0.74, 0.92],
-    compactScale: [0.72, 0.9]
+    primary: ['nature_rock_large', 'nature_stone_large', 'nature_bush_large', 'nature_log_stack'],
+    compact: ['nature_rock_large', 'nature_stone_large'],
+    stackLayers: 3,
+    primaryScale: [1.05, 1.25],
+    compactScale: [0.95, 1.15]
+  },
+  meadow: {
+    primary: ['nature_rock_large', 'nature_stone_large', 'nature_bush_large', 'nature_log_stack'],
+    compact: ['nature_rock_large', 'nature_stone_large'],
+    stackLayers: 3,
+    primaryScale: [1.05, 1.25],
+    compactScale: [0.95, 1.15]
+  },
+  mistLake: {
+    primary: ['hex_water_rocks', 'nature_rock_large', 'nature_stone_large', 'wetland_reed_clump'],
+    compact: ['hex_water_rocks', 'nature_rock_large'],
+    stackLayers: 3,
+    primaryScale: [1.08, 1.28],
+    compactScale: [0.98, 1.18]
   },
   farmTown: {
-    primary: ['town_tree', 'town_tree_high', 'town_rock_small'],
-    compact: ['town_tree', 'town_rock_small', 'town_hedge'],
-    primaryScale: [0.82, 0.98],
-    compactScale: [0.78, 0.92]
+    primary: ['town_hedge_large', 'nature_rock_large', 'nature_fence_planks', 'farm_cart_high'],
+    compact: ['town_hedge_large', 'nature_rock_large'],
+    stackLayers: 3,
+    primaryScale: [1.1, 1.3],
+    compactScale: [1.0, 1.2]
   },
   pirateShore: {
     primary: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c'],
@@ -1104,28 +1913,32 @@ const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
     compactScale: [0.8, 0.94]
   },
   graveyard: {
-    primary: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_rocks'],
-    compact: ['grave_gravestone_broken', 'grave_cross_wood', 'grave_rocks'],
-    primaryScale: [0.9, 1.08],
-    compactScale: [0.88, 1.02]
+    primary: ['grave_stone_wall_damaged', 'grave_rocks', 'grave_iron_fence_border', 'grave_iron_fence_broken'],
+    compact: ['grave_stone_wall_damaged', 'grave_rocks'],
+    stackLayers: 3,
+    primaryScale: [1.05, 1.28],
+    compactScale: [0.98, 1.18]
   },
   hexRuins: {
-    primary: ['hex_stone_hill', 'hex_stone_rocks', 'hex_grass_forest', 'hex_unit_tree'],
-    compact: ['hex_stone_rocks', 'hex_water_rocks', 'hex_unit_tree'],
-    primaryScale: [0.94, 1.1],
-    compactScale: [0.9, 1.04]
+    primary: ['hex_stone_hill', 'hex_stone_rocks', 'hex_grass_forest', 'hex_water_rocks'],
+    compact: ['hex_stone_hill', 'hex_stone_rocks'],
+    stackLayers: 3,
+    primaryScale: [1.12, 1.35],
+    compactScale: [1.02, 1.22]
   },
   survivalRidge: {
-    primary: ['platformer_tree_pine', 'survival_rock_a', 'survival_rock_b', 'survival_rock_c'],
-    compact: ['survival_rock_a', 'survival_rock_b', 'ridge_block_grass_edge'],
-    primaryScale: [0.88, 1.04],
-    compactScale: [0.84, 0.98]
+    primary: ['survival_rock_a', 'survival_rock_b', 'survival_rock_c', 'survival_tree_log'],
+    compact: ['survival_rock_a', 'survival_rock_b'],
+    stackLayers: 2,
+    primaryScale: [1.08, 1.32],
+    compactScale: [1.0, 1.2]
   },
   bossHighland: {
-    primary: ['hex_stone_hill', 'platformer_rocks', 'platformer_stones', 'platformer_tree_pine'],
-    compact: ['platformer_rocks', 'platformer_stones', 'ridge_block_grass_edge'],
-    primaryScale: [0.92, 1.08],
-    compactScale: [0.86, 1.02]
+    primary: ['ridge_block_grass_edge', 'hex_stone_hill', 'platformer_rocks', 'platformer_stones'],
+    compact: ['ridge_block_grass_edge', 'platformer_rocks'],
+    stackLayers: 3,
+    primaryScale: [1.18, 1.42],
+    compactScale: [1.08, 1.28]
   }
 }
 const BOUNDARY_FIXED_LANDMARK_CLEARANCE_RADIUS = {
@@ -1163,6 +1976,7 @@ function isRuntimeEventDecoration(object) {
 
 function isPathBlockingDecoration(object) {
   if (isRuntimeEventDecoration(object)) return false
+  if (object?.blocksPath === false) return false
   const asset = getDecorationAssetMeta(object?.type)
   return Boolean(
     DECORATIVE_FOOTPRINT_OVERRIDES[object?.type] ||
@@ -1309,6 +2123,8 @@ function distanceToRuntimeEvents(runtimeEvents, tileX, tileY) {
 }
 
 function resolveBoundaryVisualBlockerProfile(mapId) {
+  if (mapId === 'GodotMapV2') return BOUNDARY_VISUAL_BLOCKER_PROFILES.meadow
+  if (mapId === 'GodotMapV2_MistLake') return BOUNDARY_VISUAL_BLOCKER_PROFILES.mistLake
   if (mapId === 'GodotMapV2_FarmTown') return BOUNDARY_VISUAL_BLOCKER_PROFILES.farmTown
   if (mapId === 'GodotMapV2_PirateShore') return BOUNDARY_VISUAL_BLOCKER_PROFILES.pirateShore
   if (mapId === 'GodotMapV2_Graveyard') return BOUNDARY_VISUAL_BLOCKER_PROFILES.graveyard
@@ -1316,6 +2132,85 @@ function resolveBoundaryVisualBlockerProfile(mapId) {
   if (mapId === 'GodotMapV2_SurvivalRidge') return BOUNDARY_VISUAL_BLOCKER_PROFILES.survivalRidge
   if (mapId === 'GodotMapV2_BossHighland') return BOUNDARY_VISUAL_BLOCKER_PROFILES.bossHighland
   return BOUNDARY_VISUAL_BLOCKER_PROFILES.default
+}
+
+const PIRATE_SHORE_MAP_ID = 'GodotMapV2_PirateShore'
+
+function isPirateShoreMap(mapId) {
+  return mapId === PIRATE_SHORE_MAP_ID
+}
+
+function shouldRenderInstancedForestWallTrees(mapId) {
+  return isPirateShoreMap(mapId)
+}
+
+function resolveLegacyBoundaryVisualBlockerScale(type, [minFactor, maxFactor], x, y, salt = 0) {
+  const asset = getDecorationAssetMeta(type)
+  const baseScale = Number(asset?.defaultScale ?? 1) || 1
+  const factor = minFactor + seededRandom(x, y, 910 + salt) * (maxFactor - minFactor)
+  return Number((baseScale * factor).toFixed(2))
+}
+
+function buildLegacyBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths) {
+  const profile = resolveBoundaryVisualBlockerProfile(mapId)
+  const clearanceCells = collectPathClearanceCells(grid, runtimeEvents)
+  const added = []
+
+  for (let y = 0; y < HEIGHT; y += 1) {
+    for (let x = 0; x < WIDTH; x += 1) {
+      const tile = grid[y]?.[x]
+      if (!BOUNDARY_VISUAL_BLOCKER_TILES.has(tile)) continue
+      if (!hasWalkableCardinalNeighbor(grid, x, y)) continue
+      if (isCoveredByPathBlockingDecoration([...decorations, ...added], x, y, 0.16)) continue
+
+      const roadDistance = distanceToVisualPaths(visualPaths, x, y)
+      const eventDistance = distanceToRuntimeEvents(runtimeEvents, x, y)
+      const nearCriticalPath = roadDistance <= 2.75 || eventDistance <= 3
+      const primaryTypes = nearCriticalPath ? profile.compact : profile.primary
+      const primaryType = primaryTypes[Math.floor(seededRandom(x, y, 860) * primaryTypes.length) % primaryTypes.length]
+      const fallbackType = profile.compact[Math.floor(seededRandom(x, y, 875) * profile.compact.length) % profile.compact.length]
+      const tertiaryType = profile.compact[(Math.floor(seededRandom(x, y, 892) * profile.compact.length) + 1) % profile.compact.length]
+
+      const attempts = [
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: primaryType,
+          scale: resolveLegacyBoundaryVisualBlockerScale(
+            primaryType,
+            nearCriticalPath ? profile.compactScale : profile.primaryScale,
+            x,
+            y,
+            0
+          ),
+          depth: nearCriticalPath ? 0.86 : 0.64,
+          jitterRange: nearCriticalPath ? 0.05 : 0.1,
+          saltBase: 0
+        }),
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: fallbackType,
+          scale: resolveLegacyBoundaryVisualBlockerScale(fallbackType, profile.compactScale, x, y, 1),
+          depth: nearCriticalPath ? 0.96 : 0.78,
+          jitterRange: 0.04,
+          saltBase: 31
+        }),
+        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type: tertiaryType,
+          scale: resolveLegacyBoundaryVisualBlockerScale(tertiaryType, [0.7, 0.84], x, y, 2),
+          depth: nearCriticalPath ? 1.04 : 0.88,
+          jitterRange: 0.02,
+          saltBase: 63
+        })
+      ]
+
+      const candidate = attempts.find((entry) => (
+        !overlapsBoundaryVisualPathClearance(entry, clearanceCells) &&
+        !overlapsBoundaryFixedLandmarkClearance(entry, runtimeEvents)
+      ))
+      if (!candidate) continue
+      added.push(candidate)
+    }
+  }
+
+  return added
 }
 
 function resolveBoundaryVisualBlockerOffset(grid, x, y, depth = 0.58) {
@@ -1339,10 +2234,12 @@ function resolveBoundaryVisualBlockerOffset(grid, x, y, depth = 0.58) {
 }
 
 function resolveBoundaryVisualBlockerScale(type, [minFactor, maxFactor], x, y, salt = 0) {
+  const factor = minFactor + seededRandom(x, y, 910 + salt) * (maxFactor - minFactor)
+  const themed = BOUNDARY_THEME_SCALES[type] ?? THEME_LANDMARK_SCALES[type]
+  if (themed) return Number((themed * factor).toFixed(2))
   const asset = getDecorationAssetMeta(type)
   const baseScale = Number(asset?.defaultScale ?? 1) || 1
-  const factor = minFactor + seededRandom(x, y, 910 + salt) * (maxFactor - minFactor)
-  return Number((baseScale * factor).toFixed(2))
+  return Number((baseScale * factor * 3.4).toFixed(2))
 }
 
 function createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
@@ -1356,11 +2253,15 @@ function createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
   const jitterX = (seededRandom(x, y, 940 + saltBase) - 0.5) * jitterRange
   const jitterY = (seededRandom(x, y, 970 + saltBase) - 0.5) * jitterRange
 
+  const tunedScale = isPirateShoreMap(mapId) && Number.isFinite(scale)
+    ? Number((scale * 0.88).toFixed(2))
+    : scale
+
   return {
     type,
     x: Number((x + offset.x + jitterX).toFixed(2)),
     y: Number((y + offset.y + jitterY).toFixed(2)),
-    scale,
+    scale: tunedScale,
     rotation: Number((seededRandom(x, y, 1000 + saltBase) * Math.PI * 2).toFixed(4)),
     sourceId: `boundary_visual_blocker_${mapId}_${x}_${y}`
   }
@@ -1387,6 +2288,10 @@ function overlapsBoundaryFixedLandmarkClearance(object, runtimeEvents) {
 }
 
 function buildBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths) {
+  if (isPirateShoreMap(mapId)) {
+    return buildLegacyBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths)
+  }
+
   const profile = resolveBoundaryVisualBlockerProfile(mapId)
   const clearanceCells = collectPathClearanceCells(grid, runtimeEvents)
   const added = []
@@ -1401,47 +2306,33 @@ function buildBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, vi
       const roadDistance = distanceToVisualPaths(visualPaths, x, y)
       const eventDistance = distanceToRuntimeEvents(runtimeEvents, x, y)
       const nearCriticalPath = roadDistance <= 2.75 || eventDistance <= 3
-      const primaryTypes = nearCriticalPath ? profile.compact : profile.primary
-      const primaryType = primaryTypes[Math.floor(seededRandom(x, y, 860) * primaryTypes.length) % primaryTypes.length]
-      const fallbackType = profile.compact[Math.floor(seededRandom(x, y, 875) * profile.compact.length) % profile.compact.length]
-      const tertiaryType = profile.compact[(Math.floor(seededRandom(x, y, 892) * profile.compact.length) + 1) % profile.compact.length]
+      const layerTypes = nearCriticalPath ? profile.compact : profile.primary
+      const stackLayers = nearCriticalPath
+        ? Math.max(2, Math.min(3, profile.stackLayers ?? 3))
+        : (profile.stackLayers ?? 4)
 
-      const attempts = [
-        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
-          type: primaryType,
+      for (let layer = 0; layer < stackLayers; layer += 1) {
+        const type = layerTypes[
+          Math.floor(seededRandom(x, y, 860 + layer * 17) * layerTypes.length) % layerTypes.length
+        ]
+        const candidate = createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
+          type,
           scale: resolveBoundaryVisualBlockerScale(
-            primaryType,
-            nearCriticalPath ? profile.compactScale : profile.primaryScale,
+            type,
+            layer === 0 ? profile.primaryScale : profile.compactScale,
             x,
             y,
-            0
+            layer
           ),
-          depth: nearCriticalPath ? 0.86 : 0.64,
-          jitterRange: nearCriticalPath ? 0.05 : 0.1,
-          saltBase: 0
-        }),
-        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
-          type: fallbackType,
-          scale: resolveBoundaryVisualBlockerScale(fallbackType, profile.compactScale, x, y, 1),
-          depth: nearCriticalPath ? 0.96 : 0.78,
-          jitterRange: 0.04,
-          saltBase: 31
-        }),
-        createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
-          type: tertiaryType,
-          scale: resolveBoundaryVisualBlockerScale(tertiaryType, [0.7, 0.84], x, y, 2),
-          depth: nearCriticalPath ? 1.04 : 0.88,
-          jitterRange: 0.02,
-          saltBase: 63
+          depth: 0.58 + layer * 0.24,
+          jitterRange: 0.14 + layer * 0.05,
+          saltBase: layer * 31
         })
-      ]
-
-      const candidate = attempts.find((entry) => (
-        !overlapsBoundaryVisualPathClearance(entry, clearanceCells) &&
-        !overlapsBoundaryFixedLandmarkClearance(entry, runtimeEvents)
-      ))
-      if (!candidate) continue
-      added.push(candidate)
+        if (overlapsBoundaryVisualPathClearance(candidate, clearanceCells)) continue
+        if (overlapsBoundaryFixedLandmarkClearance(candidate, runtimeEvents)) continue
+        if (isCoveredByPathBlockingDecoration([...decorations, ...added], candidate.x, candidate.y, 0.12)) continue
+        added.push(candidate)
+      }
     }
   }
 
@@ -1484,16 +2375,25 @@ function collectEventAccessCorridorCells(grid, runtimeEvents) {
   return cells
 }
 
-function collectPathClearanceCells(grid, runtimeEvents) {
+function collectPathClearanceCells(grid, runtimeEvents, definition = null) {
   const cells = collectEventAccessCorridorCells(grid, runtimeEvents)
 
   for (let y = 0; y < HEIGHT; y += 1) {
     for (let x = 0; x < WIDTH; x += 1) {
-      if ([TILE.road, TILE.bridge, TILE.exit].includes(grid[y]?.[x])) {
+      if ([TILE.road, TILE.bridge, TILE.exit, TILE.tallGrass].includes(grid[y]?.[x])) {
         cells.add(`${x},${y}`)
       }
     }
   }
+
+  ;(definition?.encounterZones || []).forEach((zone) => {
+    for (let y = zone.y - 1; y < zone.y + zone.height + 1; y += 1) {
+      for (let x = zone.x - 1; x < zone.x + zone.width + 1; x += 1) {
+        if (!inBounds(x, y)) continue
+        cells.add(`${x},${y}`)
+      }
+    }
+  })
 
   ;(runtimeEvents || []).forEach((evt) => {
     const x = Math.trunc(Number(evt.position?.x))
@@ -1517,14 +2417,16 @@ function collectPathClearanceCells(grid, runtimeEvents) {
   return cells
 }
 
-function filterPathClearanceDecorations(decorations, grid, runtimeEvents) {
-  const clearanceCells = collectPathClearanceCells(grid, runtimeEvents)
+function filterPathClearanceDecorations(decorations, grid, runtimeEvents, definition = null) {
+  const clearanceCells = collectPathClearanceCells(grid, runtimeEvents, definition)
   if (clearanceCells.size === 0) return decorations
 
-  return decorations.filter((object) => {
-    if (!isPathBlockingDecoration(object)) return true
+  return decorations.flatMap((object) => {
+    if (!isPathBlockingDecoration(object)) return [object]
     const footprintCells = getDecorationFootprintCells(object, 0.28)
-    return !footprintCells.some((cell) => clearanceCells.has(`${cell.x},${cell.y}`))
+    const overlapsClearance = footprintCells.some((cell) => clearanceCells.has(`${cell.x},${cell.y}`))
+    if (!overlapsClearance) return [object]
+    return []
   })
 }
 
@@ -1586,10 +2488,31 @@ function isProtectedOpenGround(grid, definition, runtimeEvents, x, y) {
   return false
 }
 
+function isInsideDefinitionClearing(definition, x, y) {
+  return (definition.clearings || []).some((clearing) => {
+    if (clearing.shape === 'rect') {
+      return x >= clearing.x1 && x <= clearing.x2 && y >= clearing.y1 && y <= clearing.y2
+    }
+    if (clearing.shape === 'ellipse' || clearing.rx != null) {
+      const rx = Number(clearing.rx) || 0
+      const ry = Number(clearing.ry) || 0
+      if (rx <= 0 || ry <= 0) return false
+      const dx = (x - clearing.x) / rx
+      const dy = (y - clearing.y) / ry
+      return dx * dx + dy * dy <= 1
+    }
+    return false
+  })
+}
+
 function fillOpenGroundWithForestBlocks(grid, definition, runtimeEvents) {
   for (let y = 1; y < HEIGHT - 1; y += 1) {
     for (let x = 1; x < WIDTH - 1; x += 1) {
-      if (!OPEN_GROUND_TILES.has(grid[y][x])) continue
+      const tile = grid[y][x]
+      if (!OPEN_GROUND_TILES.has(tile)) continue
+      // Authored plaza / beach clearings must stay open for interior scatter and landmarks.
+      if (tile === TILE.paleGrass || tile === TILE.sand) continue
+      if (isInsideDefinitionClearing(definition, x, y)) continue
       if (isProtectedOpenGround(grid, definition, runtimeEvents, x, y)) continue
       grid[y][x] = TILE.wall
     }
@@ -2829,13 +3752,13 @@ const REGION_GAMEPLAY_PROFILES = {
     bossName: '星音首领',
     ecologyHint: '西草丛偏草/毒系，南草坡偏普通/飞行系，东花地更容易遇到宝宝丁与喵喵；击败首领后会出现稀有电系气息。',
     bossRarePokemon: { pokemonId: 2, weight: 18 },
-    challengeRarePool: [3, 112, 113, 116, 120, 121, 83, 84],
+    challengeRarePool: [3, 112, 113, 116, 120, 121, 83, 123, 150],
     signMessages: [
       '星音试炼：击败3名巡守，首领开启。',
       '草径生态：西草毒，南飞行，东有电光。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [1, 13, 39, 98, 114, 119, 4],
+    speciesPool: [1, 13, 39, 98, 114, 119, 4, 89, 151, 154, 156, 169],
     positions: {
       lieutenants: [[8, 7], [11, 25], [31, 7]],
       trainers: [[7, 18], [26, 8], [18, 27], [33, 19]],
@@ -2850,13 +3773,13 @@ const REGION_GAMEPLAY_PROFILES = {
     bossName: '雾湖首领',
     ecologyHint: '西岸芦草偏可达鸭与鲤鱼王，南岸有大舌贝，东岸潮草偏墨海马与海星星；击败首领后会出现呆呆兽气息。',
     bossRarePokemon: { pokemonId: 128, weight: 18 },
-    challengeRarePool: [33, 71, 40, 73, 90, 91, 93, 75],
+    challengeRarePool: [33, 71, 40, 73, 90, 91, 93, 75, 152, 163],
     signMessages: [
       '雾湖试炼：击败3名巡守，首领开启。',
       '苇岸生态：西水系可达鸭，南大舌贝，东海星星。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [14, 16, 77, 78, 80, 13, 5],
+    speciesPool: [14, 16, 77, 78, 80, 13, 5, 176, 186, 181, 183, 167],
     positions: {
       lieutenants: [[8, 7], [11, 25], [33, 25]],
       trainers: [[6, 18], [22, 5], [24, 26], [36, 18]],
@@ -2877,7 +3800,10 @@ const REGION_GAMEPLAY_PROFILES = {
       22,
       { pokemonId: 15, minLevel: 20, maxLevel: 24 },
       { pokemonId: 48, minLevel: 20, maxLevel: 24 },
-      { pokemonId: 49, minLevel: 20, maxLevel: 24 },
+      { pokemonId: 159, minLevel: 22, maxLevel: 24 },
+      { pokemonId: 161, minLevel: 22, maxLevel: 24 },
+      { pokemonId: 168, minLevel: 22, maxLevel: 24 },
+      { pokemonId: 179, minLevel: 21, maxLevel: 24 },
       { pokemonId: 52, minLevel: 20, maxLevel: 24 },
       { pokemonId: 56, minLevel: 20, maxLevel: 24 }
     ],
@@ -2887,7 +3813,7 @@ const REGION_GAMEPLAY_PROFILES = {
       '田垄生态：北草普，西普斗，东岩斗。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [87, 88, 119, 106, 96, 22, 30, 102],
+    speciesPool: [87, 88, 119, 106, 96, 22, 30, 102, 160, 170, 155, 157, 174],
     positions: {
       lieutenants: [[8, 7], [12, 25], [29, 25]],
       trainers: [[16, 10], [24, 12], [13, 20], [31, 19]],
@@ -2904,20 +3830,22 @@ const REGION_GAMEPLAY_PROFILES = {
     bossRarePokemon: { pokemonId: 24, weight: 18 },
     challengeRarePool: [
       { pokemonId: 8, minLevel: 23, maxLevel: 30 },
-      { pokemonId: 32, minLevel: 28, maxLevel: 30 },
-      { pokemonId: 18, minLevel: 28, maxLevel: 30 },
-      { pokemonId: 28, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 182, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 166, minLevel: 28, maxLevel: 30 },
       { pokemonId: 31, minLevel: 28, maxLevel: 30 },
       { pokemonId: 42, minLevel: 30, maxLevel: 30 },
       { pokemonId: 55, minLevel: 30, maxLevel: 30 },
-      { pokemonId: 115, minLevel: 30, maxLevel: 30 }
+      { pokemonId: 115, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 54, minLevel: 28, maxLevel: 30 },
+      { pokemonId: 86, minLevel: 28, maxLevel: 30 },
+      { pokemonId: 187, minLevel: 30, maxLevel: 30 }
     ],
     signMessages: [
       '海岸试炼：击败3名巡守，首领开启。',
       '海岸生态：沙丘水岩，南岸水系，沉船巨钳蟹。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [79, 77, 80, 82, 81, 44, 54, 5],
+    speciesPool: [79, 77, 80, 82, 81, 44, 54, 5, 184, 185, 182, 177, 175],
     positions: {
       lieutenants: [[8, 7], [11, 25], [29, 27]],
       trainers: [[7, 18], [20, 10], [24, 18], [25, 22]],
@@ -2933,25 +3861,25 @@ const REGION_GAMEPLAY_PROFILES = {
     ecologyHint: '北墓草丛偏幽灵系，南墓荒草偏毒系，月影荒草更容易遇到耿鬼与月亮伊布。',
     bossRarePokemon: { pokemonId: 126, weight: 18 },
     challengeRarePool: [
-      7,
-      29,
-      { pokemonId: 46, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 17, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 50, minLevel: 35, maxLevel: 36 },
-      { pokemonId: 54, minLevel: 32, maxLevel: 36 },
+      6,
+      21,
+      { pokemonId: 173, minLevel: 31, maxLevel: 36 },
+      { pokemonId: 164, minLevel: 32, maxLevel: 36 },
       { pokemonId: 132, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 19, minLevel: 31, maxLevel: 36 },
+      { pokemonId: 180, minLevel: 33, maxLevel: 36 },
       { pokemonId: 134, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 144, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 50, minLevel: 35, maxLevel: 36 },
       { pokemonId: 30, minLevel: 30, maxLevel: 36 },
-      { pokemonId: 70, minLevel: 33, maxLevel: 36 }
+      { pokemonId: 70, minLevel: 33, maxLevel: 36 },
+      100,
+      101
     ],
     signMessages: [
       '墓园试炼：击败3名守卫，首领现身。',
       '墓园生态：北幽灵，南毒系，月影有稀有气息。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [21, 6, 43, 100, 101, 137, 20, 50],
+    speciesPool: [21, 6, 43, 100, 101, 137, 20, 50, 173, 164, 180, 188, 153],
     positions: {
       lieutenants: [[8, 7], [11, 26], [30, 26]],
       trainers: [[15, 10], [8, 18], [24, 20], [34, 18]],
@@ -2985,7 +3913,7 @@ const REGION_GAMEPLAY_PROFILES = {
       '遗迹生态：北电超，西岩地，东电与多边兽。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [38, 45, 108, 103, 105, 135, 90, 91, 110, 111],
+    speciesPool: [38, 45, 108, 103, 105, 135, 90, 91, 110, 111, 153, 168],
     positions: {
       lieutenants: [[9, 7], [10, 26], [31, 27]],
       trainers: [[16, 10], [11, 18], [24, 18], [27, 24]],
@@ -3001,24 +3929,15 @@ const REGION_GAMEPLAY_PROFILES = {
     ecologyHint: '北岭偏格斗/岩石系，南岭偏岩石/地面系，东岭偏钢/普通系。',
     bossRarePokemon: { pokemonId: 140, weight: 18 },
     challengeRarePool: [
-      { pokemonId: 23, minLevel: 24, maxLevel: 29 },
-      36,
+      34,
+      35,
       47,
       60,
       61,
-      { pokemonId: 92, minLevel: 24, maxLevel: 29 },
-      { pokemonId: 95, minLevel: 24, maxLevel: 29 },
-      { pokemonId: 97, minLevel: 24, maxLevel: 27 },
-      { pokemonId: 99, minLevel: 24, maxLevel: 29 },
-      { pokemonId: 107, minLevel: 24, maxLevel: 25 },
-      { pokemonId: 111, minLevel: 24, maxLevel: 29 },
-      117,
-      { pokemonId: 124, minLevel: 24, maxLevel: 29 },
       125,
       127,
-      { pokemonId: 130, minLevel: 24, maxLevel: 29 },
-      141,
-      { pokemonId: 133, minLevel: 41, maxLevel: 47 }
+      139,
+      141
     ],
     bossSupportSpeciesIds: [34, 35, 51, 104, 109],
     signMessages: [
@@ -3026,7 +3945,7 @@ const REGION_GAMEPLAY_PROFILES = {
       '营地生态：北斗岩，南岩地，东钢普。',
       '完成区域试炼，会解锁隐藏稀有生态。'
     ],
-    speciesPool: [34, 35, 51, 131, 109, 139, 142, 104, 143],
+    speciesPool: [34, 35, 51, 131, 109, 139, 142, 104, 143, 159, 161, 155],
     positions: {
       lieutenants: [[8, 7], [10, 26], [32, 8]],
       trainers: [[11, 13], [18, 18], [25, 18], [31, 26]],
@@ -3046,17 +3965,16 @@ const REGION_GAMEPLAY_PROFILES = {
       10,
       { pokemonId: 12, minLevel: 55, maxLevel: 55 },
       { pokemonId: 94, minLevel: 47, maxLevel: 50 },
-      25,
       63,
       { pokemonId: 104, minLevel: 50, maxLevel: 50 },
       146,
       { pokemonId: 122, minLevel: 47, maxLevel: 50 },
       { pokemonId: 142, minLevel: 55, maxLevel: 55 },
-      69,
       { pokemonId: 145, minLevel: 47, maxLevel: 50 },
       9,
-      26,
-      27
+      72,
+      74,
+      76
     ],
     bossSupportSpeciesIds: [63, 122, 104, 146, 142],
     signMessages: [
@@ -3064,7 +3982,7 @@ const REGION_GAMEPLAY_PROFILES = {
       '高地生态：西草龙岩，南火水，东电龙。',
       '完成最终试炼，会解锁高地传说生态。'
     ],
-    speciesPool: [72, 74, 76, 129, 131, 143, 9, 10, 142, 12],
+    speciesPool: [72, 74, 76, 129, 131, 143, 9, 10, 142, 12, 123, 150],
     positions: {
       lieutenants: [[9, 7], [10, 26], [32, 26]],
       trainers: [[13, 18], [26, 10], [24, 24], [34, 27]],
@@ -3475,6 +4393,24 @@ function pickChallengeTrialSpecies(challengeRarePool, levels, fallbackPool = [])
   const rarePoolIds = Array.from(new Set(rareEntries.map((entry) => entry.pokemonId)))
   const fallbackIds = normalizeRarePoolEntries(fallbackPool).map((entry) => entry.pokemonId)
   const fallbackPoolIds = Array.from(new Set([...rarePoolIds, ...fallbackIds]))
+  const safeLevels = levels.map((level) => clampLevel(level))
+  const placeholderId = rarePoolIds[0] || fallbackPoolIds[0]
+  if (safeLevels.length > 0 && Number.isInteger(placeholderId)) {
+    const stagedTeam = buildChallengeBattleTeamFromUnlockBatch({
+      challengeRarePool: rareEntries,
+      baseTeam: safeLevels.map((level) => ({ pokemonId: placeholderId, level })),
+      unlockStage: 0,
+      targetSize: safeLevels.length,
+      bounds: {
+        minLevel: Math.min(...safeLevels),
+        maxLevel: Math.max(...safeLevels)
+      }
+    })
+    if (stagedTeam.length === safeLevels.length) {
+      return stagedTeam.map((entry) => entry.pokemonId)
+    }
+  }
+
   const usedSpeciesIds = new Set()
   const usedFamilyKeys = new Set()
   const markChosenSpecies = (pokemonId) => {
@@ -3891,14 +4827,14 @@ function buildRegionGameplayEvents(definition) {
       ),
       beforeBattleText: `试炼标记发出光芒：隐藏生态守护者会从 3 连战开始，逐步提升到最多 ${MAX_CHALLENGE_CHAIN_BATTLES} 连战（${challengeLevelText}）。完成后，它们才会按批次在草丛中出现。`,
       defeatedText: '试炼标记的光芒安静下来，你已经完成了这次挑战。',
-      completedText: `${definition.displayName}区域试炼今天已完成，明天凌晨刷新后会以新的强度再次开放。首通奖励不会重复，隐藏生态会按批次继续解锁。`,
+      completedText: `${definition.displayName}区域试炼今日已完成，明日凌晨刷新。`,
       challengeRarePool,
       challengeRareChance,
       challengeRareUnlockText,
       challengeRarePreviewText: challengeRarePool.length > 0
         ? `每次通关分批解锁隐藏生态：${challengeRareNames}，草丛约 ${challengeRareChanceText} 遇见`
         : '',
-      dailyDefeatedText: `${definition.displayName}区域试炼今天已完成，明天凌晨刷新后会以新的强度再次开放。首通奖励不会重复，隐藏生态会按批次继续解锁。`,
+      dailyDefeatedText: `${definition.displayName}区域试炼今日已完成，明日凌晨刷新。`,
       rewardItems: makeChallengeReward(definition.regionOrder, challengeChainLength)
     }
   }))
@@ -4037,7 +4973,7 @@ function buildRegionGameplayDecorations(definition, gameplayEvents) {
 }
 
 function buildRuntimeSignDecorations(definition, runtimeEvents) {
-  const signScale = scaleFromNpcBaseline(definition.id === 'GodotMap' ? 2.61 : 2.66)
+  const signScale = scaleFromNpcBaseline(definition.id === 'GodotMap' ? 3.05 : 3.12)
 
   return (runtimeEvents || [])
     .filter((evt) => evt.type === 'sign')
@@ -4049,7 +4985,7 @@ function buildRuntimeSignDecorations(definition, runtimeEvents) {
         x,
         y,
         scale: Number(evt.properties?.scale) || signScale,
-        rotation: resolveRoadsideSignRotation(definition, x, y),
+        rotation: SIGN_FACE_DOWN,
         sourceId: `${evt.id}_sign`,
         eventId: evt.id,
         eventType: evt.type
@@ -4389,11 +5325,42 @@ export function buildGodotRegionMap(rawDefinition) {
   clearEvents(grid, runtimeEvents)
   softenForestEdgeCollisions(grid)
 
-  ;(definition.scatter || []).forEach((group) => addScatter({ grid, output: decorations, ...group }))
+  ;(definition.scatter || []).forEach((group) => addScatter({
+    grid,
+    output: decorations,
+    definition,
+    runtimeEvents,
+    ...group
+  }))
+  if (!isPirateShoreMap(definition.id)) {
+    addThemeCorridorScatter({
+      grid,
+      output: decorations,
+      definition,
+      mapId: definition.id,
+      runtimeEvents,
+      count: definition.corridorScatterCount ?? 196,
+      layersPerCell: definition.corridorScatterLayers ?? 3,
+      salt: definition.corridorScatterSalt ?? 900 + (definition.regionOrder ?? 0) * 17
+    })
+  }
+
+  fillRegionOpenPlazas(grid, decorations, definition, runtimeEvents)
+  addOpenGroundFiller({
+    grid,
+    output: decorations,
+    definition,
+    runtimeEvents,
+    mapId: definition.id
+  })
 
   const bridges = deriveBridgeModelsFromGrid(grid, definition)
   paintBridgeModelFootprints(grid, bridges)
-  decorations = filterPathClearanceDecorations(decorations, grid, runtimeEvents)
+  decorations = filterLargeDecorationsOffGrassTiles(decorations, grid)
+  if (isPirateShoreMap(definition.id)) {
+    decorations = tunePirateShoreDecorationScales(decorations)
+  }
+  decorations = filterPathClearanceDecorations(decorations, grid, runtimeEvents, definition)
   decorations = filterFixedLandmarkOverlaps(decorations, runtimeEvents)
   decorations = filterBridgeSurfaceDecorations(decorations, bridges)
   decorations = filterRuntimeEventTileOverlaps(decorations, runtimeEvents)
@@ -4430,6 +5397,8 @@ export function buildGodotRegionMap(rawDefinition) {
     height: HEIGHT,
     renderMode: 'three-lowpoly',
     theme: MAP_THEME,
+    visualPalette: getRegionMapVisualPalette(definition.id),
+    renderForestWallTrees: shouldRenderInstancedForestWallTrees(definition.id),
     roadRenderStyle: 'orthogonal',
     tallGrassRate: definition.tallGrassRate ?? 0.22,
     regionOrder: definition.regionOrder,
@@ -4495,13 +5464,22 @@ const REGIONS = [
       { id: 'meadow_east_flowers', name: '星音东花地', x: 27, y: 5, width: 10, height: 6, encounterTableId: 'region_meadow_east_5_12', tallGrassRate: 0.2 }
     ],
     decorativeObjects: [
-      { type: 'nature_lily_large', x: 11.3, y: 8.7, scale: 0.8 },
-      { type: 'town_lantern', x: 2.8, y: 15.1, scale: 1.05 },
-      { type: 'town_lantern', x: 36.7, y: 15.1, scale: 1.05 }
+      // 中央巨大橡树 - 唯一视觉焦点
+      themeLandmark('nature_tree_oak', 20, 10, { scale: 3.2 }),
+      // 南侧野营角落（让玩家一眼记住“草径的南口”）
+      themeLandmark('nature_tent_detailed_open', 18, 27, { rotation: 0.08 }),
+      themeLandmark('nature_canoe', 14, 24, { rotation: -0.5 }),
+      // 北侧石阵（与草丛区形成对比）
+      themeLandmark('nature_stone_large', 14, 7, { rotation: 0.2 }),
+      themeLandmark('nature_rock_large', 16, 6, { rotation: -0.15 })
     ],
     scatter: [
-      { idPrefix: 'meadow_flowers', types: ['nature_flower_yellow', 'nature_flower_red', 'nature_flower_purple_a', 'platformer_flowers'], count: 54, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 120, scale: [0.72, 1.05], height: 0.16 },
-      { idPrefix: 'meadow_edges', types: ['nature_bush_large', 'nature_stone_flat_a', 'nature_stone_flat_b', 'town_hedge'], count: 40, allowedTiles: [TILE.wall], salt: 131, scale: [0.78, 1.16] }
+      // 密集的野花海洋 - 营造花海草原氛围
+      { idPrefix: 'meadow_flowers', types: ['nature_flower_yellow', 'nature_flower_red', 'nature_flower_purple_a', 'nature_flower_purple_b', 'platformer_flowers'], count: 160, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 120, scale: [1.0, 1.35], height: 0.16, blocksPath: false },
+      // 低矮草团补空白（不挡路）
+      { idPrefix: 'meadow_grass', types: ['nature_grass_small', 'nature_grass_large'], count: 110, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 127, scale: [1.0, 1.4], height: 0.16, blocksPath: false },
+      // 统一的灌木边界
+      { idPrefix: 'meadow_edges', types: ['nature_bush_large', 'nature_log_stack'], count: 60, allowedTiles: [TILE.wall], salt: 131, scale: [2.2, 2.8], height: 0.22 }
     ]
   },
   {
@@ -4543,11 +5521,23 @@ const REGIONS = [
       { id: 'lake_east_reeds', name: '东岸潮草', x: 29, y: 22, width: 9, height: 7, encounterTableId: 'region_lake_east_11_18', tallGrassRate: 0.23 }
     ],
     decorativeObjects: [
-      { type: 'nature_canoe', x: 27.4, y: 13.1, scale: 1.15, rotation: 0.3 }
+      // 湖心巨码头（玩家第一眼“雾湖记忆点”）
+      themeLandmark('shore_dock_small', 27, 16, { scale: 3.05 }),
+      // 两侧对称渔船（形成“湖心三件套”）
+      themeLandmark('pirate_boat_row_large', 24, 14, { rotation: 0.35 }),
+      themeLandmark('pirate_boat_row_large', 30, 18, { rotation: -0.45 }),
+      // 北侧漂流独木舟（指向北支路）
+      themeLandmark('nature_canoe', 18, 9, { rotation: 0.25 }),
+      // 南岸石圈（让南出口更像“码头集市”）
+      themeLandmark('hex_water_rocks', 23, 26, { rotation: -0.12 }),
+      themeLandmark('hex_water_rocks', 26, 27, { rotation: 0.35 })
     ],
     scatter: [
-      { idPrefix: 'lake_reeds', types: ['wetland_reed_clump', 'nature_lily_large', 'survival_patch_grass_large', 'nature_stone_flat_c'], count: 62, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 210, scale: [0.74, 1.18], height: 0.16 },
-      { idPrefix: 'lake_bank', types: ['nature_rock_small_h', 'survival_rock_a', 'hex_water_rocks'], count: 38, allowedTiles: [TILE.wall], salt: 216, scale: [0.75, 1.1] }
+      // 密集的芦苇丛 - 营造湖泊氛围
+      { idPrefix: 'lake_reeds', types: ['wetland_reed_clump', 'nature_lily_large'], count: 140, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 210, scale: [1.1, 1.45], height: 0.16, blocksPath: false },
+      { idPrefix: 'lake_grass', types: ['nature_grass_small', 'nature_grass_large'], count: 80, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 219, scale: [1.05, 1.35], height: 0.16, blocksPath: false },
+      // 水边岩石边界
+      { idPrefix: 'lake_edges', types: ['hex_water_rocks', 'nature_rock_large'], count: 60, allowedTiles: [TILE.wall], salt: 216, scale: [2.3, 2.9], height: 0.22 }
     ]
   },
   {
@@ -4590,13 +5580,21 @@ const REGIONS = [
       { id: 'farm_east_rows', name: '东麦田', x: 24, y: 23, width: 12, height: 6, encounterTableId: 'region_farm_east_17_24', tallGrassRate: 0.23 }
     ],
     decorativeObjects: [
-      { type: 'town_windmill', x: 8, y: 8, scale: 1.25 },
-      { type: 'hex_building_farm', x: 31, y: 9, scale: 1.05 },
-      { type: 'farm_cart_high', x: 25, y: 14, scale: 1.1 }
+      // 巨大风车 - 唯一视觉焦点
+      themeLandmark('town_windmill', 20, 10, { scale: 3.35 }),
+      // 农庄主路口的集市三件套（玩家从四个方向来都能一眼认出）
+      themeLandmark('town_cart', 23, 16, { rotation: 0.2 }),
+      themeLandmark('town_stall_red', 17, 15, { rotation: -0.25 }),
+      themeLandmark('town_stall_green', 16, 17, { rotation: 0.18 }),
+      // 水井旁补一个长凳角落
+      themeLandmark('town_stall_bench', 10, 12, { rotation: 0.45 })
     ],
     scatter: [
-      { idPrefix: 'farm_rows', types: ['nature_wheat_stage_a', 'nature_wheat_stage_b', 'nature_crop_carrot', 'nature_crop_pumpkin'], count: 76, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 310, scale: [0.8, 1.08], height: 0.16 },
-      { idPrefix: 'farm_edges', types: ['town_fence_low', 'nature_fence_simple', 'nature_fence_planks', 'town_lantern'], count: 54, allowedTiles: [TILE.wall], salt: 318, scale: [0.8, 1.12] }
+      // 密集的麦田海洋 - 营造丰收氛围
+      { idPrefix: 'farm_wheat', types: ['nature_wheat_stage_a', 'nature_wheat_stage_b'], count: 200, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 310, scale: [1.0, 1.35], height: 0.16, blocksPath: false },
+      { idPrefix: 'farm_grass', types: ['nature_grass_small', 'nature_grass_large', 'nature_flower_yellow'], count: 90, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 317, scale: [1.0, 1.4], height: 0.16, blocksPath: false },
+      // 树篱边界
+      { idPrefix: 'farm_edges', types: ['town_hedge_large', 'nature_fence_planks'], count: 60, allowedTiles: [TILE.wall], salt: 318, scale: [2.3, 2.9], height: 0.22 }
     ]
   },
   {
@@ -4619,6 +5617,11 @@ const REGIONS = [
       { points: [[31, 16], [31, 28]], width: 3, bridgeExtraLength: 0.1 },
       { points: [[20, 11], [24, 11]], width: 3 }
     ],
+    roadJunctions: [
+      { x: 20, y: 16, rx: 1.2, ry: 1.2 },
+      { x: 28, y: 28, rx: 1.1, ry: 1.1 },
+      { x: 31, y: 16, rx: 1.0, ry: 1.0 }
+    ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 13, y2: 10 },
       { shape: 'rect', x1: 6, y1: 23, x2: 17, y2: 28 },
@@ -4638,12 +5641,12 @@ const REGIONS = [
       { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 }
     ],
     decorativeObjects: [
-      { type: 'pirate_ship_wreck', x: 34, y: 24, scale: 1.18, rotation: -0.2 },
-      { type: 'pirate_boat_row_large', x: 30, y: 13, scale: 1.05, rotation: 0.45 }
+      { type: 'pirate_ship_wreck', x: 33, y: 19, scale: 1.02, rotation: -0.2 },
+      { type: 'pirate_boat_row_large', x: 30, y: 13, scale: 0.92, rotation: 0.45 }
     ],
     scatter: [
-      { idPrefix: 'shore_cargo', types: ['pirate_barrel', 'pirate_crate', 'pirate_chest', 'pirate_flag', 'pirate_flag_pennant', 'pirate_bottle'], count: 76, allowedTiles: [TILE.sand, TILE.grass, TILE.tallGrass], salt: 410, scale: [0.78, 1.12] },
-      { idPrefix: 'shore_edges', types: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c', 'pirate_patch_sand_foliage'], count: 54, allowedTiles: [TILE.wall], salt: 419, scale: [0.78, 1.2] }
+      { idPrefix: 'shore_cargo', types: ['pirate_barrel', 'pirate_crate', 'pirate_chest', 'pirate_flag', 'pirate_flag_pennant', 'pirate_bottle'], count: 76, allowedTiles: [TILE.sand], salt: 410, scale: [0.72, 1.02] },
+      { idPrefix: 'shore_edges', types: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c', 'pirate_patch_sand_foliage'], count: 54, allowedTiles: [TILE.wall], salt: 419, scale: [0.72, 1.05] }
     ]
   },
   {
@@ -4652,6 +5655,8 @@ const REGIONS = [
     regionOrder: 5,
     recommendedLevel: 32,
     levelRange: [29, 36],
+    corridorScatterCount: 168,
+    corridorScatterLayers: 2,
     startPosition: { x: 20, y: 3, direction: 'down' },
     clearings: [
       { shape: 'rect', x1: 12, y1: 1, x2: 27, y2: 11, tile: TILE.paleGrass },
@@ -4660,8 +5665,18 @@ const REGIONS = [
     ],
     roadPaths: [
       { points: [[20, 1], [20, 16], [38, 16]], width: 3 },
-      { points: [[20, 16], [10, 16], [10, 23]], width: 3 },
-      { points: [[10, 20], [15, 20]], width: 3 }
+      { points: [[20, 16], [8, 16], [8, 24], [16, 24], [16, 20]], width: 3 },
+      { points: [[20, 16], [16, 16], [16, 20]], width: 3 },
+      { points: [[12, 8], [28, 8]], width: 3 },
+      { points: [[28, 16], [28, 13]], width: 3 }
+    ],
+    roadJunctions: [
+      { x: 20, y: 16, rx: 1.25, ry: 1.25 },
+      { x: 16, y: 24, rx: 1.1, ry: 1.1 },
+      { x: 20, y: 8, rx: 1.0, ry: 1.0 }
+    ],
+    forestTrails: [
+      { points: [[8, 24], [8, 28], [16, 28]], radius: 0.44 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 5, y1: 5, x2: 13, y2: 10 },
@@ -4682,12 +5697,25 @@ const REGIONS = [
       { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 }
     ],
     decorativeObjects: [
-      { type: 'grave_character_ghost', x: 28, y: 13, scale: 1.05 },
-      { type: 'grave_coffin_old', x: 13, y: 19, scale: 1.0, rotation: 0.2 }
+      // 巨大陵墓 - 中央视觉焦点（偏心一点，避免“正中太死板”）
+      themeLandmark('grave_stone_wall_damaged', 19, 16, { scale: 3.5 }),
+      // 主记忆点：棺材广场 + 双灯
+      themeLandmark('grave_coffin_old', 18, 18, { rotation: 0.25 }),
+      themeLandmark('grave_lantern_glass', 16, 18, { rotation: -0.2 }),
+      themeLandmark('grave_lantern_glass', 20, 18, { rotation: 0.25 }),
+      // 幽灵守卫（站在陵墓前）
+      themeLandmark('grave_character_ghost', 19, 14, { scale: 2.65, rotation: -0.12 }),
+      // 次地标：长凳+南瓜角落
+      themeLandmark('grave_bench_damaged', 32, 18, { rotation: -0.15 }),
+      themeLandmark('grave_pumpkin_carved', 30, 19, { rotation: 0.12 })
     ],
     scatter: [
-      { idPrefix: 'grave_stones', types: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_cross_wood', 'grave_pumpkin', 'grave_pumpkin_carved', 'grave_urn_round'], count: 92, allowedTiles: [TILE.paleGrass, TILE.grass, TILE.tallGrass], salt: 510, scale: [0.78, 1.12] },
-      { idPrefix: 'grave_edges', types: ['grave_lantern_glass', 'grave_candle', 'grave_candle_multiple', 'grave_iron_fence_border', 'grave_stone_wall_damaged'], count: 48, allowedTiles: [TILE.wall], salt: 518, scale: [0.78, 1.1] }
+      // 密集的墓碑森林 - 营造阴森氛围（但别压到道路）
+      { idPrefix: 'grave_stones', types: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_cross_wood'], count: 165, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 512, scale: [0.92, 1.32], height: 0.16, minRoadDistance: 2.75, minEventDistance: 2.4, respectSampledScale: true },
+      // 南瓜/烛火点缀（不挡路）
+      { idPrefix: 'grave_mood', types: ['grave_pumpkin', 'grave_pumpkin_carved', 'grave_candle', 'grave_urn_round'], count: 70, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 516, scale: [0.9, 1.22], height: 0.16, minRoadDistance: 2.35, minEventDistance: 2.2, respectSampledScale: true, blocksPath: false },
+      // 破墙边界
+      { idPrefix: 'grave_edges', types: ['grave_stone_wall_damaged', 'grave_iron_fence_border'], count: 72, allowedTiles: [TILE.wall], salt: 518, scale: [2.4, 3.05], height: 0.22 }
     ]
   },
   {
@@ -4696,17 +5724,28 @@ const REGIONS = [
     regionOrder: 6,
     recommendedLevel: 38,
     levelRange: [35, 42],
+    corridorScatterCount: 180,
+    corridorScatterLayers: 2,
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
-      { shape: 'rect', x1: 1, y1: 12, x2: 38, y2: 20 },
-      { shape: 'rect', x1: 16, y1: 1, x2: 24, y2: 12 },
-      { shape: 'rect', x1: 10, y1: 22, x2: 29, y2: 30 }
+      { shape: 'rect', x1: 1, y1: 12, x2: 38, y2: 20, tile: TILE.paleGrass },
+      { shape: 'rect', x1: 16, y1: 1, x2: 24, y2: 12, tile: TILE.paleGrass },
+      { shape: 'rect', x1: 10, y1: 22, x2: 29, y2: 30, tile: TILE.paleGrass }
     ],
     roadPaths: [
-      { points: [[1, 16], [20, 16], [20, 1]], width: 3 },
-      { points: [[20, 16], [38, 16]], width: 3 },
+      { points: [[1, 16], [38, 16]], width: 3 },
+      { points: [[20, 16], [20, 1]], width: 3 },
       { points: [[20, 16], [20, 26], [30, 26]], width: 3 },
-      { points: [[28, 16], [28, 13]], width: 3 }
+      { points: [[28, 16], [28, 12]], width: 3 },
+      { points: [[12, 16], [12, 22], [28, 22], [28, 16]], width: 3 },
+      { points: [[32, 16], [32, 12]], width: 3 }
+    ],
+    roadJunctions: [
+      { x: 20, y: 16, rx: 1.3, ry: 1.3 },
+      { x: 28, y: 22, rx: 1.15, ry: 1.15 }
+    ],
+    forestTrails: [
+      { points: [[32, 12], [30, 10], [28, 10]], radius: 0.42 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 5, y1: 5, x2: 14, y2: 10 },
@@ -4728,13 +5767,22 @@ const REGIONS = [
       { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 }
     ],
     decorativeObjects: [
-      { type: 'hex_building_market', x: 10, y: 15, scale: 1.0 },
-      { type: 'hex_building_cabin', x: 28, y: 10, scale: 1.0 },
-      { type: 'hex_building_mine', x: 28, y: 22, scale: 1.0 }
+      // 中央神殿废墟 - 主视觉焦点
+      themeLandmark('hex_building_mine', 20, 16, { scale: 3.5 }),
+      // 两侧石柱
+      themeLandmark('hex_stone_hill', 12, 16, { scale: 3.05 }),
+      themeLandmark('hex_stone_hill', 28, 16, { scale: 3.05 }),
+      // 东北泉水区的桥+码头组合（让“泉水”更像一处景点）
+      themeLandmark('hex_bridge', 31, 12, { rotation: 0.5 }),
+      themeLandmark('hex_building_dock', 32, 12, { rotation: 0.15 })
     ],
     scatter: [
-      { idPrefix: 'hex_ruins', types: ['hex_stone_rocks', 'hex_stone_hill', 'hex_grass_forest', 'hex_unit_tree', 'platformer_stones', 'platformer_rocks'], count: 86, allowedTiles: [TILE.grass, TILE.tallGrass, TILE.wall], salt: 610, scale: [0.76, 1.12] },
-      { idPrefix: 'hex_edges', types: ['survival_metal_panel', 'platformer_platform_overhang', 'town_rock_small'], count: 32, allowedTiles: [TILE.wall], salt: 618, scale: [0.82, 1.18] }
+      // 密集的遗迹碎石 - 营造古老氛围
+      { idPrefix: 'hex_ruins', types: ['hex_stone_rocks', 'hex_grass_forest', 'platformer_rocks'], count: 160, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 610, scale: [1.05, 1.45], minRoadDistance: 2.2, minEventDistance: 2.1, respectSampledScale: true },
+      // 遗迹草团补空白（不挡路）
+      { idPrefix: 'hex_grass', types: ['nature_grass_small', 'nature_grass_large'], count: 90, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 616, scale: [1.0, 1.35], minRoadDistance: 2.05, minEventDistance: 2, blocksPath: false },
+      // 巨石边界
+      { idPrefix: 'hex_edges', types: ['hex_stone_hill', 'hex_stone_rocks'], count: 60, allowedTiles: [TILE.wall], salt: 618, scale: [2.5, 3.0], height: 0.24 }
     ]
   },
   {
@@ -4750,10 +5798,18 @@ const REGIONS = [
       { shape: 'rect', x1: 22, y1: 22, x2: 32, y2: 29 }
     ],
     roadPaths: [
-      { points: [[1, 16], [20, 16], [38, 16]], width: 3 },
+      { points: [[1, 16], [38, 16]], width: 3 },
       { points: [[20, 16], [13, 16], [13, 8]], width: 3 },
-      { points: [[20, 16], [26, 16], [26, 26]], width: 3 },
-      { points: [[23, 16], [23, 13]], width: 3 }
+      { points: [[20, 16], [26, 16], [26, 26], [22, 26], [22, 24]], width: 3 },
+      { points: [[23, 16], [23, 12]], width: 3 },
+      { points: [[32, 16], [32, 8]], width: 3 }
+    ],
+    roadJunctions: [
+      { x: 20, y: 16, rx: 1.2, ry: 1.2 },
+      { x: 26, y: 26, rx: 1.1, ry: 1.1 }
+    ],
+    forestTrails: [
+      { points: [[22, 26], [24, 28], [26, 28]], radius: 0.4 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 12, y2: 10 },
@@ -4774,13 +5830,19 @@ const REGIONS = [
       { id: 'ridge_east_grass', name: '东岭草丛', x: 28, y: 5, width: 9, height: 7, encounterTableId: 'region_ridge_east_41_47', tallGrassRate: 0.27 }
     ],
     decorativeObjects: [
-      { type: 'survival_tent', x: 25, y: 25, scale: 1.1 },
-      { type: 'survival_workbench', x: 28, y: 25, scale: 1.0 },
-      { type: 'survival_campfire_pit', x: 24, y: 27, scale: 1.0 }
+      // 中央营火 + 帐篷圈（玩家一眼记住“铁木营地”）
+      themeLandmark('survival_campfire_fishing', 20, 16, { scale: 3.2 }),
+      themeLandmark('survival_tent', 18, 15, { rotation: -0.25 }),
+      themeLandmark('survival_tent', 22, 17, { rotation: 0.35 }),
+      themeLandmark('survival_structure_canvas', 16, 16, { rotation: 0.08 }),
+      themeLandmark('survival_workbench', 24, 16, { rotation: -0.12 }),
+      themeLandmark('survival_signpost', 20, 18, { rotation: 0.05 })
     ],
     scatter: [
-      { idPrefix: 'ridge_camp', types: ['survival_box', 'survival_barrel', 'survival_chest', 'survival_resource_wood', 'survival_resource_planks', 'survival_tool_axe', 'survival_tool_pickaxe'], count: 76, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 710, scale: [0.78, 1.12] },
-      { idPrefix: 'ridge_rocks', types: ['survival_rock_a', 'survival_rock_b', 'survival_rock_c', 'nature_log_stack', 'nature_stump_round_detailed'], count: 58, allowedTiles: [TILE.wall], salt: 718, scale: [0.76, 1.18] }
+      // 物资散落（不阻挡，保证草丛可达）
+      { idPrefix: 'ridge_camp', types: ['survival_box', 'survival_barrel', 'survival_chest', 'survival_resource_wood', 'survival_resource_planks'], count: 120, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 710, scale: [1.1, 1.55], minRoadDistance: 2.2, minEventDistance: 2.1, blocksPath: false },
+      // 岩石边界
+      { idPrefix: 'ridge_edges', types: ['survival_rock_a', 'survival_rock_b', 'survival_rock_c'], count: 60, allowedTiles: [TILE.wall], salt: 718, scale: [2.4, 3.0], height: 0.22 }
     ]
   },
   {
@@ -4789,6 +5851,8 @@ const REGIONS = [
     regionOrder: 8,
     recommendedLevel: 56,
     levelRange: [52, 60],
+    corridorScatterCount: 172,
+    corridorScatterLayers: 2,
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
       { shape: 'rect', x1: 1, y1: 12, x2: 38, y2: 20, tile: TILE.paleGrass },
@@ -4796,9 +5860,19 @@ const REGIONS = [
       { shape: 'rect', x1: 17, y1: 22, x2: 28, y2: 29, tile: TILE.paleGrass }
     ],
     roadPaths: [
-      { points: [[1, 16], [20, 16], [31, 16], [31, 9]], width: 3 },
-      { points: [[20, 16], [20, 26]], width: 3 },
-      { points: [[17, 16], [17, 13]], width: 3 }
+      { points: [[1, 16], [12, 16], [12, 10], [31, 10], [31, 16], [38, 16]], width: 3 },
+      { points: [[20, 16], [20, 26], [24, 26]], width: 3 },
+      { points: [[17, 16], [17, 12]], width: 3 },
+      { points: [[20, 16], [18, 16], [18, 18]], width: 3 },
+      { points: [[24, 26], [28, 26], [28, 22]], width: 3 }
+    ],
+    roadJunctions: [
+      { x: 31, y: 10, rx: 1.2, ry: 1.2 },
+      { x: 20, y: 16, rx: 1.25, ry: 1.25 },
+      { x: 18, y: 18, rx: 1.0, ry: 1.0 }
+    ],
+    forestTrails: [
+      { points: [[12, 10], [9, 7], [10, 7]], radius: 0.4 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 15, y2: 10 },
@@ -4819,13 +5893,22 @@ const REGIONS = [
       { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 }
     ],
     decorativeObjects: [
-      { type: 'hex_stone_hill', x: 31, y: 9, scale: 1.25 },
-      { type: 'platformer_flag', x: 29, y: 9, scale: 1.2 },
-      { type: 'platformer_flag', x: 33, y: 9, scale: 1.2 }
+      // 主记忆点：高地石阵 + 悬台旗帜
+      themeLandmark('hex_stone_hill', 20, 16, { scale: 3.7 }),
+      themeLandmark('platformer_platform_overhang', 31, 10, { rotation: 0.08 }),
+      themeLandmark('platformer_flag', 29, 10, { rotation: 0.05 }),
+      themeLandmark('platformer_flag', 33, 10, { rotation: -0.05 }),
+      // 西北“峡口”石门感
+      themeLandmark('ridge_block_grass_edge', 12, 12, { rotation: 0.2 }),
+      themeLandmark('ridge_block_grass_edge', 12, 8, { rotation: -0.2 })
     ],
     scatter: [
-      { idPrefix: 'peak_stones', types: ['hex_stone_rocks', 'hex_stone_hill', 'platformer_rocks', 'platformer_stones', 'ridge_block_grass_edge'], count: 88, allowedTiles: [TILE.paleGrass, TILE.grass, TILE.tallGrass, TILE.wall], salt: 810, scale: [0.78, 1.16] },
-      { idPrefix: 'peak_supplies', types: ['mine_crate_strong', 'survival_metal_panel', 'survival_workbench', 'platformer_chest', 'pirate_cannon'], count: 36, allowedTiles: [TILE.wall], salt: 818, scale: [0.78, 1.12] }
+      // 巨石群（远离道路，别堵草丛）
+      { idPrefix: 'peak_stones', types: ['platformer_rocks', 'platformer_stones', 'ridge_block_grass_edge'], count: 120, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 812, scale: [1.15, 1.7], height: 0.18, minRoadDistance: 2.75, minEventDistance: 2.4, respectSampledScale: true },
+      // 花草点缀（不挡路）
+      { idPrefix: 'peak_flowers', types: ['platformer_flowers', 'platformer_flowers_tall'], count: 70, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 817, scale: [1.0, 1.35], height: 0.16, minRoadDistance: 2.1, minEventDistance: 2.1, blocksPath: false },
+      // 悬崖边界
+      { idPrefix: 'peak_edges', types: ['ridge_block_grass_edge', 'hex_stone_hill'], count: 72, allowedTiles: [TILE.wall], salt: 818, scale: [2.6, 3.2], height: 0.24 }
     ],
     expansionSlots: [
       { direction: 'east', recommendedLevel: 65, note: 'Reserved for post-60 expansion.' }

@@ -463,6 +463,14 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
       if (outsiderVariantMembers.length > 0) {
         errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} contains species outside unlock pool families: ${outsiderVariantMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
       }
+      const unlockBatch = rarePool.slice(
+        getChallengeRareUnlockedCountForStage(rarePool.length, victoryCount),
+        getChallengeRareUnlockedCountForStage(rarePool.length, victoryCount + 1)
+      )
+      const outsiderBatchMembers = variantTeam.filter((member) => !isTeamMemberFromRarePool(member, unlockBatch))
+      if (unlockBatch.length > 0 && outsiderBatchMembers.length > 0) {
+        errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} guardians must match unlock batch: ${outsiderBatchMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
+      }
     }
     if (challengeDistinctFamilyCount >= variantIds.length) {
       const duplicateVariantFamilies = findDuplicateEvolutionFamilyMembers(variantIds)

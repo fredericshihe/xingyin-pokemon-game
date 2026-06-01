@@ -1,5 +1,5 @@
 import { TYPES } from './constants'
-import { MOVES } from './gameData'
+import { MOVES, POTIONS } from './gameData'
 import { calculateBattleDamage, getStabMultiplier, getTypeEffectiveness } from './battleDamage'
 import { getTrainerRoleBalance, normalizeTrainerRole } from './gameBalance'
 
@@ -93,7 +93,7 @@ const AI_ROLE_PROFILES = {
     lowHpUtilityPenalty: 1.24,
     betterDamagePenalty: 1.18,
     randomMultiplier: 0.72,
-    minRandomChance: 0.03,
+    minRandomChance: 0.05,
     temperatureMultiplier: 0.72,
     minTemperature: 5,
     finishLockMultiplier: 0.18,
@@ -113,7 +113,7 @@ const AI_ROLE_PROFILES = {
     lowHpUtilityPenalty: 1.42,
     betterDamagePenalty: 1.28,
     randomMultiplier: 0.58,
-    minRandomChance: 0.02,
+    minRandomChance: 0.05,
     temperatureMultiplier: 0.62,
     minTemperature: 4,
     finishLockMultiplier: 0.14,
@@ -204,7 +204,14 @@ const getCurrentHp = (mon) => Math.max(0, Number(mon?.currentHp ?? mon?.hp ?? mo
 const getMaxHp = (mon) => Math.max(1, Number(mon?.maxHp ?? mon?.hp ?? 1) || 1)
 const getCurrentMp = (mon) => Math.max(0, Number(mon?.currentMp ?? mon?.mp ?? mon?.maxMp ?? 0) || 0)
 
-const getHpRatio = (mon) => getCurrentHp(mon) / getMaxHp(mon)
+const getHpRatio = (mon) => {
+  const maxHp = getMaxHp(mon)
+  if (!maxHp || maxHp <= 0) {
+    console.warn('[AI] Invalid maxHp detected, returning 0', { mon })
+    return 0
+  }
+  return getCurrentHp(mon) / maxHp
+}
 
 const getMoveAccuracy = (move) => (
   typeof move?.accuracy === 'number' ? Math.max(1, Math.min(100, move.accuracy)) : 100
@@ -223,6 +230,13 @@ const hasUserStatusRequirement = (move, user) => (
 const getLastMoveKey = (mon) => {
   const moveKey = mon?.volatileStatuses?.lastMoveKey
   return MOVES[moveKey] ? moveKey : null
+}
+
+// 预判：对手正在蓄力（如百万吨冲击/破坏光线第一回合），本回合不会造成伤害，
+// 这是一个明确、无作弊的安全信号——AI 应抓住机会强化/上状态，而非盲目对拼。
+const isTargetInChargeWindow = (targetMon) => {
+  const chargingMove = targetMon?.volatileStatuses?.chargingMove
+  return Boolean(chargingMove && MOVES[chargingMove])
 }
 
 const canUseMove = (enemyMon, targetMon, moveKey) => {
@@ -407,7 +421,25 @@ export const scoreEnemyMove = ({
 
   if (accuracy < 100) score -= (100 - accuracy) * 0.22
   score -= Math.max(0, (Number(move.cost) || 0) - 8) * 0.45 * profile.costWeight
-  score -= ((Number(move.cost) || 0) / enemyMp) * 4 * profile.costWeight
+
+  // 计算 MP 消耗比率（防止除零）
+  const currentMp = getCurrentMp(enemyMon)
+  const mpRatio = currentMp > 0 ? (Number(move.cost) || 0) / currentMp : 0
+  score -= mpRatio * 4 * profile.costWeight
+
+  // 预判：对手正在蓄力的回合不会造成伤害，AI 抓住这个安全窗口强化或上状态。
+  // 仅训练师 AI 启用，且按技巧（setupWeight/statusWeight 已含角色梯度）放大收益。
+  if (battleKind === 'trainer' && isTargetInChargeWindow(targetMon)) {
+    const isSetupMove = move.category === 'status' && (
+      (move.statChange && move.statChange.target === 'attacker' && Number(move.statChange.stages) > 0) ||
+      (Array.isArray(move.statChanges) && move.statChanges.some((entry) => entry.target === 'attacker' && Number(entry.stages) > 0))
+    )
+    const isStatusMove = move.category === 'status' && Boolean(move.status)
+    const isHealMove = move.effect === 'heal'
+    if (isSetupMove) score += 26 * profile.setupWeight
+    else if (isStatusMove) score += 20 * profile.statusWeight
+    else if (isHealMove && getHpRatio(enemyMon) < 0.85) score += 18 * profile.healWeight
+  }
 
   const previousMove = getLastMoveKey(enemyMon)
   if (previousMove === moveKey && candidates.length > 1) {
@@ -729,6 +761,88 @@ export function chooseTrainerSwitchTarget(options = {}) {
   return evaluateTrainerSwitchDecision(options).target
 }
 
+// 伤药从弱到强排序，便于按 HP 缺口选择恰当强度（避免厉害伤药治轻伤的浪费）。
+const POTION_TIERS = ['potion', 'super_potion', 'hyper_potion']
+  .filter((key) => POTIONS[key])
+  .map((key) => ({
+    key,
+    healAmount: Math.max(0, Number(POTIONS[key]?.healAmount) || 0)
+  }))
+
+const getRecentEnemyItemCount = (battleLogs = [], lookback = 10) => (
+  (Array.isArray(battleLogs) ? battleLogs.slice(-lookback) : [])
+    .filter((message) => typeof message === 'string' && message.startsWith('对手使用了 '))
+    .length
+)
+
+// 选择最合适的伤药：优先能补满缺口的最弱一档，避免大材小用；都补不满时用最强一档。
+const pickPotionForDeficit = (hpDeficit) => {
+  const sufficient = POTION_TIERS.find((tier) => tier.healAmount >= hpDeficit)
+  return (sufficient || POTION_TIERS[POTION_TIERS.length - 1])?.key || null
+}
+
+/**
+ * 训练师 AI 是否使用回复道具（伤药）。仅 boss/精英类角色拥有有限预算。
+ * 设计目标：在当前宝可梦濒危、换人又不划算时，用一次伤药续命续压制，
+ * 但不会被对手本回合直接打死（那种情况下用药是浪费，应改为换人/进攻）。
+ */
+export function evaluateTrainerItemDecision({
+  activeEnemyMon,
+  targetMon,
+  battleKind = 'wild',
+  trainerRole = 'normal',
+  potionsRemaining = 0,
+  battleLogs = [],
+  random = Math.random
+} = {}) {
+  const decline = (reason = 'no_item') => ({ shouldUseItem: false, itemKey: null, reason, probability: 0 })
+  if (battleKind !== 'trainer' || !activeEnemyMon || !targetMon) return decline('not_trainer')
+  if (potionsRemaining <= 0 || POTION_TIERS.length === 0) return decline('no_budget')
+  if (activeEnemyMon?.volatileStatuses?.chargingMove) return decline('charging')
+
+  const roleBalance = getTrainerRoleBalance(trainerRole)
+  const threshold = Number(roleBalance.potionHpThreshold) || 0
+  if (threshold <= 0) return decline('role_no_potion')
+
+  const hpRatio = getHpRatio(activeEnemyMon)
+  if (hpRatio <= 0 || hpRatio > threshold) return decline('healthy')
+
+  const maxHp = getMaxHp(activeEnemyMon)
+  const currentHp = getCurrentHp(activeEnemyMon)
+  const hpDeficit = Math.max(0, maxHp - currentHp)
+  // 缺口太小不值得耗费一次珍贵的道具配额。
+  if (hpDeficit < maxHp * 0.32) return decline('deficit_too_small')
+
+  // 若对手本回合就能打死当前宝可梦，治疗只是把药喂给对手，改为不治疗（让上层走换人/进攻）。
+  const incomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
+  const lethalThisTurn = incomingOutcome.damage >= currentHp
+  const targetSlower = (Number(activeEnemyMon?.spd) || 0) >= (Number(targetMon?.spd) || 0)
+  // 对手更慢时，先治疗仍能在挨打前回血；对手更快且能秒杀则放弃治疗。
+  if (lethalThisTurn && !targetSlower) return decline('would_be_wasted')
+
+  const itemKey = pickPotionForDeficit(hpDeficit)
+  if (!itemKey) return decline('no_potion_item')
+
+  // 越濒危越倾向用药；最近刚用过则降低频率，避免连续刷药的机械感。
+  const urgency = Math.max(0, threshold - hpRatio) / Math.max(0.01, threshold)
+  const recentItemUse = getRecentEnemyItemCount(battleLogs)
+  const aiSkill = Number(roleBalance.aiSkill) || 0.5
+  let probability = 0.32 + urgency * 0.5 + Math.max(0, aiSkill - 0.7) * 0.6
+  if (lethalThisTurn && targetSlower) probability = Math.min(0.95, probability + 0.3)
+  probability -= recentItemUse * 0.4
+  probability = Math.max(0, Math.min(0.92, probability))
+
+  const shouldUseItem = random() < probability
+  return {
+    shouldUseItem,
+    itemKey: shouldUseItem ? itemKey : null,
+    suggestedItemKey: itemKey,
+    reason: shouldUseItem ? (lethalThisTurn ? 'emergency_heal' : 'sustain_heal') : 'held_item',
+    probability,
+    hpRatio
+  }
+}
+
 export function chooseTrainerBattleAction({
   enemyTeam = [],
   activeEnemyMon,
@@ -738,6 +852,7 @@ export function chooseTrainerBattleAction({
   trainerStyle = null,
   battleLogs = [],
   allowSwitch = true,
+  potionsRemaining = 0,
   random = Math.random
 } = {}) {
   const moveKey = chooseBattleEnemyMove({
@@ -747,6 +862,26 @@ export function chooseTrainerBattleAction({
     trainerRole,
     trainerStyle
   })
+
+  if (battleKind === 'trainer' && potionsRemaining > 0) {
+    const itemDecision = evaluateTrainerItemDecision({
+      activeEnemyMon,
+      targetMon,
+      battleKind,
+      trainerRole,
+      potionsRemaining,
+      battleLogs,
+      random
+    })
+    if (itemDecision.shouldUseItem && itemDecision.itemKey) {
+      return {
+        type: 'item',
+        itemKey: itemDecision.itemKey,
+        reason: itemDecision.reason,
+        itemDecision
+      }
+    }
+  }
 
   if (allowSwitch && battleKind === 'trainer') {
     const switchDecision = evaluateTrainerSwitchDecision({

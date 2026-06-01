@@ -27,7 +27,8 @@ jobs:
 
       - run: npm run build
         env:
-          VITE_BASE_PATH: /xingyin-pokemon-game/
+          # 自定义域名 https://pokemongame.site/ 根路径托管
+          VITE_BASE_PATH: /
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 

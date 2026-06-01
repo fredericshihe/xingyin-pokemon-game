@@ -52,7 +52,7 @@ body {
   scrollbar-width: none;
 }
 
-/* 全屏自适应：手机 / 平板 / 电脑均铺满视口 */
+/* 全屏自适应：默认居中门屏；游戏主壳用 --immersive 铺满 */
 .game-app-bg {
   position: relative;
   min-height: 100vh;
@@ -60,19 +60,74 @@ body {
   width: 100%;
   overflow: hidden;
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2.4vw, 24px);
   background:
     linear-gradient(135deg, rgba(224, 252, 239, 0.92), rgba(219, 234, 254, 0.94) 48%, rgba(254, 243, 199, 0.86)),
     repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 1px, transparent 1px 22px);
+}
+
+.game-app-bg--immersive,
+.game-app-bg.launch-adventure,
+.game-app-bg.teacher-dashboard,
+.game-app-bg:has(> .game-console-shell),
+.game-app-bg:has(> .launch-console),
+.game-app-bg:has(> .launch-story-console) {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+.auth-page.game-app-bg {
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 30px);
+}
+
+.game-gate-card {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  pointer-events: auto;
+  flex: 0 0 auto;
+  align-self: center;
+  width: min(100%, clamp(320px, 92vw, 520px));
+}
+
+.game-entry-loading__bar {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.game-entry-loading__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0ea5e9, #22c55e);
+  transition: width 180ms ease;
+}
+
+.launch-screen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  overflow-y: auto;
+  background: rgba(8, 17, 31, 0.28);
+  backdrop-filter: blur(3px);
 }
 
 .game-app-bg::before {
   content: "";
   position: absolute;
   inset: 0;
-  pointer-events: auto;
+  pointer-events: none;
   background:
     linear-gradient(90deg, rgba(20, 184, 166, 0.08), transparent 24%, rgba(248, 113, 113, 0.06) 72%, transparent),
     repeating-linear-gradient(90deg, transparent 0 54px, rgba(255,255,255,0.18) 54px 56px),
@@ -6976,7 +7031,7 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
     overflow-y: auto;
-    padding: 52px 12px 16px;
+    padding: 8px 8px 16px;
   }
 
   .teacher-dashboard {
@@ -6985,20 +7040,113 @@ body {
     min-height: 100dvh;
   }
 
+  .teacher-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .teacher-header__brand {
+    width: 100%;
+  }
+
+  .teacher-header__icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .teacher-header__title {
+    font-size: 1.1rem;
+  }
+
+  .teacher-header__subtitle {
+    font-size: 0.8rem;
+  }
+
+  .teacher-header__stats {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .teacher-stat-pill {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+
   .teacher-layout {
     grid-template-columns: 1fr;
     flex: 0 0 auto;
     overflow: visible;
+    gap: 12px;
   }
 
   .teacher-sidebar {
-    max-height: 280px;
+    max-height: none;
+    padding: 12px;
+  }
+
+  .teacher-student-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .teacher-student-card {
+    grid-template-columns: 36px 1fr auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .teacher-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .teacher-student-card__name {
+    font-size: 0.88rem;
+  }
+
+  .teacher-student-card__user,
+  .teacher-student-card__meta {
+    font-size: 0.7rem;
+  }
+
+  .teacher-student-card__gold {
+    font-size: 0.95rem;
+  }
+
+  .teacher-student-card__energy {
+    font-size: 0.68rem;
   }
 
   .teacher-main {
     height: auto;
     overflow: visible;
     padding-right: 0;
+  }
+
+  .teacher-panel {
+    padding: 14px;
+  }
+
+  .teacher-panel__head h2 {
+    font-size: 1rem;
+  }
+
+  .teacher-tabs {
+    gap: 6px;
+  }
+
+  .teacher-tab {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .teacher-tab i {
+    font-size: 0.85rem;
   }
 
   .teacher-profile__grid {
@@ -7008,6 +7156,36 @@ body {
   .teacher-form-row,
   .teacher-form-row--3 {
     grid-template-columns: 1fr;
+  }
+
+  .teacher-field__label {
+    font-size: 0.85rem;
+  }
+
+  .teacher-input,
+  .teacher-select {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+
+  .teacher-button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  .teacher-presets {
+    gap: 6px;
+  }
+
+  .teacher-preset-chip {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .game-gate-card {
+    width: min(100%, clamp(400px, 42vw, 640px));
   }
 }
 

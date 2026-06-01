@@ -1,8 +1,7 @@
-import React, { Component, lazy, memo, Suspense, useMemo } from 'react'
+import React, { Component, memo, useMemo } from 'react'
 import { getMapConfig } from '../data/maps/mapConfig'
 import { getAdventureMapInfo } from './data/overworldMaps'
-
-const ThreeLowPolyMap = lazy(() => import('./ThreeLowPolyMap'))
+import ThreeLowPolyMap from './ThreeLowPolyMap'
 
 class ThreeMapLazyErrorBoundary extends Component {
   constructor(props) {
@@ -27,7 +26,7 @@ class ThreeMapLazyErrorBoundary extends Component {
               <div className="map-viewport flex items-center justify-center text-white/90">
                 <div className="game-card p-4 text-center text-slate-700">
                   <div className="text-lg font-black mb-2">地图资源加载失败</div>
-                  <div className="text-sm font-bold text-slate-500 mb-3">开发服务依赖缓存已刷新，请重新加载地图。</div>
+                  <div className="text-sm font-bold text-slate-500 mb-3">请重新加载页面后再试。</div>
                   <button type="button" className="game-primary-button px-4 py-2" onClick={() => window.location.reload()}>
                     重新加载
                   </button>
@@ -99,29 +98,27 @@ function GameCanvas({
 
   return (
     <ThreeMapLazyErrorBoundary>
-      <Suspense fallback={<div className="map-screen-v2"><div className="map-scene-area"><div className="map-viewport-shell"><div className="map-viewport flex items-center justify-center text-white/90">地图场景加载中...</div></div></div></div>}>
-        <ThreeLowPolyMap
-          playerPos={playerPos}
-          mapGrid={mapGrid}
-          currentMapName={currentMapName}
-          mapConfig={mapConfig}
-          encounterCooldownSteps={encounterCooldownSteps}
-          cloudBlocked={cloudBlocked}
-          mapActive={mapActive}
-          onPlayerMove={onPlayerMove}
-          onEncounter={onEncounter}
-          onCollect={onCollect}
-          onNavigate={onNavigate}
-          onMapWarp={onMapWarp}
-          onZoneEnter={onZoneEnter}
-          onEncounterCooldownChange={onEncounterCooldownChange}
-          collectedEventIds={collectedEventIds}
-          springRestoreAnimation={springRestoreAnimation}
-          currentMapBossCompleted={currentMapBossCompleted}
-          mapEventVisualState={mapEventVisualState}
-          encounterZoneLocks={encounterZoneLocks}
-        />
-      </Suspense>
+      <ThreeLowPolyMap
+        playerPos={playerPos}
+        mapGrid={mapGrid}
+        currentMapName={currentMapName}
+        mapConfig={mapConfig}
+        encounterCooldownSteps={encounterCooldownSteps}
+        cloudBlocked={cloudBlocked}
+        mapActive={mapActive}
+        onPlayerMove={onPlayerMove}
+        onEncounter={onEncounter}
+        onCollect={onCollect}
+        onNavigate={onNavigate}
+        onMapWarp={onMapWarp}
+        onZoneEnter={onZoneEnter}
+        onEncounterCooldownChange={onEncounterCooldownChange}
+        collectedEventIds={collectedEventIds}
+        springRestoreAnimation={springRestoreAnimation}
+        currentMapBossCompleted={currentMapBossCompleted}
+        mapEventVisualState={mapEventVisualState}
+        encounterZoneLocks={encounterZoneLocks}
+      />
     </ThreeMapLazyErrorBoundary>
   )
 }

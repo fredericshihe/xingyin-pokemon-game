@@ -1,6 +1,7 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { getAdventureMapInfo } from './data/overworldMaps'
+import { Group } from 'three'
+import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo } from './data/overworldMaps'
 import { MAP_MODEL_MANIFEST } from './data/mapModelManifest.generated.js'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { assetUrl } from '../utils/assetUrl'
@@ -27,6 +28,7 @@ const MODEL_URLS = {
   treePine: `${MODEL_BASE}tree_pineTallA_detailed.glb`,
   rock: `${MODEL_BASE}rock_largeA.glb`,
   stone: `${MODEL_BASE}stone_largeA.glb`,
+  logStack: `${MODEL_BASE}log_stack.glb`,
   flowerYellow: `${MODEL_BASE}flower_yellowA.glb`,
   flowerRed: `${MODEL_BASE}flower_redA.glb`,
   mushroom: `${MODEL_BASE}mushroom_redGroup.glb`,
@@ -54,6 +56,78 @@ SHARED_GLTF_LOADER.setDRACOLoader(DRACO_LOADER)
 const MODEL_SCENE_CACHE = new Map()
 const MODEL_LOAD_PROMISE_CACHE = new Map()
 
+const DEFAULT_MODEL_TIMEOUT_MS = 45000
+const DEFAULT_MODEL_CONCURRENCY = 2
+const DEFAULT_MODEL_RETRIES = 4
+
+const delay = (ms) => new Promise((resolve) => {
+  if (typeof window !== 'undefined') {
+    window.setTimeout(resolve, ms)
+    return
+  }
+  setTimeout(resolve, ms)
+})
+
+function resolveModelPreloadOptions(overrides = {}) {
+  const base = {
+    timeoutMs: DEFAULT_MODEL_TIMEOUT_MS,
+    concurrency: DEFAULT_MODEL_CONCURRENCY,
+    retries: DEFAULT_MODEL_RETRIES
+  }
+
+  if (typeof navigator === 'undefined') {
+    return { ...base, ...overrides }
+  }
+
+  const connection = navigator.connection
+    || navigator.mozConnection
+    || navigator.webkitConnection
+  const effectiveType = connection?.effectiveType || ''
+  const saveData = connection?.saveData === true
+
+  if (saveData || effectiveType === 'slow-2g' || effectiveType === '2g') {
+    base.timeoutMs = 90000
+    base.concurrency = 1
+    base.retries = 6
+  } else if (effectiveType === '3g') {
+    base.timeoutMs = 70000
+    base.concurrency = 2
+    base.retries = 5
+  }
+
+  return { ...base, ...overrides }
+}
+
+export function resetModelLoadCache() {
+  MODEL_SCENE_CACHE.clear()
+  MODEL_LOAD_PROMISE_CACHE.clear()
+}
+
+function createEmptyModelScene(key) {
+  const scene = new Group()
+  scene.name = `missing-model:${key}`
+  return scene
+}
+
+function cacheEmptyModelScene(key) {
+  const scene = createEmptyModelScene(key)
+  MODEL_SCENE_CACHE.set(key, scene)
+  MODEL_LOAD_PROMISE_CACHE.delete(key)
+  return scene
+}
+
+async function verifyModelAssetExists(key) {
+  const url = MODEL_URLS[key]
+  if (!url) return false
+  if (typeof fetch !== 'function') return true
+  try {
+    const response = await fetch(url, { method: 'HEAD', cache: 'force-cache' })
+    return response.ok
+  } catch {
+    return true
+  }
+}
+
 const CORE_MODEL_KEYS = new Set([
   'grass',
   'grassLarge',
@@ -63,6 +137,7 @@ const CORE_MODEL_KEYS = new Set([
   'treePine',
   'rock',
   'stone',
+  'logStack',
   'flowerYellow',
   'flowerRed',
   'mushroom',
@@ -86,11 +161,16 @@ export function getDecorativeModel(type) {
     case 'tree-pine':
       return { key: 'treePine', scale: 1.55 }
     case 'bush-large':
+    case 'nature_bush_large':
       return { key: 'bush', scale: 1.18 }
     case 'rock-large':
+    case 'nature_rock_large':
       return { key: 'rock', scale: 1.08 }
     case 'stone-large':
+    case 'nature_stone_large':
       return { key: 'stone', scale: 1.02 }
+    case 'nature_log_stack':
+      return { key: 'logStack', scale: 1.0 }
     case 'grass-small':
       return { key: 'grass', scale: 1.05 }
     case 'grass-large':
@@ -138,6 +218,65 @@ export function getRequiredModelKeys(mapInfo) {
   return keys
 }
 
+function loadModelSceneOnce(key, { timeoutMs = DEFAULT_MODEL_TIMEOUT_MS } = {}) {
+  const url = MODEL_URLS[key]
+  if (!url) {
+    return Promise.resolve(null)
+  }
+
+  let timer = null
+  const timeoutPromise = new Promise((_, reject) => {
+    const schedule = typeof window !== 'undefined' ? window.setTimeout.bind(window) : setTimeout
+    timer = schedule(() => {
+      reject(new Error(`timeout:${key}`))
+    }, Math.max(5000, timeoutMs))
+  })
+
+  return Promise.race([
+    SHARED_GLTF_LOADER.loadAsync(url),
+    timeoutPromise
+  ])
+    .then((gltf) => {
+      if (timer && typeof window !== 'undefined') window.clearTimeout(timer)
+      else if (timer) clearTimeout(timer)
+      return gltf?.scene || null
+    })
+    .catch((error) => {
+      if (timer && typeof window !== 'undefined') window.clearTimeout(timer)
+      else if (timer) clearTimeout(timer)
+      throw error
+    })
+}
+
+async function loadModelSceneWithRetry(key, options = {}) {
+  const { retries = DEFAULT_MODEL_RETRIES, timeoutMs = DEFAULT_MODEL_TIMEOUT_MS } = options
+  const maxAttempts = Math.max(1, Math.trunc(Number(retries)) + 1)
+  let lastError = null
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    MODEL_LOAD_PROMISE_CACHE.delete(key)
+    try {
+      const scene = await loadModelSceneOnce(key, {
+        timeoutMs: timeoutMs + attempt * 10000
+      })
+      if (scene) {
+        MODEL_SCENE_CACHE.set(key, scene)
+        return scene
+      }
+      lastError = new Error(`empty-scene:${key}`)
+    } catch (error) {
+      lastError = error
+      console.warn(`[ThreeLowPolyMap] Failed to load ${key} (attempt ${attempt + 1}/${maxAttempts}):`, error)
+    }
+
+    if (attempt < maxAttempts - 1) {
+      await delay(600 * (attempt + 1))
+    }
+  }
+
+  return null
+}
+
 function loadModelScene(key) {
   if (MODEL_SCENE_CACHE.has(key)) {
     return Promise.resolve(MODEL_SCENE_CACHE.get(key))
@@ -146,10 +285,8 @@ function loadModelScene(key) {
     return MODEL_LOAD_PROMISE_CACHE.get(key)
   }
 
-  const promise = SHARED_GLTF_LOADER.loadAsync(MODEL_URLS[key])
-    .then((gltf) => {
-      const scene = gltf.scene || null
-      MODEL_SCENE_CACHE.set(key, scene)
+  const promise = loadModelSceneWithRetry(key)
+    .then((scene) => {
       MODEL_LOAD_PROMISE_CACHE.delete(key)
       return scene
     })
@@ -182,4 +319,121 @@ export function preloadThreeLowPolyMapModels(mapName) {
     ? manifestKeys
     : getRequiredModelKeys(mapInfo)
   return loadModels(requiredKeys)
+}
+
+export function collectMapModelKeys(mapName) {
+  const mapInfo = getAdventureMapInfo(mapName)
+  if (!mapInfo || mapInfo.renderMode !== 'three-lowpoly') {
+    return [...CORE_MODEL_KEYS].filter((key) => MODEL_URLS[key])
+  }
+  const manifestKeys = MAP_MODEL_MANIFEST?.[mapName]?.modelKeys
+  const requiredKeys = Array.isArray(manifestKeys) && manifestKeys.length > 0
+    ? manifestKeys
+    : getRequiredModelKeys(mapInfo)
+  return [...new Set([...CORE_MODEL_KEYS, ...requiredKeys])].filter((key) => MODEL_URLS[key])
+}
+
+export function collectAllAdventureMapModelKeys() {
+  const keys = new Set(CORE_MODEL_KEYS)
+  ADVENTURE_MAP_CHAIN.forEach((mapName) => {
+    const mapInfo = getAdventureMapInfo(mapName)
+    if (!mapInfo || mapInfo.renderMode !== 'three-lowpoly') return
+    const manifestKeys = MAP_MODEL_MANIFEST?.[mapName]?.modelKeys
+    const requiredKeys = Array.isArray(manifestKeys) && manifestKeys.length > 0
+      ? manifestKeys
+      : getRequiredModelKeys(mapInfo)
+    requiredKeys.forEach((key) => keys.add(key))
+  })
+  return [...keys].filter((key) => MODEL_URLS[key])
+}
+
+export async function preloadModelKeysUntilComplete(keys = [], {
+  onItemComplete = null,
+  onRetryRound = null,
+  shouldContinue = () => true,
+  concurrency = null,
+  retries = null,
+  timeoutMs = null
+} = {}) {
+  const options = resolveModelPreloadOptions({
+    concurrency: concurrency ?? undefined,
+    retries: retries ?? undefined,
+    timeoutMs: timeoutMs ?? undefined
+  })
+  const pendingKeys = [...new Set((Array.isArray(keys) ? keys : []).filter((key) => MODEL_URLS[key]))]
+  if (!pendingKeys.length) {
+    return { ok: true, total: 0, loaded: 0, keys: [] }
+  }
+
+  let remaining = [...pendingKeys]
+  let loaded = 0
+  let round = 0
+
+  while (remaining.length > 0) {
+    if (!shouldContinue()) {
+      throw new Error('aborted')
+    }
+
+    round += 1
+    if (round > 1) {
+      onRetryRound?.(round - 1, remaining.length, pendingKeys.length)
+      await delay(Math.min(10000, 1000 + round * 800))
+    }
+
+    const roundOptions = {
+      ...options,
+      concurrency: Math.max(1, Math.min(options.concurrency, round > 2 ? 1 : options.concurrency)),
+      timeoutMs: options.timeoutMs + (round - 1) * 12000,
+      retries: options.retries + round - 1
+    }
+
+    const failed = []
+    let cursor = 0
+    const workerCount = Math.max(
+      1,
+      Math.min(
+        Math.trunc(Number(roundOptions.concurrency)) || 1,
+        remaining.length
+      )
+    )
+
+    await Promise.all(Array.from({ length: workerCount }, async () => {
+      while (cursor < remaining.length) {
+        if (!shouldContinue()) return
+        const index = cursor
+        cursor += 1
+        const key = remaining[index]
+        MODEL_LOAD_PROMISE_CACHE.delete(key)
+        const scene = await loadModelSceneWithRetry(key, roundOptions)
+        if (!scene) {
+          failed.push(key)
+          continue
+        }
+        loaded += 1
+        onItemComplete?.(key, { loaded, total: pendingKeys.length, retryRound: round })
+      }
+    }))
+
+    if (failed.length === 0) break
+
+    const stillMissing = []
+    for (const key of failed) {
+      const exists = await verifyModelAssetExists(key)
+      if (!exists) {
+        cacheEmptyModelScene(key)
+        loaded += 1
+        onItemComplete?.(key, { loaded, total: pendingKeys.length, retryRound: round, placeholder: true })
+        continue
+      }
+      stillMissing.push(key)
+    }
+    remaining = stillMissing
+  }
+
+  return { ok: true, total: pendingKeys.length, loaded: pendingKeys.length, keys: pendingKeys }
+}
+
+/** @deprecated 内部改用 preloadModelKeysUntilComplete，保留别名避免旧调用抛错 */
+export async function preloadModelKeysStrict(keys = [], options = {}) {
+  return preloadModelKeysUntilComplete(keys, options)
 }

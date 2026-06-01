@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { applyImageFallback } from '../../utils/localAssetPreloader'
 import { pokemonArtUrl, POKEMON_PLACEHOLDER_URL, toPngFallbackUrl } from '../../utils/mediaAssetUrl'
+import { primeStudentSession } from '../../utils/primeStudentSession'
 
 const AUTH_IMAGE_FALLBACK = POKEMON_PLACEHOLDER_URL
 
@@ -20,6 +21,10 @@ export default function Login({ onLogin, onSwitchToRegister }) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    primeStudentSession()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

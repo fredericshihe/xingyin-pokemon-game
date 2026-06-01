@@ -1,6 +1,7 @@
 import { MONSTERS } from './gameData'
 import { getTrainerRoleBalance, normalizeTrainerRole } from './gameBalance'
 import { isLevelValidForSpecies } from './wildEncounterRules'
+import { buildChallengeBattleTeamFromUnlockBatch } from './challengeRareUnlock.js'
 import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from './pokemonFamilyVariety.js'
 
 const ROLE_VARIANT_RULES = {
@@ -350,19 +351,34 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   )
   const bossCandidateTeam = rule.bossCandidateCount > 0 ? bossTeam.slice(-rule.bossCandidateCount) : []
   const bossPoolEntries = normalizePokemonPoolEntries(bossCandidateTeam, 7)
-  const speciesPool = isChallengeBattle && challengePoolEntries.length > 0
-    ? challengePoolEntries
-    : [...teamPoolEntries, ...variantPoolEntries, ...bossPoolEntries]
-  const localPoolIds = Array.from(new Set(speciesPool.map((entry) => entry.pokemonId)))
   const victoryBonus = Math.floor(safeVictoryCount / Math.max(1, rule.victoryStepEvery))
-  const usedSpeciesIds = new Set()
-  const usedFamilyKeys = new Set()
   const mapRegionOrder = Math.trunc(Number(mapConfig?.regionOrder ?? 0)) || 0
   const isLateGameNormalTrainer = normalizedRole === 'normal' && (
     mapRegionOrder >= 8 ||
     bounds.recommendedLevel >= 45 ||
     bounds.mapMaxLevel >= 47
   )
+
+  if (isChallengeBattle && challengePoolEntries.length > 0) {
+    const batchTeam = buildChallengeBattleTeamFromUnlockBatch({
+      challengeRarePool,
+      baseTeam,
+      unlockStage: safeVictoryCount,
+      targetSize,
+      bounds,
+      victoryBonus,
+      levelJitter,
+      random
+    })
+    if (batchTeam.length > 0) return batchTeam
+  }
+
+  const speciesPool = isChallengeBattle && challengePoolEntries.length > 0
+    ? challengePoolEntries
+    : [...teamPoolEntries, ...variantPoolEntries, ...bossPoolEntries]
+  const localPoolIds = Array.from(new Set(speciesPool.map((entry) => entry.pokemonId)))
+  const usedSpeciesIds = new Set()
+  const usedFamilyKeys = new Set()
 
   return Array.from({ length: targetSize }, (_, index) => {
     const baseEntry = baseTeam[index % Math.max(1, baseTeam.length)] || null
@@ -385,9 +401,7 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
     const levelSpeciesPool = filterPoolEntriesForLevel(speciesPool, targetLevel, localPoolIds, usedSpeciesIds, usedFamilyKeys)
     const shouldSwapSpecies = levelSpeciesPool.length > 0 && random() < rule.speciesSwapChance
     const pickedEntry = shouldSwapSpecies ? pickWeightedPoolEntry(levelSpeciesPool, random) : null
-    const baseEntryId = isChallengeBattle && challengePoolEntries.length > 0
-      ? null
-      : baseEntry?.pokemonId
+    const baseEntryId = baseEntry?.pokemonId
     const preferredIds = [
       pickedEntry?.pokemonId,
       baseEntryId,

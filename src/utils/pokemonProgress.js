@@ -275,17 +275,46 @@ export const simulateMonsterExpGain = (
     if (evolvedBase) growthBase = evolvedBase
   }
 
+  // 安全计数器：防止无限循环导致浏览器卡死
+  let safetyCounter = 0
+  const MAX_LEVEL_UPS_PER_GAIN = 50
+
   while (
     updatedMon.level < 100 &&
     Number.isFinite(updatedMon.expToNextLevel) &&
-    updatedMon.currentExp >= updatedMon.expToNextLevel
+    updatedMon.currentExp >= updatedMon.expToNextLevel &&
+    safetyCounter < MAX_LEVEL_UPS_PER_GAIN
   ) {
+    safetyCounter++
+
     const prevLevel = updatedMon.level
     const beforeStats = getStatSnapshot(updatedMon)
     const newLevel = prevLevel + 1
     const nextExp = updatedMon.currentExp - updatedMon.expToNextLevel
 
+    // 额外保护：检查 nextExp 是否异常
+    if (!Number.isFinite(nextExp) || nextExp < 0) {
+      console.error('[CRITICAL] Invalid nextExp detected', {
+        level: prevLevel,
+        currentExp: updatedMon.currentExp,
+        expToNextLevel: updatedMon.expToNextLevel,
+        nextExp
+      })
+      break
+    }
+
     updatedMon = buildLeveledMonster(baseMonster, updatedMon, newLevel, nextExp)
+
+    // 验证升级后的数据
+    if (!Number.isFinite(updatedMon.expToNextLevel) || updatedMon.expToNextLevel <= 0) {
+      console.error('[CRITICAL] Invalid expToNextLevel after level up', {
+        level: newLevel,
+        expToNextLevel: updatedMon.expToNextLevel
+      })
+      updatedMon.expToNextLevel = 1
+      break
+    }
+
     levelUps.push({
       monId: mon.id,
       name: updatedMon.name,
@@ -326,6 +355,17 @@ export const simulateMonsterExpGain = (
       const evolvedBase = resolvePokemonBaseDefinition({ baseId: evoId }, getBaseMonsterDefinition)
       if (evolvedBase) growthBase = evolvedBase
     }
+  }
+
+  // 如果触发安全限制，记录错误
+  if (safetyCounter >= MAX_LEVEL_UPS_PER_GAIN) {
+    console.error('[CRITICAL] Level up loop safety limit reached', {
+      monId: mon.id,
+      monName: mon.name,
+      finalLevel: updatedMon.level,
+      xpAmount,
+      safetyCounter
+    })
   }
 
   return { updatedMon, events, levelUps }

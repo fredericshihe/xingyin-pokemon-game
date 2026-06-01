@@ -1,5 +1,5 @@
 /* Game UI styles — load after login */
-/* 全屏自适应：手机 / 平板 / 电脑均铺满视口 */
+/* 全屏自适应：默认居中门屏；游戏主壳用 --immersive 铺满 */
 .game-app-bg {
   position: relative;
   min-height: 100vh;
@@ -7,19 +7,47 @@
   width: 100%;
   overflow: hidden;
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 2.4vw, 24px);
   background:
     linear-gradient(135deg, rgba(224, 252, 239, 0.92), rgba(219, 234, 254, 0.94) 48%, rgba(254, 243, 199, 0.86)),
     repeating-linear-gradient(45deg, rgba(255,255,255,0.22) 0 1px, transparent 1px 22px);
+}
+
+.game-app-bg--immersive,
+.game-app-bg.launch-adventure,
+.game-app-bg.teacher-dashboard,
+.game-app-bg:has(> .game-console-shell),
+.game-app-bg:has(> .launch-console),
+.game-app-bg:has(> .launch-story-console) {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+.auth-page.game-app-bg {
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 30px);
+}
+
+.game-gate-card {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  pointer-events: auto;
+  flex: 0 0 auto;
+  align-self: center;
+  width: min(100%, clamp(320px, 92vw, 520px));
 }
 
 .game-app-bg::before {
   content: "";
   position: absolute;
   inset: 0;
-  pointer-events: auto;
+  pointer-events: none;
   background:
     linear-gradient(90deg, rgba(20, 184, 166, 0.08), transparent 24%, rgba(248, 113, 113, 0.06) 72%, transparent),
     repeating-linear-gradient(90deg, transparent 0 54px, rgba(255,255,255,0.18) 54px 56px),
@@ -41,6 +69,8 @@
   height: 100dvh;
   min-height: 100dvh;
   max-height: none;
+  --game-modal-width: min(100%, clamp(340px, 92vw, 560px));
+  --game-modal-width-lg: min(100%, clamp(420px, 94vw, 720px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1569,7 +1599,7 @@
 .fast-travel-overlay {
   position: absolute;
   inset: 0;
-  z-index: 88;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4010,8 +4040,9 @@
 /* 首次进入：研究所邀请与伙伴选择 */
 .launch-adventure {
   isolation: isolate;
-  align-items: center;
-  padding: clamp(10px, 2.2vw, 24px);
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
   color: #0f172a;
   overflow: hidden;
 }
@@ -7572,6 +7603,33 @@
 
 /* 游戏画面内顶部通知：浮层叠加，不占布局、不推动画面 */
 .game-notification-layer {
+  --toast-max-width: min(calc(100% - 28px), clamp(320px, 92vw, 520px));
+  --toast-min-width: min(100%, clamp(260px, 78vw, 360px));
+  --toast-min-height: clamp(42px, 10vw, 48px);
+  --toast-pad-y: clamp(7px, 1.8vw, 10px);
+  --toast-pad-x: clamp(10px, 3vw, 14px);
+  --toast-gap: clamp(7px, 2vw, 10px);
+  --toast-radius: clamp(12px, 3.2vw, 16px);
+  --toast-icon-size: clamp(28px, 8vw, 36px);
+  --toast-icon-font: clamp(13px, 3.6vw, 15px);
+  --toast-font-size: clamp(10.5px, 2.8vw, 12.5px);
+  --toast-stack-top: clamp(16px, 4vw, 28px);
+  --toast-stack-gap: clamp(5px, 1.5vw, 8px);
+  --toast-accent-width: clamp(5px, 1.2vw, 7px);
+  --toast-accent-inset-y: clamp(10px, 2.6vw, 12px);
+  --toast-shine-inset-x: clamp(10px, 3vw, 14px);
+  --toast-timer-inset-x: clamp(10px, 3vw, 14px);
+  --toast-timer-bottom: clamp(4px, 1.2vw, 6px);
+  --toast-timer-height: clamp(2px, 0.6vw, 3px);
+  --toast-battle-max-width: min(calc(100% - 232px), clamp(200px, 42vw, 300px));
+  --toast-battle-min-height: clamp(38px, 9vw, 44px);
+  --toast-battle-pad-y: clamp(6px, 1.6vw, 9px);
+  --toast-battle-pad-x: clamp(8px, 2.6vw, 12px);
+  --toast-battle-gap: clamp(6px, 1.8vw, 9px);
+  --toast-battle-radius: clamp(10px, 2.8vw, 14px);
+  --toast-battle-icon-size: clamp(26px, 7vw, 32px);
+  --toast-battle-icon-font: clamp(12px, 3.2vw, 14px);
+  --toast-battle-font-size: clamp(11px, 2.8vw, 13px);
   position: absolute;
   inset: 0;
   z-index: 9000;
@@ -7587,14 +7645,14 @@
 
 .game-notification-stack {
   position: absolute;
-  top: 24px;
+  top: var(--toast-stack-top);
   left: 50%;
   right: auto;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--toast-stack-gap);
   width: max-content;
   max-width: calc(100% - 28px);
   transform: translateX(-50%);
@@ -7602,12 +7660,12 @@
 }
 
 .game-notification-layer--battle .game-notification-stack {
-  top: 8px;
+  top: clamp(6px, 1.4vh, 12px);
   left: auto;
-  right: 10px;
+  right: clamp(8px, 2vw, 14px);
   transform: none;
   align-items: flex-end;
-  max-width: min(300px, calc(100% - 232px));
+  max-width: var(--toast-battle-max-width);
 }
 
 .game-notification-layer[aria-hidden='true'] .game-notification-stack {
@@ -7622,16 +7680,16 @@
   --toast-accent: #14b8a6;
   position: relative;
   width: auto;
-  max-width: min(420px, calc(100vw - 28px));
-  min-width: min(300px, 100%);
+  max-width: var(--toast-max-width);
+  min-width: var(--toast-min-width);
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 12px 10px;
+  gap: var(--toast-gap);
+  min-height: var(--toast-min-height);
+  padding: var(--toast-pad-y) var(--toast-pad-x) calc(var(--toast-pad-y) + 2px);
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--toast-radius);
   border: 1px solid var(--toast-border);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08) 42%),
@@ -7646,19 +7704,19 @@
 }
 
 .game-notification-layer--battle .game-notification-toast {
-  max-width: min(280px, 100%);
+  max-width: var(--toast-battle-max-width);
   min-width: 0;
-  min-height: 40px;
-  gap: 7px;
-  padding: 7px 10px 9px;
-  border-radius: 12px;
+  min-height: var(--toast-battle-min-height);
+  gap: var(--toast-battle-gap);
+  padding: var(--toast-battle-pad-y) var(--toast-battle-pad-x) calc(var(--toast-battle-pad-y) + 2px);
+  border-radius: var(--toast-battle-radius);
 }
 
 .game-notification-toast::before {
   content: '';
   position: absolute;
-  left: 12px;
-  right: 12px;
+  left: var(--toast-shine-inset-x);
+  right: var(--toast-shine-inset-x);
   top: 4px;
   height: 2px;
   border-radius: 999px;
@@ -7669,9 +7727,9 @@
   content: '';
   position: absolute;
   left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 6px;
+  top: var(--toast-accent-inset-y);
+  bottom: var(--toast-accent-inset-y);
+  width: var(--toast-accent-width);
   border-radius: 0 999px 999px 0;
   background: var(--toast-accent);
 }
@@ -7739,24 +7797,24 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: var(--toast-icon-size);
+  height: var(--toast-icon-size);
+  border-radius: calc(var(--toast-radius) - 4px);
   border: 1px solid rgba(255, 255, 255, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--toast-icon-font);
   box-shadow:
     0 3px 8px rgba(15, 23, 42, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .game-notification-layer--battle .game-notification-toast__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  font-size: 13px;
+  width: var(--toast-battle-icon-size);
+  height: var(--toast-battle-icon-size);
+  border-radius: calc(var(--toast-battle-radius) - 3px);
+  font-size: var(--toast-battle-icon-font);
 }
 
 .game-notification-toast__icon--gold {
@@ -7795,9 +7853,9 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--toast-font-size);
   font-weight: 900;
-  line-height: 1.38;
+  line-height: 1.42;
   color: rgba(23, 32, 51, 0.92);
   white-space: normal;
   word-break: break-word;
@@ -7810,21 +7868,21 @@
 }
 
 .game-notification-layer:not(.game-notification-layer--battle) .game-notification-toast__text {
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .game-notification-layer--battle .game-notification-toast__text {
-  font-size: 12px;
+  font-size: var(--toast-battle-font-size);
   line-height: 1.35;
 }
 
 .game-notification-toast__timer {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 5px;
+  left: var(--toast-timer-inset-x);
+  right: var(--toast-timer-inset-x);
+  bottom: var(--toast-timer-bottom);
   z-index: 1;
-  height: 3px;
+  height: var(--toast-timer-height);
   border-radius: 999px;
   background: color-mix(in srgb, var(--toast-accent) 70%, white 30%);
   opacity: 0.46;
@@ -7833,10 +7891,10 @@
 }
 
 .game-notification-layer--battle .game-notification-toast__timer {
-  left: 14px;
-  right: 14px;
-  bottom: 4px;
-  height: 2px;
+  left: calc(var(--toast-timer-inset-x) + 2px);
+  right: calc(var(--toast-timer-inset-x) + 2px);
+  bottom: max(3px, calc(var(--toast-timer-bottom) - 1px));
+  height: max(2px, calc(var(--toast-timer-height) - 1px));
 }
 
 @keyframes notificationTimerShrink {
@@ -7849,11 +7907,6 @@
     max-width: calc(100% - 20px);
   }
 
-  .game-notification-toast {
-    max-width: min(400px, calc(100vw - 24px));
-    min-width: min(280px, 100%);
-  }
-
   .game-notification-layer--battle .game-notification-stack {
     left: 50%;
     right: auto;
@@ -7862,8 +7915,17 @@
     align-items: center;
   }
 
-  .game-notification-layer--battle .game-notification-toast {
-    max-width: min(260px, calc(100vw - 40px));
+  /* 桌面端战斗通知允许更多行 */
+  @media (min-width: 900px) {
+    .game-notification-layer--battle .game-notification-toast__text {
+      -webkit-line-clamp: 3;
+      line-height: 1.4;
+    }
+
+    .game-notification-layer--battle .game-notification-toast {
+      min-height: auto;
+      padding: var(--toast-pad-y) var(--toast-pad-x) calc(var(--toast-pad-y) + 2px);
+    }
   }
 }
 
@@ -7872,22 +7934,12 @@
 }
 
 .game-console-shell--map-overlay .game-notification-toast {
-  max-width: min(440px, calc(100% - 8px));
-  min-width: min(280px, calc(100% - 8px));
-  min-height: 38px;
-  padding: 6px 10px 7px;
-  gap: 7px;
-  border-radius: 12px;
-}
-
-.game-console-shell--map-overlay .game-notification-toast__icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  font-size: 13px;
+  max-width: min(var(--toast-max-width), calc(100% - 8px));
+  min-width: min(var(--toast-min-width), calc(100% - 8px));
 }
 
 .game-page {
+  width: 100%;
   min-height: 100%;
   height: 100%;
   display: flex;
@@ -8433,19 +8485,19 @@ button.game-collection-card:active:not(:disabled) {
 }
 
 .pokemon-roster-row__sprite {
-  width: 70px;
-  height: 70px;
+  width: 96px;
+  height: 96px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 18px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(224, 242, 254, 0.74));
   border: 1px solid rgba(255, 255, 255, 0.82);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 8px 16px rgba(15, 23, 42, 0.08);
 }
 
 .pokemon-roster-row__sprite img {
-  width: 58px;
-  height: 58px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
 }
 
@@ -14346,6 +14398,12 @@ button.dex-evolution-tile:active {
   animation-name: battleHitCharge;
 }
 
+/* 会心一击：更剧烈的左右震动 + 金色高光，强调"击中要害"。 */
+.battle-hit-reaction--crit {
+  animation-name: battleHitCrit;
+  animation-duration: 620ms;
+}
+
 .battle-move-effect {
   --move-accent: #fff;
   --move-core: #64748b;
@@ -16164,7 +16222,7 @@ button.dex-evolution-tile:active {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 8px;
   padding: clamp(10px, 2vw, 14px) clamp(10px, 2.4vw, 16px);
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.58);
@@ -16175,7 +16233,8 @@ button.dex-evolution-tile:active {
     0 14px 32px rgba(15, 23, 42, 0.28),
     inset 0 1px 0 rgba(255,255,255,0.92);
   text-align: center;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -16206,13 +16265,13 @@ button.dex-evolution-tile:active {
 
 .battle-no-mp-overlay__body {
   margin: 0;
+  width: 100%;
   max-width: 28ch;
   color: #6b4b21;
   font-size: clamp(11px, 2.05vw, 12px);
   font-weight: 800;
-  line-height: 1.25;
-  flex-shrink: 1;
-  min-height: 0;
+  line-height: 1.35;
+  flex-shrink: 0;
 }
 
 .battle-no-mp-overlay__meters {
@@ -16221,6 +16280,8 @@ button.dex-evolution-tile:active {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .battle-no-mp-overlay__meter {
@@ -16853,7 +16914,7 @@ button.dex-evolution-tile:active {
   }
 
   .battle-no-mp-overlay__card {
-    gap: 5px;
+    gap: 7px;
     padding: 8px 10px;
     border-radius: 14px;
   }
@@ -16870,7 +16931,7 @@ button.dex-evolution-tile:active {
 
   .battle-no-mp-overlay__body {
     font-size: 10px;
-    line-height: 1.2;
+    line-height: 1.3;
   }
 
   .battle-no-mp-overlay__meter {
@@ -17045,6 +17106,14 @@ button.dex-evolution-tile:active {
 @keyframes battleHitCharge {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.12); filter: drop-shadow(0 0 28px rgba(255,255,255,0.7)); }
+}
+
+@keyframes battleHitCrit {
+  0%, 100% { transform: translate(0,0) scale(1); filter: drop-shadow(0 18px 24px rgba(5,12,26,0.36)); }
+  18% { transform: translate(calc(var(--actor-dir, 1) * -16px), -6px) scale(0.94); filter: drop-shadow(0 0 30px rgba(255,214,102,0.9)); }
+  40% { transform: translate(calc(var(--actor-dir, 1) * 12px), 4px) scale(1.08); filter: drop-shadow(0 0 24px rgba(255,196,64,0.78)); }
+  64% { transform: translate(calc(var(--actor-dir, 1) * -7px), -2px) scale(0.99); }
+  82% { transform: translate(calc(var(--actor-dir, 1) * 3px), 1px) scale(1.02); }
 }
 
 @keyframes battleEffectLayer {
@@ -19706,4 +19775,835 @@ button.dex-evolution-tile:active {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.72); }
   60% { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (min-width: 768px) {
+  .game-gate-card {
+    width: min(100%, clamp(400px, 42vw, 640px));
+  }
+
+  /* 平板战斗界面优化 */
+  .battle-modern-shell {
+    --battle-hud-width: min(
+      clamp(220px, 45%, 280px),
+      calc(100% - var(--battle-enemy-slot-size) - var(--battle-enemy-slot-right) - 16px),
+      calc(100% - var(--battle-player-slot-size) - var(--battle-player-slot-left) - 16px)
+    );
+    --battle-hud-min-height: 140px;
+  }
+
+  .battle-hud-enemy,
+  .battle-hud-player {
+    font-size: 15px;
+  }
+
+  .battle-command-panel {
+    --battle-control-row-height: clamp(58px, 9vh, 72px);
+    --battle-control-gap: clamp(8px, 1.5vh, 12px);
+  }
+
+  .battle-action-button {
+    font-size: 16px;
+    border-radius: 11px;
+  }
+
+  .battle-action-button i {
+    font-size: 16px;
+  }
+
+  .battle-action-button__note {
+    font-size: 12px;
+  }
+
+  .move-button {
+    font-size: 15px;
+    padding: 12px 14px;
+  }
+
+  .move-button__name {
+    font-size: 15px;
+  }
+
+  .move-button__meta {
+    font-size: 11px;
+  }
+}
+
+/* 桌面端战斗界面优化 - 对称布局，宝可梦居中对峙 */
+@media (min-width: 1025px) {
+  .battle-modern-shell {
+    --battle-stage-inset: clamp(16px, 2.5vw, 32px);
+
+    /* 敌方宝可梦 - 右侧中间偏上 */
+    --battle-enemy-slot-right: clamp(200px, 25vw, 320px);
+    --battle-enemy-slot-top: clamp(60px, 10vh, 100px);
+    --battle-enemy-slot-size: clamp(220px, 16vw, 280px);
+
+    /* 我方宝可梦 - 左侧中间偏下 */
+    --battle-player-slot-left: clamp(200px, 25vw, 320px);
+    --battle-player-slot-bottom: clamp(40px, 6vh, 80px);
+    --battle-player-slot-size: clamp(240px, 18vw, 300px);
+
+    /* HUD宽度 */
+    --battle-hud-width: clamp(240px, 18vw, 300px);
+    --battle-hud-min-height: 160px;
+  }
+
+  /* 敌方HUD - 在敌方宝可梦右侧 */
+  .battle-hud-enemy {
+    top: var(--battle-enemy-slot-top);
+    right: var(--battle-stage-inset);
+    left: auto;
+  }
+
+  /* 我方HUD - 在我方宝可梦左侧 */
+  .battle-hud-player {
+    bottom: var(--battle-player-slot-bottom);
+    left: var(--battle-stage-inset);
+    right: auto;
+  }
+
+  /* 增大宝可梦图像 */
+  .battle-sprite-player > div > .relative {
+    width: clamp(240px, 19vw, 320px) !important;
+    height: clamp(240px, 19vw, 320px) !important;
+  }
+
+  .battle-sprite-player > div > .relative img {
+    width: clamp(220px, 17vw, 300px) !important;
+    height: clamp(220px, 17vw, 300px) !important;
+  }
+
+  .battle-sprite-enemy > div > .relative {
+    width: clamp(220px, 17vw, 300px) !important;
+    height: clamp(220px, 17vw, 300px) !important;
+  }
+
+  .battle-sprite-enemy > div > .relative img {
+    width: clamp(200px, 15vw, 280px) !important;
+    height: clamp(200px, 15vw, 280px) !important;
+  }
+
+  /* 增大HUD信息框 */
+  .battle-hud-enemy.battle-glass-card,
+  .battle-hud-player.battle-glass-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+
+  .battle-glass-card .text-lg {
+    font-size: 22px;
+  }
+
+  .battle-hud-enemy .truncate,
+  .battle-hud-player .truncate {
+    font-size: 20px;
+  }
+
+  .battle-hud-enemy .rounded-full,
+  .battle-hud-player .rounded-full {
+    font-size: 16px;
+    padding: 4px 10px;
+    min-height: 26px;
+  }
+
+  .battle-hud-enemy .battle-meter-track,
+  .battle-hud-player .battle-meter-track {
+    height: 12px;
+    border-radius: 6px;
+  }
+
+  .battle-hud-enemy .battle-meter-track-exp,
+  .battle-hud-player .battle-meter-track-exp {
+    height: 7px;
+  }
+
+  .battle-hud-enemy .text-xs,
+  .battle-hud-player .text-xs {
+    font-size: 14px;
+  }
+
+  .battle-status-badge {
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+
+  /* 增大技能按钮和操作区域 */
+  .battle-command-panel {
+    --battle-control-row-height: clamp(70px, 11vh, 90px);
+    --battle-control-gap: clamp(12px, 2vh, 16px);
+  }
+
+  .battle-move-button {
+    padding: 12px 14px;
+    gap: 7px;
+    border-radius: 12px;
+  }
+
+  .battle-move-button__name {
+    font-size: 17px;
+    line-height: 1.3;
+  }
+
+  .battle-move-button__badges .type-badge--small {
+    min-width: 48px;
+    min-height: 24px;
+    padding-inline: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .battle-move-button__badges .battle-move-effectiveness {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+
+  .battle-move-button__details {
+    gap: 5px;
+    font-size: 13px;
+  }
+
+  .battle-move-button__detail,
+  .battle-move-button__category,
+  .battle-move-button__mp {
+    min-height: 24px;
+    padding: 5px 7px;
+  }
+
+  .battle-move-button__detail small,
+  .battle-move-button__mp small {
+    font-size: 12px;
+  }
+
+  .battle-move-button__category {
+    font-size: 12px;
+  }
+
+  /* 增大战斗日志文字 */
+  .battle-dialogue-line {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* 增大操作按钮 */
+  .battle-action-button {
+    font-size: 18px;
+    min-height: 64px;
+    padding: 14px 18px;
+    border-radius: 12px;
+  }
+
+  .battle-action-button i {
+    font-size: 20px;
+  }
+
+  .battle-action-button__note {
+    font-size: 14px;
+  }
+
+  /* 返回按钮 */
+  .battle-back-button {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+
+  .battle-back-button i {
+    font-size: 18px;
+  }
+
+  /* 底部操作区域优化 - 极简紧凑布局 */
+  .battle-command-panel {
+    --battle-control-row-height: clamp(70px, 9.5vh, 85px);
+    --battle-control-gap: clamp(10px, 1.5vh, 14px);
+    --battle-command-top-padding: clamp(8px, 1.2vh, 12px);
+    --battle-command-bottom-padding: clamp(14px, 2vh, 20px);
+  }
+
+  /* 确保提示区域始终占据固定高度，即使为空 */
+  .battle-hud-hint {
+    min-height: 14px !important;
+    height: 14px !important;
+    font-size: 11px !important;
+    line-height: 14px !important;
+    visibility: visible !important;
+  }
+
+  /* 确保对话框高度始终一致，无论是主操作还是技能选择 */
+  .battle-dialogue,
+  .battle-command-panel:has(.battle-move-stack) .battle-dialogue {
+    height: calc(var(--battle-dialogue-lines-height) + 20px) !important;
+    min-height: calc(var(--battle-dialogue-lines-height) + 20px) !important;
+    max-height: calc(var(--battle-dialogue-lines-height) + 20px) !important;
+    padding: 10px 12px !important;
+  }
+
+  .battle-dialogue-line,
+  .battle-command-panel:has(.battle-move-stack) .battle-dialogue-line {
+    font-size: var(--battle-dialogue-font-size) !important;
+    line-height: var(--battle-dialogue-line-height) !important;
+    height: var(--battle-dialogue-line-height) !important;
+    min-height: var(--battle-dialogue-line-height) !important;
+    max-height: var(--battle-dialogue-line-height) !important;
+  }
+
+  .battle-command-controls {
+    /* 覆盖默认的3行高度计算，改为单行 */
+    min-height: auto !important;
+    height: auto !important;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--battle-command-top-padding) clamp(40px, 5vw, 80px) var(--battle-command-bottom-padding) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 主操作按钮 - 横向4个，紧凑高度 */
+  .battle-command-main-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    gap: clamp(14px, 2.2vw, 28px);
+    height: var(--battle-control-row-height);
+  }
+
+  .battle-action-button {
+    min-height: var(--battle-control-row-height) !important;
+    max-height: var(--battle-control-row-height) !important;
+    height: var(--battle-control-row-height) !important;
+    font-size: clamp(15px, 1.5vw, 18px);
+    padding: 12px 16px;
+    border-radius: clamp(10px, 1.3vw, 13px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .battle-action-button i {
+    font-size: clamp(17px, 1.7vw, 20px);
+  }
+
+  .battle-action-button__note {
+    font-size: clamp(11px, 1.1vw, 13px);
+  }
+
+  /* 技能选择 - 横向对齐，统一高度 */
+  .battle-move-stack {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 2.2vw, 28px);
+    width: 100%;
+    height: var(--battle-control-row-height);
+  }
+
+  .battle-move-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+    gap: clamp(14px, 2.2vw, 28px);
+    flex: 1;
+    height: var(--battle-control-row-height);
+  }
+
+  .battle-move-button {
+    min-height: var(--battle-control-row-height) !important;
+    max-height: var(--battle-control-row-height) !important;
+    height: var(--battle-control-row-height) !important;
+    padding: 8px 10px;
+    gap: 4px;
+    border-radius: clamp(10px, 1.3vw, 13px);
+  }
+
+  .battle-move-button__name {
+    font-size: clamp(14px, 1.4vw, 16px);
+  }
+
+  .battle-move-button__details {
+    font-size: clamp(10px, 1vw, 12px);
+  }
+
+  .battle-move-button__badges .type-badge--small {
+    font-size: clamp(9px, 0.9vw, 11px) !important;
+    min-height: 16px;
+    padding-inline: 6px !important;
+  }
+
+  /* 返回按钮 - 与技能按钮统一高度 */
+  .battle-back-button {
+    min-height: var(--battle-control-row-height);
+    max-height: var(--battle-control-row-height);
+    height: var(--battle-control-row-height);
+    width: auto;
+    min-width: clamp(120px, 10vw, 150px);
+    padding: 12px 18px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: clamp(13px, 1.3vw, 15px);
+    border-radius: clamp(10px, 1.3vw, 13px);
+    flex-shrink: 0;
+  }
+
+  .battle-back-button span {
+    display: inline;
+  }
+
+  .battle-back-button i {
+    font-size: clamp(15px, 1.5vw, 17px);
+  }
+
+  /* 桌面端队伍和仓库卡片整体放大 */
+  .game-collection-card.pokemon-roster-row {
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 14px;
+    padding-right: 16px;
+  }
+
+  .pokemon-roster-row__main {
+    gap: 7px;
+  }
+
+  .pokemon-roster-row__title {
+    gap: 10px;
+  }
+
+  .pokemon-roster-row__rank-chip {
+    min-width: 30px;
+    min-height: 22px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .pokemon-roster-row__name {
+    font-size: 18px;
+  }
+
+  .pokemon-roster-row__title b {
+    font-size: 15px;
+  }
+
+  .pokemon-roster-row__active-chip {
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .pokemon-roster-row__types {
+    gap: 6px;
+    min-height: 24px;
+  }
+
+  .pokemon-roster-row__bars {
+    gap: 6px;
+  }
+
+  .pokemon-roster-row__bar-line {
+    grid-template-columns: 36px minmax(80px, 1fr) minmax(60px, auto);
+    gap: 8px;
+  }
+
+  .pokemon-roster-row__bar-line span,
+  .pokemon-roster-row__bar-line b {
+    font-size: 11px;
+  }
+
+  .pokemon-roster-row__actions {
+    gap: 8px;
+    min-width: 52px;
+    max-width: 84px;
+  }
+
+  .pokemon-roster-row__actions .game-soft-button,
+  .pokemon-roster-row__actions .game-primary-button {
+    min-width: 52px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .pokemon-roster-list {
+    gap: 12px;
+  }
+
+  /* 仓库和图鉴卡片也整体放大 */
+  .game-collection-grid {
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .game-collection-card {
+    padding: 16px;
+  }
+
+  .game-collection-card__sprite-wrap {
+    width: 110px;
+    height: 110px;
+  }
+
+  .game-collection-card__sprite {
+    width: 92px;
+    height: 92px;
+  }
+
+  .game-collection-card__dexno {
+    font-size: 12px;
+    margin-top: 10px;
+  }
+
+  .game-collection-card__name {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .game-collection-card__meta {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .game-collection-card__title {
+    font-size: 17px;
+    margin-top: 10px;
+  }
+
+  .game-collection-card__level {
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .game-collection-card__types {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .game-collection-card__bars {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .game-collection-card__bar-line {
+    gap: 7px;
+  }
+
+  .game-collection-card__bar-line span {
+    font-size: 11px;
+  }
+
+  .game-collection-card__bar {
+    height: 7px;
+  }
+
+  /* 桌面端地图HUD按钮放大 */
+  .map-hud-icon-button,
+  .map-action-button.map-hud-icon-button {
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+    border-radius: 12px;
+  }
+
+  .map-hud-icon-button i,
+  .map-action-button.map-hud-icon-button i {
+    font-size: 20px;
+  }
+
+  /* 桌面端战斗MP不足对话框改为全屏居中弹窗 */
+  .battle-no-mp-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .battle-no-mp-overlay__card {
+    max-width: 480px !important;
+    width: auto !important;
+    min-width: 420px !important;
+    max-height: none !important;
+    align-self: center !important;
+    gap: 14px !important;
+    padding: 24px 28px !important;
+    border-radius: 24px !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    box-shadow:
+      0 20px 50px rgba(15, 23, 42, 0.4),
+      inset 0 1px 0 rgba(255,255,255,0.92) !important;
+  }
+
+  .battle-no-mp-overlay__badge {
+    min-height: 34px !important;
+    padding: 6px 16px !important;
+    gap: 8px !important;
+    font-size: 14px !important;
+  }
+
+  .battle-no-mp-overlay__badge i {
+    font-size: 16px !important;
+  }
+
+  .battle-no-mp-overlay__title {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+  }
+
+  .battle-no-mp-overlay__body {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    max-width: 38ch !important;
+  }
+
+  .battle-no-mp-overlay__meters {
+    gap: 10px !important;
+  }
+
+  .battle-no-mp-overlay__meter {
+    min-height: 32px !important;
+    padding: 6px 16px !important;
+    font-size: 15px !important;
+  }
+
+  .battle-no-mp-overlay__actions {
+    gap: 14px !important;
+    margin-top: 10px !important;
+  }
+
+  .battle-no-mp-action {
+    min-height: 56px !important;
+    font-size: 17px !important;
+    gap: 12px !important;
+    padding: 0 24px !important;
+    border-radius: 16px !important;
+  }
+
+  .battle-no-mp-action i {
+    font-size: 20px !important;
+  }
+}
+
+
+/* iPad竖屏战斗界面优化 - 增大所有元素 */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .battle-modern-shell {
+    --battle-enemy-slot-size: clamp(200px, 45vw, 260px);
+    --battle-player-slot-size: 220px !important;
+    --battle-hud-width: min(
+      clamp(240px, 48%, 300px),
+      calc(100% - var(--battle-enemy-slot-size) - var(--battle-enemy-slot-right) - 16px),
+      calc(100% - var(--battle-player-slot-size) - var(--battle-player-slot-left) - 16px)
+    );
+    --battle-hud-min-height: 160px;
+  }
+
+  /* 增大宝可梦图像 */
+  .battle-sprite-player > div > .relative {
+    width: clamp(200px, 48vw, 240px) !important;
+    height: clamp(200px, 48vw, 240px) !important;
+  }
+
+  .battle-sprite-player > div > .relative img {
+    width: clamp(180px, 44vw, 220px) !important;
+    height: clamp(180px, 44vw, 220px) !important;
+  }
+
+  .battle-sprite-enemy > div > .relative {
+    width: clamp(190px, 46vw, 230px) !important;
+    height: clamp(190px, 46vw, 230px) !important;
+  }
+
+  .battle-sprite-enemy > div > .relative img {
+    width: clamp(170px, 42vw, 210px) !important;
+    height: clamp(170px, 42vw, 210px) !important;
+  }
+
+  /* 增大HUD信息框 */
+  .battle-hud-enemy.battle-glass-card,
+  .battle-hud-player.battle-glass-card {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .battle-glass-card .text-lg {
+    font-size: 20px;
+  }
+
+  .battle-hud-enemy .truncate,
+  .battle-hud-player .truncate {
+    font-size: 18px;
+  }
+
+  .battle-hud-enemy .rounded-full,
+  .battle-hud-player .rounded-full {
+    font-size: 14px;
+    padding: 3px 9px;
+    min-height: 22px;
+  }
+
+  .battle-hud-enemy .battle-meter-track,
+  .battle-hud-player .battle-meter-track {
+    height: 10px;
+  }
+
+  .battle-hud-enemy .battle-meter-track-exp,
+  .battle-hud-player .battle-meter-track-exp {
+    height: 6px;
+  }
+
+  .battle-hud-enemy .text-xs,
+  .battle-hud-player .text-xs {
+    font-size: 13px;
+  }
+
+  .battle-status-badge {
+    min-width: 24px;
+    height: 22px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
+  /* 增大技能按钮 */
+  .battle-command-panel {
+    --battle-control-row-height: clamp(64px, 10vh, 80px);
+    --battle-control-gap: clamp(10px, 1.8vh, 14px);
+  }
+
+  .battle-move-button {
+    padding: 10px 12px;
+    gap: 6px;
+    border-radius: 11px;
+  }
+
+  .battle-move-button__name {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  .battle-move-button__badges .type-badge--small {
+    min-width: 42px;
+    min-height: 22px;
+    padding-inline: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .battle-move-button__badges .battle-move-effectiveness {
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+
+  .battle-move-button__details {
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .battle-move-button__detail,
+  .battle-move-button__category,
+  .battle-move-button__mp {
+    min-height: 22px;
+    padding: 4px 6px;
+  }
+
+  .battle-move-button__detail small,
+  .battle-move-button__mp small {
+    font-size: 11px;
+  }
+
+  .battle-move-button__category {
+    font-size: 11px;
+  }
+
+  /* 增大战斗日志文字 */
+  .battle-dialogue-line {
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* 增大返回按钮 */
+  .battle-back-button {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .battle-back-button i {
+    font-size: 16px;
+  }
+
+  /* 增大操作按钮 */
+  .battle-action-button {
+    font-size: 17px;
+    min-height: 56px;
+    padding: 12px 16px;
+  }
+
+  .battle-action-button i {
+    font-size: 18px;
+  }
+
+  .battle-action-button__note {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 900px) {
+  .game-notification-layer {
+    --toast-max-width: min(calc(100% - 40px), clamp(420px, 52vw, 800px));
+    --toast-min-width: min(100%, clamp(360px, 36vw, 560px));
+    --toast-min-height: clamp(48px, 5vh, 64px);
+    --toast-pad-y: clamp(10px, 1.4vh, 14px);
+    --toast-pad-x: clamp(14px, 2vw, 22px);
+    --toast-gap: clamp(10px, 1.2vw, 14px);
+    --toast-radius: clamp(14px, 1.4vw, 20px);
+    --toast-icon-size: clamp(36px, 4.5vw, 52px);
+    --toast-icon-font: clamp(15px, 1.6vw, 20px);
+    --toast-font-size: clamp(13px, 1.35vw, 18px);
+    --toast-stack-top: clamp(24px, 3vh, 44px);
+    --toast-stack-gap: clamp(6px, 0.8vh, 10px);
+    --toast-accent-width: clamp(6px, 0.8vw, 9px);
+    --toast-accent-inset-y: clamp(12px, 1.8vh, 18px);
+    --toast-shine-inset-x: clamp(12px, 1.6vw, 18px);
+    --toast-timer-inset-x: clamp(12px, 1.6vw, 18px);
+    --toast-timer-bottom: clamp(5px, 0.9vh, 8px);
+    --toast-timer-height: clamp(3px, 0.45vh, 4px);
+    --toast-battle-max-width: min(calc(100% - 232px), clamp(260px, 28vw, 480px));
+    --toast-battle-min-height: clamp(42px, 4.6vh, 54px);
+    --toast-battle-pad-y: clamp(8px, 1.1vh, 12px);
+    --toast-battle-pad-x: clamp(10px, 1.4vw, 16px);
+    --toast-battle-gap: clamp(8px, 1vw, 12px);
+    --toast-battle-radius: clamp(12px, 1.2vw, 16px);
+    --toast-battle-icon-size: clamp(30px, 3.6vw, 42px);
+    --toast-battle-icon-font: clamp(13px, 1.3vw, 17px);
+    --toast-battle-font-size: clamp(12px, 1.2vw, 16px);
+  }
+
+  .game-console-shell {
+    --game-modal-width: min(100%, clamp(440px, 40vw, 680px));
+    --game-modal-width-lg: min(100%, clamp(520px, 52vw, 860px));
+  }
+
+  .game-console-shell .reset-confirm-card,
+  .game-console-shell .game-local-confirm-card,
+  .game-console-shell .topbar-settings-card,
+  .game-console-shell .challenge-confirm-card,
+  .game-console-shell .spring-restore-card,
+  .game-console-shell .growth-levelup-card,
+  .game-console-shell .growth-learn-card,
+  .game-console-shell .bag-target-modal,
+  .game-console-shell .pokemon-detail-modal,
+  .game-console-shell .fast-travel-panel,
+  .game-console-shell .game-bounded-modal-overlay .game-card {
+    width: var(--game-modal-width);
+  }
+
+  .game-console-shell .growth-evolution-card {
+    width: var(--game-modal-width-lg);
+  }
 }

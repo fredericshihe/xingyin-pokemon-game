@@ -186,6 +186,12 @@ const STARTER_SIGNS = [
     '阳光草坡 Lv.2-4：适合初战。受伤回泉水。'
   ),
   sign(
+    'sign_valley_grove_warning',
+    10,
+    21,
+    '密林入口：野生宝可梦 Lv.4-6，建议先去阳光草坡练习。'
+  ),
+  sign(
     'sign_valley_fork',
     19,
     18,
@@ -229,6 +235,18 @@ const STARTER_TRAINERS = [
     defeatedText: '营地练习生笑着点头：很稳，记得受伤后去泉水恢复。',
     dailyDefeatedText: '营地练习生：今天已经练过啦，明天我再陪你对战。'
   }),
+  trainer('valley_trainer_grove_guard', 11, 23, {
+    name: '密林守卫',
+    title: '密林入口守卫',
+    team: [
+      { pokemonId: 16, level: 4 },
+      { pokemonId: 39, level: 4 }
+    ],
+    beforeBattleText: '密林守卫拦住去路：密林草丛野生宝可梦较强，先去阳光草坡练习后再来挑战我！',
+    defeatedText: '密林守卫让开道路：你已经准备好了，密林草丛欢迎你的探索。',
+    dailyDefeatedText: '密林守卫：密林通道已开放，继续你的冒险吧。',
+    facing: 'down'
+  }),
   trainer('valley_trainer_flower_hill', 20, 12, {
     name: '花丘学员',
     title: '花丘捕捉练习',
@@ -262,7 +280,7 @@ const STARTER_PICKUPS = [
 ]
 
 const STARTER_TRAINER_DECORATIONS = STARTER_TRAINERS.map((entry, index) => ({
-  type: ['blocky_character_a', 'blocky_character_b', 'blocky_character_c'][index % 3],
+  type: ['blocky_character_a', 'blocky_character_b', 'blocky_character_c', 'blocky_character_a'][index % 4],
   x: entry.position.x,
   y: entry.position.y,
   scale: NPC_SCALE,

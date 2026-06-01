@@ -205,12 +205,12 @@ export function createLowPolyPlayerBody({ castShadow = true } = {}) {
   const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.48 })
   const armMaterial = new THREE.MeshStandardMaterial({ color: 0xffc9a5, roughness: 0.76 })
 
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.5, 4, 12), bodyMaterial)
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.5, 6, 20), bodyMaterial)
   body.position.y = 0.72
   body.castShadow = castShadow
   group.add(body)
 
-  const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.28, 4, 10), armMaterial)
+  const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.28, 6, 16), armMaterial)
   leftArm.position.set(-0.28, 0.72, 0)
   leftArm.rotation.z = Math.PI / 10
   leftArm.castShadow = castShadow
@@ -221,7 +221,7 @@ export function createLowPolyPlayerBody({ castShadow = true } = {}) {
   rightArm.rotation.z = -Math.PI / 10
   group.add(rightArm)
 
-  const leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.34, 4, 10), legMaterial)
+  const leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.34, 6, 16), legMaterial)
   leftLeg.position.set(-0.12, 0.3, 0)
   leftLeg.castShadow = castShadow
   group.add(leftLeg)
@@ -239,12 +239,12 @@ export function createLowPolyPlayerBody({ castShadow = true } = {}) {
   rightShoe.position.x = 0.12
   group.add(rightShoe)
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 20, 16), faceMaterial)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 20), faceMaterial)
   head.position.set(0, 1.22, 0.02)
   head.castShadow = castShadow
   group.add(head)
 
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.295, 18, 12), hairMaterial)
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.295, 22, 18), hairMaterial)
   hair.position.set(0, 1.31, -0.02)
   hair.scale.set(1.03, 0.58, 1)
   hair.castShadow = castShadow
@@ -256,7 +256,7 @@ export function createLowPolyPlayerBody({ castShadow = true } = {}) {
   group.add(backpack)
 
   const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.26, 0.3, 0.12, 18),
+    new THREE.CylinderGeometry(0.26, 0.3, 0.12, 24),
     new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.62 })
   )
   cap.position.set(0, 1.45, 0)

@@ -41,6 +41,7 @@ export function findLegacySpawn(mapGrid, preferred = { x: 1, y: 1 }) {
 }
 
 export function isWalkable(mapGrid, x, y) {
+  if (!mapGrid?.length || !mapGrid[0]?.length) return false
   if (y < 0 || y >= mapGrid.length || x < 0 || x >= mapGrid[0].length) return false
   return !BLOCKED_LEGACY_TILES.has(mapGrid[y][x])
 }

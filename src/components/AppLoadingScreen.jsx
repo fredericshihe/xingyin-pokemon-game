@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export default function AppLoadingScreen({ message = '加载中...', slowHintAfterMs = 12000 }) {
+export default function AppLoadingScreen({ message = '加载中...', slowHintAfterMs = 5000 }) {
   const [showSlowHint, setShowSlowHint] = useState(false)
 
   useEffect(() => {
@@ -11,13 +11,18 @@ export default function AppLoadingScreen({ message = '加载中...', slowHintAft
 
   return (
     <div className="game-app-bg">
-      <div className="game-card p-5 max-w-md mx-auto text-center space-y-3">
+      <div className="game-gate-card game-card p-5 text-center space-y-3 relative z-[1]">
+        <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-600">
+          <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+        </div>
         <p className="text-2xl font-bold text-slate-700">{message}</p>
         {showSlowHint ? (
           <p className="text-sm text-slate-600 leading-relaxed">
-            首次打开需要下载游戏资源，弱网下会较慢。若超过 1 分钟仍无反应，请刷新页面或换网络后重试。
+            正在下载游戏模块，首次打开约需 10–30 秒。请保持网络畅通；若超过 1 分钟仍停在这里，请刷新页面或换 Wi‑Fi 后重试。
           </p>
-        ) : null}
+        ) : (
+          <p className="text-sm text-slate-500">请稍候，正在准备游戏…</p>
+        )}
       </div>
     </div>
   )

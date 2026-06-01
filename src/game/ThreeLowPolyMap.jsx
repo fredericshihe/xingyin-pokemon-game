@@ -12,6 +12,7 @@ import { pickWildPokemon } from './data/encounterTables'
 import { resolveEncounterTableId } from './data/mapRegistry'
 import { animateLowPolyPlayer, createLowPolyPlayer } from './playerFigureVisual'
 import { getDecorativeModel, getRequiredModelKeys, loadModels } from './threeLowPolyModelCache'
+import { resolveThemeLandmarkRenderScale } from './data/godotMaps/godot_region_maps.js'
 
 const CELL = 1.55
 const MOVE_MS = 285
@@ -29,36 +30,72 @@ const GRASS_SWAY_KEYS = new Set(['grass', 'grassLarge'])
 const GRASS_SWAY_DISABLED = -999
 const grassSwayUniforms = { uMapTime: { value: 0 } }
 
+function isMobileSafari() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua)
+  return isIOS || (isSafari && /Mobile/.test(ua))
+}
+
+function isMobileDevice() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  // 检测移动设备
+  const ua = navigator.userAgent || ''
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  const isSmallScreen = window.innerWidth <= 768
+  return isMobileUA || (isTouchDevice && isSmallScreen)
+}
+
 function readMapVisualQualityPref() {
-  if (typeof window === 'undefined') return 'auto'
+  if (typeof window === 'undefined') return 'high'
   const params = new URLSearchParams(window.location.search)
   const query = params.get('mapQuality') || params.get('hq')
   if (query === 'lite' || query === 'low') return 'lite'
   if (query === 'high' || query === 'hq' || query === '1') return 'high'
+
+  // 自动检测：移动端Safari默认使用优化配置
+  if (query === 'auto' || !query) {
+    if (isMobileSafari() || isMobileDevice()) {
+      return 'lite'
+    }
+  }
+
   try {
     const stored = window.localStorage.getItem('mapVisualQuality')
     if (stored === 'lite' || stored === 'high') return stored
   } catch {
     // ignore storage failures
   }
-  return 'auto'
+
+  // 移动设备默认lite，桌面默认high
+  return (isMobileSafari() || isMobileDevice()) ? 'lite' : 'high'
 }
 
 function resolveMapRendererProfile() {
   const pref = readMapVisualQualityPref()
   const liteTier = pref === 'lite'
+  const isMobile = isMobileSafari() || isMobileDevice()
+
+  // 移动端优化：即使在high模式也要限制某些参数
+  const mobileOptimized = isMobile && !liteTier
+
   return {
     liteTier,
     antialias: !liteTier,
-    pixelRatioCap: liteTier ? 1.5 : 3,
-    shadowMapSize: liteTier ? 1024 : 2048,
-    shadowType: liteTier ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap,
+    // 移动端：限制pixelRatio避免过高分辨率导致性能问题
+    pixelRatioCap: liteTier ? 1.5 : (mobileOptimized ? 2 : 3),
+    // 移动端：使用较小的阴影贴图以节省内存和带宽
+    shadowMapSize: liteTier ? 1024 : (mobileOptimized ? 1536 : 2048),
+    shadowType: THREE.PCFShadowMap,
     powerPreference: 'high-performance',
-    maxAnisotropy: liteTier ? 4 : 8,
-    // 默认要有“明显的方向阴影”（至少树/建筑），否则画面会显得很“贴纸”。
+    // 移动端：降低各向异性过滤以提升性能
+    maxAnisotropy: liteTier ? 4 : (mobileOptimized ? 6 : 8),
+    // 默认要有”明显的方向阴影”（至少树/建筑），否则画面会显得很”贴纸”。
     // 只有 lite 模式才关掉装饰投影；high 模式允许更多小物件也投影。
     castDecorationShadows: !liteTier,
-    castAllDecorationShadows: pref === 'high'
+    castAllDecorationShadows: !liteTier && !mobileOptimized
   }
 }
 
@@ -543,6 +580,9 @@ const DEFAULT_EVENT_SIGNAL_STYLE = {
 }
 
 const FOOT_SAFE_EVENT_SIGNAL_TYPES = new Set(['warp', 'fast_travel'])
+const PICKUP_REWARD_EVENT_TYPES = new Set(['item', 'pickup'])
+const ROAD_SIGN_DECORATION_TYPES = new Set(['sign', 'trail_sign'])
+const ROADSIDE_SIGN_FACE_DOWN = Math.PI
 
 // Unified map-event visual language.
 // tier 1: passive information; tier 2: rewards; tier 3: services; tier 4: combat; tier 5: milestone gates.
@@ -584,31 +624,42 @@ const MAP_EVENT_SIGNAL_STYLES = {
     tier: 2,
     colorA: 0xf59e0b,
     colorB: 0xfef08a,
-    radius: 0.26,
-    hoverY: 0.68,
+    radius: 0.28,
+    hoverY: 0.72,
+    ringCount: 2,
+    ringGap: 0.05,
     coreShape: 'octa',
-    coreSize: 0.112,
-    baseOpacity: 0.045,
-    ringOpacity: 0.28,
-    coreOpacity: 0.82,
-    light: 0.08,
-    lightRange: 1.5,
-    bobAmount: 0.024
+    coreSize: 0.118,
+    baseOpacity: 0.055,
+    ringOpacity: 0.32,
+    coreOpacity: 0.86,
+    light: 0.14,
+    lightRange: 1.9,
+    bobAmount: 0.028,
+    ringSpinSpeed: 0.14,
+    objectAnchor: 'modelTop',
+    objectTopGap: 0.1
   },
   pickup: {
     label: '隐藏补给',
     tier: 2,
-    colorA: 0xd97706,
-    colorB: 0xfde68a,
-    radius: 0.22,
-    hoverY: 0.58,
+    colorA: 0xf59e0b,
+    colorB: 0xfef08a,
+    radius: 0.28,
+    hoverY: 0.72,
+    ringCount: 2,
+    ringGap: 0.05,
     coreShape: 'octa',
-    coreSize: 0.09,
-    baseOpacity: 0.028,
-    ringOpacity: 0.18,
-    coreOpacity: 0.58,
-    bobAmount: 0.014,
-    corePulseScale: 0.045
+    coreSize: 0.118,
+    baseOpacity: 0.055,
+    ringOpacity: 0.32,
+    coreOpacity: 0.86,
+    light: 0.14,
+    lightRange: 1.9,
+    bobAmount: 0.028,
+    ringSpinSpeed: 0.14,
+    objectAnchor: 'modelTop',
+    objectTopGap: 0.1
   },
   heal: {
     label: '恢复点',
@@ -761,8 +812,30 @@ function getEventSignalStyleKey(eventType, npcRole = null) {
   if (eventType === 'boss' || npcRole === 'boss') return 'boss'
   if (eventType === 'trainer' && npcRole === 'lieutenant') return 'lieutenant'
   if (eventType === 'trainer') return 'trainer'
+  if (eventType === 'pickup') return 'item'
   if (MAP_EVENT_SIGNAL_STYLES[eventType]) return eventType
   return 'item'
+}
+
+function isPickupRewardDecoration(object) {
+  return Boolean(object?.eventId && PICKUP_REWARD_EVENT_TYPES.has(object.eventType))
+}
+
+function isRoadSignDecoration(object) {
+  return Boolean(
+    object?.eventId &&
+    object?.eventType === 'sign' &&
+    ROAD_SIGN_DECORATION_TYPES.has(object.type)
+  )
+}
+
+function resolvePickupRewardSignalEventType(eventType) {
+  return PICKUP_REWARD_EVENT_TYPES.has(eventType) ? 'item' : eventType
+}
+
+function resolveDecorationRotationY(object) {
+  if (isRoadSignDecoration(object)) return ROADSIDE_SIGN_FACE_DOWN
+  return object.rotation ?? Math.PI / 6
 }
 
 function getEventSignalSpec(eventType, options = {}) {
@@ -1486,7 +1559,7 @@ function createBridge({ length = 3, width = 1.4, rotation = 0 } = {}) {
   return group
 }
 
-function createTerrainTop(width, height) {
+function createTerrainTop(width, height, palette = {}) {
   const terrainW = (width + VISUAL_PADDING_TILES * 2) * CELL + 4
   const terrainH = (height + VISUAL_PADDING_TILES * 2) * CELL + 4
   const segX = Math.min(40, Math.max(12, Math.round(width / 2)))
@@ -1505,7 +1578,7 @@ function createTerrainTop(width, height) {
   const mesh = new THREE.Mesh(
     geometry,
     new THREE.MeshStandardMaterial({
-      color: 0x79d16b,
+      color: palette.terrainTop ?? 0x79d16b,
       roughness: 0.95,
       metalness: 0.02,
       flatShading: false
@@ -1517,13 +1590,13 @@ function createTerrainTop(width, height) {
   return mesh
 }
 
-function createIslandBase(width, height) {
+function createIslandBase(width, height, palette = {}) {
   const terrainW = (width + VISUAL_PADDING_TILES * 2) * CELL + 4.3
   const terrainH = (height + VISUAL_PADDING_TILES * 2) * CELL + 4.3
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(terrainW, 0.7, terrainH),
     new THREE.MeshStandardMaterial({
-      color: 0x67b457,
+      color: palette.terrainBase ?? 0x67b457,
       roughness: 0.92
     })
   )
@@ -1628,7 +1701,18 @@ function ThreeLowPolyMap({
   const [renderNonce, setRenderNonce] = useState(0)
   const [renderIssue, setRenderIssue] = useState(null)
 
-  const mapInfo = useMemo(() => getAdventureMapInfo(currentMapName), [currentMapName])
+  const mapInfo = useMemo(() => {
+    const info = getAdventureMapInfo(currentMapName)
+    if (info) {
+      console.log(`[Map Debug] ${currentMapName} - Total decorations:`, info.decorativeObjects?.length || 0)
+      const rockStoneDecorations = (info.decorativeObjects || []).filter(d =>
+        d.type?.includes('rock') || d.type?.includes('stone') || d.type?.includes('bush') || d.type?.includes('log')
+      )
+      console.log(`[Map Debug] ${currentMapName} - Rock/Stone/Bush/Log decorations:`, rockStoneDecorations.length)
+      console.log(`[Map Debug] ${currentMapName} - Sample decorations:`, rockStoneDecorations.slice(0, 5).map(d => d.type))
+    }
+    return info
+  }, [currentMapName])
   const requestRendererRestart = useCallback((reason = 'manual') => {
     console.warn(`[ThreeLowPolyMap] Restarting renderer: ${reason}`)
     setRenderNonce((value) => value + 1)
@@ -1675,7 +1759,6 @@ function ThreeLowPolyMap({
     disposeActiveThreeMapRenderer('effect-remount')
 
     let disposed = false
-    let frameId = 0
     let renderer = null
     let resizeObserver = null
     let healthTimerId = 0
@@ -1769,11 +1852,12 @@ function ThreeLowPolyMap({
     sun.position.set(12, 22, 8)
     sun.castShadow = true
     configureSunShadow(sun, renderProfile.shadowMapSize)
-    sun.shadow.camera.left = -35
-    sun.shadow.camera.right = 35
-    sun.shadow.camera.top = 35
-    sun.shadow.camera.bottom = -35
+    sun.shadow.camera.left = -22
+    sun.shadow.camera.right = 22
+    sun.shadow.camera.top = 22
+    sun.shadow.camera.bottom = -22
     scene.add(sun)
+    scene.add(sun.target)
 
     const root = new THREE.Group()
     scene.add(root)
@@ -1891,6 +1975,7 @@ function ThreeLowPolyMap({
     const buildWorld = async () => {
       const height = mapGrid.length
       const width = mapGrid[0].length
+      const glintMeshes = []
 
       const start = worldFromTile(pointer.tileX, pointer.tileY, width, height)
       const fallbackPlayer = createLowPolyPlayer()
@@ -1899,8 +1984,9 @@ function ThreeLowPolyMap({
       root.add(fallbackPlayer)
       stateRef.current.player = fallbackPlayer
 
-      root.add(createIslandBase(width, height))
-      root.add(createTerrainTop(width, height))
+      const visualPalette = mapInfo?.visualPalette || {}
+      root.add(createIslandBase(width, height, visualPalette))
+      root.add(createTerrainTop(width, height, visualPalette))
 
 	      const springEffects = []
 	      const eventSignals = []
@@ -1997,10 +2083,22 @@ function ThreeLowPolyMap({
         depthWrite: false
       })
       const forestFloorMaterial = new THREE.MeshStandardMaterial({
-        color: 0x5fa85a,
+        color: visualPalette.forestFloor ?? 0x5fa85a,
         roughness: 0.95,
         transparent: true,
         opacity: 0.14
+      })
+      const sandPatchMaterial = new THREE.MeshStandardMaterial({
+        color: visualPalette.sandPatch ?? 0xe8d4a8,
+        roughness: 0.96,
+        transparent: true,
+        opacity: 0.22
+      })
+      const paleGrassPatchMaterial = new THREE.MeshStandardMaterial({
+        color: visualPalette.paleGrassPatch ?? 0xc8ddb8,
+        roughness: 0.95,
+        transparent: true,
+        opacity: 0.18
       })
       const forestTrailMaterial = new THREE.MeshStandardMaterial({
         color: 0x8bcf72,
@@ -2013,6 +2111,8 @@ function ThreeLowPolyMap({
       applyGroundDecalMaterial(pathHighlightMaterial)
       applyGroundDecalMaterial(waterBankMaterial)
       applyGroundDecalMaterial(forestFloorMaterial)
+      applyGroundDecalMaterial(sandPatchMaterial)
+      applyGroundDecalMaterial(paleGrassPatchMaterial)
       applyGroundDecalMaterial(forestTrailMaterial)
 
       // === InstancedMesh 工厂 + Chunk 化 ===
@@ -2686,6 +2786,28 @@ function ThreeLowPolyMap({
             pathObjects.push(path)
           }
 
+          if (legacy === 13 && insidePlayableArea) {
+            const sandPatch = makeSoftTileBlob(
+              pos,
+              CELL * (0.66 + seededRandom(x, y, 201) * 0.08),
+              sandPatchMaterial,
+              200 + x * 3 + y,
+              0.038
+            )
+            root.add(sandPatch)
+          }
+
+          if (legacy === 17 && insidePlayableArea) {
+            const palePatch = makeSoftTileBlob(
+              pos,
+              CELL * (0.64 + seededRandom(x, y, 211) * 0.08),
+              paleGrassPatchMaterial,
+              210 + x * 3 + y,
+              0.04
+            )
+            root.add(palePatch)
+          }
+
           if (legacy === 8) {
             const grass = createGrassCluster(x, y, pos, insidePlayableArea, { compact: isNearRoad(x, y) })
             if (!grass) continue
@@ -2698,6 +2820,7 @@ function ThreeLowPolyMap({
               glint.position.set(pos.x, 0.075, pos.z)
               root.add(glint)
               grassObjects.set(`${x},${y}:glint`, glint)
+              glintMeshes.push({ mesh: glint, tileX: x, tileY: y })
             }
           }
 
@@ -2732,6 +2855,19 @@ function ThreeLowPolyMap({
               }
               continue
             }
+
+            const renderForestWallTrees = mapInfo?.renderForestWallTrees !== false
+            if (!renderForestWallTrees) {
+              if (blockedEdgeTile || seededRandom(x, y, 12) < 0.42) {
+                placeForestUndergrowth(x, y, pos, {
+                  edge: isForestEdge(x, y),
+                  heavy: true,
+                  force: blockedEdgeTile
+                })
+              }
+              continue
+            }
+
             const edge = isForestEdge(x, y)
             const treeRoll = seededRandom(x, y, 12)
             const shouldRenderTree = insidePlayableArea
@@ -2786,15 +2922,36 @@ function ThreeLowPolyMap({
       })
 
       const signaledEventIds = new Set()
+      let decorationStats = { total: 0, rendered: 0, skippedNoSpec: 0, skippedNoModel: 0, skippedBlocked: 0, skippedRoad: 0 }
       mapInfo?.decorativeObjects?.forEach((object) => {
+        decorationStats.total++
         const spec = getDecorativeModel(object.type)
-        if (!spec || !models[spec.key]) return
-        if (!object.eventType && shouldHideBlockedLowVegetation(object, mapGrid)) return
-        if (ROAD_CLEAR_DECOR_TYPES.has(object.type) && isInRoadClearance(mapInfo, object.x, object.y, object.roadClearance ?? 0.65)) return
+        if (!spec) {
+          decorationStats.skippedNoSpec++
+          return
+        }
+        if (!models[spec.key]) {
+          decorationStats.skippedNoModel++
+          if (object.type?.includes('rock') || object.type?.includes('stone')) {
+            console.warn(`[Map Debug] Missing model for ${object.type} (key: ${spec.key})`)
+          }
+          return
+        }
+        if (!object.eventType && shouldHideBlockedLowVegetation(object, mapGrid)) {
+          decorationStats.skippedBlocked++
+          return
+        }
+        if (ROAD_CLEAR_DECOR_TYPES.has(object.type) && isInRoadClearance(mapInfo, object.x, object.y, object.roadClearance ?? 0.65)) {
+          decorationStats.skippedRoad++
+          return
+        }
+        decorationStats.rendered++
         const pos = worldFromTile(object.x, object.y, width, height)
-        const eventType = resolveDecorativeObjectSignalType(object, mapInfo, mapGrid)
-        const modelScale = object.scale ?? spec.scale
+        const rawEventType = resolveDecorativeObjectSignalType(object, mapInfo, mapGrid) || object.eventType
+        const eventType = rawEventType ? resolvePickupRewardSignalEventType(rawEventType) : null
+        const modelScale = resolveThemeLandmarkRenderScale(object.type, object.scale ?? spec.scale)
         const modelLift = object.height ?? 0.2
+        const decorationRotationY = resolveDecorationRotationY(object)
         const shouldAddGenericSignal = Boolean(eventType)
         const signalBaseY = eventType
           ? getEventSignalBaseY(eventType, object.npcRole, modelScale, modelLift, models[spec.key])
@@ -2802,7 +2959,7 @@ function ThreeLowPolyMap({
         const signalOffsetZ = eventType
           ? getNpcSignalForwardOffsetZ(eventType, object.npcRole)
           : 0
-        const alwaysVisibleSignal = isAlwaysVisibleMapSignal(eventType, object.npcRole)
+        const alwaysVisibleSignal = isPickupRewardDecoration(object) || isAlwaysVisibleMapSignal(eventType, object.npcRole)
         const signal = shouldAddGenericSignal
           ? addEventSignalAt(
             Math.trunc(Number(object.x)),
@@ -2823,7 +2980,7 @@ function ThreeLowPolyMap({
           pos.x + (object.offsetX ?? 0),
           modelLift,
           pos.z + (object.offsetZ ?? 0),
-          object.rotation ?? Math.PI / 6,
+          decorationRotationY,
           modelScale
         )
         if (eventType && typeof object.eventId === 'string' && object.eventId.length > 0) {
@@ -2839,8 +2996,8 @@ function ThreeLowPolyMap({
             posX: pos.x + (object.offsetX ?? 0),
             posY: object.height ?? 0.2,
             posZ: pos.z + (object.offsetZ ?? 0),
-            rotationY: object.rotation ?? Math.PI / 6,
-            scale: object.scale ?? spec.scale,
+            rotationY: decorationRotationY,
+            scale: modelScale,
             signal
           })
           if (controller) {
@@ -2869,13 +3026,28 @@ function ThreeLowPolyMap({
           npcRoleEffect
         })
       })
+      console.log(`[Map Debug] Decoration rendering stats:`, decorationStats)
 
       ;(Array.isArray(mapInfo?.runtimeEvents) ? mapInfo.runtimeEvents : []).forEach((event) => {
         if (!event?.type || signaledEventIds.has(event.id)) return
-        if (!['warp', 'fast_travel', 'heal', 'challenge', 'sign', 'info'].includes(event.type)) return
         const tileX = Math.trunc(Number(event.position?.x))
         const tileY = Math.trunc(Number(event.position?.y))
         if (!Number.isSafeInteger(tileX) || !Number.isSafeInteger(tileY)) return
+
+        if (PICKUP_REWARD_EVENT_TYPES.has(event.type)) {
+          const pickupSignalType = resolvePickupRewardSignalEventType(event.type)
+          const signal = addEventSignalAt(tileX, tileY, pickupSignalType, {
+            alwaysVisible: true,
+            eventId: typeof event.id === 'string' ? event.id : null
+          })
+          registerEventVisualBinding({
+            eventId: typeof event.id === 'string' ? event.id : null,
+            signal
+          })
+          return
+        }
+
+        if (!['warp', 'fast_travel', 'heal', 'challenge', 'sign', 'info'].includes(event.type)) return
         const signal = addEventSignalAt(tileX, tileY, event.type, {
           alwaysVisible: isAlwaysVisibleMapSignal(event.type, event.properties?.role)
         })
@@ -2886,6 +3058,7 @@ function ThreeLowPolyMap({
       })
 
       finalizeInstancedMeshes()
+      stateRef.current.glintMeshes = glintMeshes
 
       resize()
       recoverAttemptsRef.current = 0
@@ -2917,6 +3090,17 @@ function ThreeLowPolyMap({
       }
     }
     healthTimerId = window.setTimeout(runHealthCheck, 1800)
+
+    function notifyPlayerIdle(state) {
+      if (!state?.pointer || state.pointer.moving) return
+      state.onPlayerMove?.({
+        x: state.pointer.tileX,
+        y: state.pointer.tileY,
+        direction: state.pointer.direction || 'down',
+        idle: true,
+        encounterCooldownSteps: cooldownRef.current
+      })
+    }
 
     function finishStep(step) {
       const state = stateRef.current
@@ -3236,7 +3420,6 @@ function ThreeLowPolyMap({
 
       if (cooldownRef.current > 0) {
         cooldownRef.current -= 1
-        stateRef.current?.onEncounterCooldownChange?.(cooldownRef.current)
         return true
       }
       if (Math.random() >= rate) return true
@@ -3266,7 +3449,21 @@ function ThreeLowPolyMap({
     }
 
     let last = performance.now()
+    let frameId = null
+
+    // 性能监控：用于检测低帧率
+    const frameTimings = []
+    const MAX_FRAME_SAMPLES = 60
+    let lowFpsWarningShown = false
+
+    const scheduleAnimation = () => {
+      if (frameId != null || disposed) return
+      frameId = requestAnimationFrame(animate)
+    }
+    stateRef.current.kickAnimation = scheduleAnimation
+
     const animate = (now) => {
+      frameId = null
       const state = stateRef.current
       const mapShouldRun = Boolean(
         state?.mapActive &&
@@ -3274,11 +3471,35 @@ function ThreeLowPolyMap({
       )
 
       if (!mapShouldRun) {
-        frameId = requestAnimationFrame(animate)
         return
       }
 
       const dt = Math.min((now - last) / 1000, 0.05)
+
+      // 性能监控：记录帧时间
+      if (isMobileSafari() || isMobileDevice()) {
+        const frameTime = now - last
+        frameTimings.push(frameTime)
+        if (frameTimings.length > MAX_FRAME_SAMPLES) {
+          frameTimings.shift()
+        }
+
+        // 每60帧检查一次平均帧率
+        if (frameTimings.length >= MAX_FRAME_SAMPLES && !lowFpsWarningShown) {
+          const avgFrameTime = frameTimings.reduce((a, b) => a + b, 0) / frameTimings.length
+          const avgFps = 1000 / avgFrameTime
+
+          // 如果平均帧率低于25fps，在控制台提示用户
+          if (avgFps < 25) {
+            console.warn(
+              `[ThreeLowPolyMap] 检测到低帧率 (${avgFps.toFixed(1)} FPS)。` +
+              `建议在URL添加 ?mapQuality=lite 以提升性能。`
+            )
+            lowFpsWarningShown = true
+          }
+        }
+      }
+
       last = now
       grassSwayUniforms.uMapTime.value = now
       const player = state?.player
@@ -3315,10 +3536,12 @@ function ThreeLowPolyMap({
             } else {
               state.pointer.moving = false
               state.pointer.target = null
+              notifyPlayerIdle(state)
             }
           } else {
             state.pointer.moving = false
             state.pointer.target = null
+            notifyPlayerIdle(state)
           }
         }
       }
@@ -3342,6 +3565,9 @@ function ThreeLowPolyMap({
         cameraFocus.copy(liveFocus)
         camera.position.set(cameraFocus.x, CAMERA_HEIGHT, cameraFocus.z + CAMERA_FORWARD_OFFSET)
         camera.lookAt(cameraFocus.x, cameraFocus.y, cameraFocus.z)
+        sun.position.set(player.position.x + 12, 22, player.position.z + 8)
+        sun.target.position.set(player.position.x, 0, player.position.z)
+        sun.target.updateMatrixWorld()
       }
 
       // === Chunk 视锥剔除 ===
@@ -3364,14 +3590,23 @@ function ThreeLowPolyMap({
         }
       }
 
-      grassObjects.forEach((grass, key) => {
-        if (!key.includes(':glint')) return
-        const [gx, gy] = key.split(':')[0].split(',').map(Number)
-        if (!isGrassTileInVisibleChunk(gx, gy, visibleChunkIds, chunkGrid)) return
-        grass.material.opacity = 0.18 + Math.sin(now / 320 + gx + gy) * 0.08
-        grass.rotation.z += 0.01
-      })
+      const glintMeshes = state?.glintMeshes
+      if (Array.isArray(glintMeshes) && glintMeshes.length > 0) {
+        for (let i = 0; i < glintMeshes.length; i += 1) {
+          const entry = glintMeshes[i]
+          const grass = entry?.mesh
+          if (!grass) continue
+          const gx = entry.tileX
+          const gy = entry.tileY
+          // 只更新可见chunk中的闪光草丛
+          if (!isGrassTileInVisibleChunk(gx, gy, visibleChunkIds, chunkGrid)) continue
+          grass.material.opacity = 0.18 + Math.sin(now / 320 + gx + gy) * 0.08
+          grass.rotation.z += 0.01
+        }
+      }
 
+      // 优化：只更新可见chunk中的踩踏草丛动画
+      if (activeTrampleGrassKeys.size > 0) {
       for (const key of activeTrampleGrassKeys) {
         const grass = grassObjects.get(key)
         if (!grass?.subInstances) {
@@ -3381,6 +3616,12 @@ function ThreeLowPolyMap({
 
         const tx = grass.tileX
         const ty = grass.tileY
+
+        // 跳过不可见chunk中的草丛，节省CPU
+        if (!isGrassTileInVisibleChunk(tx, ty, visibleChunkIds, chunkGrid)) {
+          continue
+        }
+
         const trample = Math.max(0, ((grass.trampleUntil ?? 0) - now) / TRAMPLED_GRASS_MS)
         if (trample <= 0) {
           activeTrampleGrassKeys.delete(key)
@@ -3417,34 +3658,51 @@ function ThreeLowPolyMap({
         dirtyMeshes.forEach((m) => { m.instanceMatrix.needsUpdate = true })
         dirtyMeshes.clear()
       }
+      }
 
       if (!renderer.getContext?.()?.isContextLost?.()) {
         renderer.render(scene, camera)
       }
-      if (perfProbeEnabled && typeof window !== 'undefined') {
-        window.__THREE_LOW_POLY_MAP_PERF__ = {
-          mapName: currentMapName,
-          canvasWidth: renderer.domElement.width,
-          canvasHeight: renderer.domElement.height,
-          cssWidth: renderer.domElement.clientWidth,
-          cssHeight: renderer.domElement.clientHeight,
-          devicePixelRatio: window.devicePixelRatio || 1,
-          pixelRatio: renderer.getPixelRatio(),
-          drawCalls: renderer.info.render.calls,
-          triangles: renderer.info.render.triangles,
-          points: renderer.info.render.points,
-          lines: renderer.info.render.lines,
-          geometries: renderer.info.memory.geometries,
-          textures: renderer.info.memory.textures,
-          sceneChildren: scene.children.length,
-          rootChildren: root.children.length,
-          visibleChunks: visibleChunkCount,
-          totalChunks: mapChunks?.length || 0
+
+      // 性能监控：移动端减少性能统计的频率以节省CPU
+      const shouldUpdatePerfStats = perfProbeEnabled && typeof window !== 'undefined'
+      const isMobile = isMobileSafari() || isMobileDevice()
+      const perfUpdateInterval = isMobile ? 60 : 1 // 移动端每60帧更新一次
+
+      if (shouldUpdatePerfStats) {
+        // 移动端降低性能统计频率
+        if (!isMobile || (state.frameCount || 0) % perfUpdateInterval === 0) {
+          window.__THREE_LOW_POLY_MAP_PERF__ = {
+            mapName: currentMapName,
+            mapVisualQuality: readMapVisualQualityPref(),
+            isMobile,
+            canvasWidth: renderer.domElement.width,
+            canvasHeight: renderer.domElement.height,
+            cssWidth: renderer.domElement.clientWidth,
+            cssHeight: renderer.domElement.clientHeight,
+            devicePixelRatio: window.devicePixelRatio || 1,
+            pixelRatio: renderer.getPixelRatio(),
+            drawCalls: renderer.info.render.calls,
+            triangles: renderer.info.render.triangles,
+            points: renderer.info.render.points,
+            lines: renderer.info.render.lines,
+            geometries: renderer.info.memory.geometries,
+            textures: renderer.info.memory.textures,
+            sceneChildren: scene.children.length,
+            rootChildren: root.children.length,
+            visibleChunks: visibleChunkCount,
+            totalChunks: mapChunks?.length || 0,
+            avgFps: frameTimings.length > 0
+              ? (1000 / (frameTimings.reduce((a, b) => a + b, 0) / frameTimings.length)).toFixed(1)
+              : 'N/A'
+          }
         }
+        state.frameCount = (state.frameCount || 0) + 1
       }
-      frameId = requestAnimationFrame(animate)
+
+      scheduleAnimation()
     }
-    frameId = requestAnimationFrame(animate)
+    scheduleAnimation()
 
     const keyDown = (event) => {
       let direction = null
@@ -3485,7 +3743,7 @@ function ThreeLowPolyMap({
       disposed = true
       clearActiveThreeMapRenderer(host, cleanupRenderer)
       clearMoveDelayTimer()
-      cancelAnimationFrame(frameId)
+      if (frameId != null) cancelAnimationFrame(frameId)
       window.clearTimeout(healthTimerId)
       window.clearTimeout(recoveryTimerId)
       window.removeEventListener('resize', handleResize)
@@ -3578,6 +3836,9 @@ function ThreeLowPolyMap({
     stateRef.current.cloudBlocked = cloudBlocked
     stateRef.current.mapActive = mapActive
     stateRef.current.springRestoreAnimation = springRestoreAnimation
+    if (mapActive) {
+      stateRef.current.kickAnimation?.()
+    }
   }, [
     cloudBlocked,
     currentMapBossCompleted,

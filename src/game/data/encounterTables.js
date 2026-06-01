@@ -82,7 +82,7 @@ export const ENCOUNTER_TABLES = {
       { id: 119, minLevel: 5, maxLevel: 8, weight: 18 },
       { id: 106, minLevel: 6, maxLevel: 8, weight: 14 },
       { id: 110, minLevel: 6, maxLevel: 8, weight: 12 },
-      { id: 4, minLevel: 5, maxLevel: 8, weight: 14 }
+      { id: 4, minLevel: 5, maxLevel: 8, weight: 7 }
     ]
   },
 
@@ -238,12 +238,17 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.22,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 1, minLevel: 5, maxLevel: 12, weight: 28 },
-      { id: 98, minLevel: 5, maxLevel: 12, weight: 22 },
-      { id: 13, minLevel: 5, maxLevel: 12, weight: 18 },
-      { id: 39, minLevel: 5, maxLevel: 12, weight: 14 },
-      { id: 114, minLevel: 5, maxLevel: 12, weight: 10 },
-      { id: 119, minLevel: 6, maxLevel: 12, weight: 8 }
+      { id: 120, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 1, minLevel: 5, maxLevel: 12, weight: 24 },
+      { id: 89, minLevel: 5, maxLevel: 6, weight: 22 },
+      { id: 148, minLevel: 5, maxLevel: 6, weight: 20 },
+      { id: 151, minLevel: 5, maxLevel: 12, weight: 18 },
+      { id: 98, minLevel: 5, maxLevel: 12, weight: 14 },
+      { id: 13, minLevel: 5, maxLevel: 12, weight: 12 },
+      { id: 118, minLevel: 7, maxLevel: 9, weight: 7 },
+      { id: 149, minLevel: 7, maxLevel: 9, weight: 7 },
+      { id: 114, minLevel: 5, maxLevel: 12, weight: 8 },
+      { id: 119, minLevel: 6, maxLevel: 12, weight: 6 }
     ]
   },
   /** 星音草径南草坡：普通/飞行练级位 */
@@ -252,11 +257,13 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 13, minLevel: 5, maxLevel: 12, weight: 24 },
-      { id: 39, minLevel: 5, maxLevel: 12, weight: 22 },
-      { id: 119, minLevel: 6, maxLevel: 12, weight: 18 },
-      { id: 114, minLevel: 5, maxLevel: 12, weight: 16 },
-      { id: 98, minLevel: 5, maxLevel: 12, weight: 12 },
+      { id: 113, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 154, minLevel: 5, maxLevel: 12, weight: 26 },
+      { id: 156, minLevel: 5, maxLevel: 12, weight: 22 },
+      { id: 151, minLevel: 5, maxLevel: 12, weight: 18 },
+      { id: 169, minLevel: 6, maxLevel: 12, weight: 16 },
+      { id: 39, minLevel: 5, maxLevel: 12, weight: 12 },
+      { id: 114, minLevel: 5, maxLevel: 12, weight: 10 },
       { id: 1, minLevel: 5, maxLevel: 12, weight: 8 }
     ]
   },
@@ -266,12 +273,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.20,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 114, minLevel: 5, maxLevel: 12, weight: 24 },
-      { id: 1, minLevel: 5, maxLevel: 12, weight: 22 },
-      { id: 119, minLevel: 6, maxLevel: 12, weight: 18 },
-      { id: 13, minLevel: 5, maxLevel: 12, weight: 16 },
-      { id: 39, minLevel: 5, maxLevel: 12, weight: 12 },
-      { id: 98, minLevel: 5, maxLevel: 12, weight: 8 }
+      { id: 112, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 165, minLevel: 5, maxLevel: 12, weight: 24 },
+      { id: 162, minLevel: 5, maxLevel: 12, weight: 20 },
+      { id: 178, minLevel: 6, maxLevel: 12, weight: 18 },
+      { id: 114, minLevel: 5, maxLevel: 12, weight: 14 },
+      { id: 1, minLevel: 5, maxLevel: 12, weight: 12 },
+      { id: 119, minLevel: 6, maxLevel: 12, weight: 8 },
+      { id: 39, minLevel: 5, maxLevel: 12, weight: 4 }
     ]
   },
 
@@ -281,11 +290,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.22,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 14, minLevel: 11, maxLevel: 18, weight: 32 },
-      { id: 16, minLevel: 11, maxLevel: 18, weight: 28 },
-      { id: 77, minLevel: 12, maxLevel: 18, weight: 14 },
-      { id: 13, minLevel: 11, maxLevel: 16, weight: 12 },
-      { id: 80, minLevel: 12, maxLevel: 18, weight: 10 },
+      { id: 121, minLevel: 11, maxLevel: 18, weight: 6 },
+      { id: 110, minLevel: 11, maxLevel: 15, weight: 8 },
+      { id: 14, minLevel: 11, maxLevel: 18, weight: 26 },
+      { id: 176, minLevel: 11, maxLevel: 18, weight: 22 },
+      { id: 186, minLevel: 11, maxLevel: 18, weight: 18 },
+      { id: 16, minLevel: 11, maxLevel: 18, weight: 16 },
+      { id: 77, minLevel: 12, maxLevel: 18, weight: 10 },
+      { id: 80, minLevel: 12, maxLevel: 18, weight: 8 },
       { id: 78, minLevel: 12, maxLevel: 18, weight: 4 }
     ]
   },
@@ -295,12 +307,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 16, minLevel: 11, maxLevel: 18, weight: 30 },
-      { id: 14, minLevel: 11, maxLevel: 18, weight: 24 },
-      { id: 78, minLevel: 12, maxLevel: 18, weight: 18 },
-      { id: 77, minLevel: 12, maxLevel: 18, weight: 14 },
-      { id: 80, minLevel: 12, maxLevel: 18, weight: 10 },
-      { id: 13, minLevel: 11, maxLevel: 16, weight: 4 }
+      { id: 116, minLevel: 11, maxLevel: 18, weight: 6 },
+      { id: 181, minLevel: 11, maxLevel: 18, weight: 26 },
+      { id: 183, minLevel: 11, maxLevel: 18, weight: 22 },
+      { id: 16, minLevel: 11, maxLevel: 18, weight: 18 },
+      { id: 14, minLevel: 11, maxLevel: 18, weight: 14 },
+      { id: 78, minLevel: 12, maxLevel: 18, weight: 10 },
+      { id: 77, minLevel: 12, maxLevel: 18, weight: 6 },
+      { id: 186, minLevel: 11, maxLevel: 18, weight: 4 }
     ]
   },
   /** 雾湖苇岸东岸潮草：湖心边缘，墨海马/大舌贝/海星星偏多 */
@@ -309,12 +323,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.23,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 77, minLevel: 12, maxLevel: 18, weight: 28 },
-      { id: 78, minLevel: 12, maxLevel: 18, weight: 22 },
-      { id: 80, minLevel: 12, maxLevel: 18, weight: 18 },
-      { id: 14, minLevel: 11, maxLevel: 18, weight: 16 },
-      { id: 16, minLevel: 11, maxLevel: 18, weight: 10 },
-      { id: 13, minLevel: 11, maxLevel: 16, weight: 6 }
+      { id: 5, minLevel: 12, maxLevel: 18, weight: 8 },
+      { id: 77, minLevel: 12, maxLevel: 18, weight: 24 },
+      { id: 167, minLevel: 11, maxLevel: 18, weight: 20 },
+      { id: 78, minLevel: 12, maxLevel: 18, weight: 18 },
+      { id: 163, minLevel: 16, maxLevel: 18, weight: 7 },
+      { id: 80, minLevel: 12, maxLevel: 18, weight: 12 },
+      { id: 14, minLevel: 11, maxLevel: 18, weight: 8 },
+      { id: 16, minLevel: 11, maxLevel: 18, weight: 4 }
     ]
   },
 
@@ -324,11 +340,15 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.20,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 87, minLevel: 17, maxLevel: 24, weight: 28 },
-      { id: 88, minLevel: 17, maxLevel: 24, weight: 22 },
-      { id: 119, minLevel: 17, maxLevel: 24, weight: 18 },
-      { id: 106, minLevel: 17, maxLevel: 24, weight: 14 },
-      { id: 96, minLevel: 17, maxLevel: 24, weight: 12 },
+      { id: 23, minLevel: 17, maxLevel: 24, weight: 8 },
+      { id: 107, minLevel: 17, maxLevel: 24, weight: 8 },
+      { id: 158, minLevel: 17, maxLevel: 21, weight: 10 },
+      { id: 87, minLevel: 17, maxLevel: 24, weight: 24 },
+      { id: 160, minLevel: 17, maxLevel: 21, weight: 22 },
+      { id: 170, minLevel: 17, maxLevel: 23, weight: 18 },
+      { id: 88, minLevel: 17, maxLevel: 24, weight: 16 },
+      { id: 106, minLevel: 17, maxLevel: 24, weight: 12 },
+      { id: 96, minLevel: 17, maxLevel: 24, weight: 8 },
       { id: 102, minLevel: 17, maxLevel: 24, weight: 6 }
     ]
   },
@@ -338,12 +358,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.23,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 119, minLevel: 17, maxLevel: 24, weight: 26 },
-      { id: 106, minLevel: 17, maxLevel: 24, weight: 22 },
-      { id: 96, minLevel: 17, maxLevel: 24, weight: 18 },
-      { id: 88, minLevel: 17, maxLevel: 24, weight: 16 },
-      { id: 87, minLevel: 17, maxLevel: 24, weight: 12 },
-      { id: 102, minLevel: 17, maxLevel: 24, weight: 6 }
+      { id: 20, minLevel: 17, maxLevel: 24, weight: 10 },
+      { id: 155, minLevel: 20, maxLevel: 24, weight: 7 },
+      { id: 157, minLevel: 20, maxLevel: 24, weight: 7 },
+      { id: 106, minLevel: 17, maxLevel: 24, weight: 18 },
+      { id: 96, minLevel: 17, maxLevel: 24, weight: 14 },
+      { id: 88, minLevel: 17, maxLevel: 24, weight: 12 },
+      { id: 87, minLevel: 17, maxLevel: 24, weight: 8 },
+      { id: 102, minLevel: 17, maxLevel: 24, weight: 4 }
     ]
   },
   /** 风车农庄东麦田：靠近低坡，格斗/岩石系更常见 */
@@ -352,12 +374,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.23,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 96, minLevel: 17, maxLevel: 24, weight: 26 },
-      { id: 102, minLevel: 17, maxLevel: 24, weight: 22 },
-      { id: 106, minLevel: 17, maxLevel: 24, weight: 18 },
-      { id: 87, minLevel: 17, maxLevel: 24, weight: 14 },
-      { id: 88, minLevel: 17, maxLevel: 24, weight: 12 },
-      { id: 119, minLevel: 17, maxLevel: 24, weight: 8 }
+      { id: 97, minLevel: 17, maxLevel: 24, weight: 10 },
+      { id: 172, minLevel: 17, maxLevel: 24, weight: 24 },
+      { id: 174, minLevel: 17, maxLevel: 24, weight: 20 },
+      { id: 96, minLevel: 17, maxLevel: 24, weight: 18 },
+      { id: 102, minLevel: 17, maxLevel: 24, weight: 14 },
+      { id: 106, minLevel: 17, maxLevel: 24, weight: 12 },
+      { id: 87, minLevel: 17, maxLevel: 24, weight: 8 },
+      { id: 88, minLevel: 17, maxLevel: 24, weight: 4 }
     ]
   },
 
@@ -367,12 +391,17 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.22,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 79, minLevel: 23, maxLevel: 30, weight: 24 },
-      { id: 80, minLevel: 23, maxLevel: 30, weight: 22 },
-      { id: 82, minLevel: 23, maxLevel: 30, weight: 18 },
-      { id: 81, minLevel: 23, maxLevel: 30, weight: 16 },
-      { id: 77, minLevel: 23, maxLevel: 30, weight: 14 },
-      { id: 5, minLevel: 23, maxLevel: 30, weight: 6 }
+      { id: 93, minLevel: 23, maxLevel: 29, weight: 6 },
+      { id: 65, minLevel: 23, maxLevel: 29, weight: 7 },
+      { id: 22, minLevel: 23, maxLevel: 30, weight: 8 },
+      { id: 83, minLevel: 23, maxLevel: 29, weight: 7 },
+      { id: 79, minLevel: 23, maxLevel: 30, weight: 22 },
+      { id: 184, minLevel: 23, maxLevel: 27, weight: 20 },
+      { id: 185, minLevel: 23, maxLevel: 30, weight: 16 },
+      { id: 80, minLevel: 23, maxLevel: 30, weight: 14 },
+      { id: 82, minLevel: 23, maxLevel: 30, weight: 12 },
+      { id: 81, minLevel: 23, maxLevel: 30, weight: 10 },
+      { id: 77, minLevel: 23, maxLevel: 30, weight: 6 }
     ]
   },
   /** 贝壳海岸南岸潮草：水边练级位 */
@@ -381,12 +410,15 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 77, minLevel: 23, maxLevel: 30, weight: 26 },
-      { id: 79, minLevel: 23, maxLevel: 30, weight: 24 },
-      { id: 80, minLevel: 23, maxLevel: 30, weight: 18 },
-      { id: 81, minLevel: 23, maxLevel: 30, weight: 14 },
-      { id: 82, minLevel: 23, maxLevel: 30, weight: 12 },
-      { id: 5, minLevel: 23, maxLevel: 30, weight: 6 }
+      { id: 52, minLevel: 23, maxLevel: 29, weight: 7 },
+      { id: 84, minLevel: 23, maxLevel: 29, weight: 7 },
+      { id: 182, minLevel: 30, maxLevel: 30, weight: 5 },
+      { id: 177, minLevel: 25, maxLevel: 30, weight: 7 },
+      { id: 79, minLevel: 23, maxLevel: 30, weight: 18 },
+      { id: 77, minLevel: 23, maxLevel: 30, weight: 14 },
+      { id: 80, minLevel: 23, maxLevel: 30, weight: 12 },
+      { id: 81, minLevel: 23, maxLevel: 30, weight: 8 },
+      { id: 82, minLevel: 23, maxLevel: 30, weight: 6 }
     ]
   },
   /** 贝壳海岸沉船潮草：高等级水系与化石系更集中 */
@@ -395,11 +427,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.25,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 44, minLevel: 28, maxLevel: 30, weight: 22 },
-      { id: 82, minLevel: 23, maxLevel: 30, weight: 20 },
-      { id: 81, minLevel: 23, maxLevel: 30, weight: 18 },
-      { id: 80, minLevel: 23, maxLevel: 30, weight: 16 },
-      { id: 77, minLevel: 23, maxLevel: 30, weight: 14 },
+      { id: 130, minLevel: 23, maxLevel: 29, weight: 3 },
+      { id: 90, minLevel: 23, maxLevel: 29, weight: 7 },
+      { id: 175, minLevel: 26, maxLevel: 30, weight: 7 },
+      { id: 166, minLevel: 28, maxLevel: 30, weight: 7 },
+      { id: 44, minLevel: 28, maxLevel: 30, weight: 16 },
+      { id: 82, minLevel: 23, maxLevel: 30, weight: 14 },
+      { id: 81, minLevel: 23, maxLevel: 30, weight: 12 },
+      { id: 80, minLevel: 23, maxLevel: 30, weight: 12 },
       { id: 79, minLevel: 23, maxLevel: 30, weight: 10 }
     ]
   },
@@ -410,11 +445,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 30 },
-      { id: 100, minLevel: 29, maxLevel: 36, weight: 20 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 18 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 16 },
-      { id: 6, minLevel: 29, maxLevel: 36, weight: 10 },
+      { id: 32, minLevel: 29, maxLevel: 35, weight: 8 },
+      { id: 91, minLevel: 29, maxLevel: 29, weight: 7 },
+      { id: 21, minLevel: 29, maxLevel: 36, weight: 26 },
+      { id: 173, minLevel: 31, maxLevel: 36, weight: 7 },
+      { id: 164, minLevel: 32, maxLevel: 36, weight: 5 },
+      { id: 100, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 101, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 43, minLevel: 29, maxLevel: 36, weight: 10 },
       { id: 137, minLevel: 30, maxLevel: 36, weight: 6 }
     ]
   },
@@ -424,12 +462,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.28,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 100, minLevel: 29, maxLevel: 36, weight: 28 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 24 },
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 18 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 14 },
-      { id: 6, minLevel: 29, maxLevel: 36, weight: 10 },
-      { id: 137, minLevel: 30, maxLevel: 36, weight: 6 }
+      { id: 48, minLevel: 29, maxLevel: 36, weight: 8 },
+      { id: 100, minLevel: 29, maxLevel: 36, weight: 24 },
+      { id: 180, minLevel: 33, maxLevel: 36, weight: 5 },
+      { id: 153, minLevel: 36, maxLevel: 36, weight: 5 },
+      { id: 101, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 21, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 43, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 137, minLevel: 30, maxLevel: 36, weight: 8 }
     ]
   },
   /** 月影墓园月影荒草：幽灵/恶系稀有位 */
@@ -438,12 +478,15 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 6, minLevel: 29, maxLevel: 36, weight: 26 },
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 22 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 16 },
-      { id: 137, minLevel: 30, maxLevel: 36, weight: 14 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 12 },
-      { id: 100, minLevel: 29, maxLevel: 36, weight: 10 }
+      { id: 4, minLevel: 29, maxLevel: 29, weight: 7 },
+      { id: 124, minLevel: 29, maxLevel: 29, weight: 8 },
+      { id: 6, minLevel: 29, maxLevel: 36, weight: 24 },
+      { id: 188, minLevel: 29, maxLevel: 36, weight: 7 },
+      { id: 187, minLevel: 33, maxLevel: 36, weight: 5 },
+      { id: 21, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 43, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 137, minLevel: 30, maxLevel: 36, weight: 12 },
+      { id: 101, minLevel: 29, maxLevel: 36, weight: 8 }
     ]
   },
 
@@ -453,12 +496,16 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 38, minLevel: 35, maxLevel: 42, weight: 24 },
-      { id: 45, minLevel: 35, maxLevel: 42, weight: 20 },
-      { id: 11, minLevel: 35, maxLevel: 42, weight: 16 },
-      { id: 108, minLevel: 35, maxLevel: 42, weight: 16 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 14 },
-      { id: 103, minLevel: 35, maxLevel: 42, weight: 10 }
+      { id: 95, minLevel: 35, maxLevel: 39, weight: 6 },
+      { id: 56, minLevel: 35, maxLevel: 41, weight: 8 },
+      { id: 85, minLevel: 35, maxLevel: 39, weight: 7 },
+      { id: 38, minLevel: 35, maxLevel: 42, weight: 22 },
+      { id: 45, minLevel: 35, maxLevel: 42, weight: 18 },
+      { id: 153, minLevel: 36, maxLevel: 42, weight: 5 },
+      { id: 11, minLevel: 35, maxLevel: 42, weight: 14 },
+      { id: 108, minLevel: 35, maxLevel: 42, weight: 14 },
+      { id: 135, minLevel: 35, maxLevel: 42, weight: 10 },
+      { id: 103, minLevel: 35, maxLevel: 42, weight: 6 }
     ]
   },
   /** 六角遗迹西遗迹草丛：岩石/地面训练位 */
@@ -467,12 +514,13 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.26,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 103, minLevel: 35, maxLevel: 42, weight: 24 },
-      { id: 105, minLevel: 35, maxLevel: 42, weight: 22 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 18 },
-      { id: 38, minLevel: 35, maxLevel: 42, weight: 14 },
-      { id: 108, minLevel: 35, maxLevel: 42, weight: 12 },
-      { id: 45, minLevel: 35, maxLevel: 42, weight: 10 }
+      { id: 103, minLevel: 35, maxLevel: 42, weight: 22 },
+      { id: 105, minLevel: 35, maxLevel: 42, weight: 20 },
+      { id: 175, minLevel: 35, maxLevel: 42, weight: 7 },
+      { id: 135, minLevel: 35, maxLevel: 42, weight: 14 },
+      { id: 38, minLevel: 35, maxLevel: 42, weight: 12 },
+      { id: 108, minLevel: 35, maxLevel: 42, weight: 10 },
+      { id: 45, minLevel: 35, maxLevel: 42, weight: 6 }
     ]
   },
   /** 六角遗迹东遗迹草丛：电系机关与超能残响更明显 */
@@ -481,12 +529,15 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 45, minLevel: 35, maxLevel: 42, weight: 24 },
-      { id: 38, minLevel: 35, maxLevel: 42, weight: 22 },
-      { id: 108, minLevel: 35, maxLevel: 42, weight: 18 },
-      { id: 11, minLevel: 35, maxLevel: 42, weight: 14 },
-      { id: 105, minLevel: 35, maxLevel: 42, weight: 12 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 10 }
+      { id: 92, minLevel: 35, maxLevel: 39, weight: 6 },
+      { id: 60, minLevel: 35, maxLevel: 42, weight: 8 },
+      { id: 45, minLevel: 35, maxLevel: 42, weight: 22 },
+      { id: 168, minLevel: 35, maxLevel: 42, weight: 7 },
+      { id: 38, minLevel: 35, maxLevel: 42, weight: 18 },
+      { id: 108, minLevel: 35, maxLevel: 42, weight: 14 },
+      { id: 11, minLevel: 35, maxLevel: 42, weight: 12 },
+      { id: 105, minLevel: 35, maxLevel: 42, weight: 10 },
+      { id: 135, minLevel: 35, maxLevel: 42, weight: 6 }
     ]
   },
 
@@ -496,12 +547,16 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.26,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 24 },
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 22 },
-      { id: 51, minLevel: 42, maxLevel: 47, weight: 18 },
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 14 },
-      { id: 131, minLevel: 41, maxLevel: 47, weight: 12 },
-      { id: 109, minLevel: 41, maxLevel: 47, weight: 10 }
+      { id: 141, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 61, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 49, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 34, minLevel: 41, maxLevel: 47, weight: 22 },
+      { id: 159, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 157, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 35, minLevel: 41, maxLevel: 47, weight: 14 },
+      { id: 51, minLevel: 42, maxLevel: 47, weight: 12 },
+      { id: 139, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 131, minLevel: 41, maxLevel: 47, weight: 3 }
     ]
   },
   /** 铁木营地南岭草丛：岩石/地面系更集中 */
@@ -510,12 +565,13 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 26 },
-      { id: 51, minLevel: 42, maxLevel: 47, weight: 22 },
-      { id: 131, minLevel: 41, maxLevel: 47, weight: 18 },
-      { id: 109, minLevel: 41, maxLevel: 47, weight: 14 },
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 12 },
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 8 }
+      { id: 35, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 161, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 51, minLevel: 42, maxLevel: 47, weight: 18 },
+      { id: 131, minLevel: 41, maxLevel: 47, weight: 3 },
+      { id: 109, minLevel: 41, maxLevel: 47, weight: 12 },
+      { id: 139, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 34, minLevel: 41, maxLevel: 47, weight: 6 }
     ]
   },
   /** 铁木营地东岭草丛：钢系和后期普通系更突出 */
@@ -524,12 +580,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 26 },
-      { id: 109, minLevel: 41, maxLevel: 47, weight: 20 },
-      { id: 51, minLevel: 42, maxLevel: 47, weight: 18 },
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 14 },
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 12 },
-      { id: 131, minLevel: 41, maxLevel: 47, weight: 10 }
+      { id: 10, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 139, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 155, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 109, minLevel: 41, maxLevel: 47, weight: 16 },
+      { id: 51, minLevel: 42, maxLevel: 47, weight: 14 },
+      { id: 35, minLevel: 41, maxLevel: 47, weight: 12 },
+      { id: 34, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 131, minLevel: 41, maxLevel: 47, weight: 3 }
     ]
   },
 
@@ -539,12 +597,16 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 22 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 131, minLevel: 52, maxLevel: 60, weight: 18 },
-      { id: 143, minLevel: 52, maxLevel: 60, weight: 16 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 12 },
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 12 }
+      { id: 25, minLevel: 55, maxLevel: 60, weight: 3 },
+      { id: 9, minLevel: 52, maxLevel: 60, weight: 6 },
+      { id: 57, minLevel: 52, maxLevel: 60, weight: 8 },
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 123, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 3 },
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 14 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 8 }
     ]
   },
   /** 星雾高地南高地草丛：火/水强敌练级位 */
@@ -553,12 +615,14 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.28,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 22 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 131, minLevel: 52, maxLevel: 60, weight: 18 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 16 },
-      { id: 143, minLevel: 52, maxLevel: 60, weight: 12 },
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 12 }
+      { id: 26, minLevel: 55, maxLevel: 60, weight: 3 },
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 180, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 182, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 16 },
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 3 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 8 }
     ]
   },
   /** 星雾高地东高地草丛：电/龙/终盘混合位，遇敌率最高 */
@@ -567,12 +631,15 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.30,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 143, minLevel: 52, maxLevel: 60, weight: 22 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 18 },
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 16 },
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 12 },
-      { id: 131, minLevel: 52, maxLevel: 60, weight: 12 }
+      { id: 69, minLevel: 58, maxLevel: 60, weight: 2 },
+      { id: 27, minLevel: 55, maxLevel: 60, weight: 3 },
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 20 },
+      { id: 150, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 164, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
+      { id: 74, minLevel: 52, maxLevel: 60, weight: 14 },
+      { id: 76, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 72, minLevel: 52, maxLevel: 60, weight: 10 }
     ]
   }
 }

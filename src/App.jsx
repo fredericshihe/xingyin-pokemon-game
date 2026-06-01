@@ -6,12 +6,14 @@ import { pokemonArtUrl, pokemonArtPngUrl, POKEMON_PLACEHOLDER_URL } from './util
 import { primeStudentSession } from './utils/primeStudentSession'
 import { loadGameStyles } from './utils/loadGameStyles'
 import { lazyWithRetry } from './utils/lazyWithRetry'
-import AppLoadingScreen from './components/AppLoadingScreen'
+import { markAppReady } from './utils/clientUpdate'
+import { gameAudio } from './utils/gameAudio'
+import { gameBgm } from './utils/gameBgm'
+import UnifiedBootScreen from './components/UnifiedBootScreen'
 import LazyRouteErrorBoundary from './components/LazyRouteErrorBoundary'
 
 const Login = lazyWithRetry(() => import('./components/Auth/Login'))
 const Register = lazyWithRetry(() => import('./components/Auth/Register'))
-const GameWrapper = lazyWithRetry(() => import('./components/Game/GameWrapper'))
 const TeacherDashboard = lazyWithRetry(() => import('./components/Teacher/Dashboard'))
 const MapRuntimePreview = lazyWithRetry(() => import('./game/MapRuntimePreview'))
 
@@ -39,16 +41,28 @@ function GlobalLogoutButton({ onLogout }) {
   )
 }
 
+function preloadStudentGameModule(setStudentGameComponent) {
+  return import('./components/Game/GameWrapper').then((module) => {
+    setStudentGameComponent(() => module.default)
+  })
+}
+
 function App() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authView, setAuthView] = useState('login') // 'login' or 'register'
+  const [StudentGameComponent, setStudentGameComponent] = useState(null)
 
   useEffect(() => {
     void import('./components/Auth/Login')
     void import('./components/Auth/Register')
     warmImageAssets(AUTH_LOCAL_IMAGE_ASSETS, { concurrency: 4, timeoutMs: 3500 })
+    const storedProfile = authService.getStoredProfile()
+    if (storedProfile?.role === 'student') {
+      primeStudentSession()
+      void preloadStudentGameModule(setStudentGameComponent)
+    }
   }, [])
 
   useEffect(() => {
@@ -63,6 +77,9 @@ function App() {
 
       if (storedProfile.role === 'student') {
         primeStudentSession()
+        void import('./components/Game/GameWrapper').then((module) => {
+          if (!cancelled) setStudentGameComponent(() => module.default)
+        })
       }
 
       authService.refreshStoredProfile()
@@ -98,8 +115,13 @@ function App() {
     void loadGameStyles()
     if (profile.role === 'student') {
       primeStudentSession()
+      void preloadStudentGameModule(setStudentGameComponent)
     }
   }, [profile?.id, profile?.role])
+
+  useEffect(() => {
+    if (!loading) markAppReady()
+  }, [loading])
 
   const handleLogin = async (username, password) => {
     const result = await authService.login(username, password)
@@ -110,6 +132,7 @@ function App() {
       void loadGameStyles()
       if (storedProfile?.role === 'student') {
         primeStudentSession()
+        void preloadStudentGameModule(setStudentGameComponent)
       }
     }
     return result
@@ -124,28 +147,39 @@ function App() {
   }
 
   const handleLogout = async () => {
+    if (typeof gameAudio?.stopAll === 'function') {
+      gameAudio.stopAll()
+    }
+    if (typeof gameBgm?.stop === 'function') {
+      await gameBgm.stop({ immediate: true })
+    }
     await authService.logout()
     setUser(null)
     setProfile(null)
+    setStudentGameComponent(null)
   }
 
   const mapRuntimePreviewEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_MAP_RUNTIME_PREVIEW === 'true'
-  if (mapRuntimePreviewEnabled && window.location.pathname === '/map-runtime-preview') {
+  const isMapRuntimePreviewPath = typeof window !== 'undefined' && (
+    window.location.pathname === '/map-runtime-preview' ||
+    window.location.pathname.endsWith('/map-runtime-preview')
+  )
+  if (mapRuntimePreviewEnabled && isMapRuntimePreviewPath) {
     return (
-      <Suspense fallback={<AppLoadingScreen message="地图预览加载中..." />}>
+      <Suspense fallback={<UnifiedBootScreen phase="地图预览加载中..." showProgressBar={false} />}>
         <MapRuntimePreview />
       </Suspense>
     )
   }
 
   if (loading) {
-    return <AppLoadingScreen message="加载中..." />
+    return <UnifiedBootScreen phase="加载中..." showProgressBar={false} />
   }
 
   if (!user || !profile) {
     return (
       <LazyRouteErrorBoundary>
-        <Suspense fallback={<AppLoadingScreen message={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} />}>
+        <Suspense fallback={<UnifiedBootScreen phase={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} showProgressBar={false} />}>
           {authView === 'login' ? (
             <Login
               onLogin={handleLogin}
@@ -168,21 +202,27 @@ function App() {
       {profile.role !== 'student' && <GlobalLogoutButton onLogout={handleLogout} />}
       <Router basename={basename} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <LazyRouteErrorBoundary>
-          <Suspense fallback={<AppLoadingScreen message={profile.role === 'student' ? '游戏加载中...' : '教师后台加载中...'} />}>
-            <Routes>
-              {profile.role === 'student' ? (
+          {profile.role === 'student' ? (
+            StudentGameComponent ? (
+              <Routes>
                 <Route
                   path="/*"
-                  element={<GameWrapper user={profile} onLogout={handleLogout} />}
+                  element={<StudentGameComponent user={profile} onLogout={handleLogout} />}
                 />
-              ) : (
+              </Routes>
+            ) : (
+              <UnifiedBootScreen phase="正在加载游戏模块..." showProgressBar={false} />
+            )
+          ) : (
+            <Suspense fallback={<UnifiedBootScreen phase="教师后台加载中..." showProgressBar={false} />}>
+              <Routes>
                 <Route
                   path="/*"
                   element={<TeacherDashboard profile={profile} />}
                 />
-              )}
-            </Routes>
-          </Suspense>
+              </Routes>
+            </Suspense>
+          )}
         </LazyRouteErrorBoundary>
       </Router>
     </>

@@ -59,6 +59,7 @@ npm run dev
 - ✅ 必须联网游戏，登录后直接从后端读取云端进度
 - ✅ 关键操作后自动同步云端，并支持随时手动保存
 - ✅ 完整游戏逻辑已集成
+- ✅ 进入游戏前会显示**加载进度条**，需完整图鉴、商店素材与全部地图 3D 模型加载成功后才会进入
 - 📝 地图玩法升级见 `docs/MAP_GAMEPLAY_UPGRADE_PLAN.md`（**须先将主地图扩至 100×100**，见该文档 §0、§6 阶段零）
 - 📝 队伍上限 6、仓库上限 100、「宝可梦」双 Tab 管理、捕捉安置与道具边界见 `docs/POKEMON_ROSTER_STORAGE_UPGRADE_PLAN.md`
 - 📝 战斗失败系统方案 B 见 `docs/DEFEAT_SYSTEM_UPGRADE_PLAN.md` — **须在 100×100 扩图 + 地图玩法升级均验收后再开发**
@@ -140,8 +141,9 @@ npm run dev
 2. 将代码推送到 GitHub：`fredericshihe/xingyin-pokemon-game`
 3. GitHub Actions 会自动构建并发布到 **gh-pages** 分支（工作流：`.github/workflows/deploy-pages.yml`）
 4. 在 GitHub 仓库 **Settings → Secrets** 配置：`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`
-5. 公开地址必须是项目页完整路径：`https://<你的用户名>.github.io/xingyin-pokemon-game/`（末尾斜杠建议保留）
-6. 若改用 Cloudflare Pages 根路径部署，见 **[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)**（需设置 `VITE_BASE_PATH=/`）
+5. 公开地址：**https://pokemongame.site/**（详见 **[docs/DEPLOY_GITHUB_PAGES.md](docs/DEPLOY_GITHUB_PAGES.md)**）
+6. 在 GitHub **Settings → Pages → Custom domain** 填写 `pokemongame.site` 并保存（仓库已带 `CNAME` 文件）
+7. 若改用 Cloudflare Pages，见 **[docs/DEPLOY_CLOUDFLARE.md](docs/DEPLOY_CLOUDFLARE.md)**（同样 `VITE_BASE_PATH=/`）
 
 ---
 
@@ -161,16 +163,25 @@ A: 学生注册时填写老师用户名后，会自动出现在老师的学生�
 
 ### Q: 手机打开 GitHub Pages 一直显示「登录/游戏加载中」？
 A: 常见原因有三点：
-1. **链接不完整**：必须打开 `https://<用户名>.github.io/xingyin-pokemon-game/`，不要少掉仓库名这一段。
+1. **链接错误**：请打开 **https://pokemongame.site/**，不要用 `/xingyin-pokemon-game/` 旧路径。
 2. **首次下载较慢**：游戏 JS 约 2MB+，弱网下会多等一会儿；超过 1 分钟可刷新重试。
 3. **旧缓存**：游戏更新后，请在手机浏览器里清除该站点数据，或用无痕模式重新打开。
 
 若 GitHub Actions 构建失败，检查仓库 Secrets 是否已配置 Supabase 环境变量。
 
+### Q: 游戏更新后手机/电脑还显示旧版？
+A: 发布新版本后，客户端会**自动检测**并处理缓存：
+1. **Service Worker** 定期检查更新，发现新版本会清缓存并刷新页面。
+2. 每次构建带有唯一 **buildId**（git 提交号），与线上 `version.json` 对比，版本不一致会清缓存重载。
+3. 若仍异常，可用浏览器**无痕模式**打开，或在登录页使用「清除缓存并重试」（资源加载失败时）。
+
+### Q: 进入游戏时进度条要加载很久？
+A: **每个新版本首次进入**会阻塞加载：战斗/商店/UI 素材、**完整图鉴**、**全部 9 张地图** 3D 模型（弱网下约 1–3 分钟）。**同一版本内刷新**若本地已标记完成，则不再重复进度条。若加载失败，请换网络后点「重新加载」。
+
 ### Q: 地图里的树/石头看起来很多切面、很粗糙？
 A: 常见原因：
 1. **模型被 Draco 强压缩过**（法线量化后会明显“三角化”）。仓库已恢复未压缩的 Kenney 原版 GLB；请勿随意运行 `npm run compress:models` 的 Draco 模式。
-2. **手机省电渲染**会关闭抗锯齿。可在地址后加 `?mapQuality=high` 强制高画质，或在控制台执行 `localStorage.setItem('mapVisualQuality','high')` 后刷新。
+2. **画质档位**：默认已是 `high`（全开抗锯齿 + 装饰投影）。若手机卡顿，可在链接后加 `?mapQuality=lite`，或执行 `localStorage.setItem('mapVisualQuality','lite')` 后刷新。
 3. 资源本身是 **低多边形风格**，棱角会比写实模型明显，这是正常风格，不是贴图坏了。
 
 ---

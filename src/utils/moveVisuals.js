@@ -4,7 +4,7 @@ export const MOVE_EFFECT_CONFIG = {
   horn_attack: { icon: 'fa-solid fa-location-arrow', visual: 'pierce', motion: 'jab', hitReaction: 'pierce', target: 'foe', accent: '#fef3c7', core: '#92400e', glow: 'rgba(146, 64, 14, 0.62)' },
   quickattack: { icon: 'fa-solid fa-forward-fast', visual: 'speed', motion: 'dash', hitReaction: 'snap', target: 'foe', accent: '#fef3c7', core: '#38bdf8', glow: 'rgba(125, 211, 252, 0.75)' },
   flail: { icon: 'fa-solid fa-arrows-spin', visual: 'flail', motion: 'flail', hitReaction: 'wobble', target: 'foe', accent: '#fef9c3', core: '#fb923c', glow: 'rgba(251, 146, 60, 0.58)' },
-  fury_attack: { icon: 'fa-solid fa-burst', visual: 'fury', motion: 'jab', hitReaction: 'pierce', target: 'foe', accent: '#f8fafc', core: '#475569', glow: 'rgba(148, 163, 184, 0.68)' },
+  fury_attack: { icon: 'fa-solid fa-burst', visual: 'fury', motion: 'flail', hitReaction: 'pierce', target: 'foe', accent: '#f8fafc', core: '#475569', glow: 'rgba(148, 163, 184, 0.68)' },
   bite: { icon: 'fa-solid fa-teeth', visual: 'bite', motion: 'bite', hitReaction: 'crunch', target: 'foe', accent: '#fef3c7', core: '#292524', glow: 'rgba(68, 64, 60, 0.72)' },
   bodyslam: { icon: 'fa-solid fa-weight-hanging', visual: 'slam', motion: 'leap', hitReaction: 'squash', target: 'foe', accent: '#e2e8f0', core: '#78716c', glow: 'rgba(120, 113, 108, 0.62)' },
   slash: { icon: 'fa-solid fa-slash', visual: 'slash', motion: 'swipe', hitReaction: 'slice', target: 'foe', accent: '#ffffff', core: '#334155', glow: 'rgba(241, 245, 249, 0.68)' },
@@ -62,6 +62,24 @@ export const MOVE_EFFECT_CONFIG = {
   dragonclaw: { icon: 'fa-solid fa-dragon', visual: 'dragon-claw', motion: 'swipe', hitReaction: 'slice', target: 'foe', accent: '#c7d2fe', core: '#4338ca', glow: 'rgba(67, 56, 202, 0.76)' },
   iron_tail: { icon: 'fa-solid fa-shield-halved', visual: 'iron-tail', motion: 'tail', hitReaction: 'clang', target: 'foe', accent: '#f8fafc', core: '#64748b', glow: 'rgba(148, 163, 184, 0.86)' },
   moonblast: { icon: 'fa-solid fa-moon', visual: 'moonblast', motion: 'focus', hitReaction: 'ripple', target: 'foe', accent: '#fae8ff', core: '#c026d3', glow: 'rgba(192, 38, 211, 0.78)' },
+
+  // ── 高威力招式精细配置 ──────────────────────────────────────────────────────
+  close_combat: { icon: 'fa-solid fa-dumbbell', visual: 'rage-fist', motion: 'rage', hitReaction: 'crunch', target: 'foe', accent: '#fca5a5', core: '#991b1b', glow: 'rgba(153, 27, 27, 0.82)', scale: 1.12, particleCount: 14 },
+  superpower:   { icon: 'fa-solid fa-dumbbell', visual: 'rage-fist', motion: 'leap',  hitReaction: 'squash', target: 'foe', accent: '#fca5a5', core: '#7f1d1d', glow: 'rgba(127, 29, 29, 0.86)', scale: 1.12, particleCount: 14 },
+  outrage:      { icon: 'fa-solid fa-dragon',   visual: 'dragon-claw', motion: 'rage', hitReaction: 'slice',  target: 'foe', accent: '#a5b4fc', core: '#3730a3', glow: 'rgba(55, 48, 163, 0.86)', scale: 1.12, particleCount: 14 },
+  giga_impact:  { icon: 'fa-solid fa-weight-hanging', visual: 'slam', motion: 'leap', hitReaction: 'squash', target: 'foe', accent: '#e2e8f0', core: '#1e293b', glow: 'rgba(30, 41, 59, 0.88)', scale: 1.12, particleCount: 14 },
+  hyper_beam:   { icon: 'fa-solid fa-wand-magic-sparkles', visual: 'psychic', motion: 'burst', hitReaction: 'blast', target: 'foe', accent: '#f0abfc', core: '#86198f', glow: 'rgba(134, 25, 143, 0.9)', scale: 1.12, particleCount: 14 },
+  thunder:      { icon: 'fa-solid fa-bolt-lightning', visual: 'lightning', motion: 'storm', hitReaction: 'jolt', target: 'foe', accent: '#fef08a', core: '#a16207', glow: 'rgba(250, 204, 21, 0.95)', scale: 1.0, particleCount: 14 },
+  overheat:     { icon: 'fa-solid fa-fire-flame-curved', visual: 'fire-blast', motion: 'burst', hitReaction: 'blast', target: 'foe', accent: '#fef08a', core: '#7f1d1d', glow: 'rgba(239, 68, 68, 0.92)', scale: 1.12, particleCount: 14 },
+  leaf_storm:   { icon: 'fa-solid fa-tornado', visual: 'tornado', motion: 'storm', hitReaction: 'slice', target: 'foe', accent: '#bbf7d0', core: '#166534', glow: 'rgba(21, 128, 61, 0.88)', scale: 1.0, particleCount: 14 },
+
+  // ── 自强化/能力变化招式独立视觉（区分于普通催眠视觉） ─────────────────────────
+  swords_dance:  { icon: 'fa-solid fa-slash', visual: 'slash',   motion: 'flail',  hitReaction: 'heal',  target: 'self', accent: '#fef9c3', core: '#ca8a04', glow: 'rgba(202, 138, 4, 0.72)' },
+  calm_mind:     { icon: 'fa-solid fa-brain', visual: 'psychic', motion: 'focus',  hitReaction: 'heal',  target: 'self', accent: '#fce7f3', core: '#9d174d', glow: 'rgba(157, 23, 77, 0.7)' },
+  dragon_dance:  { icon: 'fa-solid fa-dragon', visual: 'dragon-claw', motion: 'flail', hitReaction: 'heal', target: 'self', accent: '#c7d2fe', core: '#4338ca', glow: 'rgba(67, 56, 202, 0.72)' },
+  nasty_plot:    { icon: 'fa-solid fa-moon',  visual: 'shadow-ball', motion: 'focus', hitReaction: 'heal', target: 'self', accent: '#e7e5e4', core: '#292524', glow: 'rgba(68, 64, 60, 0.7)' },
+  bulk_up:       { icon: 'fa-solid fa-dumbbell', visual: 'rage-fist', motion: 'focus', hitReaction: 'heal', target: 'self', accent: '#fee2e2', core: '#9f1239', glow: 'rgba(159, 18, 57, 0.68)' },
+  quiver_dance:  { icon: 'fa-solid fa-spa',   visual: 'leaves',  motion: 'flail',  hitReaction: 'heal',  target: 'self', accent: '#d1fae5', core: '#065f46', glow: 'rgba(5, 150, 105, 0.72)' },
 };
 
 export const SUPPORTED_MOVE_VISUALS = [

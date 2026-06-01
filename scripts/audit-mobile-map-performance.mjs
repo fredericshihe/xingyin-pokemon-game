@@ -23,7 +23,7 @@ const REGION_MAPS = MAP_CHAIN.filter((mapId) => mapId !== 'GodotMap')
 
 function parseArgs(argv) {
   const args = {
-    baseUrl: 'http://127.0.0.1:4173',
+    baseUrl: 'http://127.0.0.1:4173/xingyin-pokemon-game',
     durationMs: 5000,
     warmupMs: 1800,
     mapSet: 'all',
@@ -254,7 +254,7 @@ async function evaluate(page, expression, timeoutMs = 30000) {
   return result.result?.value
 }
 
-async function waitForSceneReady(page, timeoutMs = 25000) {
+async function waitForSceneReady(page, timeoutMs = 45000) {
   const started = Date.now()
   while (Date.now() - started < timeoutMs) {
     const value = await evaluate(page, `(() => {
@@ -499,15 +499,16 @@ function toMarkdown({ args, maps, devices, results, jsonPath }) {
   lines.push('# Mobile Map Performance Audit')
   lines.push('')
   lines.push(`- Base URL: ${args.baseUrl}`)
+  lines.push(`- Map quality: high (default)`)
   lines.push(`- Maps tested: ${maps.length} (${maps.join(', ')})`)
   lines.push(`- Devices: ${devices.map((device) => device.id).join(', ')}`)
   lines.push(`- Sample: warmup ${args.warmupMs}ms, measure ${args.durationMs}ms, CPU throttle ${args.cpuThrottle ? 'on' : 'off'}`)
   lines.push(`- Raw JSON: ${path.relative(PROJECT_ROOT, jsonPath)}`)
   lines.push('')
-  lines.push('| Status | Device | Map | Ready ms | Avg FPS | P10 FPS | >50ms Frames | Long Tasks | Draw Calls | Triangles | 3D Assets | Asset Failures | Transfer |')
-  lines.push('|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|')
+  lines.push('| Status | Device | Map | Quality | Ready ms | Avg FPS | P10 FPS | >50ms Frames | Long Tasks | Draw Calls | Triangles | 3D Assets | Asset Failures | Transfer |')
+  lines.push('|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|')
   for (const result of results) {
-    lines.push(`| ${result.status} | ${result.deviceId} | ${result.mapName || result.mapId} | ${fmt(result.readyMs, 0)} | ${fmt(result.avgFps)} | ${fmt(result.p10Fps)} | ${result.framesOver50ms ?? '-'} | ${result.longTaskCount ?? '-'} | ${result.perfProbe?.drawCalls ?? '-'} | ${result.perfProbe?.triangles ?? '-'} | ${result.assetResourceCount ?? '-'} | ${result.assetFailures?.length ?? 0} | ${bytesToKb(result.assetTransferSize)} |`)
+    lines.push(`| ${result.status} | ${result.deviceId} | ${result.mapName || result.mapId} | ${result.perfProbe?.mapVisualQuality || '-'} | ${fmt(result.readyMs, 0)} | ${fmt(result.avgFps)} | ${fmt(result.p10Fps)} | ${result.framesOver50ms ?? '-'} | ${result.longTaskCount ?? '-'} | ${result.perfProbe?.drawCalls ?? '-'} | ${result.perfProbe?.triangles ?? '-'} | ${result.assetResourceCount ?? '-'} | ${result.assetFailures?.length ?? 0} | ${bytesToKb(result.assetTransferSize)} |`)
   }
 
   const byMap = new Map()

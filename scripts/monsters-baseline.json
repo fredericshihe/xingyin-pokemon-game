@@ -1,0 +1,1154 @@
+[
+  {
+    "id": 1,
+    "dexNo": 1,
+    "name": "妙蛙种子",
+    "type": "grass",
+    "type2": "poison",
+    "evolvesTo": 71
+  },
+  {
+    "id": 2,
+    "dexNo": 4,
+    "name": "小火龙",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 73
+  },
+  {
+    "id": 3,
+    "dexNo": 7,
+    "name": "杰尼龟",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 75
+  },
+  {
+    "id": 4,
+    "dexNo": 25,
+    "name": "皮卡丘",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": 28
+  },
+  {
+    "id": 5,
+    "dexNo": 79,
+    "name": "呆呆兽",
+    "type": "water",
+    "type2": "psychic",
+    "evolvesTo": 37
+  },
+  {
+    "id": 6,
+    "dexNo": 94,
+    "name": "耿鬼",
+    "type": "ghost",
+    "type2": "poison",
+    "evolvesTo": null
+  },
+  {
+    "id": 7,
+    "dexNo": 59,
+    "name": "风速狗",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 8,
+    "dexNo": 130,
+    "name": "暴鲤龙",
+    "type": "water",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 9,
+    "dexNo": 131,
+    "name": "拉普拉斯",
+    "type": "water",
+    "type2": "ice",
+    "evolvesTo": null
+  },
+  {
+    "id": 10,
+    "dexNo": 143,
+    "name": "卡比兽",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 11,
+    "dexNo": 65,
+    "name": "胡地",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 12,
+    "dexNo": 149,
+    "name": "快龙",
+    "type": "dragon",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 13,
+    "dexNo": 133,
+    "name": "伊布",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 14,
+    "dexNo": 54,
+    "name": "可达鸭",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 70
+  },
+  {
+    "id": 15,
+    "dexNo": 39,
+    "name": "胖丁",
+    "type": "normal",
+    "type2": "fairy",
+    "evolvesTo": 115
+  },
+  {
+    "id": 16,
+    "dexNo": 129,
+    "name": "鲤鱼王",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 8
+  },
+  {
+    "id": 17,
+    "dexNo": 34,
+    "name": "尼多王",
+    "type": "poison",
+    "type2": "ground",
+    "evolvesTo": null
+  },
+  {
+    "id": 18,
+    "dexNo": 67,
+    "name": "豪力",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": 34
+  },
+  {
+    "id": 19,
+    "dexNo": 85,
+    "name": "嘟嘟利",
+    "type": "normal",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 20,
+    "dexNo": 92,
+    "name": "鬼斯",
+    "type": "ghost",
+    "type2": "poison",
+    "evolvesTo": 21
+  },
+  {
+    "id": 21,
+    "dexNo": 93,
+    "name": "鬼斯通",
+    "type": "ghost",
+    "type2": "poison",
+    "evolvesTo": 6
+  },
+  {
+    "id": 22,
+    "dexNo": 95,
+    "name": "大岩蛇",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": 139
+  },
+  {
+    "id": 23,
+    "dexNo": 123,
+    "name": "飞天螳螂",
+    "type": "bug",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 24,
+    "dexNo": 142,
+    "name": "化石翼龙",
+    "type": "rock",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 25,
+    "dexNo": 146,
+    "name": "火焰鸟",
+    "type": "fire",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 26,
+    "dexNo": 144,
+    "name": "急冻鸟",
+    "type": "ice",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 27,
+    "dexNo": 145,
+    "name": "闪电鸟",
+    "type": "electric",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 28,
+    "dexNo": 26,
+    "name": "雷丘",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 29,
+    "dexNo": 38,
+    "name": "九尾",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 30,
+    "dexNo": 45,
+    "name": "霸王花",
+    "type": "grass",
+    "type2": "poison",
+    "evolvesTo": null
+  },
+  {
+    "id": 31,
+    "dexNo": 53,
+    "name": "猫老大",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 32,
+    "dexNo": 57,
+    "name": "火爆猴",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": 126
+  },
+  {
+    "id": 33,
+    "dexNo": 62,
+    "name": "蚊香泳士",
+    "type": "water",
+    "type2": "fighting",
+    "evolvesTo": null
+  },
+  {
+    "id": 34,
+    "dexNo": 68,
+    "name": "怪力",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 35,
+    "dexNo": 76,
+    "name": "隆隆岩",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": null
+  },
+  {
+    "id": 36,
+    "dexNo": 78,
+    "name": "烈焰马",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 37,
+    "dexNo": 80,
+    "name": "呆壳兽",
+    "type": "water",
+    "type2": "psychic",
+    "evolvesTo": null
+  },
+  {
+    "id": 38,
+    "dexNo": 82,
+    "name": "三合一磁怪",
+    "type": "electric",
+    "type2": "steel",
+    "evolvesTo": 143
+  },
+  {
+    "id": 39,
+    "dexNo": 83,
+    "name": "大葱鸭",
+    "type": "normal",
+    "type2": "flying",
+    "evolvesTo": 146
+  },
+  {
+    "id": 40,
+    "dexNo": 87,
+    "name": "白海狮",
+    "type": "water",
+    "type2": "ice",
+    "evolvesTo": null
+  },
+  {
+    "id": 41,
+    "dexNo": 89,
+    "name": "臭臭泥",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 42,
+    "dexNo": 91,
+    "name": "刺甲贝",
+    "type": "water",
+    "type2": "ice",
+    "evolvesTo": null
+  },
+  {
+    "id": 43,
+    "dexNo": 97,
+    "name": "引梦貘人",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 44,
+    "dexNo": 99,
+    "name": "巨钳蟹",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 45,
+    "dexNo": 101,
+    "name": "顽皮雷弹",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 46,
+    "dexNo": 103,
+    "name": "椰蛋树",
+    "type": "grass",
+    "type2": "psychic",
+    "evolvesTo": null
+  },
+  {
+    "id": 47,
+    "dexNo": 105,
+    "name": "嘎啦嘎啦",
+    "type": "ground",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 48,
+    "dexNo": 106,
+    "name": "飞腿郎",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 49,
+    "dexNo": 107,
+    "name": "快拳郎",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 50,
+    "dexNo": 110,
+    "name": "双弹瓦斯",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 51,
+    "dexNo": 112,
+    "name": "钻角犀兽",
+    "type": "ground",
+    "type2": "rock",
+    "evolvesTo": 104
+  },
+  {
+    "id": 52,
+    "dexNo": 113,
+    "name": "吉利蛋",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 117
+  },
+  {
+    "id": 53,
+    "dexNo": 115,
+    "name": "袋兽",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 54,
+    "dexNo": 117,
+    "name": "海刺龙",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 86
+  },
+  {
+    "id": 55,
+    "dexNo": 121,
+    "name": "宝石海星",
+    "type": "water",
+    "type2": "psychic",
+    "evolvesTo": null
+  },
+  {
+    "id": 56,
+    "dexNo": 122,
+    "name": "魔墙人偶",
+    "type": "psychic",
+    "type2": "fairy",
+    "evolvesTo": 147
+  },
+  {
+    "id": 57,
+    "dexNo": 124,
+    "name": "迷唇姐",
+    "type": "ice",
+    "type2": "psychic",
+    "evolvesTo": null
+  },
+  {
+    "id": 58,
+    "dexNo": 125,
+    "name": "电击兽",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": 122
+  },
+  {
+    "id": 59,
+    "dexNo": 126,
+    "name": "鸭嘴火兽",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 94
+  },
+  {
+    "id": 60,
+    "dexNo": 127,
+    "name": "大甲",
+    "type": "bug",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 61,
+    "dexNo": 128,
+    "name": "肯泰罗",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 62,
+    "dexNo": 134,
+    "name": "水伊布",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 63,
+    "dexNo": 135,
+    "name": "雷伊布",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 64,
+    "dexNo": 136,
+    "name": "火伊布",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 65,
+    "dexNo": 137,
+    "name": "3D龙",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 108
+  },
+  {
+    "id": 66,
+    "dexNo": 139,
+    "name": "多刺菊石兽",
+    "type": "rock",
+    "type2": "water",
+    "evolvesTo": null
+  },
+  {
+    "id": 67,
+    "dexNo": 141,
+    "name": "镰刀盔",
+    "type": "rock",
+    "type2": "water",
+    "evolvesTo": null
+  },
+  {
+    "id": 68,
+    "dexNo": 150,
+    "name": "超梦",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 69,
+    "dexNo": 151,
+    "name": "梦幻",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 70,
+    "dexNo": 55,
+    "name": "哥达鸭",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 71,
+    "dexNo": 2,
+    "name": "妙蛙草",
+    "type": "grass",
+    "type2": "poison",
+    "evolvesTo": 72
+  },
+  {
+    "id": 72,
+    "dexNo": 3,
+    "name": "妙蛙花",
+    "type": "grass",
+    "type2": "poison",
+    "evolvesTo": null
+  },
+  {
+    "id": 73,
+    "dexNo": 5,
+    "name": "火恐龙",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 74
+  },
+  {
+    "id": 74,
+    "dexNo": 6,
+    "name": "喷火龙",
+    "type": "fire",
+    "type2": "flying",
+    "evolvesTo": null
+  },
+  {
+    "id": 75,
+    "dexNo": 8,
+    "name": "卡咪龟",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 76
+  },
+  {
+    "id": 76,
+    "dexNo": 9,
+    "name": "水箭龟",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 77,
+    "dexNo": 116,
+    "name": "墨海马",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 54
+  },
+  {
+    "id": 78,
+    "dexNo": 90,
+    "name": "大舌贝",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 42
+  },
+  {
+    "id": 79,
+    "dexNo": 98,
+    "name": "大钳蟹",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 44
+  },
+  {
+    "id": 80,
+    "dexNo": 120,
+    "name": "海星星",
+    "type": "water",
+    "type2": null,
+    "evolvesTo": 55
+  },
+  {
+    "id": 81,
+    "dexNo": 138,
+    "name": "菊石兽",
+    "type": "rock",
+    "type2": "water",
+    "evolvesTo": 66
+  },
+  {
+    "id": 82,
+    "dexNo": 140,
+    "name": "化石盔",
+    "type": "rock",
+    "type2": "water",
+    "evolvesTo": 67
+  },
+  {
+    "id": 83,
+    "dexNo": 58,
+    "name": "卡蒂狗",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 7
+  },
+  {
+    "id": 84,
+    "dexNo": 37,
+    "name": "六尾",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 29
+  },
+  {
+    "id": 85,
+    "dexNo": 77,
+    "name": "小火马",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 36
+  },
+  {
+    "id": 86,
+    "dexNo": 230,
+    "name": "刺龙王",
+    "type": "water",
+    "type2": "dragon",
+    "evolvesTo": null
+  },
+  {
+    "id": 87,
+    "dexNo": 44,
+    "name": "臭臭花",
+    "type": "grass",
+    "type2": "poison",
+    "evolvesTo": null
+  },
+  {
+    "id": 88,
+    "dexNo": 102,
+    "name": "蛋蛋",
+    "type": "grass",
+    "type2": "psychic",
+    "evolvesTo": 46
+  },
+  {
+    "id": 90,
+    "dexNo": 81,
+    "name": "小磁怪",
+    "type": "electric",
+    "type2": "steel",
+    "evolvesTo": 38
+  },
+  {
+    "id": 91,
+    "dexNo": 100,
+    "name": "霹雳电球",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": 45
+  },
+  {
+    "id": 92,
+    "dexNo": 239,
+    "name": "电击怪",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": 58
+  },
+  {
+    "id": 93,
+    "dexNo": 238,
+    "name": "迷唇娃",
+    "type": "ice",
+    "type2": "psychic",
+    "evolvesTo": 57
+  },
+  {
+    "id": 94,
+    "dexNo": 467,
+    "name": "鸭嘴炎兽",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 95,
+    "dexNo": 240,
+    "name": "鸭嘴宝宝",
+    "type": "fire",
+    "type2": null,
+    "evolvesTo": 59
+  },
+  {
+    "id": 96,
+    "dexNo": 66,
+    "name": "腕力",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": 18
+  },
+  {
+    "id": 97,
+    "dexNo": 56,
+    "name": "猴怪",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": 32
+  },
+  {
+    "id": 98,
+    "dexNo": 32,
+    "name": "尼多朗",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": 99
+  },
+  {
+    "id": 99,
+    "dexNo": 33,
+    "name": "尼多力诺",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": 17
+  },
+  {
+    "id": 100,
+    "dexNo": 88,
+    "name": "臭泥",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": 41
+  },
+  {
+    "id": 101,
+    "dexNo": 109,
+    "name": "瓦斯弹",
+    "type": "poison",
+    "type2": null,
+    "evolvesTo": 50
+  },
+  {
+    "id": 102,
+    "dexNo": 74,
+    "name": "小拳石",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": 103
+  },
+  {
+    "id": 103,
+    "dexNo": 75,
+    "name": "隆隆石",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": 35
+  },
+  {
+    "id": 104,
+    "dexNo": 464,
+    "name": "超甲狂犀",
+    "type": "ground",
+    "type2": "rock",
+    "evolvesTo": null
+  },
+  {
+    "id": 105,
+    "dexNo": 111,
+    "name": "独角犀牛",
+    "type": "ground",
+    "type2": "rock",
+    "evolvesTo": 51
+  },
+  {
+    "id": 106,
+    "dexNo": 84,
+    "name": "嘟嘟",
+    "type": "normal",
+    "type2": "flying",
+    "evolvesTo": 19
+  },
+  {
+    "id": 107,
+    "dexNo": 96,
+    "name": "催眠貘",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": 43
+  },
+  {
+    "id": 108,
+    "dexNo": 233,
+    "name": "多边兽II",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 109
+  },
+  {
+    "id": 109,
+    "dexNo": 474,
+    "name": "多边兽Z",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 110,
+    "dexNo": 63,
+    "name": "凯西",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": 111
+  },
+  {
+    "id": 111,
+    "dexNo": 64,
+    "name": "勇基拉",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": 11
+  },
+  {
+    "id": 112,
+    "dexNo": 439,
+    "name": "魔尼尼",
+    "type": "psychic",
+    "type2": "fairy",
+    "evolvesTo": 56
+  },
+  {
+    "id": 113,
+    "dexNo": 446,
+    "name": "小卡比兽",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 10
+  },
+  {
+    "id": 114,
+    "dexNo": 174,
+    "name": "宝宝丁",
+    "type": "normal",
+    "type2": "fairy",
+    "evolvesTo": 15
+  },
+  {
+    "id": 115,
+    "dexNo": 40,
+    "name": "胖可丁",
+    "type": "normal",
+    "type2": "fairy",
+    "evolvesTo": null
+  },
+  {
+    "id": 116,
+    "dexNo": 440,
+    "name": "小福蛋",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 52
+  },
+  {
+    "id": 117,
+    "dexNo": 242,
+    "name": "幸福蛋",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 119,
+    "dexNo": 52,
+    "name": "喵喵",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 31
+  },
+  {
+    "id": 120,
+    "dexNo": 438,
+    "name": "盆才怪",
+    "type": "rock",
+    "type2": null,
+    "evolvesTo": 135
+  },
+  {
+    "id": 121,
+    "dexNo": 236,
+    "name": "无畏小子",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 122,
+    "dexNo": 466,
+    "name": "电击魔兽",
+    "type": "electric",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 124,
+    "dexNo": 108,
+    "name": "大舌头",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": 127
+  },
+  {
+    "id": 125,
+    "dexNo": 900,
+    "name": "劈斧螳螂",
+    "type": "bug",
+    "type2": "rock",
+    "evolvesTo": null
+  },
+  {
+    "id": 126,
+    "dexNo": 979,
+    "name": "弃世猴",
+    "type": "fighting",
+    "type2": "ghost",
+    "evolvesTo": null
+  },
+  {
+    "id": 127,
+    "dexNo": 463,
+    "name": "大舌舔",
+    "type": "normal",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 128,
+    "dexNo": 147,
+    "name": "迷你龙",
+    "type": "dragon",
+    "type2": null,
+    "evolvesTo": 129
+  },
+  {
+    "id": 129,
+    "dexNo": 148,
+    "name": "哈克龙",
+    "type": "dragon",
+    "type2": null,
+    "evolvesTo": 12
+  },
+  {
+    "id": 130,
+    "dexNo": 246,
+    "name": "幼基拉斯",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": 131
+  },
+  {
+    "id": 131,
+    "dexNo": 247,
+    "name": "沙基拉斯",
+    "type": "rock",
+    "type2": "ground",
+    "evolvesTo": 142
+  },
+  {
+    "id": 132,
+    "dexNo": 196,
+    "name": "太阳伊布",
+    "type": "psychic",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 133,
+    "dexNo": 470,
+    "name": "叶伊布",
+    "type": "grass",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 134,
+    "dexNo": 471,
+    "name": "冰伊布",
+    "type": "ice",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 135,
+    "dexNo": 185,
+    "name": "树才怪",
+    "type": "rock",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 136,
+    "dexNo": 182,
+    "name": "美丽花",
+    "type": "grass",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 137,
+    "dexNo": 197,
+    "name": "月亮伊布",
+    "type": "dark",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 138,
+    "dexNo": 199,
+    "name": "呆呆王",
+    "type": "water",
+    "type2": "psychic",
+    "evolvesTo": null
+  },
+  {
+    "id": 139,
+    "dexNo": 208,
+    "name": "大钢蛇",
+    "type": "steel",
+    "type2": "ground",
+    "evolvesTo": null
+  },
+  {
+    "id": 140,
+    "dexNo": 212,
+    "name": "巨钳螳螂",
+    "type": "bug",
+    "type2": "steel",
+    "evolvesTo": null
+  },
+  {
+    "id": 141,
+    "dexNo": 237,
+    "name": "战舞郎",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 142,
+    "dexNo": 248,
+    "name": "班基拉斯",
+    "type": "rock",
+    "type2": "dark",
+    "evolvesTo": null
+  },
+  {
+    "id": 143,
+    "dexNo": 462,
+    "name": "自爆磁怪",
+    "type": "electric",
+    "type2": "steel",
+    "evolvesTo": null
+  },
+  {
+    "id": 144,
+    "dexNo": 700,
+    "name": "仙子伊布",
+    "type": "fairy",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 145,
+    "dexNo": 863,
+    "name": "喵头目",
+    "type": "steel",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 146,
+    "dexNo": 865,
+    "name": "葱游兵",
+    "type": "fighting",
+    "type2": null,
+    "evolvesTo": null
+  },
+  {
+    "id": 147,
+    "dexNo": 866,
+    "name": "踏冰人偶",
+    "type": "ice",
+    "type2": "psychic",
+    "evolvesTo": null
+  }
+]

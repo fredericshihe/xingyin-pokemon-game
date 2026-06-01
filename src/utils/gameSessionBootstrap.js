@@ -39,15 +39,26 @@ export function bootstrapGameSession({
   adjacentMaps = true
 } = {}) {
   const safeMapName = mapName || DEFAULT_MAP_NAME
+
+  // 仅预热小图，避免与首屏 JS 抢带宽
   startGameAssetPreload({ tier: 'p0' })
-  void preloadMapModels(safeMapName)
-  startGameAssetPreload({
-    mapName: safeMapName,
-    playerTeam,
-    tier: 'p1'
-  })
-  scheduleIdleAssetWarmup({
-    mapName: safeMapName,
-    adjacentMapNames: adjacentMaps ? getAdjacentMapNames(safeMapName) : []
-  })
+
+  const runHeavyWarmup = () => {
+    void preloadMapModels(safeMapName)
+    startGameAssetPreload({
+      mapName: safeMapName,
+      playerTeam,
+      tier: 'p1'
+    })
+    scheduleIdleAssetWarmup({
+      mapName: safeMapName,
+      adjacentMapNames: adjacentMaps ? getAdjacentMapNames(safeMapName) : []
+    })
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(runHeavyWarmup, { timeout: 6000 })
+  } else {
+    window.setTimeout(runHeavyWarmup, 2500)
+  }
 }

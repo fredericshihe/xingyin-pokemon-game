@@ -428,6 +428,8 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['grave_stone_wall_damaged', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'stone-wall-damaged.glb', ['graveyard', 'wall', 'edge'], ['H'], { defaultScale: 0.72 }],
   ['grave_iron_fence_border', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'iron-fence-border.glb', ['graveyard', 'fence', 'edge'], ['H'], { defaultScale: 0.78 }],
   ['grave_character_ghost', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'character-ghost.glb', ['graveyard', 'character', 'hidden_hint'], ['H'], { defaultScale: 0.72 }],
+  ['grave_character_skeleton', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'character-skeleton.glb', ['graveyard', 'character', 'landmark'], ['H'], { defaultScale: 0.72 }],
+  ['grave_character_zombie', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'character-zombie.glb', ['graveyard', 'character', 'landmark'], ['H'], { defaultScale: 0.72 }],
 
   ['platformer_flowers', 'kenney_platformer-kit', 'kenney-platformer', 'flowers.glb', ['platformer', 'flower', 'filler'], ['C', 'G', 'I', 'H'], { defaultScale: 0.9 }],
   ['platformer_flowers_tall', 'kenney_platformer-kit', 'kenney-platformer', 'flowers-tall.glb', ['platformer', 'flower', 'filler'], ['C', 'G', 'I', 'H'], { defaultScale: 0.88 }],
@@ -443,6 +445,7 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['platformer_tree_pine', 'kenney_platformer-kit', 'kenney-platformer', 'tree-pine.glb', ['platformer', 'tree', 'edge'], ['B', 'G', 'H', 'K'], { defaultScale: 0.86 }],
   ['platformer_platform_overhang', 'kenney_platformer-kit', 'kenney-platformer', 'platform-overhang.glb', ['platformer', 'mine', 'height'], ['K'], { defaultScale: 0.7 }],
   ['platformer_flag', 'kenney_platformer-kit', 'kenney-platformer', 'flag.glb', ['platformer', 'flag', 'landmark'], ['F', 'K'], { defaultScale: 0.86 }],
+  ['platformer_lever', 'kenney_platformer-kit', 'kenney-platformer', 'lever.glb', ['platformer', 'lever', 'landmark'], ['K'], { defaultScale: 0.86 }],
 
   ['blocky_character_a', 'kenney_blocky-characters_20', 'kenney-blocky-characters', 'character-a.glb', ['character', 'npc', 'life'], ['F', 'G', 'I', 'J'], { defaultScale: 0.62 }],
   ['blocky_character_b', 'kenney_blocky-characters_20', 'kenney-blocky-characters', 'character-b.glb', ['character', 'npc', 'life'], ['F', 'G', 'I', 'J'], { defaultScale: 0.62 }],

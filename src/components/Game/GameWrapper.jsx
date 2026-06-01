@@ -1,22 +1,19 @@
-import { Suspense, useEffect } from 'react'
-import AppLoadingScreen from '../AppLoadingScreen'
+import { useEffect } from 'react'
 import LazyRouteErrorBoundary from '../LazyRouteErrorBoundary'
 import { loadGameStyles } from '../../utils/loadGameStyles'
-import { lazyWithRetry } from '../../utils/lazyWithRetry'
-
-const OriginalGame = lazyWithRetry(() => import('./OriginalGame'))
+import { markAppReady } from '../../utils/clientUpdate'
+import OriginalGame from './OriginalGame'
 
 export default function GameWrapper({ user, onLogout }) {
   useEffect(() => {
     void loadGameStyles()
+    markAppReady()
   }, [])
 
   return (
     <div className="h-screen w-full overflow-hidden">
       <LazyRouteErrorBoundary>
-        <Suspense fallback={<AppLoadingScreen message="游戏加载中..." />}>
-          <OriginalGame user={user} onLogout={onLogout} />
-        </Suspense>
+        <OriginalGame user={user} onLogout={onLogout} />
       </LazyRouteErrorBoundary>
     </div>
   )

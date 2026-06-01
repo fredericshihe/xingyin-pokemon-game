@@ -50,7 +50,9 @@ export const TRAINER_ROLE_BALANCE = {
     aiSkill: 0.5,
     switchChance: 0.08,
     switchScoreGap: 34,
-    switchHpRatio: 0.26
+    switchHpRatio: 0.26,
+    potionBudget: 0,
+    potionHpThreshold: 0
   },
   lieutenant: {
     label: '部下训练家',
@@ -64,7 +66,9 @@ export const TRAINER_ROLE_BALANCE = {
     aiSkill: 0.72,
     switchChance: 0.18,
     switchScoreGap: 30,
-    switchHpRatio: 0.34
+    switchHpRatio: 0.34,
+    potionBudget: 1,
+    potionHpThreshold: 0.4
   },
   boss: {
     label: 'Boss训练家',
@@ -78,7 +82,9 @@ export const TRAINER_ROLE_BALANCE = {
     aiSkill: 0.92,
     switchChance: 0.26,
     switchScoreGap: 24,
-    switchHpRatio: 0.4
+    switchHpRatio: 0.4,
+    potionBudget: 2,
+    potionHpThreshold: 0.45
   },
   challenge: {
     label: '试炼守护者',
@@ -92,7 +98,9 @@ export const TRAINER_ROLE_BALANCE = {
     aiSkill: 0.78,
     switchChance: 0.2,
     switchScoreGap: 28,
-    switchHpRatio: 0.36
+    switchHpRatio: 0.36,
+    potionBudget: 1,
+    potionHpThreshold: 0.42
   }
 }
 

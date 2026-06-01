@@ -59,7 +59,15 @@ const sanitizeProfileSession = (profile) => {
 const saveProfileSession = (profile) => {
   const sessionProfile = sanitizeProfileSession(profile)
   if (!sessionProfile?.id) return
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(sessionProfile))
+  try {
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(sessionProfile))
+  } catch (error) {
+    console.warn('[Auth] 无法保存会话到本地存储', { error })
+    if (error.name === 'QuotaExceededError') {
+      console.error('[Auth] 存储空间已满，请清理浏览器数据')
+    }
+    // 会话保存失败不影响登录，只是下次需要重新登录
+  }
 }
 
 const clearProfileSession = () => {

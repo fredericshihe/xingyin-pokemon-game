@@ -1,10 +1,13 @@
 import { TYPES } from './constants'
 
-export const AUDIO_SETTINGS_STORAGE_KEY = 'pokemon-game:sfx-settings:v1'
+export const AUDIO_SETTINGS_STORAGE_KEY = 'pokemon-game:audio-settings:v2'
+export const LEGACY_AUDIO_SETTINGS_STORAGE_KEY = 'pokemon-game:sfx-settings:v1'
 
 const DEFAULT_AUDIO_SETTINGS = {
-  enabled: true,
-  volume: 0.72,
+  sfxEnabled: true,
+  sfxVolume: 0.72,
+  bgmEnabled: true,
+  bgmVolume: 0.72,
 }
 
 const MIN_VOLUME = 0
@@ -24,25 +27,43 @@ const getErrorMessage = (error) => {
   }
 }
 
-const clampVolume = (value) => {
+const clampVolume = (value, fallback = DEFAULT_AUDIO_SETTINGS.sfxVolume) => {
   const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return DEFAULT_AUDIO_SETTINGS.volume
+  if (!Number.isFinite(numeric)) return fallback
   return Math.max(MIN_VOLUME, Math.min(MAX_VOLUME, numeric))
 }
 
-export const normalizeAudioSettings = (value = null) => ({
-  enabled: value?.enabled !== false,
-  volume: clampVolume(value?.volume),
-})
+const migrateLegacyAudioSettings = (value = null) => {
+  if (!value || typeof value !== 'object') return { ...DEFAULT_AUDIO_SETTINGS }
+  if ('sfxEnabled' in value || 'bgmEnabled' in value) {
+    return {
+      sfxEnabled: value.sfxEnabled !== false,
+      sfxVolume: clampVolume(value.sfxVolume, DEFAULT_AUDIO_SETTINGS.sfxVolume),
+      bgmEnabled: value.bgmEnabled !== false,
+      bgmVolume: clampVolume(value.bgmVolume, DEFAULT_AUDIO_SETTINGS.bgmVolume),
+    }
+  }
+  const legacyEnabled = value.enabled !== false
+  const legacyVolume = clampVolume(value.volume, DEFAULT_AUDIO_SETTINGS.sfxVolume)
+  return {
+    sfxEnabled: legacyEnabled,
+    sfxVolume: legacyVolume,
+    bgmEnabled: legacyEnabled,
+    bgmVolume: legacyVolume,
+  }
+}
+
+export const normalizeAudioSettings = (value = null) => migrateLegacyAudioSettings(value)
 
 export const readStoredAudioSettings = () => {
-  if (typeof window === 'undefined') return DEFAULT_AUDIO_SETTINGS
+  if (typeof window === 'undefined') return { ...DEFAULT_AUDIO_SETTINGS }
   try {
     const raw = window.localStorage.getItem(AUDIO_SETTINGS_STORAGE_KEY)
-    if (!raw) return DEFAULT_AUDIO_SETTINGS
+      || window.localStorage.getItem(LEGACY_AUDIO_SETTINGS_STORAGE_KEY)
+    if (!raw) return { ...DEFAULT_AUDIO_SETTINGS }
     return normalizeAudioSettings(JSON.parse(raw))
   } catch {
-    return DEFAULT_AUDIO_SETTINGS
+    return { ...DEFAULT_AUDIO_SETTINGS }
   }
 }
 
@@ -55,6 +76,22 @@ export const writeStoredAudioSettings = (value = null) => {
     )
   } catch {
     // Ignore local preference persistence failures.
+  }
+}
+
+export const getSfxSettings = (value = null) => {
+  const normalized = normalizeAudioSettings(value)
+  return {
+    enabled: normalized.sfxEnabled,
+    volume: normalized.sfxVolume,
+  }
+}
+
+export const getBgmSettings = (value = null) => {
+  const normalized = normalizeAudioSettings(value)
+  return {
+    enabled: normalized.bgmEnabled,
+    volume: normalized.bgmVolume,
   }
 }
 
@@ -85,7 +122,7 @@ const getAudioCtor = () => {
 
 class GameAudioController {
   constructor() {
-    const defaults = readStoredAudioSettings()
+    const defaults = getSfxSettings(readStoredAudioSettings())
     this.enabled = defaults.enabled
     this.volume = defaults.volume
     this.context = null
@@ -93,6 +130,9 @@ class GameAudioController {
     this.noiseBuffer = null
     this.diagnosticFlags = new Set()
     this.resumePromise = null
+    this.unlockListeners = new Set()
+    this.sfxBuffers = new Map()
+    this.sfxLoadPromises = new Map()
     this.debugState = {
       supported: null,
       contextState: 'idle',
@@ -101,8 +141,34 @@ class GameAudioController {
       scheduledTones: 0,
       scheduledNoise: 0,
       lastScheduledStart: '',
+      loadedSfxCount: 0,
     }
     this.updateDebugState()
+  }
+
+  addUnlockListener(listener) {
+    if (typeof listener !== 'function') {
+      return () => {}
+    }
+    this.unlockListeners.add(listener)
+    return () => {
+      this.unlockListeners.delete(listener)
+    }
+  }
+
+  notifyUnlockListeners() {
+    this.unlockListeners.forEach((listener) => {
+      try {
+        listener()
+      } catch (error) {
+        this.logOnce('unlock-listener-failed', 'warn', '音频解锁回调执行失败。', getErrorMessage(error))
+      }
+    })
+  }
+
+  isContextRunning() {
+    const context = this.context || this.ensureContext()
+    return context?.state === 'running'
   }
 
   updateDebugState(patch = {}) {
@@ -150,12 +216,15 @@ class GameAudioController {
     }
     this.context = null
     this.master = null
+    this.bgmGain = null
     this.noiseBuffer = null
     this.resumePromise = null
+    this.sfxBuffers.clear()
+    this.sfxLoadPromises.clear()
   }
 
   applySettings(value = null) {
-    const next = normalizeAudioSettings(value)
+    const next = getSfxSettings(value)
     this.enabled = next.enabled
     this.volume = next.volume
     this.updateDebugState({
@@ -172,6 +241,17 @@ class GameAudioController {
     const target = this.enabled ? this.volume : 0
     this.master.gain.cancelScheduledValues(now)
     this.master.gain.setTargetAtTime(target, now, 0.01)
+  }
+
+  ensureBgmBus() {
+    const context = this.ensureContext()
+    if (!context || !this.master) return null
+    if (!this.bgmGain) {
+      this.bgmGain = context.createGain()
+      this.bgmGain.gain.value = 1
+      this.bgmGain.connect(this.master)
+    }
+    return { context, gain: this.bgmGain }
   }
 
   resolveScheduleStart(context, requestedStart, fallbackLeadMs = 120) {
@@ -226,6 +306,7 @@ class GameAudioController {
 
       this.context = context
       this.master = master
+      this.bgmGain = null
       this.noiseBuffer = null
       this.updateDebugState({
         supported: true,
@@ -275,6 +356,22 @@ class GameAudioController {
             lastError: '',
           })
           this.logDebug('info', `AudioContext resumed (${targetContext.state}).`)
+
+          // Safari修复：如果resume后仍然是suspended，尝试播放静音音频
+          if (targetContext.state === 'suspended') {
+            this.logDebug('warn', 'AudioContext still suspended after resume, trying silent audio workaround')
+            try {
+              const buffer = targetContext.createBuffer(1, 1, 22050)
+              const source = targetContext.createBufferSource()
+              source.buffer = buffer
+              source.connect(targetContext.destination)
+              source.start(0)
+              source.disconnect()
+            } catch (e) {
+              this.logDebug('warn', 'Silent audio workaround failed', e)
+            }
+          }
+
           return targetContext
         })
         .catch((error) => {
@@ -315,7 +412,7 @@ class GameAudioController {
   }
 
   async unlock() {
-    if (!this.canPlay()) return false
+    if (!getAudioCtor()) return false
     let context = this.ensureContext()
     if (!context) return false
     if (context.state === 'closed') {
@@ -323,6 +420,20 @@ class GameAudioController {
       context = this.ensureContext()
       if (!context) return false
     }
+
+    // Safari修复：在resume前先尝试播放静音音频
+    if (context.state === 'suspended') {
+      try {
+        const buffer = context.createBuffer(1, 1, 22050)
+        const source = context.createBufferSource()
+        source.buffer = buffer
+        source.connect(context.destination)
+        source.start(0)
+      } catch (e) {
+        this.logDebug('warn', 'Pre-resume silent audio failed', e)
+      }
+    }
+
     const readyContext = await this.resumeContext(context)
     this.syncMasterGain()
     const running = readyContext?.state === 'running'
@@ -332,16 +443,20 @@ class GameAudioController {
       reason: running ? 'unlocked' : 'unlock-pending',
       lastError: running ? '' : this.debugState.lastError,
     })
+    if (running) {
+      this.notifyUnlockListeners()
+    }
     return running
   }
 
   withReadyContext(callback) {
-    if (typeof callback !== 'function' || !this.canPlay()) return null
+    if (typeof callback !== 'function') return null
     const context = this.ensureContext()
     if (!context) return null
 
     const invoke = (readyContext) => {
       if (readyContext?.state !== 'running') return
+      if (!this.canPlay()) return
       try {
         callback(readyContext)
       } catch (error) {
@@ -359,7 +474,11 @@ class GameAudioController {
       return context
     }
 
-    void this.resumeContext(context).then(invoke)
+    void this.resumeContext(context).then((readyContext) => {
+      if (readyContext?.state === 'running') {
+        invoke(readyContext)
+      }
+    })
     return context
   }
 
@@ -602,7 +721,7 @@ class GameAudioController {
     })
   }
 
-  playBattleImpact({ effectiveness = 1, didHit = true, outcome = 'hit', targetFainted = false } = {}) {
+  playBattleImpact({ effectiveness = 1, didHit = true, outcome = 'hit', targetFainted = false, crit = false } = {}) {
     this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
 
@@ -620,6 +739,12 @@ class GameAudioController {
     const hitDuration = effectiveness > 1 ? 0.11 : 0.09
     this.scheduleNoise({ start, duration: hitDuration, gain: effectiveness > 1 ? 0.032 : 0.024, highpass: 700, lowpass: effectiveness > 1 ? 2600 : 1900 })
     this.scheduleTone({ start, frequency: effectiveness > 1 ? 293.66 : 246.94, toFrequency: effectiveness > 1 ? 146.83 : 174.61, duration: hitDuration, gain: hitGain, waveform: 'square' })
+
+    if (crit) {
+      // 会心一击：更亮更锐的高频叠加 + 一段额外噪音，强调"击中要害"的爆发感。
+      this.scheduleTone({ start: start + 0.018, frequency: 1244.51, toFrequency: 622.25, duration: 0.13, gain: 0.03, waveform: 'sawtooth' })
+      this.scheduleNoise({ start: start + 0.01, duration: 0.07, gain: 0.026, highpass: 1400, lowpass: 5200 })
+    }
 
     if (targetFainted) {
       this.scheduleTone({ start: start + 0.04, frequency: 174.61, toFrequency: 92.5, duration: 0.14, gain: 0.025, waveform: 'triangle' })
@@ -836,6 +961,268 @@ class GameAudioController {
     })
     })
   }
+
+  async loadSfx(url, { timeoutMs = 10000 } = {}) {
+    if (!url) return null
+    if (this.sfxBuffers.has(url)) return this.sfxBuffers.get(url)
+    if (this.sfxLoadPromises.has(url)) return this.sfxLoadPromises.get(url)
+
+    const promise = (async () => {
+      const context = this.ensureContext()
+      if (!context || typeof fetch !== 'function') return null
+
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+        const response = await fetch(url, {
+          cache: 'force-cache',
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          throw new Error(`SFX fetch failed (${response.status}) ${url}`)
+        }
+
+        const arrayBuffer = await response.arrayBuffer()
+        const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0))
+
+        this.sfxBuffers.set(url, audioBuffer)
+        this.updateDebugState({
+          loadedSfxCount: this.sfxBuffers.size
+        })
+        return audioBuffer
+      } catch (error) {
+        const message = getErrorMessage(error)
+        if (error.name === 'AbortError') {
+          this.logOnce(`sfx-timeout-${url}`, 'warn', `音效加载超时: ${url}`)
+        } else {
+          this.logOnce(`sfx-load-failed-${url}`, 'warn', `音效加载失败: ${url}`, message)
+        }
+        return null
+      }
+    })()
+      .finally(() => {
+        this.sfxLoadPromises.delete(url)
+      })
+
+    this.sfxLoadPromises.set(url, promise)
+    return promise
+  }
+
+  async preloadSfx(urls = []) {
+    const uniqueUrls = [...new Set((Array.isArray(urls) ? urls : []).filter(Boolean))]
+    await Promise.all(uniqueUrls.map((url) => this.loadSfx(url)))
+    return {
+      total: uniqueUrls.length,
+      loaded: uniqueUrls.filter((url) => this.sfxBuffers.has(url)).length
+    }
+  }
+
+  async playSfx(url, { volume = 0.5, playbackRate = 1, loop = false } = {}) {
+    if (!this.canPlay() || !url) return
+
+    const buffer = await this.loadSfx(url)
+    if (!buffer) return
+
+    this.withReadyContext((context) => {
+      const source = context.createBufferSource()
+      const gainNode = context.createGain()
+
+      source.buffer = buffer
+      source.playbackRate.value = playbackRate
+      source.loop = loop
+      source.connect(gainNode)
+      gainNode.connect(this.master)
+
+      const targetVolume = Math.max(0, Math.min(1, volume)) * this.volume
+      gainNode.gain.value = targetVolume
+
+      const startAt = context.currentTime + 0.005
+      source.start(startAt)
+
+      if (!loop) {
+        source.stop(startAt + buffer.duration + 0.1)
+      }
+    })
+  }
+
+  playSfxVariant(baseUrl, variantCount = 3, options = {}) {
+    if (!baseUrl || variantCount < 1) return
+    const variant = Math.floor(Math.random() * variantCount) + 1
+    const url = baseUrl.replace('{variant}', String(variant))
+    return this.playSfx(url, options)
+  }
+
+  playError() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.005
+      this.scheduleTone({ start, frequency: 392, toFrequency: 196, duration: 0.08, gain: 0.035, waveform: 'square' })
+      this.scheduleTone({ start: start + 0.06, frequency: 349.23, toFrequency: 174.61, duration: 0.08, gain: 0.03, waveform: 'square' })
+      this.scheduleNoise({ start: start + 0.02, duration: 0.06, gain: 0.018, highpass: 800, lowpass: 2200 })
+    })
+  }
+
+  playLevelUp() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.01
+      const melody = [
+        [523.25, 0],
+        [659.25, 0.08],
+        [783.99, 0.16],
+        [1046.5, 0.26],
+        [1318.51, 0.38],
+      ]
+      melody.forEach(([frequency, offset], index) => {
+        this.scheduleTone({
+          start: start + offset,
+          frequency,
+          toFrequency: frequency * 1.03,
+          duration: index === melody.length - 1 ? 0.24 : 0.12,
+          gain: index === melody.length - 1 ? 0.042 : 0.032,
+          waveform: 'triangle',
+        })
+      })
+      this.scheduleTone({ start: start + 0.2, frequency: 987.77, toFrequency: 1174.66, duration: 0.16, gain: 0.024, waveform: 'sine' })
+    })
+  }
+
+  playLearnMove() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.01
+      this.scheduleTone({ start, frequency: 659.25, toFrequency: 987.77, duration: 0.1, gain: 0.032, waveform: 'sine' })
+      this.scheduleTone({ start: start + 0.08, frequency: 783.99, toFrequency: 1174.66, duration: 0.1, gain: 0.028, waveform: 'triangle' })
+      this.scheduleTone({ start: start + 0.16, frequency: 1046.5, toFrequency: 1318.51, duration: 0.12, gain: 0.024, waveform: 'sine' })
+    })
+  }
+
+  playEvolutionStart() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.01
+      this.scheduleTone({ start, frequency: 261.63, toFrequency: 523.25, duration: 0.18, gain: 0.038, waveform: 'sine' })
+      this.scheduleTone({ start: start + 0.12, frequency: 392, toFrequency: 783.99, duration: 0.18, gain: 0.034, waveform: 'triangle' })
+      this.scheduleNoise({ start: start + 0.08, duration: 0.12, gain: 0.016, highpass: 1200, lowpass: 4800 })
+    })
+  }
+
+  playEvolutionComplete() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.01
+      const melody = [
+        [523.25, 0],
+        [659.25, 0.1],
+        [783.99, 0.2],
+        [1046.5, 0.32],
+        [1318.51, 0.46],
+        [1567.98, 0.62],
+      ]
+      melody.forEach(([frequency, offset], index) => {
+        this.scheduleTone({
+          start: start + offset,
+          frequency,
+          toFrequency: frequency * 1.04,
+          duration: index === melody.length - 1 ? 0.28 : 0.14,
+          gain: index === melody.length - 1 ? 0.046 : 0.034,
+          waveform: index % 2 === 0 ? 'sine' : 'triangle',
+        })
+      })
+      this.scheduleTone({ start: start + 0.4, frequency: 987.77, toFrequency: 1318.51, duration: 0.2, gain: 0.026, waveform: 'sine' })
+    })
+  }
+
+  playCaptureShake() {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.01
+      this.scheduleTone({ start, frequency: 440, toFrequency: 523.25, duration: 0.06, gain: 0.022, waveform: 'triangle' })
+      this.scheduleNoise({ start: start + 0.01, duration: 0.04, gain: 0.01, highpass: 1400, lowpass: 3600 })
+    })
+  }
+
+  /**
+   * 播放技能音效
+   * @param {string} moveKey - 技能key（如 'ember', 'watergun'）
+   * @param {object} options - 播放选项
+   * @returns {Promise<void>}
+   */
+  async playMoveSfx(moveKey, options = {}) {
+    if (!this.canPlay() || !moveKey) return
+
+    // 动态导入 MOVES 数据
+    const { MOVES } = await import('./gameData.js')
+    const move = MOVES[moveKey]
+    if (!move) {
+      this.logDebug('warn', `未找到技能: ${moveKey}`)
+      return
+    }
+
+    // 获取技能类型
+    const moveType = move.type || 'normal'
+    const typeFolder = moveType.toLowerCase()
+
+    // 构建音效URL
+    const url = `/assets/audio/sfx/${typeFolder}/${moveKey}.ogg`
+
+    // 播放音效，默认音量0.6
+    return this.playSfx(url, {
+      volume: 0.6,
+      playbackRate: 1,
+      ...options
+    })
+  }
+
+  /**
+   * 预加载技能音效
+   * @param {string[]} moveKeys - 技能key数组
+   * @returns {Promise<object>}
+   */
+  async preloadMoveSfx(moveKeys = []) {
+    if (!Array.isArray(moveKeys) || moveKeys.length === 0) return { total: 0, loaded: 0 }
+
+    const { MOVES } = await import('./gameData.js')
+    const urls = moveKeys
+      .filter(key => MOVES[key])
+      .map(key => {
+        const moveType = MOVES[key].type || 'normal'
+        const typeFolder = moveType.toLowerCase()
+        return `/assets/audio/sfx/${typeFolder}/${key}.ogg`
+      })
+
+    return this.preloadSfx(urls)
+  }
 }
 
 export const gameAudio = new GameAudioController()
+
+/**
+ * 清理音频资源
+ * 用于组件卸载或游戏退出时释放音频资源
+ */
+export function cleanupAudioResources() {
+  try {
+    // 停止所有正在播放的音频
+    if (typeof gameAudio?.stopAll === 'function') {
+      gameAudio.stopAll()
+    }
+
+    // 暂停音频上下文以释放资源
+    if (gameAudio?.audioContext) {
+      const ctx = gameAudio.audioContext
+      if (ctx.state === 'running') {
+        ctx.suspend().catch(err => {
+          console.warn('[Audio] Failed to suspend audio context', err)
+        })
+      }
+    }
+
+    console.log('[Audio] Resources cleaned up')
+  } catch (error) {
+    console.warn('[Audio] Cleanup failed', error)
+  }
+}

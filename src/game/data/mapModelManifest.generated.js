@@ -42,7 +42,10 @@ export const MAP_MODEL_MANIFEST = {
       "town_fountain_round",
       "trail_sign",
       "nature_bush_large",
-      "nature_grass_large"
+      "nature_grass_large",
+      "nature_stone_large",
+      "nature_log_stack",
+      "nature_rock_large"
     ]
   },
   "GodotMapV2": {
@@ -61,12 +64,13 @@ export const MAP_MODEL_MANIFEST = {
       "campfire",
       "tent",
       "sign",
-      "nature_lily_large",
-      "town_lantern",
+      "nature_canoe",
       "nature_path_stone",
       "platformer_flag",
       "nature_flower_yellow_b",
+      "town_lantern",
       "wetlandReedClump",
+      "nature_lily_large",
       "nature_fence_simple",
       "nature_wheat_stage_b",
       "town_fountain_round",
@@ -91,9 +95,15 @@ export const MAP_MODEL_MANIFEST = {
       "nature_flower_yellow",
       "nature_flower_red",
       "platformer_flowers",
+      "nature_flower_purple_b",
+      "nature_grass_small",
+      "nature_grass_large",
+      "nature_log_stack",
       "nature_bush_large",
-      "town_hedge",
-      "nature_stone_flat_c"
+      "nature_stone_large",
+      "nature_rock_large",
+      "nature_plant_bush_triangle",
+      "nature_plant_bush_detailed"
     ]
   },
   "GodotMapV2_MistLake": {
@@ -138,10 +148,10 @@ export const MAP_MODEL_MANIFEST = {
       "nature_stone_flat_c",
       "platformer_chest",
       "hex_water_rocks",
-      "survival_patch_grass_large",
-      "nature_rock_small_h",
-      "survival_rock_a",
-      "nature_stone_flat_a"
+      "nature_grass_small",
+      "nature_grass_large",
+      "nature_rock_large",
+      "nature_stone_large"
     ]
   },
   "GodotMapV2_FarmTown": {
@@ -160,7 +170,6 @@ export const MAP_MODEL_MANIFEST = {
       "campfire",
       "tent",
       "sign",
-      "hex_building_farm",
       "nature_path_stone",
       "platformer_flag",
       "nature_flower_yellow_b",
@@ -190,12 +199,16 @@ export const MAP_MODEL_MANIFEST = {
       "nature_crop_pumpkin",
       "survival_chest",
       "nature_wheat_stage_a",
-      "townFenceLow",
+      "nature_grass_large",
+      "nature_flower_yellow",
+      "nature_grass_small",
       "nature_fence_planks",
-      "town_rock_small",
-      "town_tree",
-      "town_tree_high",
-      "town_hedge"
+      "town_hedge_large",
+      "farmCartHigh",
+      "town_cart",
+      "town_hedge",
+      "nature_log_stack",
+      "nature_rock_large"
     ]
   },
   "GodotMapV2_PirateShore": {
@@ -242,8 +255,8 @@ export const MAP_MODEL_MANIFEST = {
       "pirate_rocks_sand_a",
       "pirate_flag",
       "pirate_rocks_sand_b",
-      "pirate_rocks_sand_c",
-      "pirate_palm_detailed_straight"
+      "pirate_palm_detailed_straight",
+      "pirate_rocks_sand_c"
     ]
   },
   "GodotMapV2_Graveyard": {
@@ -262,7 +275,7 @@ export const MAP_MODEL_MANIFEST = {
       "campfire",
       "tent",
       "sign",
-      "grave_character_ghost",
+      "grave_pumpkin_carved",
       "nature_path_stone",
       "platformer_flag",
       "nature_fence_simple",
@@ -285,15 +298,16 @@ export const MAP_MODEL_MANIFEST = {
       "grave_coffin_old",
       "grave_urn_round",
       "grave_candle",
-      "grave_pumpkin_carved",
       "grave_rocks",
+      "grave_gravestone_round",
       "grave_gravestone_broken",
       "grave_gravestone_cross",
       "grave_cross_wood",
       "grave_pumpkin",
-      "grave_gravestone_round",
+      "grave_stone_wall_damaged",
       "grave_iron_fence_border",
-      "grave_stone_wall_damaged"
+      "graveIronFenceBroken",
+      "grave_bench_damaged"
     ]
   },
   "GodotMapV2_HexRuins": {
@@ -340,10 +354,10 @@ export const MAP_MODEL_MANIFEST = {
       "hex_stone_hill",
       "platformer_rocks",
       "hex_grass_forest",
-      "hex_unit_tree",
-      "platformer_platform_overhang",
-      "town_rock_small",
-      "hex_water_rocks"
+      "nature_grass_large",
+      "nature_grass_small",
+      "hex_water_rocks",
+      "hex_unit_tree"
     ]
   },
   "GodotMapV2_SurvivalRidge": {
@@ -362,7 +376,6 @@ export const MAP_MODEL_MANIFEST = {
       "campfire",
       "tent",
       "sign",
-      "survival_campfire_pit",
       "nature_path_stone",
       "platformer_flag",
       "hex_stone_hill",
@@ -392,9 +405,8 @@ export const MAP_MODEL_MANIFEST = {
       "survival_resource_wood",
       "survival_rock_b",
       "survival_rock_c",
-      "nature_stump_round_detailed",
-      "platformer_tree_pine",
-      "ridgeBlockGrassEdge"
+      "survival_tree_log",
+      "survival_fence"
     ]
   },
   "GodotMapV2_BossHighland": {
@@ -438,9 +450,9 @@ export const MAP_MODEL_MANIFEST = {
       "nature_mushroom_red_tall",
       "platformer_rocks",
       "ridgeBlockGrassEdge",
-      "survival_workbench",
-      "pirate_cannon",
-      "platformer_tree_pine"
+      "platformer_flowers",
+      "platformer_flowers_tall",
+      "platformer_hedge"
     ]
   }
 }

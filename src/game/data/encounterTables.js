@@ -307,9 +307,9 @@ export const ENCOUNTER_TABLES = {
       { id: 111, minLevel: 17, maxLevel: 19, weight: 10 },
       { id: 178, minLevel: 17, maxLevel: 19, weight: 9 },
       { id: 165, minLevel: 17, maxLevel: 19, weight: 8 },
-      { id: 189, minLevel: 17, maxLevel: 19, weight: 14 },
-      { id: 190, minLevel: 17, maxLevel: 19, weight: 14 },
-      { id: 191, minLevel: 17, maxLevel: 19, weight: 12 }
+      { id: 189, minLevel: 17, maxLevel: 19, weight: 50 },
+      { id: 190, minLevel: 17, maxLevel: 19, weight: 50 },
+      { id: 191, minLevel: 17, maxLevel: 19, weight: 40 }
     ]
   },
 
@@ -375,9 +375,9 @@ export const ENCOUNTER_TABLES = {
       { id: 181, minLevel: 23, maxLevel: 25, weight: 9 },
       { id: 183, minLevel: 23, maxLevel: 25, weight: 8 },
       { id: 186, minLevel: 23, maxLevel: 25, weight: 7 },
-      { id: 192, minLevel: 23, maxLevel: 25, weight: 14 },
-      { id: 193, minLevel: 23, maxLevel: 25, weight: 14 },
-      { id: 194, minLevel: 23, maxLevel: 25, weight: 12 }
+      { id: 192, minLevel: 23, maxLevel: 25, weight: 50 },
+      { id: 193, minLevel: 23, maxLevel: 25, weight: 50 },
+      { id: 194, minLevel: 23, maxLevel: 25, weight: 40 }
     ]
   },
 
@@ -450,9 +450,9 @@ export const ENCOUNTER_TABLES = {
       { id: 157, minLevel: 29, maxLevel: 31, weight: 10 },
       { id: 179, minLevel: 29, maxLevel: 31, weight: 8 },
       { id: 11, minLevel: 30, maxLevel: 31, weight: 8 },
-      { id: 195, minLevel: 29, maxLevel: 31, weight: 14 },
-      { id: 196, minLevel: 29, maxLevel: 31, weight: 14 },
-      { id: 197, minLevel: 29, maxLevel: 31, weight: 12 }
+      { id: 195, minLevel: 29, maxLevel: 31, weight: 50 },
+      { id: 196, minLevel: 29, maxLevel: 31, weight: 50 },
+      { id: 197, minLevel: 29, maxLevel: 31, weight: 40 }
     ]
   },
 
@@ -522,9 +522,9 @@ export const ENCOUNTER_TABLES = {
       { id: 175, minLevel: 35, maxLevel: 37, weight: 9 },
       { id: 188, minLevel: 35, maxLevel: 37, weight: 8 },
       { id: 131, minLevel: 35, maxLevel: 37, weight: 8 },
-      { id: 198, minLevel: 35, maxLevel: 37, weight: 14 },
-      { id: 199, minLevel: 35, maxLevel: 37, weight: 14 },
-      { id: 200, minLevel: 35, maxLevel: 37, weight: 12 }
+      { id: 198, minLevel: 35, maxLevel: 37, weight: 50 },
+      { id: 199, minLevel: 35, maxLevel: 37, weight: 50 },
+      { id: 200, minLevel: 35, maxLevel: 37, weight: 40 }
     ]
   },
 
@@ -591,9 +591,9 @@ export const ENCOUNTER_TABLES = {
       { id: 43, minLevel: 41, maxLevel: 43, weight: 8 },
       { id: 137, minLevel: 41, maxLevel: 43, weight: 8 },
       { id: 185, minLevel: 41, maxLevel: 43, weight: 8 },
-      { id: 201, minLevel: 41, maxLevel: 43, weight: 14 },
-      { id: 202, minLevel: 41, maxLevel: 43, weight: 14 },
-      { id: 203, minLevel: 41, maxLevel: 43, weight: 12 }
+      { id: 201, minLevel: 41, maxLevel: 43, weight: 50 },
+      { id: 202, minLevel: 41, maxLevel: 43, weight: 50 },
+      { id: 203, minLevel: 41, maxLevel: 43, weight: 40 }
     ]
   },
 
@@ -660,9 +660,9 @@ export const ENCOUNTER_TABLES = {
       { id: 175, minLevel: 47, maxLevel: 49, weight: 10 },
       { id: 109, minLevel: 47, maxLevel: 49, weight: 9 },
       { id: 143, minLevel: 47, maxLevel: 49, weight: 8 },
-      { id: 204, minLevel: 47, maxLevel: 49, weight: 14 },
-      { id: 205, minLevel: 47, maxLevel: 49, weight: 14 },
-      { id: 206, minLevel: 47, maxLevel: 49, weight: 12 }
+      { id: 204, minLevel: 47, maxLevel: 49, weight: 50 },
+      { id: 205, minLevel: 47, maxLevel: 49, weight: 50 },
+      { id: 206, minLevel: 47, maxLevel: 49, weight: 40 }
     ]
   },
 
@@ -811,9 +811,9 @@ export const ENCOUNTER_TABLES = {
       { id: 27, minLevel: 65, maxLevel: 67, weight: 9 },
       { id: 109, minLevel: 65, maxLevel: 67, weight: 8 },
       { id: 143, minLevel: 65, maxLevel: 67, weight: 8 },
-      { id: 207, minLevel: 69, maxLevel: 70, weight: 14 },
-      { id: 208, minLevel: 69, maxLevel: 70, weight: 14 },
-      { id: 209, minLevel: 69, maxLevel: 70, weight: 12 }
+      { id: 207, minLevel: 69, maxLevel: 70, weight: 50 },
+      { id: 208, minLevel: 69, maxLevel: 70, weight: 50 },
+      { id: 209, minLevel: 69, maxLevel: 70, weight: 40 }
     ]
   }
 }

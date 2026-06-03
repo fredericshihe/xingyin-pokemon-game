@@ -2,8 +2,7 @@
 import { withViteAuditServer } from './load-vite-module.mjs'
 
 const MIN_HIDDEN_TREASURE_VALUE = 500
-const MIN_RARE_POWER_TOTAL = 420
-const MAX_RARE_WEIGHT = 14
+const MIN_HIDDEN_EXCLUSIVE_SHARE = 0.6
 const MIN_HIDDEN_EXCLUSIVE_POWER_TOTAL = 500
 const HIDDEN_BOSS_LEVEL_BONUS_MIN = 5
 const HIDDEN_BOSS_LEVEL_BONUS_MAX = 10
@@ -207,19 +206,19 @@ await withViteAuditServer(async ({ loadModule }) => {
         errors.push(`${mapId}/${zone.id} needs a better hidden treasure worth at least ${MIN_HIDDEN_TREASURE_VALUE}, got ${treasures[0]?.value || 0}`)
       }
 
-      const rareStrongEntries = entries
-        .map((entry) => {
-          const monster = monsterById.get(Number(entry.id))
-          return {
-            entry,
-            monster,
-            total: statTotal(monster)
-          }
-        })
-        .filter(({ entry, total }) => (Number(entry.weight) || 1) <= MAX_RARE_WEIGHT && total >= MIN_RARE_POWER_TOTAL)
+      const exclusiveEntries = entries.filter((entry) => expectedExclusiveIds.includes(Math.trunc(Number(entry.id))))
+      const ordinaryEntries = entries.filter((entry) => !expectedExclusiveIds.includes(Math.trunc(Number(entry.id))))
+      const totalWeight = entries.reduce((sum, entry) => sum + (Number(entry.weight) || 0), 0)
+      const exclusiveWeight = exclusiveEntries.reduce((sum, entry) => sum + (Number(entry.weight) || 0), 0)
+      const ordinaryMaxWeight = ordinaryEntries.reduce((max, entry) => Math.max(max, Number(entry.weight) || 0), 0)
+      const exclusiveMinWeight = exclusiveEntries.reduce((min, entry) => Math.min(min, Number(entry.weight) || 0), Number.POSITIVE_INFINITY)
+      const exclusiveShare = totalWeight > 0 ? exclusiveWeight / totalWeight : 0
 
-      if (rareStrongEntries.length === 0) {
-        errors.push(`${mapId}/${zone.id} needs at least one low-weight strong Pokemon (weight <= ${MAX_RARE_WEIGHT}, stat total >= ${MIN_RARE_POWER_TOTAL})`)
+      if (exclusiveShare < MIN_HIDDEN_EXCLUSIVE_SHARE) {
+        errors.push(`${mapId}/${zone.id} hidden-exclusive total share ${(exclusiveShare * 100).toFixed(1)}% is below ${(MIN_HIDDEN_EXCLUSIVE_SHARE * 100).toFixed(0)}%`)
+      }
+      if (!Number.isFinite(exclusiveMinWeight) || exclusiveMinWeight <= ordinaryMaxWeight) {
+        errors.push(`${mapId}/${zone.id} every hidden-exclusive Pokemon must have weight greater than ordinary max weight ${ordinaryMaxWeight}, got min ${exclusiveMinWeight}`)
       }
 
       entries.forEach((entry) => {
@@ -246,9 +245,13 @@ await withViteAuditServer(async ({ loadModule }) => {
         exclusive: expectedExclusiveIds
           .map((pokemonId) => `${monsterById.get(pokemonId)?.name || pokemonId}#${pokemonId}`)
           .join(', '),
-        rareStrong: rareStrongEntries
-          .slice(0, 4)
-          .map(({ entry, monster, total }) => `${monster?.name || entry.id}#${entry.id}(w${entry.weight}, total${total})`)
+        exclusiveShare,
+        ordinaryMaxWeight,
+        rareStrong: exclusiveEntries
+          .map((entry) => {
+            const monster = monsterById.get(Number(entry.id))
+            return `${monster?.name || entry.id}#${entry.id}(w${entry.weight}, total${statTotal(monster)})`
+          })
       })
     }
   }
@@ -265,7 +268,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
 console.log('=== 隐藏区奖励与图鉴路线审计 ===')
 summary.forEach((entry) => {
-  console.log(`${entry.mapId}/${entry.zoneId}: treasure=${entry.treasure?.id || 'none'}:${entry.treasure?.itemKey || 'none'}x${entry.treasure?.quantity || 0}=${entry.treasure?.value || 0}; exclusive=${entry.exclusive}; rare=${entry.rareStrong.join(', ')}`)
+  console.log(`${entry.mapId}/${entry.zoneId}: treasure=${entry.treasure?.id || 'none'}:${entry.treasure?.itemKey || 'none'}x${entry.treasure?.quantity || 0}=${entry.treasure?.value || 0}; exclusiveShare=${(entry.exclusiveShare * 100).toFixed(1)}%; ordinaryMaxWeight=${entry.ordinaryMaxWeight}; exclusive=${entry.exclusive}; rare=${entry.rareStrong.join(', ')}`)
 })
 
 if (errors.length > 0) {

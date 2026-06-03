@@ -42,10 +42,31 @@ const getLocalLearnLevelByMove = (baseMonster) => {
   return levels
 }
 
-const getLearnLevelByMove = (baseMonster) => ({
-  ...getLocalLearnLevelByMove(baseMonster),
-  ...getOfficialLearnLevelByMove(baseMonster),
-})
+const getSupplementalLearnLevelByMove = (baseMonster) => {
+  const levels = {}
+  for (const [levelKey, moveEntry] of Object.entries(baseMonster?.supplementalLearnset || {})) {
+    const learnLevel = Number(levelKey)
+    const moveKeys = Array.isArray(moveEntry) ? moveEntry : [moveEntry]
+    for (const moveKey of moveKeys) {
+      if (!MOVES[moveKey] || !Number.isInteger(learnLevel)) continue
+      levels[moveKey] = Math.min(levels[moveKey] ?? learnLevel, learnLevel)
+    }
+  }
+  return levels
+}
+
+const getLearnLevelByMove = (baseMonster) => {
+  const officialLearnLevelByMove = getOfficialLearnLevelByMove(baseMonster)
+  return {
+    ...(
+      Object.keys(officialLearnLevelByMove).length > 0
+        ? {}
+        : getLocalLearnLevelByMove(baseMonster)
+    ),
+    ...officialLearnLevelByMove,
+    ...getSupplementalLearnLevelByMove(baseMonster),
+  }
+}
 
 export function getMovesLearnedAtLevel(baseMonster, level) {
   const safeLevel = Number(level)
@@ -54,13 +75,14 @@ export function getMovesLearnedAtLevel(baseMonster, level) {
     .filter(([, lvl]) => Number(lvl) === safeLevel)
     .map(([moveKey]) => moveKey)
   const explicitMoveKeys = new Set(Object.keys(learnLevelByMove))
-  const levelUnlockedMoves = (baseMonster?.moves || [])
+  const shouldUseLegacyUnlockLevels = explicitMoveKeys.size === 0
+  const levelUnlockedMoves = shouldUseLegacyUnlockLevels ? (baseMonster?.moves || [])
     .filter((moveKey) => (
       !explicitMoveKeys.has(moveKey) &&
       MOVES[moveKey] &&
       MOVES[moveKey].cost !== 0 &&
       MOVES[moveKey].unlockLevel === safeLevel
-    ))
+    )) : []
   return [...new Set([...explicitMoves, ...levelUnlockedMoves])]
 }
 

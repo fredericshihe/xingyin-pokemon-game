@@ -5,7 +5,7 @@ const BLOCKED_TILES = new Set([1, 5, 6, 11, 14, 18, 20])
 const STEP_ON_EVENT_TYPES = new Set(['item', 'pickup', 'fast_travel'])
 const ADJACENT_EVENT_TYPES = new Set(['warp', 'heal', 'sign', 'info', 'trainer', 'boss', 'challenge'])
 const NPC_EVENT_TYPES = new Set(['trainer', 'boss'])
-const ACTIVE_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion'])
+const ACTIVE_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion', 'statBoost'])
 const ROAD_END_MEANINGFUL_EVENT_TYPES = new Set(['warp', 'fast_travel', 'item', 'pickup', 'heal', 'trainer', 'boss', 'challenge'])
 const TALL_GRASS_TILE = 8
 const ROAD_TILE = 12
@@ -31,6 +31,7 @@ const FIXED_LANDMARK_CLEARANCE_RADIUS = {
   heal: 2.25,
   challenge: 2.25
 }
+const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
 const LEGACY_DECORATIVE_ASSET_ALIASES = {
   'grass-small': 'nature_grass_small',
   'grass-large': 'nature_grass_large',
@@ -239,8 +240,34 @@ function isRuntimeEventDecoration(object) {
   return Boolean(object?.eventId || object?.eventType || object?.fixedSceneEventType)
 }
 
+function isHiddenEncounterGateEvent(event) {
+  return event?.type === 'sign' && event?.properties?.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
+}
+
+function isHiddenZoneRuleDecoration(object) {
+  return Boolean(object?.hiddenZonePerimeter || object?.hiddenZoneCorner || object?.hiddenGateMarker || object?.hiddenGateEntranceBlocker)
+}
+
+function isPremiumHiddenZone(zone) {
+  return zone?.premiumHiddenZone === true && Array.isArray(zone?.levelRange) && zone.levelRange.length >= 2
+}
+
+function getZoneLevelBounds(zone, config) {
+  if (isPremiumHiddenZone(zone)) {
+    const minLevel = Math.max(1, Math.trunc(Number(zone.levelRange[0])) || 1)
+    const maxLevel = Math.max(minLevel, Math.trunc(Number(zone.levelRange[1])) || minLevel)
+    return { minLevel, maxLevel, source: 'hidden' }
+  }
+  return {
+    minLevel: Math.max(1, Math.trunc(Number(config.minLevel || 1)) || 1),
+    maxLevel: Math.max(1, Math.trunc(Number(config.maxLevel || config.minLevel || 1)) || 1),
+    source: 'map'
+  }
+}
+
 function isPathBlockingDecoration(object, catalog) {
   if (isRuntimeEventDecoration(object)) return false
+  if (isHiddenZoneRuleDecoration(object)) return false
   const asset = getDecorativeAsset(object?.type, catalog)
   return Boolean(
     DECORATIVE_FOOTPRINT_OVERRIDES[object?.type] ||
@@ -341,6 +368,26 @@ function reachableTerrain(map) {
   }
 
   return visited
+}
+
+function buildUnlockedHiddenGateAuditMap(map, getHiddenEncounterGatePassageTiles, regionTile) {
+  const grid = (map.mapGrid || []).map((row) => Array.isArray(row) ? [...row] : row)
+  ;(map.runtimeEvents || [])
+    .filter(isHiddenEncounterGateEvent)
+    .forEach((event) => {
+      const { lockedTiles, sealedTiles } = getHiddenEncounterGatePassageTiles(map, map.mapGrid, event, map.runtimeEvents)
+      const rawOpenTile = Number(event?.properties?.openTile)
+      const openTile = Number.isFinite(rawOpenTile) ? Math.trunc(rawOpenTile) : regionTile.road
+      sealedTiles.forEach(({ x, y }) => {
+        if (grid[y]?.[x] === undefined) return
+        grid[y][x] = regionTile.objectBlocker
+      })
+      lockedTiles.forEach(({ x, y }) => {
+        if (grid[y]?.[x] === undefined) return
+        grid[y][x] = openTile
+      })
+    })
+  return { ...map, mapGrid: grid }
 }
 
 function findMisleadingBlockedLowVegetation(map, catalog, reachable) {
@@ -762,6 +809,7 @@ function validateBridgeSurfaceClear({ errors, mapId, map, bridge, index }) {
   const label = `${mapId} 第 ${index + 1} 座桥`
 
   ;(map.decorativeObjects || []).forEach((object) => {
+    if (isHiddenZoneRuleDecoration(object)) return
     if (!isInsideBridgeFootprint(bridge, Number(object.x), Number(object.y))) return
     add(errors, `${label} 桥面上有装饰物 ${object.type}@${object.x},${object.y}`)
   })
@@ -813,11 +861,13 @@ function validateBridgeModel({ errors, mapId, map, bridge, index }) {
 function validateStaticSigns({ errors, mapId, map, reachable, events = [] }) {
   const runtimeSignCoordinates = new Set(
     events
+      .filter((event) => !isHiddenEncounterGateEvent(event))
       .filter((event) => event.type === 'sign' || event.type === 'info')
       .map((event) => key(event.position?.x, event.position?.y))
   )
   const visibleSignDecorations = (map.decorativeObjects || [])
     .filter((object) => object.type === 'sign' || object.type === 'trail_sign')
+    .filter((object) => !isHiddenZoneRuleDecoration(object))
     .filter((object) => {
       if (object.eventType && object.eventType !== 'sign') return false
       if (object.fixedSceneEventType && object.fixedSceneEventType !== 'sign') return false
@@ -1161,6 +1211,7 @@ function itemDetails(defs, itemType, itemKey) {
   if (itemType === 'pokeball') return defs.POKEBALLS[itemKey]
   if (itemType === 'potion') return defs.POTIONS[itemKey]
   if (itemType === 'expPotion') return defs.EXP_POTIONS[itemKey]
+  if (itemType === 'statBoost') return defs.STAT_BOOST_ITEMS[itemKey]
   return null
 }
 
@@ -1345,6 +1396,7 @@ function getChallenge(events) {
 
 function getSignCount(map, events) {
   const eventSignCoordinates = events
+    .filter((event) => !isHiddenEncounterGateEvent(event))
     .filter((event) => event.type === 'sign' || event.type === 'info')
     .map((event) => key(event.position?.x, event.position?.y))
   const staticSignCoordinates = Object.keys(map.signs || {})
@@ -1362,8 +1414,9 @@ await withViteAuditServer(async ({ loadModule }) => {
   const { getMapConfig } = await loadModule('/src/data/maps/mapConfig.js')
   const { ENCOUNTER_TABLES } = await loadModule('/src/game/data/encounterTables.js')
   const { MAP_ASSET_CATALOG } = await loadModule('/src/game/data/mapAssetCatalog.js')
-  const { MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS } = await loadModule('/src/utils/gameData.js')
+  const { MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS } = await loadModule('/src/utils/gameData.js')
   const { getSpeciesLevelBounds, isLevelValidForSpecies } = await loadModule('/src/utils/wildEncounterRules.js')
+  const { getHiddenEncounterGatePassageTiles, REGION_MAP_TILE } = await loadModule('/src/game/data/godotMaps/godot_region_maps.js')
 
   const errors = []
   const warnings = []
@@ -1379,15 +1432,16 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   for (const mapId of ADVENTURE_MAP_CHAIN) {
     const map = getAdventureMapInfo(mapId)
+    const reachabilityMap = buildUnlockedHiddenGateAuditMap(map, getHiddenEncounterGatePassageTiles, REGION_MAP_TILE)
     const config = getMapConfig(mapId)
     const events = Array.isArray(map.runtimeEvents) ? map.runtimeEvents : []
-    const reachable = reachableTerrain(map)
+    const reachable = reachableTerrain(reachabilityMap)
     const isRegion = mapId.startsWith('GodotMapV2')
     const eventIds = new Set()
     const warps = events.filter((event) => event.type === 'warp')
     const fastTravelEvents = events.filter((event) => event.type === 'fast_travel')
     const healPoints = events.filter((event) => event.type === 'heal')
-    const signEvents = events.filter((event) => event.type === 'sign' || event.type === 'info')
+    const signEvents = events.filter((event) => (event.type === 'sign' || event.type === 'info') && !isHiddenEncounterGateEvent(event))
     const signCount = getSignCount(map, events)
     const items = events.filter((event) => event.type === 'item' || event.type === 'pickup')
     const normalTrainers = getNormalTrainers(events)
@@ -1556,14 +1610,16 @@ await withViteAuditServer(async ({ loadModule }) => {
         add(warnings, `${mapId}/${zone.id} 高草丛占比偏低: ${grassTiles}/${zone.width * zone.height}`)
       }
 
+      const zoneBounds = getZoneLevelBounds(zone, config)
       table.pokemon.forEach((entry) => {
         const speciesExists = Boolean(findMonster(MONSTERS, entry.id))
         if (!speciesExists) {
           add(errors, `${mapId}/${zone.encounterTableId} 宝可梦不存在: ${entry.id}`)
           return
         }
-        if (entry.minLevel < config.minLevel || entry.maxLevel > config.maxLevel) {
-          add(errors, `${mapId}/${zone.encounterTableId} ${findMonster(MONSTERS, entry.id)?.name || entry.id} 等级 ${entry.minLevel}-${entry.maxLevel} 超出地图 ${config.minLevel}-${config.maxLevel}`)
+        if (entry.minLevel < zoneBounds.minLevel || entry.maxLevel > zoneBounds.maxLevel) {
+          const boundLabel = zoneBounds.source === 'hidden' ? '隐藏区' : '地图'
+          add(errors, `${mapId}/${zone.encounterTableId} ${findMonster(MONSTERS, entry.id)?.name || entry.id} 等级 ${entry.minLevel}-${entry.maxLevel} 超出${boundLabel} ${zoneBounds.minLevel}-${zoneBounds.maxLevel}`)
         }
         if (!hasLegalLevelForSpecies(getSpeciesLevelBounds, entry.id, entry.minLevel, entry.maxLevel)) {
           add(errors, `${mapId}/${zone.encounterTableId} ${findMonster(MONSTERS, entry.id)?.name || entry.id} 在 ${entry.minLevel}-${entry.maxLevel} 没有合法形态等级`)
@@ -1597,7 +1653,7 @@ await withViteAuditServer(async ({ loadModule }) => {
           mapId,
           eventId: event.id,
           rewardItems: [eventProps(event)],
-          defs: { POKEBALLS, POTIONS, EXP_POTIONS }
+          defs: { POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS }
         })
       })
       const forwardWarp = warps.find((event) => event.target?.mapName === 'GodotMapV2')
@@ -1667,7 +1723,7 @@ await withViteAuditServer(async ({ loadModule }) => {
           mapId,
           eventId: boss.id,
           rewardItems: eventProps(boss).rewardItems,
-          defs: { POKEBALLS, POTIONS, EXP_POTIONS }
+          defs: { POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS }
         })
         if (!eventProps(boss).rareUnlockText) {
           add(errors, `${mapId}/${boss.id} 缺少 Boss 后稀有生态提示 rareUnlockText`)
@@ -1707,7 +1763,7 @@ await withViteAuditServer(async ({ loadModule }) => {
           mapId,
           eventId: challenge.id,
           rewardItems: eventProps(challenge).rewardItems,
-          defs: { POKEBALLS, POTIONS, EXP_POTIONS }
+          defs: { POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS }
         })
       }
 
@@ -1717,7 +1773,7 @@ await withViteAuditServer(async ({ loadModule }) => {
           mapId,
           eventId: event.id,
           rewardItems: [eventProps(event)],
-          defs: { POKEBALLS, POTIONS, EXP_POTIONS }
+          defs: { POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS }
         })
       })
     }

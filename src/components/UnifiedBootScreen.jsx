@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 function getEstimatedTimeHint(percent) {
   if (typeof navigator === 'undefined') return null
-  if (percent > 85) return '即将完成'
+  if (percent > 85) return '即将进入冒险'
 
   const connection = navigator.connection
     || navigator.mozConnection
@@ -10,13 +10,24 @@ function getEstimatedTimeHint(percent) {
   const effectiveType = connection?.effectiveType || ''
 
   const estimates = {
-    'slow-2g': '预计还需 2-3 分钟',
-    '2g': '预计还需 2-3 分钟',
-    '3g': '预计还需 1-2 分钟',
-    '4g': '预计还需 30-60 秒'
+    'slow-2g': '网络较慢，正在稳定加载',
+    '2g': '网络较慢，正在稳定加载',
+    '3g': '资源较多，仍在继续准备',
+    '4g': '资源较多，正在继续准备'
   }
 
-  return estimates[effectiveType] || '预计还需 20-40 秒'
+  return estimates[effectiveType] || '资源较多，正在继续准备'
+}
+
+const clampPercent = (value) => (
+  Number.isFinite(value)
+    ? Math.min(100, Math.max(0, Number(value)))
+    : null
+)
+
+const toSafeCount = (value) => {
+  const count = Math.trunc(Number(value))
+  return Number.isFinite(count) && count >= 0 ? count : null
 }
 
 /**
@@ -35,16 +46,21 @@ export default function UnifiedBootScreen({
   onSecondaryAction = null,
   showProgressBar = true,
   slowHintAfterMs = 8000,
-  slowHint = '首次进入需下载完整游戏资源（约 30MB）：146 种宝可梦高清立绘、9 张地图的 3D 场景、背景音乐和音效。下载完成后，游戏将保存在您的设备上，下次打开只需 1-2 秒！网络较慢时会自动重试，请保持页面打开。',
-  idleHint = '加载完成后将自动进入游戏'
+  slowHint = '首次进入需要准备本地素材缓存；之后会明显更快。请保持页面打开，系统会自动继续。',
+  idleHint = '加载完成后会自动进入游戏'
 }) {
   const resolvedPercent = percent ?? progress?.percent ?? null
-  const displayPercent = Number.isFinite(resolvedPercent)
-    ? Math.min(100, Math.max(0, Number(resolvedPercent)))
-    : null
+  const displayPercent = clampPercent(resolvedPercent)
   const displayPhase = phase || progress?.phase || ''
   const displayDetail = detail ?? progress?.detail ?? null
   const displayTitle = title || (error ? '无法进入游戏' : '正在准备冒险世界')
+  const stageIndex = toSafeCount(progress?.stageIndex)
+  const stageCount = toSafeCount(progress?.stageCount)
+  const stageLoaded = toSafeCount(progress?.stageLoaded)
+  const stageTotal = toSafeCount(progress?.stageTotal)
+  const mapCount = toSafeCount(progress?.mapCount)
+  const showStageMeta = !progress?.hideResourceCounts && stageIndex !== null && stageCount !== null && stageCount > 0
+  const showStageCount = !progress?.hideResourceCounts && stageLoaded !== null && stageTotal !== null && stageTotal > 0
   const [showSlowHint, setShowSlowHint] = useState(false)
 
   useEffect(() => {
@@ -88,10 +104,13 @@ export default function UnifiedBootScreen({
                 <p className="text-sm font-bold text-sky-700">{displayPercent}%</p>
               </>
             ) : null}
-            {Number.isFinite(progress?.loaded) && Number.isFinite(progress?.total) ? (
+            {showStageMeta || showStageCount || mapCount ? (
               <p className="text-xs text-slate-500">
-                已加载 {progress.loaded} / {progress.total} 项
-                {Number.isFinite(progress?.mapCount) ? ` · ${progress.mapCount} 张地图` : ''}
+                {showStageMeta ? `步骤 ${stageIndex}/${stageCount}` : ''}
+                {showStageMeta && showStageCount ? ' · ' : ''}
+                {showStageCount ? `当前阶段 ${stageLoaded}/${stageTotal} 项` : ''}
+                {(showStageMeta || showStageCount) && mapCount ? ' · ' : ''}
+                {mapCount ? `${mapCount} 张地图` : ''}
               </p>
             ) : null}
             {showSlowHint && displayPercent !== null ? (

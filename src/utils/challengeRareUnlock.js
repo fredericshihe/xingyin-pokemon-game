@@ -2,6 +2,17 @@ import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from './poke
 import { isLevelValidForSpecies } from './wildEncounterRules.js'
 
 export const CHALLENGE_RARE_UNLOCK_STAGE_COUNT = 4
+export const CHALLENGE_BATTLE_GROUP_SIZES = [3, 4, 5, 6]
+export const MIN_CHALLENGE_RARE_UNLOCK_BATCH_SIZE = 2
+
+export function getChallengeBattleGroupIndex(completedStage = 0) {
+  const stage = Math.max(0, Math.trunc(Number(completedStage)) || 0)
+  return Math.min(CHALLENGE_BATTLE_GROUP_SIZES.length - 1, stage)
+}
+
+export function getChallengeBattleGroupSize(completedStage = 0) {
+  return CHALLENGE_BATTLE_GROUP_SIZES[getChallengeBattleGroupIndex(completedStage)]
+}
 
 export function normalizeChallengeRarePool(pool) {
   if (!Array.isArray(pool)) return []
@@ -25,7 +36,22 @@ export function normalizeChallengeRarePool(pool) {
 export function getChallengeRareUnlockStageCount(poolSize) {
   const total = Math.max(0, Math.trunc(Number(poolSize)) || 0)
   if (total <= 0) return 0
-  return Math.min(CHALLENGE_RARE_UNLOCK_STAGE_COUNT, total)
+  if (total < MIN_CHALLENGE_RARE_UNLOCK_BATCH_SIZE) return 1
+  return Math.min(
+    CHALLENGE_RARE_UNLOCK_STAGE_COUNT,
+    Math.max(1, Math.floor(total / MIN_CHALLENGE_RARE_UNLOCK_BATCH_SIZE))
+  )
+}
+
+function getChallengeRareUnlockBatchSizes(poolSize) {
+  const total = Math.max(0, Math.trunc(Number(poolSize)) || 0)
+  const stageCount = getChallengeRareUnlockStageCount(total)
+  if (stageCount <= 0) return []
+  const baseSize = Math.floor(total / stageCount)
+  const extraCount = total % stageCount
+  return Array.from({ length: stageCount }, (_, index) => (
+    baseSize + (index >= stageCount - extraCount ? 1 : 0)
+  ))
 }
 
 export function getChallengeRareUnlockedCountForStage(poolSize, stage) {
@@ -35,7 +61,9 @@ export function getChallengeRareUnlockedCountForStage(poolSize, stage) {
   const safeStage = Math.max(0, Math.min(stageCount, Math.trunc(Number(stage)) || 0))
   if (safeStage <= 0) return 0
   if (safeStage >= stageCount) return total
-  return Math.max(1, Math.min(total, Math.round((total * safeStage) / stageCount)))
+  return getChallengeRareUnlockBatchSizes(total)
+    .slice(0, safeStage)
+    .reduce((sum, batchSize) => sum + batchSize, 0)
 }
 
 export function getChallengeRareUnlockBatch(pool, completedStage = 0) {
@@ -50,6 +78,16 @@ function rotateEntries(entries, start) {
   if (!Array.isArray(entries) || entries.length === 0) return []
   const offset = Math.max(0, Math.trunc(Number(start)) || 0) % entries.length
   return [...entries.slice(offset), ...entries.slice(0, offset)]
+}
+
+function uniqueEntriesByPokemonId(entries = []) {
+  const seen = new Set()
+  return (Array.isArray(entries) ? entries : []).filter((entry) => {
+    const pokemonId = Math.trunc(Number(entry?.pokemonId))
+    if (!Number.isInteger(pokemonId) || seen.has(pokemonId)) return false
+    seen.add(pokemonId)
+    return true
+  })
 }
 
 function normalizeTeamEntries(teamConfig = []) {
@@ -70,12 +108,6 @@ function clampLevel(level, fallback = 5) {
   return Math.max(1, Math.min(100, safe))
 }
 
-function randomInt(random, min, max) {
-  const lo = Math.min(min, max)
-  const hi = Math.max(min, max)
-  return lo + Math.floor(random() * (hi - lo + 1))
-}
-
 function isBatchFamilyMember(pokemonId, batchEntries = []) {
   const safeId = Math.trunc(Number(pokemonId))
   if (!Number.isInteger(safeId)) return false
@@ -87,8 +119,9 @@ function isBatchFamilyMember(pokemonId, batchEntries = []) {
 }
 
 /**
- * Build the challenge guardian team for the unlock batch at `unlockStage`.
- * Species come only from that batch (reusing when the team is larger than the batch).
+ * Build the challenge guardian team for the unlock progress at `unlockStage`.
+ * The exact reward batch stays separate; battle teams use the cumulative guardian
+ * pool so repeat trials can grow without duplicating species too early.
  */
 export function buildChallengeBattleTeamFromUnlockBatch({
   challengeRarePool = [],
@@ -96,15 +129,23 @@ export function buildChallengeBattleTeamFromUnlockBatch({
   unlockStage = 0,
   targetSize = 3,
   bounds = { minLevel: 1, maxLevel: 100 },
-  victoryBonus = 0,
-  levelJitter = 0,
-  random = null
+  victoryBonus = 0
 } = {}) {
   const baseEntries = normalizeTeamEntries(baseTeam)
-  const batch = getChallengeRareUnlockBatch(challengeRarePool, unlockStage)
   const fullPool = normalizeChallengeRarePool(challengeRarePool)
-  const speciesSource = batch.length > 0 ? batch : fullPool
   const safeTargetSize = Math.max(0, Math.trunc(Number(targetSize)) || 0)
+  const groupStage = getChallengeBattleGroupIndex(unlockStage)
+  const batch = getChallengeRareUnlockBatch(fullPool, groupStage)
+  const cumulativeEnd = Math.max(
+    getChallengeRareUnlockedCountForStage(fullPool.length, groupStage + 1),
+    safeTargetSize
+  )
+  const cumulativePool = fullPool.slice(0, Math.min(fullPool.length, cumulativeEnd))
+  const speciesSource = uniqueEntriesByPokemonId([
+    ...batch,
+    ...cumulativePool,
+    ...fullPool
+  ])
   if (safeTargetSize <= 0 || speciesSource.length === 0) return baseEntries
 
   const usedSpeciesIds = new Set()
@@ -113,15 +154,12 @@ export function buildChallengeBattleTeamFromUnlockBatch({
   return Array.from({ length: safeTargetSize }, (_, index) => {
     const baseEntry = baseEntries[index % Math.max(1, baseEntries.length)] || null
     const fallbackLevel = bounds.minLevel + Math.floor(index / 2)
-    const jitter = levelJitter > 0 && typeof random === 'function'
-      ? randomInt(random, -levelJitter, levelJitter)
-      : 0
     const addMemberLevelBonus = index >= baseEntries.length ? Math.floor(index / 2) : 0
     const targetLevel = Math.max(
       bounds.minLevel,
       Math.min(
         bounds.maxLevel,
-        clampLevel((baseEntry?.level ?? fallbackLevel) + victoryBonus + jitter + addMemberLevelBonus, fallbackLevel)
+        clampLevel((baseEntry?.level ?? fallbackLevel) + victoryBonus + addMemberLevelBonus, fallbackLevel)
       )
     )
     const orderedBatch = rotateEntries(speciesSource, index)

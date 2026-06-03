@@ -58,12 +58,42 @@ const canUseLocalStorage = (relativeFile, lines, index) => {
     return context.includes('SESSION_KEY') || context.includes('ProfileSession')
   }
 
+  if (relativeFile === 'src/game/ThreeLowPolyMap.jsx') {
+    return context.includes('mapVisualQuality')
+  }
+
+  if (relativeFile === 'src/utils/clientUpdate.js') {
+    return context.includes('BUILD_STORAGE_KEY') || context.includes('ENTRY_HASH_STORAGE_KEY')
+  }
+
+  if (relativeFile === 'src/utils/gameAudio.js') {
+    return context.includes('AUDIO_SETTINGS_STORAGE_KEY') || context.includes('LEGACY_AUDIO_SETTINGS_STORAGE_KEY')
+  }
+
+  if (relativeFile === 'src/utils/gameEntryPreloadMarks.js') {
+    return context.includes('PRELOAD_DONE_PREFIX') || context.includes('getEntryPreloadStorageKey')
+  }
+
   if (relativeFile === 'src/components/Game/OriginalGame.jsx') {
     return (
       context.includes('getLegacyTeacherRewardRecoveryStorageKey') ||
       context.includes('LegacyTeacherRewardRecovery') ||
       context.includes('legacy teacher reward recovery')
     )
+  }
+
+  return false
+}
+
+const canUseSessionStorage = (relativeFile, lines, index) => {
+  const context = lineContext(lines, index)
+
+  if (relativeFile === 'src/utils/clientUpdate.js') {
+    return context.includes('REMOTE_UPDATE_GUARD_KEY')
+  }
+
+  if (relativeFile === 'src/utils/recoverStaleClient.js') {
+    return context.includes('RELOAD_GUARD_KEY')
   }
 
   return false
@@ -96,6 +126,7 @@ const stats = {
   directUsersTableReadReferences: 0,
   trainerDailyCloudMarkers: 0,
   atomicLoadMarkers: 0,
+  mapWorldProgressCloudMarkers: 0,
 }
 
 for (const file of files) {
@@ -122,14 +153,16 @@ for (const file of files) {
 
     if (line.includes('sessionStorage')) {
       stats.sessionStorageReferences += 1
-      addViolation(
-        violations,
-        'SESSION_STORAGE_FORBIDDEN',
-        relativeFile,
-        lineNumber,
-        '当前规则不支持本地/离线游戏，源码不得使用 sessionStorage 保存进度或状态。',
-        line
-      )
+      if (!canUseSessionStorage(relativeFile, lines, index)) {
+        addViolation(
+          violations,
+          'SESSION_STORAGE_FORBIDDEN',
+          relativeFile,
+          lineNumber,
+          '当前规则只允许版本更新/陈旧客户端刷新保护使用 sessionStorage；不得保存游戏进度或状态。',
+          line
+        )
+      }
     }
 
     if (/\bselect\s*\(\s*['"`]\*['"`]\s*\)/.test(line)) {
@@ -295,6 +328,13 @@ for (const oldHookPath of OLD_HOOK_PATHS) {
 
 const originalGamePath = path.join(ROOT_DIR, 'src/components/Game/OriginalGame.jsx')
 const originalGameSource = await fs.readFile(originalGamePath, 'utf8')
+const migrationsDir = path.join(ROOT_DIR, 'supabase/migrations')
+const migrationFiles = (await fs.readdir(migrationsDir))
+  .filter((file) => file.endsWith('.sql'))
+  .sort()
+const migrationSource = (await Promise.all(
+  migrationFiles.map((file) => fs.readFile(path.join(migrationsDir, file), 'utf8'))
+)).join('\n')
 for (const marker of requiredOriginalGameMarkers) {
   if (!originalGameSource.includes(marker)) {
     addViolation(
@@ -350,6 +390,45 @@ const atomicLoadMarkers = [
   },
 ]
 
+const mapWorldProgressCloudMarkers = [
+  {
+    marker: 'flags: source.flags && typeof source.flags === \'object\' ? source.flags : {}',
+    source: originalGameSource,
+    file: 'src/components/Game/OriginalGame.jsx',
+    message: '隐藏区解锁 flags 必须进入 world 归一化，才能被 createCloudSnapshot 同步到云端。',
+  },
+  {
+    marker: 'setWorldFlagValue(worldPositionPatch.world || baseSnapshot.world, flagKey, true)',
+    source: originalGameSource,
+    file: 'src/components/Game/OriginalGame.jsx',
+    message: '隐藏区开启必须写入 world.flags，而不是只改本地地图格。',
+  },
+  {
+    marker: 'appendCollectedMapEvent(worldPositionPatch.world || baseSnapshot.world, currentMapName, eventId)',
+    source: originalGameSource,
+    file: 'src/components/Game/OriginalGame.jsx',
+    message: '一次性宝箱拾取必须写入带地图作用域的 world.collectedEventIds。',
+  },
+  {
+    marker: 'preserve_game_data_world_hidden_gate_flags',
+    source: migrationSource,
+    file: 'supabase/migrations',
+    message: '后端保存必须保护隐藏区解锁 flags，避免旧快照把已开启秘境关回去。',
+  },
+  {
+    marker: 'preserve_game_data_world_trainer_victory_counts',
+    source: migrationSource,
+    file: 'supabase/migrations',
+    message: '后端保存必须保护循环挑战胜利次数，避免旧快照把递进难度回退。',
+  },
+  {
+    marker: "preserve_game_data_world_string_array(NEW.game_data, OLD.game_data, 'collectedEventIds')",
+    source: migrationSource,
+    file: 'supabase/migrations',
+    message: '后端保存必须保护一次性宝箱拾取记录，避免旧快照把已领取宝箱刷回来。',
+  },
+]
+
 for (const { marker, message } of trainerDailyCloudMarkers) {
   if (originalGameSource.includes(marker)) {
     stats.trainerDailyCloudMarkers += 1
@@ -380,6 +459,21 @@ for (const { marker, message } of atomicLoadMarkers) {
   }
 }
 
+for (const { marker, source, file, message } of mapWorldProgressCloudMarkers) {
+  if (source.includes(marker)) {
+    stats.mapWorldProgressCloudMarkers += 1
+  } else {
+    addViolation(
+      violations,
+      'MAP_WORLD_PROGRESS_CLOUD_MARKER_MISSING',
+      file,
+      1,
+      message,
+      marker
+    )
+  }
+}
+
 const summary = {
   ok: violations.length === 0,
   stats,
@@ -400,6 +494,7 @@ const summary = {
     'main game still references required cloud save/reward RPCs',
     'main game prefers atomic cloud load with guarded fallback',
     'daily trainer lock and victory count are cloud snapshot fields',
+    'hidden-zone flags and one-time pickup ids are cloud-preserved progress',
   ],
   violations,
 }

@@ -166,20 +166,20 @@ function App() {
   )
   if (mapRuntimePreviewEnabled && isMapRuntimePreviewPath) {
     return (
-      <Suspense fallback={<UnifiedBootScreen phase="地图预览加载中..." showProgressBar={false} />}>
+      <Suspense fallback={<UnifiedBootScreen phase="正在打开地图预览..." showProgressBar={false} />}>
         <MapRuntimePreview />
       </Suspense>
     )
   }
 
   if (loading) {
-    return <UnifiedBootScreen phase="加载中..." showProgressBar={false} />
+    return <UnifiedBootScreen phase="正在检查登录状态..." showProgressBar={false} />
   }
 
   if (!user || !profile) {
     return (
       <LazyRouteErrorBoundary>
-        <Suspense fallback={<UnifiedBootScreen phase={authView === 'login' ? '登录界面加载中...' : '注册界面加载中...'} showProgressBar={false} />}>
+        <Suspense fallback={<UnifiedBootScreen phase={authView === 'login' ? '正在打开登录界面...' : '正在打开注册界面...'} showProgressBar={false} />}>
           {authView === 'login' ? (
             <Login
               onLogin={handleLogin}
@@ -211,10 +211,10 @@ function App() {
                 />
               </Routes>
             ) : (
-              <UnifiedBootScreen phase="正在加载游戏模块..." showProgressBar={false} />
+              <UnifiedBootScreen phase="正在打开冒险入口..." showProgressBar={false} />
             )
           ) : (
-            <Suspense fallback={<UnifiedBootScreen phase="教师后台加载中..." showProgressBar={false} />}>
+            <Suspense fallback={<UnifiedBootScreen phase="正在打开教师工作台..." showProgressBar={false} />}>
               <Routes>
                 <Route
                   path="/*"

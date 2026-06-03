@@ -16,15 +16,15 @@ const place = {
   110:'region_lake_11_18',      // 凯西 超能 Lv≤15
   22:'region_shore_23_30',      // 大岩蛇 岩地 Lv≤35
   23:'region_farm_17_24',       // 飞天螳螂 虫飞 Lv≤29
-  65:'region_shore_23_30',      // 3D龙 普通 Lv≤29
+  65:'region_shore_23_30',      // 多边兽 普通 Lv≤29
   56:'region_ruin_35_42',       // 魔墙人偶 超能妖 Lv≤41
-  32:'region_grave_29_36',      // 火爆猴 格斗 Lv≤35
+  32:'region_grave_29_36',      // 火暴猴 格斗 Lv≤35
   48:'region_grave_south_29_36',// 飞腿郎 格斗
   49:'region_ridge_41_47',      // 快拳郎 格斗
   10:'region_ridge_east_41_47', // 卡比兽 普通
   52:'region_shore_south_23_30',// 吉利蛋 普通 Lv≤29
   61:'region_ridge_41_47',      // 肯泰罗 普通
-  60:'region_ruin_east_35_42',  // 大甲 虫
+  60:'region_ruin_east_35_42',  // 凯罗斯 虫
   124:'region_grave_moon_29_36',// 大舌头 普通 Lv≤29
   57:'region_peak_52_60',       // 迷唇姐 冰超 Lv30+
 }

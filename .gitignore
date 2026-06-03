@@ -11,6 +11,7 @@ output/
 # Production
 build
 dist
+.tmp-build-check
 
 # Environment variables
 .env
@@ -29,6 +30,7 @@ supabase/.temp/
 b2,*
 boss,*
 j,*
+*.backup-*
 
 # Logs
 npm-debug.log*

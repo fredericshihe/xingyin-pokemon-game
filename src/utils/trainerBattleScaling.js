@@ -1,7 +1,10 @@
 import { MONSTERS } from './gameData'
 import { getTrainerRoleBalance, normalizeTrainerRole } from './gameBalance'
 import { isLevelValidForSpecies } from './wildEncounterRules'
-import { buildChallengeBattleTeamFromUnlockBatch } from './challengeRareUnlock.js'
+import {
+  buildChallengeBattleTeamFromUnlockBatch,
+  getChallengeBattleGroupSize
+} from './challengeRareUnlock.js'
 import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from './pokemonFamilyVariety.js'
 
 const ROLE_VARIANT_RULES = {
@@ -24,6 +27,17 @@ const ROLE_VARIANT_RULES = {
     extraTeamChance: 0.34,
     extraTeamVictoryFloor: 1,
     bossCandidateCount: 2
+  },
+  minigame: {
+    mapCapBonus: 36,
+    bossCapMargin: 2,
+    maxLevelCap: 80,
+    victoryStepEvery: 1,
+    levelJitter: 0,
+    speciesSwapChance: 1,
+    extraTeamChance: 0,
+    extraTeamVictoryFloor: Infinity,
+    bossCandidateCount: 0
   },
   challenge: {
     mapCapBonus: 3,
@@ -56,6 +70,10 @@ const ROLE_PLAYER_CATCH_UP_RULES = {
     overlevelFactor: 0.9,
     maxBonus: 5
   },
+  minigame: {
+    overlevelFactor: 0.35,
+    maxBonus: 2
+  },
   challenge: {
     overlevelFactor: 0,
     maxBonus: 0
@@ -65,6 +83,10 @@ const ROLE_PLAYER_CATCH_UP_RULES = {
     maxBonus: 3
   }
 }
+
+export const TERMINAL_BOSS_EXCLUSIVE_POKEMON_IDS = new Set([
+  68 // 超梦：只由星雾高地最终 Boss 带出，击败后再进入专属稀有生态。
+])
 
 const clampLevel = (level, fallback = 1) => {
   const normalized = Math.trunc(Number(level))
@@ -101,13 +123,17 @@ const randomInt = (random, min, max) => {
 
 const normalizeMapBounds = (mapConfig = {}) => {
   const recommended = clampLevel(mapConfig?.recommendedLevel ?? 5, 5)
-  const minLevel = clampLevel(mapConfig?.minLevel ?? Math.max(1, recommended - 3), Math.max(1, recommended - 3))
+  const mapMinLevel = clampLevel(mapConfig?.minLevel ?? Math.max(1, recommended - 3), Math.max(1, recommended - 3))
   const maxLevel = Math.max(
-    minLevel,
+    mapMinLevel,
     clampLevel(mapConfig?.maxLevel ?? recommended + 3, recommended + 3)
   )
-  return { minLevel, maxLevel, recommendedLevel: recommended }
+  return { mapMinLevel, maxLevel, recommendedLevel: recommended }
 }
+
+const isProgressiveRepeatableTrainerBattle = (eventType, role) => (
+  eventType === 'trainer' && normalizeTrainerRole(role) === 'minigame'
+)
 
 const normalizeTeamConfig = (teamConfig = []) => (
   Array.isArray(teamConfig)
@@ -119,6 +145,14 @@ const normalizeTeamConfig = (teamConfig = []) => (
         return { pokemonId, level }
       })
       .filter(Boolean)
+    : []
+)
+
+const normalizeChallengeBattleGroups = (groups = []) => (
+  Array.isArray(groups)
+    ? groups
+      .map((group) => normalizeTeamConfig(Array.isArray(group?.team) ? group.team : group))
+      .filter((team) => team.length > 0)
     : []
 )
 
@@ -153,6 +187,17 @@ const pickWeightedPoolEntry = (pool, random) => {
   return pool[0]
 }
 
+const shufflePoolEntries = (entries = [], random = Math.random) => {
+  const shuffled = Array.isArray(entries) ? entries.slice() : []
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1))
+    const current = shuffled[index]
+    shuffled[index] = shuffled[swapIndex]
+    shuffled[swapIndex] = current
+  }
+  return shuffled
+}
+
 const isPoolEntryAvailableAtLevel = (entry, level) => {
   const safeLevel = clampLevel(level)
   if (Number.isInteger(entry?.minLevel) && safeLevel < entry.minLevel) return false
@@ -173,6 +218,81 @@ const filterPoolEntriesForLevel = (pool, level, localPoolIds, usedSpeciesIds = n
     return Number.isInteger(resolvedId)
   })
 )
+
+const buildRotatingChallengeRepeatTeam = ({
+  fixedChallengeGroups = [],
+  challengeRarePool = [],
+  bounds = { minLevel: 1, maxLevel: 100 },
+  random = Math.random,
+  victoryCount = 0
+} = {}) => {
+  const finalGroup = fixedChallengeGroups[fixedChallengeGroups.length - 1] || []
+  const targetSize = getChallengeBattleGroupSize(victoryCount)
+  const levelTemplate = Array.from({ length: targetSize }, (_, index) => (
+    Math.max(
+      bounds.minLevel,
+      Math.min(
+        bounds.maxLevel,
+        clampLevel(finalGroup[index]?.level ?? bounds.minLevel + Math.floor(index / 2), bounds.minLevel)
+      )
+    )
+  ))
+  const rareEntries = normalizePokemonPoolEntries(challengeRarePool, 24)
+  const fallbackEntries = normalizePokemonPoolEntries(finalGroup, 24)
+  const speciesPool = rareEntries.length > 0 ? rareEntries : fallbackEntries
+  if (speciesPool.length === 0 || levelTemplate.length === 0) return []
+
+  const orderedPool = shufflePoolEntries(speciesPool, random)
+  const localPoolIds = Array.from(new Set(speciesPool.map((entry) => entry.pokemonId)))
+  const usedSpeciesIds = new Set()
+  const usedFamilyKeys = new Set()
+
+  return levelTemplate
+    .map((targetLevel, index) => {
+      const availablePool = filterPoolEntriesForLevel(
+        orderedPool,
+        targetLevel,
+        localPoolIds,
+        usedSpeciesIds,
+        usedFamilyKeys
+      )
+      const fallbackPool = availablePool.length > 0
+        ? availablePool
+        : filterPoolEntriesForLevel(orderedPool, targetLevel, localPoolIds)
+      const pickedEntry = pickWeightedPoolEntry(fallbackPool.length > 0 ? fallbackPool : orderedPool, random)
+      const preferredIds = Array.from(new Set([
+        pickedEntry?.pokemonId,
+        ...orderedPool.slice(index).map((entry) => entry.pokemonId),
+        ...orderedPool.slice(0, index).map((entry) => entry.pokemonId),
+        finalGroup[index]?.pokemonId
+      ].filter(Number.isInteger)))
+      let pokemonId = resolveSpeciesForLevelWithVariety({
+        preferredIds,
+        level: targetLevel,
+        localPoolIds,
+        usedSpeciesIds,
+        usedFamilyKeys
+      })
+      if (!pokemonId) {
+        pokemonId = resolveSpeciesForLevelWithVariety({
+          preferredIds,
+          level: targetLevel,
+          localPoolIds,
+          usedSpeciesIds: new Set(),
+          usedFamilyKeys: new Set()
+        })
+      }
+      if (!pokemonId || !isLevelValidForSpecies(pokemonId, targetLevel)) return null
+      usedSpeciesIds.add(pokemonId)
+      const familyKey = getEvolutionFamilyKey(pokemonId)
+      if (familyKey.length > 0) usedFamilyKeys.add(familyKey)
+      return {
+        pokemonId,
+        level: targetLevel
+      }
+    })
+    .filter(Boolean)
+}
 
 export const createTrainerBattleSeed = ({
   dailyRefreshKey = '',
@@ -203,17 +323,26 @@ export const getTrainerDifficultyBounds = ({
 } = {}) => {
   const normalizedRole = normalizeTrainerRole(role)
   const rule = ROLE_VARIANT_RULES[normalizedRole] || ROLE_VARIANT_RULES.normal
-  const { minLevel, maxLevel, recommendedLevel } = normalizeMapBounds(mapConfig)
+  const { mapMinLevel, maxLevel, recommendedLevel } = normalizeMapBounds(mapConfig)
+  const rawRoleMinLevel = normalizedRole === 'normal'
+    ? mapConfig?.normalTrainerMinLevel ?? mapConfig?.trainerMinLevel
+    : null
+  const minLevel = Math.min(
+    maxLevel,
+    clampLevel(rawRoleMinLevel ?? mapMinLevel, mapMinLevel)
+  )
   const bossCap = clampLevel(bossLevelCap ?? maxLevel + rule.mapCapBonus, maxLevel + rule.mapCapBonus)
   const roleCap = normalizedRole === 'boss'
     ? bossCap
+    : normalizedRole === 'minigame'
+      ? Math.max(minLevel, Math.min(100, rule.maxLevelCap ?? 80))
     : Math.min(maxLevel + rule.mapCapBonus, Math.max(minLevel, bossCap - rule.bossCapMargin))
 
   return {
     role: normalizedRole,
     minLevel,
     maxLevel: Math.max(minLevel, Math.min(100, roleCap)),
-    mapMinLevel: minLevel,
+    mapMinLevel,
     mapMaxLevel: maxLevel,
     recommendedLevel,
     bossLevelCap: bossCap
@@ -298,6 +427,7 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   dailyVariantLevelJitter = null,
   bossTeamConfig = [],
   challengeRarePool = [],
+  challengeBattleGroups = [],
   enableDailyVariant = true
 } = {}) => {
   const normalizedRole = normalizeTrainerRole(role)
@@ -310,7 +440,37 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
     ? Math.max(...bossTeam.map((member) => member.level))
     : null
   const bounds = getTrainerDifficultyBounds({ role: normalizedRole, mapConfig, bossLevelCap })
-  const shouldVariant = enableDailyVariant && isDailyVariantBattleEvent(eventType, normalizedRole)
+  const safeVictoryCount = Math.max(0, Math.trunc(Number(victoryCount)) || 0)
+  const fixedChallengeGroups = isChallengeBattle ? normalizeChallengeBattleGroups(challengeBattleGroups) : []
+  if (fixedChallengeGroups.length > 0) {
+    const finalFixedGroupIndex = fixedChallengeGroups.length - 1
+    if (safeVictoryCount > finalFixedGroupIndex) {
+      const repeatRandom = createSeededRandom(createTrainerBattleSeed({
+        dailyRefreshKey,
+        mapName,
+        eventId,
+        role: normalizedRole,
+        victoryCount: safeVictoryCount
+      }))
+      const repeatTeam = buildRotatingChallengeRepeatTeam({
+        fixedChallengeGroups,
+        challengeRarePool,
+        bounds,
+        random: repeatRandom,
+        victoryCount: safeVictoryCount
+      })
+      if (repeatTeam.length === getChallengeBattleGroupSize(safeVictoryCount)) return repeatTeam
+    }
+    const groupIndex = Math.min(finalFixedGroupIndex, safeVictoryCount)
+    return fixedChallengeGroups[groupIndex].map((entry) => ({
+      ...entry,
+      level: Math.max(bounds.minLevel, Math.min(bounds.maxLevel, entry.level))
+    }))
+  }
+  const shouldVariant = enableDailyVariant && (
+    isDailyVariantBattleEvent(eventType, normalizedRole) ||
+    isProgressiveRepeatableTrainerBattle(eventType, normalizedRole)
+  )
   if (!shouldVariant) {
     return baseTeam.map((entry) => ({
       ...entry,
@@ -318,7 +478,6 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
     }))
   }
 
-  const safeVictoryCount = Math.max(0, Math.trunc(Number(victoryCount)) || 0)
   const seed = createTrainerBattleSeed({
     dailyRefreshKey,
     mapName,
@@ -337,12 +496,18 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
   const progressionBaseTargetSize = isChallengeBattle ? roleBalance.minTeamSize : baseTargetSize
   const canAddMember = progressionBaseTargetSize < roleBalance.maxTeamSize && safeVictoryCount >= rule.extraTeamVictoryFloor
   const targetSize = isChallengeBattle
-    ? Math.min(roleBalance.maxTeamSize, progressionBaseTargetSize + safeVictoryCount)
+    ? getChallengeBattleGroupSize(safeVictoryCount)
     : canAddMember && random() < rule.extraTeamChance
       ? progressionBaseTargetSize + 1
       : progressionBaseTargetSize
   const teamPoolEntries = normalizePokemonPoolEntries(baseTeam, 18)
   const challengePoolEntries = normalizePokemonPoolEntries(challengeRarePool, 24)
+  const fullDexPoolEntries = normalizedRole === 'minigame'
+    ? normalizePokemonPoolEntries(
+      MONSTERS.filter((monster) => !TERMINAL_BOSS_EXCLUSIVE_POKEMON_IDS.has(monster.id)),
+      10
+    )
+    : []
   const variantPoolEntries = normalizePokemonPoolEntries(
     Array.isArray(dailyVariantSpeciesIds) && dailyVariantSpeciesIds.length > 0
       ? dailyVariantSpeciesIds
@@ -366,16 +531,16 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
       unlockStage: safeVictoryCount,
       targetSize,
       bounds,
-      victoryBonus,
-      levelJitter,
-      random
+      victoryBonus: 0
     })
     if (batchTeam.length > 0) return batchTeam
   }
 
-  const speciesPool = isChallengeBattle && challengePoolEntries.length > 0
-    ? challengePoolEntries
-    : [...teamPoolEntries, ...variantPoolEntries, ...bossPoolEntries]
+  const speciesPool = normalizedRole === 'minigame' && fullDexPoolEntries.length > 0
+    ? fullDexPoolEntries
+    : isChallengeBattle && challengePoolEntries.length > 0
+      ? challengePoolEntries
+      : [...teamPoolEntries, ...variantPoolEntries, ...bossPoolEntries]
   const localPoolIds = Array.from(new Set(speciesPool.map((entry) => entry.pokemonId)))
   const usedSpeciesIds = new Set()
   const usedFamilyKeys = new Set()
@@ -399,7 +564,10 @@ export const resolveTrainerBattleTeamConfig = (teamConfig = [], {
       )
     )
     const levelSpeciesPool = filterPoolEntriesForLevel(speciesPool, targetLevel, localPoolIds, usedSpeciesIds, usedFamilyKeys)
-    const shouldSwapSpecies = levelSpeciesPool.length > 0 && random() < rule.speciesSwapChance
+    const shouldSwapSpecies = levelSpeciesPool.length > 0 && (
+      normalizedRole === 'minigame' ||
+      random() < rule.speciesSwapChance
+    )
     const pickedEntry = shouldSwapSpecies ? pickWeightedPoolEntry(levelSpeciesPool, random) : null
     const baseEntryId = baseEntry?.pokemonId
     const preferredIds = [

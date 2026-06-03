@@ -34,6 +34,7 @@ export const MOVES = {
   extremespeed: { name: '神速',     type: TYPES.NORMAL,   power: 80,  accuracy: 100, priority: 2, category: 'physical', cost: 19, unlockLevel: 42 },
   recover:      { name: '自我再生', type: TYPES.NORMAL,   power: 0,   accuracy: 100, effect: 'heal', category: 'status', cost: 18, unlockLevel: 30 },
   mimic:        { name: '模仿',     type: TYPES.NORMAL,   power: 0,   accuracy: 100, effect: 'mimic', category: 'status', cost: 13, unlockLevel: 18 },
+  transform:    { name: '变身',     type: TYPES.NORMAL,   power: 0,   accuracy: 100, effect: 'mimic', category: 'status', cost: 10, unlockLevel: 8 },
   // 火
   ember:        { name: '火花',     type: TYPES.FIRE,     power: 40,  accuracy: 100, category: 'special', cost: 5,  unlockLevel: 5,  status: 'burn', statusChance: 10 },
   flamethrower: { name: '喷射火焰', type: TYPES.FIRE,     power: 90,  accuracy: 100, category: 'special', cost: 13, unlockLevel: 28, status: 'burn', statusChance: 10 },
@@ -118,8 +119,22 @@ export const getLocalLearnLevelByMove = (monster) => {
   return levels;
 };
 
+export const getSupplementalLearnLevelByMove = (monster) => {
+  const levels = {};
+  for (const [levelKey, moveEntry] of Object.entries(monster?.supplementalLearnset || {})) {
+    const level = Number(levelKey);
+    const moveKeys = Array.isArray(moveEntry) ? moveEntry : [moveEntry];
+    for (const moveKey of moveKeys) {
+      if (!MOVES[moveKey] || !Number.isInteger(level)) continue;
+      levels[moveKey] = Math.min(levels[moveKey] ?? level, level);
+    }
+  }
+  return levels;
+};
+
 export const getLearnLevelByMove = (monster) => {
   const officialLearnLevelByMove = getOfficialLearnLevelByMove(monster);
+  const supplementalLearnLevelByMove = getSupplementalLearnLevelByMove(monster);
   return {
     ...(
       Object.keys(officialLearnLevelByMove).length > 0
@@ -127,6 +142,7 @@ export const getLearnLevelByMove = (monster) => {
         : getLocalLearnLevelByMove(monster)
     ),
     ...officialLearnLevelByMove,
+    ...supplementalLearnLevelByMove,
   };
 };
 
@@ -318,12 +334,17 @@ const getLevelMoveCandidates = (monster, level = 1) => {
 
   if (hasOfficialLearnset) {
     const designMinimum = getMinimumMoveCountForLevel(safeLevel);
+    const supplementalLearnLevelByMove = getSupplementalLearnLevelByMove(monster);
     const supplementalMoves = rawBaseMoves
       .filter((moveKey) => MOVES[moveKey] && !eligibleMoves.includes(moveKey))
       .filter((moveKey) => {
         const officialLevel = officialLearnLevelByMove[moveKey];
-        const supplementalLevel = getSupplementalBaseMoveLevel(monster, moveKey);
-        return supplementalLevel <= safeLevel && (officialLevel === undefined || officialLevel > supplementalLevel);
+        const hasExplicitSupplementalLevel = supplementalLearnLevelByMove[moveKey] !== undefined;
+        if (!hasExplicitSupplementalLevel && MOVES[moveKey]?.effect === 'heal') return false;
+        const supplementalLevel = hasExplicitSupplementalLevel
+          ? supplementalLearnLevelByMove[moveKey]
+          : getSupplementalBaseMoveLevel(monster, moveKey);
+        return officialLevel !== undefined && supplementalLevel <= safeLevel && officialLevel > supplementalLevel;
       })
       .sort((a, b) => getSupplementalMoveRank(monster, a) - getSupplementalMoveRank(monster, b));
 
@@ -361,9 +382,13 @@ const getLevelMoveCandidates = (monster, level = 1) => {
     }
   }
 
-  if (!hasAffordableDamagingMove(eligibleMoves)) {
-    const emergencyFallback = getEmergencyFallbackMove(rawBaseMoves);
-    if (MOVES[emergencyFallback]) {
+  const needsEmergencyFallback = eligibleMoves.length === 0 || !hasDamagingMove(eligibleMoves);
+  if (needsEmergencyFallback) {
+    const emergencyFallbackPool = hasOfficialLearnset
+      ? uniqueMoveKeys([...Object.keys(officialLearnLevelByMove), ...Object.keys(getSupplementalLearnLevelByMove(monster))])
+      : rawBaseMoves;
+    const emergencyFallback = getEmergencyFallbackMove(emergencyFallbackPool);
+    if (MOVES[emergencyFallback] && (!hasOfficialLearnset || emergencyFallbackPool.includes(emergencyFallback))) {
       availableMoves = uniqueMoveKeys([...availableMoves, emergencyFallback]);
       eligibleMoves = uniqueMoveKeys([...eligibleMoves, emergencyFallback]);
     }
@@ -375,6 +400,8 @@ const getLevelMoveCandidates = (monster, level = 1) => {
 const getEmergencyFallbackMove = (baseMoves = []) => (
   FALLBACK_ZERO_COST_MOVES.find((moveKey) => MOVES[moveKey] && baseMoves.includes(moveKey)) ||
   baseMoves.find((moveKey) => MOVES[moveKey]?.cost === 0) ||
+  baseMoves.find((moveKey) => isDamagingMoveKey(moveKey)) ||
+  baseMoves.find((moveKey) => MOVES[moveKey]) ||
   FALLBACK_ZERO_COST_MOVES.find((moveKey) => MOVES[moveKey]) ||
   'tackle'
 );
@@ -401,9 +428,25 @@ const backfillMoveScore = (monster, moveKey, level) => {
   return selectionMoveScore(monster, moveKey, level) - lateMovePenalty - heavyCostPenalty;
 };
 
+const getPreferredBattleMovesForLevel = (monster, eligibleMoves, fallbackMove, safeLevel) => {
+  const preferredBattleMoves = uniqueMoveKeys(Array.isArray(monster?.preferredBattleMoves) ? monster.preferredBattleMoves : []);
+  if (preferredBattleMoves.length === 0) return null;
+
+  const prioritized = preferredBattleMoves.filter((moveKey) => eligibleMoves.includes(moveKey) || moveKey === fallbackMove);
+  if (prioritized.length === 0) return null;
+
+  const remaining = eligibleMoves
+    .filter((moveKey) => !prioritized.includes(moveKey))
+    .sort((a, b) => selectionMoveScore(monster, b, safeLevel) - selectionMoveScore(monster, a, safeLevel));
+
+  return uniqueMoveKeys([...prioritized, fallbackMove, ...remaining]).slice(0, 4);
+};
+
 export const getBalancedMovesForLevel = (monster, level = 1) => {
   const { safeLevel, baseMoves, eligibleMoves } = getLevelMoveCandidates(monster, level);
   const fallbackMove = getPreferredOpeningMove(monster, baseMoves, eligibleMoves, safeLevel);
+  const preferredBattleMoves = getPreferredBattleMovesForLevel(monster, eligibleMoves, fallbackMove, safeLevel);
+  if (preferredBattleMoves) return preferredBattleMoves;
   const selected = [];
 
   if (MOVES[fallbackMove]) selected.push(fallbackMove);
@@ -474,6 +517,7 @@ export const POKEBALLS = {
   pokeball_basic: { name: '精灵球', price: 150,  catchRateMultiplier: 1.0, sprite: itemSprite('poke-ball.png') },
   pokeball_great: { name: '超级球', price: 600,  catchRateMultiplier: 1.5, sprite: itemSprite('great-ball.png') },
   pokeball_ultra: { name: '高级球', price: 1200, catchRateMultiplier: 2.0, sprite: itemSprite('ultra-ball.png') },
+  pokeball_master: { name: '大师球', price: 0, notForSale: true, catchRateMultiplier: 255, sprite: itemSprite('master-ball.png'), description: '必定捕获任何宝可梦的究极精灵球' },
 }
 
 // ─── 回复药水 ────────────────────────────────────────────────────────────────
@@ -529,6 +573,17 @@ export const EVOLUTION_ITEMS = {
   oval_stone:       { name: '浑圆之石',   price: 1600, sprite: itemSprite('oval-stone.png') },
 }
 
+// ─── 属性提升石（永久提升宝可梦基础属性，不可购买）─────────────────────────
+export const STAT_BOOST_ITEMS = {
+  hp_stone:         { name: 'HP之石',     price: 0, notForSale: true, effect: 'stat_boost', stat: 'hp',        boostAmount: 10, sprite: itemSprite('hp-stone.png'), description: '永久提升宝可梦的HP基础值+10' },
+  attack_stone:     { name: '攻击之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'attack',    boostAmount: 10, sprite: itemSprite('attack-stone.png'), description: '永久提升宝可梦的攻击基础值+10' },
+  defense_stone:    { name: '防御之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'defense',   boostAmount: 10, sprite: itemSprite('defense-stone.png'), description: '永久提升宝可梦的防御基础值+10' },
+  sp_attack_stone:  { name: '特攻之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'spAttack',  boostAmount: 10, sprite: itemSprite('sp-attack-stone.png'), description: '永久提升宝可梦的特攻基础值+10' },
+  sp_defense_stone: { name: '特防之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'spDefense', boostAmount: 10, sprite: itemSprite('sp-defense-stone.png'), description: '永久提升宝可梦的特防基础值+10' },
+  speed_stone:      { name: '速度之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'speed',     boostAmount: 10, sprite: itemSprite('speed-stone.png'), description: '永久提升宝可梦的速度基础值+10' },
+  rare_candy:       { name: '神奇糖果',   price: 0, notForSale: true, effect: 'stat_boost_all', boostAmount: 5, sprite: itemSprite('rare-candy.png'), description: '永久提升宝可梦所有基础属性+5' },
+}
+
 // ─── 宝可梦数据库 ─────────────────────────────────────────────────────────────
 //
 // 字段说明：
@@ -558,6 +613,13 @@ export const EVOLUTION_ITEMS = {
 //   ...sp(<图鉴号>),
 // },
 // ─────────────────────────────────────────────────────────────────────────────
+
+const hiddenBossLearnset = (levelOneMove, earlyMove, midMove, aceMove) => ({
+  1: levelOneMove,
+  5: earlyMove,
+  10: midMove,
+  13: aceMove,
+})
 
 export const MONSTERS = [
   // ── 御三家 ──────────────────────────────────────────────────────────────────
@@ -715,6 +777,7 @@ export const MONSTERS = [
     type: TYPES.FIRE,
     maxHp: 73, maxMp: 60, atk: 76, def: 75, spAtk: 81, spDef: 100, spd: 100,
     moves: ['flamethrower', 'fire_blast', 'hypnosis', 'quickattack'],
+    supplementalLearnset: { 24: 'fire_blast' },
     ...sp(38),
   },
   {
@@ -833,7 +896,7 @@ export const MONSTERS = [
     ...sp(67),
   },
   {
-    id: 32, dexNo: 57, name: '火爆猴',
+    id: 32, dexNo: 57, name: '火暴猴',
     type: TYPES.FIGHTING,
     maxHp: 65, maxMp: 45, atk: 105, def: 60, spAtk: 60, spDef: 70, spd: 95,
     moves: ['karate_chop', 'low_kick', 'bodyslam', 'scratch'],
@@ -973,10 +1036,11 @@ export const MONSTERS = [
     ...sp(122),
   },
   {
-    id: 65, dexNo: 137, name: '3D龙',
+    id: 65, dexNo: 137, name: '多边兽',
     type: TYPES.NORMAL,
     maxHp: 65, maxMp: 60, atk: 60, def: 70, spAtk: 85, spDef: 75, spd: 40,
     moves: ['psychic', 'thunderbolt', 'recover', 'tackle'],
+    supplementalLearnset: { 8: 'thundershock', 16: 'psybeam', 24: 'agility' },
     evolvesTo: { method: 'trade_item', item: 'upgrade', targetId: 108 },
     ...sp(137),
   },
@@ -1087,7 +1151,7 @@ export const MONSTERS = [
     ...sp(55),
   },
   {
-    id: 60, dexNo: 127, name: '大甲',
+    id: 60, dexNo: 127, name: '凯罗斯',
     type: TYPES.BUG,
     maxHp: 65, maxMp: 40, atk: 125, def: 100, spAtk: 55, spDef: 70, spd: 85,
     moves: ['slash', 'bodyslam', 'fury_cutter', 'low_kick'],
@@ -1113,6 +1177,7 @@ export const MONSTERS = [
     type: TYPES.PSYCHIC,
     maxHp: 100, maxMp: 70, atk: 100, def: 100, spAtk: 100, spDef: 100, spd: 100,
     moves: ['psychic', 'earthquake', 'flamethrower', 'recover'],
+    supplementalLearnset: { 16: 'swift', 24: 'flamethrower', 32: 'earthquake' },
     ...sp(151),
   },
 
@@ -1409,7 +1474,7 @@ export const MONSTERS = [
     ...sp(96),
   },
   {
-    id: 108, dexNo: 233, name: '多边兽II',
+    id: 108, dexNo: 233, name: '多边兽２型',
     type: TYPES.NORMAL,
     maxHp: 85, maxMp: 75, atk: 80, def: 90, spAtk: 105, spDef: 95, spd: 60,
     moves: ['tackle', 'psychic', 'thunderbolt', 'recover'],
@@ -1417,7 +1482,7 @@ export const MONSTERS = [
     ...sp(233),
   },
   {
-    id: 109, dexNo: 474, name: '多边兽Z',
+    id: 109, dexNo: 474, name: '多边兽乙型',
     type: TYPES.NORMAL,
     maxHp: 85, maxMp: 85, atk: 80, def: 70, spAtk: 135, spDef: 75, spd: 90,
     moves: ['tackle', 'psychic', 'thunderbolt', 'recover'],
@@ -1428,6 +1493,7 @@ export const MONSTERS = [
     type: TYPES.PSYCHIC,
     maxHp: 25, maxMp: 60, atk: 20, def: 15, spAtk: 105, spDef: 55, spd: 90,
     moves: ['tackle', 'quickattack', 'psychic', 'recover'],
+    supplementalLearnset: { 8: 'confusion', 16: 'psybeam', 24: 'psychic' },
     evolvesTo: { level: 16, targetId: 111 },
     ...sp(63),
   },
@@ -1510,6 +1576,7 @@ export const MONSTERS = [
     type: TYPES.FIGHTING,
     maxHp: 35, maxMp: 25, atk: 35, def: 35, spAtk: 35, spDef: 35, spd: 35,
     moves: ['tackle', 'karate_chop', 'quickattack', 'low_kick'],
+    supplementalLearnset: { 8: 'low_sweep', 16: 'brick_break' },
     alternateEvolutions: [
       { level: 20, condition: 'attack_gt_defense', targetId: 48 },
       { level: 20, condition: 'attack_lt_defense', targetId: 49 },
@@ -1530,6 +1597,7 @@ export const MONSTERS = [
     maxHp: 90, maxMp: 45, atk: 55, def: 75, spAtk: 60, spDef: 75, spd: 30,
     moves: ['tackle', 'bodyslam', 'lick', 'earthquake'],
     learnset: { 24: 'rollout' },
+    supplementalLearnset: { 8: 'lick', 16: 'bodyslam' },
     evolvesTo: { method: 'move_known', move: 'rollout', targetId: 127 },
     ...sp(108),
   },
@@ -1552,6 +1620,7 @@ export const MONSTERS = [
     type: TYPES.NORMAL,
     maxHp: 110, maxMp: 55, atk: 85, def: 95, spAtk: 80, spDef: 95, spd: 50,
     moves: ['tackle', 'bodyslam', 'lick', 'earthquake'],
+    supplementalLearnset: { 8: 'lick', 16: 'bodyslam' },
     ...sp(463),
   },
   {
@@ -1702,7 +1771,8 @@ export const MONSTERS = [
     id: 89, dexNo: 10, name: '绿毛虫',
     type: TYPES.BUG,
     maxHp: 45, maxMp: 36, atk: 30, def: 35, spAtk: 20, spDef: 20, spd: 45,
-    moves: ['tackle'],
+    moves: ['tackle', 'string_shot', 'bug_bite', 'flail'],
+    supplementalLearnset: { 4: 'string_shot', 14: 'flail' },
     evolvesTo: { level: 7, targetId: 118 },
     ...sp(10),
   },
@@ -1710,7 +1780,8 @@ export const MONSTERS = [
     id: 118, dexNo: 11, name: '铁甲蛹',
     type: TYPES.BUG,
     maxHp: 50, maxMp: 40, atk: 20, def: 55, spAtk: 25, spDef: 25, spd: 30,
-    moves: ['flail'],
+    moves: ['harden', 'tackle', 'string_shot', 'fury_cutter'],
+    supplementalLearnset: { 4: 'tackle', 12: 'string_shot', 22: 'fury_cutter' },
     evolvesTo: { level: 10, targetId: 123 },
     ...sp(11),
   },
@@ -1725,7 +1796,8 @@ export const MONSTERS = [
     id: 148, dexNo: 13, name: '独角虫',
     type: TYPES.BUG, type2: TYPES.POISON,
     maxHp: 40, maxMp: 36, atk: 35, def: 30, spAtk: 20, spDef: 20, spd: 50,
-    moves: ['poison_sting', 'tackle'],
+    moves: ['poison_sting', 'string_shot', 'bug_bite', 'flail'],
+    supplementalLearnset: { 4: 'string_shot', 14: 'flail' },
     evolvesTo: { level: 7, targetId: 149 },
     ...sp(13),
   },
@@ -1733,7 +1805,8 @@ export const MONSTERS = [
     id: 149, dexNo: 14, name: '铁壳蛹',
     type: TYPES.BUG, type2: TYPES.POISON,
     maxHp: 45, maxMp: 40, atk: 25, def: 50, spAtk: 25, spDef: 25, spd: 35,
-    moves: ['flail'],
+    moves: ['harden', 'poison_sting', 'string_shot', 'fury_cutter'],
+    supplementalLearnset: { 4: 'poison_sting', 12: 'string_shot', 22: 'fury_cutter' },
     evolvesTo: { level: 10, targetId: 150 },
     ...sp(14),
   },
@@ -1863,6 +1936,7 @@ export const MONSTERS = [
     type: TYPES.FAIRY,
     maxHp: 95, maxMp: 96, atk: 70, def: 73, spAtk: 95, spDef: 90, spd: 60,
     moves: ['moonblast', 'bodyslam', 'psychic', 'recover'],
+    supplementalLearnset: { 8: 'sing', 16: 'disarming_voice', 24: 'psychic' },
     ...sp(36),
   },
   {
@@ -1878,6 +1952,7 @@ export const MONSTERS = [
     type: TYPES.POISON, type2: TYPES.FLYING,
     maxHp: 75, maxMp: 72, atk: 80, def: 70, spAtk: 65, spDef: 75, spd: 90,
     moves: ['wing_attack', 'poison_jab', 'bite', 'fly'],
+    evolvesTo: { method: 'friendship', targetId: 201 },
     ...sp(42),
   },
   {
@@ -2029,8 +2104,184 @@ export const MONSTERS = [
     id: 188, dexNo: 132, name: '百变怪',
     type: TYPES.NORMAL,
     maxHp: 48, maxMp: 58, atk: 48, def: 48, spAtk: 48, spDef: 48, spd: 48,
-    moves: ['tackle', 'mimic'],
+    moves: ['tackle', 'transform', 'mimic', 'bodyslam'],
+    learnset: { 1: 'tackle', 8: 'transform', 16: 'mimic', 24: 'bodyslam' },
     ...sp(132),
+  },
+  // ── 隐藏区域专属强力宝可梦（id 按隐藏区推进顺序追加）───────────────────────
+  {
+    id: 189, dexNo: 282, name: '沙奈朵',
+    type: TYPES.PSYCHIC, type2: TYPES.FAIRY,
+    maxHp: 68, maxMp: 85, atk: 65, def: 65, spAtk: 125, spDef: 115, spd: 80,
+    moves: ['tackle', 'hypnosis', 'psychic', 'moonblast'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'hypnosis', 'psychic', 'moonblast'),
+    ...sp(282),
+  },
+  {
+    id: 190, dexNo: 407, name: '罗丝雷朵',
+    type: TYPES.GRASS, type2: TYPES.POISON,
+    maxHp: 60, maxMp: 86, atk: 70, def: 65, spAtk: 125, spDef: 105, spd: 90,
+    moves: ['tackle', 'vinewhip', 'razorleaf', 'poison_jab'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'vinewhip', 'razorleaf', 'poison_jab'),
+    ...sp(407),
+  },
+  {
+    id: 191, dexNo: 468, name: '波克基斯',
+    type: TYPES.FAIRY, type2: TYPES.FLYING,
+    maxHp: 85, maxMp: 82, atk: 50, def: 95, spAtk: 120, spDef: 115, spd: 80,
+    moves: ['tackle', 'wing_attack', 'moonblast', 'sky_attack'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'wing_attack', 'moonblast', 'sky_attack'),
+    ...sp(468),
+  },
+  {
+    id: 192, dexNo: 350, name: '美纳斯',
+    type: TYPES.WATER,
+    maxHp: 95, maxMp: 70, atk: 60, def: 79, spAtk: 100, spDef: 125, spd: 81,
+    moves: ['tackle', 'watergun', 'surf', 'recover'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'watergun', 'surf', 'recover'),
+    ...sp(350),
+  },
+  {
+    id: 193, dexNo: 245, name: '水君',
+    type: TYPES.WATER,
+    maxHp: 100, maxMp: 75, atk: 75, def: 115, spAtk: 90, spDef: 115, spd: 85,
+    moves: ['tackle', 'watergun', 'surf', 'icebeam'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'watergun', 'surf', 'icebeam'),
+    ...sp(245),
+  },
+  {
+    id: 194, dexNo: 272, name: '乐天河童',
+    type: TYPES.WATER, type2: TYPES.GRASS,
+    maxHp: 85, maxMp: 82, atk: 75, def: 80, spAtk: 100, spDef: 110, spd: 80,
+    moves: ['tackle', 'watergun', 'surf', 'razorleaf'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'watergun', 'surf', 'razorleaf'),
+    ...sp(272),
+  },
+  {
+    id: 195, dexNo: 257, name: '火焰鸡',
+    type: TYPES.FIRE, type2: TYPES.FIGHTING,
+    maxHp: 80, maxMp: 76, atk: 120, def: 70, spAtk: 110, spDef: 70, spd: 80,
+    moves: ['scratch', 'ember', 'flamethrower', 'low_kick'],
+    supplementalLearnset: hiddenBossLearnset('scratch', 'ember', 'flamethrower', 'low_kick'),
+    ...sp(257),
+  },
+  {
+    id: 196, dexNo: 286, name: '斗笠菇',
+    type: TYPES.GRASS, type2: TYPES.FIGHTING,
+    maxHp: 75, maxMp: 58, atk: 135, def: 90, spAtk: 70, spDef: 70, spd: 80,
+    moves: ['tackle', 'vinewhip', 'razorleaf', 'low_kick'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'vinewhip', 'razorleaf', 'low_kick'),
+    ...sp(286),
+  },
+  {
+    id: 197, dexNo: 241, name: '大奶罐',
+    type: TYPES.NORMAL,
+    maxHp: 105, maxMp: 60, atk: 90, def: 110, spAtk: 55, spDef: 80, spd: 100,
+    moves: ['tackle', 'rollout', 'bodyslam', 'earthquake'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'rollout', 'bodyslam', 'earthquake'),
+    ...sp(241),
+  },
+  {
+    id: 198, dexNo: 160, name: '大力鳄',
+    type: TYPES.WATER,
+    maxHp: 100, maxMp: 66, atk: 130, def: 110, spAtk: 90, spDef: 95, spd: 100,
+    moves: ['waterfall', 'crunch', 'thunder_fang', 'earthquake'],
+    preferredBattleMoves: ['waterfall', 'crunch', 'thunder_fang', 'earthquake'],
+    supplementalLearnset: hiddenBossLearnset('waterfall', 'crunch', 'thunder_fang', 'earthquake'),
+    ...sp(160),
+  },
+  {
+    id: 199, dexNo: 260, name: '巨沼怪',
+    type: TYPES.WATER, type2: TYPES.GROUND,
+    maxHp: 110, maxMp: 68, atk: 125, def: 100, spAtk: 95, spDef: 95, spd: 75,
+    moves: ['tackle', 'surf', 'earthquake', 'thunder_punch'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'surf', 'earthquake', 'thunder_punch'),
+    ...sp(260),
+  },
+  {
+    id: 200, dexNo: 319, name: '巨牙鲨',
+    type: TYPES.WATER, type2: TYPES.DARK,
+    maxHp: 95, maxMp: 78, atk: 130, def: 75, spAtk: 105, spDef: 70, spd: 115,
+    moves: ['tackle', 'waterfall', 'crunch', 'thunder_fang'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'waterfall', 'crunch', 'thunder_fang'),
+    ...sp(319),
+  },
+  {
+    id: 201, dexNo: 169, name: '叉字蝠',
+    type: TYPES.POISON, type2: TYPES.FLYING,
+    maxHp: 85, maxMp: 62, atk: 90, def: 80, spAtk: 70, spDef: 80, spd: 130,
+    moves: ['quickattack', 'wing_attack', 'poison_jab', 'bite'],
+    supplementalLearnset: hiddenBossLearnset('quickattack', 'wing_attack', 'poison_jab', 'bite'),
+    ...sp(169),
+  },
+  {
+    id: 202, dexNo: 477, name: '黑夜魔灵',
+    type: TYPES.GHOST,
+    maxHp: 90, maxMp: 80, atk: 125, def: 140, spAtk: 85, spDef: 145, spd: 80,
+    moves: ['shadowball', 'fire_punch', 'thunder_punch', 'recover'],
+    preferredBattleMoves: ['shadowball', 'fire_punch', 'thunder_punch', 'recover'],
+    supplementalLearnset: hiddenBossLearnset('shadowball', 'fire_punch', 'thunder_punch', 'recover'),
+    ...sp(477),
+  },
+  {
+    id: 203, dexNo: 609, name: '水晶灯火灵',
+    type: TYPES.GHOST, type2: TYPES.FIRE,
+    maxHp: 80, maxMp: 104, atk: 60, def: 95, spAtk: 155, spDef: 100, spd: 105,
+    moves: ['tackle', 'shadowball', 'dark_pulse', 'fire_blast'],
+    supplementalLearnset: hiddenBossLearnset('tackle', 'shadowball', 'dark_pulse', 'fire_blast'),
+    ...sp(609),
+  },
+  {
+    id: 204, dexNo: 376, name: '巨金怪',
+    type: TYPES.STEEL, type2: TYPES.PSYCHIC,
+    maxHp: 85, maxMp: 90, atk: 140, def: 130, spAtk: 105, spDef: 95, spd: 80,
+    moves: ['bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'],
+    preferredBattleMoves: ['bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'],
+    supplementalLearnset: hiddenBossLearnset('bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'),
+    ...sp(376),
+  },
+  {
+    id: 205, dexNo: 448, name: '路卡利欧',
+    type: TYPES.FIGHTING, type2: TYPES.STEEL,
+    maxHp: 85, maxMp: 88, atk: 125, def: 80, spAtk: 125, spDef: 80, spd: 105,
+    moves: ['quickattack', 'dark_pulse', 'thunder_punch', 'meteor_mash'],
+    supplementalLearnset: hiddenBossLearnset('quickattack', 'dark_pulse', 'thunder_punch', 'meteor_mash'),
+    ...sp(448),
+  },
+  {
+    id: 206, dexNo: 681, name: '坚盾剑怪',
+    type: TYPES.STEEL, type2: TYPES.GHOST,
+    maxHp: 75, maxMp: 86, atk: 115, def: 140, spAtk: 115, spDef: 140, spd: 80,
+    moves: ['bullet_punch', 'iron_head', 'shadowball', 'thunderbolt'],
+    supplementalLearnset: hiddenBossLearnset('bullet_punch', 'iron_head', 'shadowball', 'thunderbolt'),
+    ...sp(681),
+  },
+  {
+    id: 207, dexNo: 373, name: '暴飞龙',
+    type: TYPES.DRAGON, type2: TYPES.FLYING,
+    maxHp: 100, maxMp: 80, atk: 145, def: 90, spAtk: 115, spDef: 90, spd: 110,
+    moves: ['thunder_fang', 'fly', 'earthquake', 'dragonclaw'],
+    preferredBattleMoves: ['thunder_fang', 'fly', 'earthquake', 'dragonclaw'],
+    supplementalLearnset: hiddenBossLearnset('thunder_fang', 'fly', 'earthquake', 'dragonclaw'),
+    ...sp(373),
+  },
+  {
+    id: 208, dexNo: 445, name: '烈咬陆鲨',
+    type: TYPES.DRAGON, type2: TYPES.GROUND,
+    maxHp: 128, maxMp: 70, atk: 160, def: 110, spAtk: 90, spDef: 95, spd: 125,
+    moves: ['earthquake', 'dragonclaw', 'crunch', 'thunder_fang'],
+    preferredBattleMoves: ['earthquake', 'dragonclaw', 'crunch', 'thunder_fang'],
+    supplementalLearnset: hiddenBossLearnset('earthquake', 'dragonclaw', 'crunch', 'thunder_fang'),
+    ...sp(445),
+  },
+  {
+    id: 209, dexNo: 635, name: '三首恶龙',
+    type: TYPES.DARK, type2: TYPES.DRAGON,
+    maxHp: 112, maxMp: 98, atk: 120, def: 100, spAtk: 145, spDef: 100, spd: 115,
+    moves: ['low_kick', 'surf', 'air_slash', 'recover'],
+    preferredBattleMoves: ['low_kick', 'surf', 'air_slash', 'recover'],
+    supplementalLearnset: hiddenBossLearnset('low_kick', 'surf', 'air_slash', 'recover'),
+    ...sp(635),
   },
 ]
 
@@ -2067,3 +2318,153 @@ export const comparePokemonOfficialDex = (a, b) => {
 };
 
 export const OFFICIAL_DEX_MONSTERS = [...MONSTERS].sort(comparePokemonOfficialDex);
+
+const getDexEvolutionTargetIds = (monster) => {
+  const targetIds = [
+    monster?.evolvesTo,
+    ...(Array.isArray(monster?.alternateEvolutions) ? monster.alternateEvolutions : [])
+  ]
+    .filter((evolution) => evolution && evolution.disabled !== true)
+    .map((evolution) => Math.trunc(Number(evolution?.targetId)))
+    .filter((targetId) => Number.isInteger(targetId) && targetId > 0);
+
+  return [...new Set(targetIds)];
+};
+
+const buildDexDisplayGraph = (monsters) => {
+  const byId = new Map();
+  const childIdsByParentId = new Map();
+  const parentIdsByChildId = new Map();
+
+  monsters.forEach((monster) => {
+    const id = Math.trunc(Number(monster?.id));
+    if (!Number.isInteger(id) || id <= 0) return;
+    byId.set(id, monster);
+  });
+
+  byId.forEach((monster, id) => {
+    const childIds = getDexEvolutionTargetIds(monster).filter((targetId) => byId.has(targetId));
+    childIdsByParentId.set(id, childIds);
+
+    childIds.forEach((targetId) => {
+      const parentIds = parentIdsByChildId.get(targetId) || [];
+      parentIds.push(id);
+      parentIdsByChildId.set(targetId, parentIds);
+    });
+  });
+
+  return { byId, childIdsByParentId, parentIdsByChildId };
+};
+
+const collectDexFamilyIds = (startId, graph) => {
+  const pending = [startId];
+  const familyIds = new Set();
+
+  while (pending.length > 0) {
+    const currentId = pending.shift();
+    if (!Number.isInteger(currentId) || familyIds.has(currentId)) continue;
+
+    familyIds.add(currentId);
+
+    const linkedIds = [
+      ...(graph.parentIdsByChildId.get(currentId) || []),
+      ...(graph.childIdsByParentId.get(currentId) || [])
+    ];
+
+    linkedIds.forEach((linkedId) => {
+      if (!familyIds.has(linkedId)) pending.push(linkedId);
+    });
+  }
+
+  return familyIds;
+};
+
+const orderDexFamilyMembers = (familyMembers, graph) => {
+  const familyIds = new Set(familyMembers
+    .map((monster) => Number(monster?.id))
+    .filter((id) => Number.isInteger(id) && id > 0));
+  const roots = familyMembers
+    .filter((monster) => {
+      const parentIds = graph.parentIdsByChildId.get(Number(monster?.id)) || [];
+      return !parentIds.some((parentId) => familyIds.has(parentId));
+    })
+    .sort(comparePokemonOfficialDex);
+
+  let currentStage = roots.length > 0
+    ? roots
+    : [...familyMembers].sort(comparePokemonOfficialDex).slice(0, 1);
+
+  const seen = new Set();
+  const ordered = [];
+
+  while (currentStage.length > 0) {
+    const stageMembers = currentStage
+      .filter((monster) => monster && !seen.has(monster.id))
+      .sort(comparePokemonOfficialDex);
+
+    if (stageMembers.length === 0) break;
+
+    stageMembers.forEach((monster) => {
+      seen.add(monster.id);
+      ordered.push(monster);
+    });
+
+    const nextStage = [];
+    stageMembers.forEach((monster) => {
+      const childIds = graph.childIdsByParentId.get(Number(monster?.id)) || [];
+      childIds
+        .filter((childId) => familyIds.has(childId) && !seen.has(childId))
+        .map((childId) => graph.byId.get(childId))
+        .filter(Boolean)
+        .sort(comparePokemonOfficialDex)
+        .forEach((childMonster) => {
+          if (!nextStage.some((entry) => entry.id === childMonster.id)) {
+            nextStage.push(childMonster);
+          }
+        });
+    });
+
+    currentStage = nextStage;
+  }
+
+  const remaining = familyMembers
+    .filter((monster) => monster && !seen.has(monster.id))
+    .sort(comparePokemonOfficialDex);
+
+  return [...ordered, ...remaining];
+};
+
+const buildDexDisplayMonsters = (monsters) => {
+  const orderedByDex = [...monsters].sort(comparePokemonOfficialDex);
+  const graph = buildDexDisplayGraph(orderedByDex);
+  const consumedIds = new Set();
+  const families = [];
+
+  orderedByDex.forEach((monster) => {
+    const id = Number(monster?.id);
+    if (!Number.isInteger(id) || consumedIds.has(id)) return;
+
+    const familyIds = collectDexFamilyIds(id, graph);
+    familyIds.forEach((familyId) => consumedIds.add(familyId));
+
+    const familyMembers = [...familyIds]
+      .map((familyId) => graph.byId.get(familyId))
+      .filter(Boolean);
+
+    families.push({
+      anchorDexNo: Math.min(...familyMembers.map(getPokemonOfficialDexNo)),
+      leadMonster: [...familyMembers].sort(comparePokemonOfficialDex)[0] || monster,
+      members: orderDexFamilyMembers(familyMembers, graph)
+    });
+  });
+
+  return families
+    .sort((left, right) => (
+      left.anchorDexNo - right.anchorDexNo ||
+      comparePokemonOfficialDex(left.leadMonster, right.leadMonster)
+    ))
+    .flatMap((family) => family.members);
+};
+
+// 图鉴显示顺序只影响 UI，不改任何物种模板 id，也不碰玩家存档里的实例 id。
+export const DEX_DISPLAY_MONSTERS = buildDexDisplayMonsters(MONSTERS);

@@ -6,6 +6,7 @@ const addError = (errors, message) => errors.push(message)
 const WALKABLE_ROAD_TILES = new Set([2, 12, 15])
 const PASSABLE_REGION_TILES = new Set([0, 2, 8, 12, 13, 15, 16, 17])
 const EVENT_BLOCKING_TYPES = new Set(['trainer', 'boss', 'challenge', 'info', 'sign'])
+const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
 
 function positionKey(x, y) {
   return `${x},${y}`
@@ -23,9 +24,27 @@ function neighbors(point) {
 function collectEventBlockers(map) {
   return new Set(
     (map.runtimeEvents || [])
+      .filter((event) => !isHiddenEncounterGateEvent(event))
       .filter((event) => EVENT_BLOCKING_TYPES.has(event.type))
       .map((event) => positionKey(Math.trunc(event.position?.x), Math.trunc(event.position?.y)))
   )
+}
+
+function isHiddenEncounterGateEvent(event) {
+  return event?.type === 'sign' && event?.properties?.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
+}
+
+function isPremiumHiddenZone(zone) {
+  return zone?.premiumHiddenZone === true && Array.isArray(zone?.levelRange) && zone.levelRange.length >= 2
+}
+
+function getZoneLevelBounds(zone, config) {
+  if (isPremiumHiddenZone(zone)) {
+    const minLevel = Math.max(1, Math.trunc(Number(zone.levelRange[0])) || 1)
+    const maxLevel = Math.max(minLevel, Math.trunc(Number(zone.levelRange[1])) || minLevel)
+    return { minLevel, maxLevel, source: 'hidden' }
+  }
+  return { minLevel: config.minLevel, maxLevel: config.maxLevel, source: 'map' }
 }
 
 function collectReachableTiles(map, blockedKeys) {
@@ -52,6 +71,22 @@ function collectReachableTiles(map, blockedKeys) {
   }
 
   return seen
+}
+
+function buildUnlockedHiddenGateAuditMap(map, getHiddenEncounterGatePassageTiles, regionTile) {
+  const grid = (map.mapGrid || []).map((row) => Array.isArray(row) ? [...row] : row)
+  ;(map.runtimeEvents || [])
+    .filter(isHiddenEncounterGateEvent)
+    .forEach((event) => {
+      const { lockedTiles } = getHiddenEncounterGatePassageTiles(map, map.mapGrid, event, map.runtimeEvents)
+      const rawOpenTile = Number(event?.properties?.openTile)
+      const openTile = Number.isFinite(rawOpenTile) ? Math.trunc(rawOpenTile) : regionTile.road
+      lockedTiles.forEach(({ x, y }) => {
+        if (grid[y]?.[x] === undefined) return
+        grid[y][x] = openTile
+      })
+    })
+  return { ...map, mapGrid: grid }
 }
 
 function hasReachableEncounterTile(map, zone, reachableKeys, blockedKeys) {
@@ -86,6 +121,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const { getMapConfig } = await loadModule('/src/data/maps/mapConfig.js')
   const { ENCOUNTER_TABLES } = await loadModule('/src/game/data/encounterTables.js')
   const { isLevelValidForSpecies } = await loadModule('/src/utils/wildEncounterRules.js')
+  const { getHiddenEncounterGatePassageTiles, REGION_MAP_TILE } = await loadModule('/src/game/data/godotMaps/godot_region_maps.js')
 
   const regionMapIds = ADVENTURE_MAP_CHAIN.filter((mapId) => mapId.startsWith('GodotMapV2'))
   const errors = []
@@ -97,8 +133,9 @@ await withViteAuditServer(async ({ loadModule }) => {
   const highestRecommendedLevel = Math.max(
     ...regionMapIds.map((mapId) => Number(getMapConfig(mapId).recommendedLevel) || 0)
   )
-  if (highestRecommendedLevel !== 50) {
-    addError(errors, `最高区域推荐等级必须到 50，当前 ${highestRecommendedLevel}`)
+  const minimumFinalRecommendedLevel = 50
+  if (highestRecommendedLevel < minimumFinalRecommendedLevel) {
+    addError(errors, `最高区域推荐等级至少应覆盖 Lv.${minimumFinalRecommendedLevel}，当前 ${highestRecommendedLevel}`)
   }
 
   const newbieMap = getAdventureMapInfo('GodotMap')
@@ -111,13 +148,14 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   const metrics = regionMapIds.map((mapId) => {
     const map = getAdventureMapInfo(mapId)
+    const reachabilityMap = buildUnlockedHiddenGateAuditMap(map, getHiddenEncounterGatePassageTiles, REGION_MAP_TILE)
     const config = getMapConfig(mapId)
     const healEvents = (map.runtimeEvents || []).filter((event) => event.type === 'heal')
     const warpEvents = (map.runtimeEvents || []).filter((event) => event.type === 'warp')
     const roadTiles = map.mapGrid.flat().filter((tile) => tile === 12 || tile === 15).length
     const blockedFillTiles = map.mapGrid.flat().filter((tile) => tile === 1).length
     const blockedKeys = collectEventBlockers(map)
-    const reachableKeys = collectReachableTiles(map, blockedKeys)
+    const reachableKeys = collectReachableTiles(reachabilityMap, blockedKeys)
 
     if (map.width >= 60 || map.height >= 60) {
       addError(errors, `${mapId} 仍然过大：${map.width}x${map.height}`)
@@ -176,7 +214,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     })
 
     ;(map.encounterZones || []).forEach((zone) => {
-      if (!hasReachableEncounterTile(map, zone, reachableKeys, blockedKeys)) {
+      if (!hasReachableEncounterTile(reachabilityMap, zone, reachableKeys, blockedKeys)) {
         addError(errors, `${mapId}/${zone.id} 缺少可达的草丛/野外遭遇格`)
       }
 
@@ -185,9 +223,10 @@ await withViteAuditServer(async ({ loadModule }) => {
         addError(errors, `${mapId}/${zone.id} 缺少遇敌表 ${zone.encounterTableId}`)
         return
       }
+      const bounds = getZoneLevelBounds(zone, config)
       table.pokemon.forEach((entry) => {
-        if (entry.minLevel < config.minLevel || entry.maxLevel > config.maxLevel) {
-          addError(errors, `${mapId}/${zone.encounterTableId} 等级 ${entry.minLevel}-${entry.maxLevel} 超出地图 ${config.minLevel}-${config.maxLevel}`)
+        if (entry.minLevel < bounds.minLevel || entry.maxLevel > bounds.maxLevel) {
+          addError(errors, `${mapId}/${zone.encounterTableId} 等级 ${entry.minLevel}-${entry.maxLevel} 超出${bounds.source === 'hidden' ? '隐藏区' : '地图'} ${bounds.minLevel}-${bounds.maxLevel}`)
         }
         let hasValidLevel = false
         for (let level = entry.minLevel; level <= entry.maxLevel; level += 1) {

@@ -124,6 +124,30 @@ function normalizeStartPosition(startPosition) {
   }
 }
 
+const ENCOUNTER_ZONE_DEPTH_PRIORITY = {
+  deep: 2
+}
+
+function isPointInsideEncounterZone(zone, tileX, tileY) {
+  if (!zone) return false
+  return (
+    tileX >= zone.x &&
+    tileX < zone.x + zone.width &&
+    tileY >= zone.y &&
+    tileY < zone.y + zone.height
+  )
+}
+
+function getEncounterZonePriority(zone, index) {
+  const width = Math.max(1, Math.trunc(Number(zone?.width)) || 1)
+  const height = Math.max(1, Math.trunc(Number(zone?.height)) || 1)
+  return {
+    depth: ENCOUNTER_ZONE_DEPTH_PRIORITY[zone?.depth] || 0,
+    area: width * height,
+    index
+  }
+}
+
 function buildSourceMeta({
   runtimeSource,
   authoringSource = runtimeSource,
@@ -277,15 +301,19 @@ export function getMapRuntimeEvents(mapId) {
 export function getMapEncounterZoneAt(mapId, tileX, tileY) {
   const info = getMapInfo(mapId)
   if (!info?.encounterZones) return null
-  return (
-    info.encounterZones.find(
-      (zone) =>
-        tileX >= zone.x &&
-        tileX < zone.x + zone.width &&
-        tileY >= zone.y &&
-        tileY < zone.y + zone.height
-    ) || null
-  )
+  const matches = info.encounterZones
+    .map((zone, index) => ({ zone, priority: getEncounterZonePriority(zone, index) }))
+    .filter(({ zone }) => isPointInsideEncounterZone(zone, tileX, tileY))
+
+  if (matches.length === 0) return null
+
+  matches.sort((left, right) => (
+    right.priority.depth - left.priority.depth ||
+    left.priority.area - right.priority.area ||
+    right.priority.index - left.priority.index
+  ))
+
+  return matches[0]?.zone || null
 }
 
 export function getMapSignText(mapId, tileX, tileY) {

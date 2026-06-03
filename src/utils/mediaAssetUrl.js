@@ -1,13 +1,15 @@
-import { assetUrl } from './assetUrl.js'
+import { assetUrl, versionedAssetUrl } from './assetUrl.js'
 
 export const POKEMON_ART_DIR = '/assets/pokemon/official-artwork'
 export const ITEM_ART_DIR = '/assets/items/official-artwork'
 export const POKEMON_PLACEHOLDER_URL = assetUrl('/assets/pokemon/placeholder.svg')
+const POKEMON_ART_VERSION = 'pokemon-art-20260601'
+const ITEM_ART_VERSION = 'item-art-20260602-stones'
 
 export function pokemonArtUrl(dexNo, format = 'webp') {
   const id = Math.trunc(Number(dexNo))
   if (!Number.isFinite(id) || id <= 0) return POKEMON_PLACEHOLDER_URL
-  return assetUrl(`${POKEMON_ART_DIR}/${id}.${format}`)
+  return versionedAssetUrl(`${POKEMON_ART_DIR}/${id}.${format}`, POKEMON_ART_VERSION)
 }
 
 export function pokemonArtPngUrl(dexNo) {
@@ -17,7 +19,7 @@ export function pokemonArtPngUrl(dexNo) {
 export function itemArtUrl(fileName, format = 'webp') {
   const base = String(fileName || '').replace(/\.(png|webp)$/i, '')
   if (!base) return ''
-  return assetUrl(`${ITEM_ART_DIR}/${base}.${format}`)
+  return versionedAssetUrl(`${ITEM_ART_DIR}/${base}.${format}`, ITEM_ART_VERSION)
 }
 
 export function itemArtPngUrl(fileName) {

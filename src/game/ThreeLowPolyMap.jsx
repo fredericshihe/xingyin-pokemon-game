@@ -8,11 +8,15 @@ import { getMapEventTile } from './data/mapEventTypes'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
-import { pickWildPokemon } from './data/encounterTables'
+import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
 import { resolveEncounterTableId } from './data/mapRegistry'
 import { animateLowPolyPlayer, createLowPolyPlayer } from './playerFigureVisual'
 import { getDecorativeModel, getRequiredModelKeys, loadModels } from './threeLowPolyModelCache'
-import { resolveThemeLandmarkRenderScale } from './data/godotMaps/godot_region_maps.js'
+import {
+  REGION_MAP_TILE,
+  isInsideDecorationFootprint,
+  resolveThemeLandmarkRenderScale
+} from './data/godotMaps/godot_region_maps.js'
 
 const CELL = 1.55
 const MOVE_MS = 285
@@ -25,6 +29,9 @@ const CAMERA_FORWARD_OFFSET = 12.5
 const CAMERA_LOOK_Y = 0.45
 const CAMERA_EDGE_PADDING = CELL * 0.75
 const PLAYER_BASE_Y = 0.16
+const MAX_RENDERER_VIEWPORT_MULTIPLIER = 1.25
+const MIN_RENDERER_DIMENSION = 1
+const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
 
 const GRASS_SWAY_KEYS = new Set(['grass', 'grassLarge'])
 const GRASS_SWAY_DISABLED = -999
@@ -73,6 +80,45 @@ function readMapVisualQualityPref() {
   return (isMobileSafari() || isMobileDevice()) ? 'lite' : 'high'
 }
 
+function isMapRuntimeDebugEnabled() {
+  if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  return params.get('mapDebug') === '1' || params.get('debugMap') === '1' || params.get('perf') === '1'
+}
+
+function getViewportDimension(axis) {
+  if (typeof window === 'undefined') return null
+  const visualViewportSize = axis === 'width'
+    ? window.visualViewport?.width
+    : window.visualViewport?.height
+  const innerSize = axis === 'width' ? window.innerWidth : window.innerHeight
+  const candidates = [visualViewportSize, innerSize]
+    .filter((value) => Number.isFinite(value) && value > 0)
+  return candidates.length > 0 ? Math.min(...candidates) : null
+}
+
+function clampRendererDimension(rawValue, viewportValue) {
+  if (!Number.isFinite(rawValue) || rawValue <= 0) return MIN_RENDERER_DIMENSION
+  if (!Number.isFinite(viewportValue) || viewportValue <= 0) return Math.max(rawValue, MIN_RENDERER_DIMENSION)
+  const maxValue = Math.max(viewportValue * MAX_RENDERER_VIEWPORT_MULTIPLIER, 320)
+  return clamp(rawValue, MIN_RENDERER_DIMENSION, maxValue)
+}
+
+function getSafeRendererSize(host) {
+  const rect = host.getBoundingClientRect()
+  const rawWidth = rect.width
+  const rawHeight = rect.height
+  const width = clampRendererDimension(rawWidth, getViewportDimension('width'))
+  const height = clampRendererDimension(rawHeight, getViewportDimension('height'))
+  return {
+    width,
+    height,
+    rawWidth,
+    rawHeight,
+    wasClamped: Math.abs(width - rawWidth) > 0.5 || Math.abs(height - rawHeight) > 0.5
+  }
+}
+
 function resolveMapRendererProfile() {
   const pref = readMapVisualQualityPref()
   const liteTier = pref === 'lite'
@@ -82,6 +128,7 @@ function resolveMapRendererProfile() {
   const mobileOptimized = isMobile && !liteTier
 
   return {
+    isMobile,
     liteTier,
     antialias: !liteTier,
     // 移动端：限制pixelRatio避免过高分辨率导致性能问题
@@ -95,7 +142,9 @@ function resolveMapRendererProfile() {
     // 默认要有”明显的方向阴影”（至少树/建筑），否则画面会显得很”贴纸”。
     // 只有 lite 模式才关掉装饰投影；high 模式允许更多小物件也投影。
     castDecorationShadows: !liteTier,
-    castAllDecorationShadows: !liteTier && !mobileOptimized
+    castAllDecorationShadows: !liteTier && !mobileOptimized,
+    idleFrameMs: isMobile ? 1000 / 24 : 1000 / 30,
+    recoveryIdleFrameMs: isMobile ? 1000 / 18 : 1000 / 24
   }
 }
 
@@ -290,6 +339,7 @@ const DIRS = {
   right: { x: 1, y: 0, rot: Math.PI / 2 }
 }
 
+const NPC_INTERACTION_EVENT_TYPES = new Set(['trainer', 'boss'])
 const BLOCKING_INTERACTIONS = new Set(['exit', 'heal', 'trainer', 'boss', 'challenge', 'info'])
 const MUTED_EVENT_VISUAL_STATES = new Set(['locked', 'daily_complete', 'cleared', 'completed'])
 const NON_BATTLE_INFO_VISUAL_STATES = new Set(['daily_complete', 'cleared', 'completed', 'locked'])
@@ -322,6 +372,18 @@ function isBlockingInteraction(interaction) {
   return BLOCKING_INTERACTIONS.has(interaction)
 }
 
+function isHiddenEncounterGateMapEvent(mapEvent) {
+  return mapEvent?.type === 'sign' && mapEvent?.properties?.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
+}
+
+function getLockedEncounterZoneAt(state, tileX, tileY) {
+  if (!state?.currentMapName || !state?.encounterZoneLocks) return null
+  const zone = getEncounterZoneAt(state.currentMapName, tileX, tileY)
+  const zoneLock = zone?.id ? state.encounterZoneLocks?.[zone.id] : null
+  if (!zoneLock?.blocked) return null
+  return { zone, zoneLock }
+}
+
 function isMutedEventVisualState(status = 'available') {
   return MUTED_EVENT_VISUAL_STATES.has(status)
 }
@@ -342,6 +404,27 @@ function shouldRouteBattleEventToInfo(mapEvent, mapEventVisualState, currentMapB
 function lerpAngle(current, target, alpha) {
   const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current))
   return current + delta * alpha
+}
+
+function getDirectionTowardTile(fromX, fromY, toX, toY) {
+  const dx = Math.trunc(Number(toX)) - Math.trunc(Number(fromX))
+  const dy = Math.trunc(Number(toY)) - Math.trunc(Number(fromY))
+  if (dx === 0 && dy === 0) return null
+  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? 'left' : 'right'
+  return dy < 0 ? 'up' : 'down'
+}
+
+function isCardinalAdjacentTile(leftX, leftY, rightX, rightY) {
+  return Math.abs(Math.trunc(Number(leftX)) - Math.trunc(Number(rightX))) +
+    Math.abs(Math.trunc(Number(leftY)) - Math.trunc(Number(rightY))) === 1
+}
+
+function isNpcInteractionDecoration(object, eventType) {
+  return Boolean(
+    object?.npcRole &&
+    typeof object.eventId === 'string' &&
+    NPC_INTERACTION_EVENT_TYPES.has(eventType)
+  )
 }
 
 function worldFromTile(x, y, width, height) {
@@ -557,6 +640,7 @@ const DEFAULT_EVENT_SIGNAL_STYLE = {
   ringCount: 1,
   ringGap: 0.06,
   ringTube: 0.01,
+  showBase: true,
   moteCount: 0,
   moteSize: 0.022,
   beamCount: 0,
@@ -579,7 +663,7 @@ const DEFAULT_EVENT_SIGNAL_STYLE = {
   npcForwardOffset: 0
 }
 
-const FOOT_SAFE_EVENT_SIGNAL_TYPES = new Set(['warp', 'fast_travel'])
+const FOOT_SAFE_EVENT_SIGNAL_TYPES = new Set(['warp', 'fast_travel', 'sign'])
 const PICKUP_REWARD_EVENT_TYPES = new Set(['item', 'pickup'])
 const ROAD_SIGN_DECORATION_TYPES = new Set(['sign', 'trail_sign'])
 const ROADSIDE_SIGN_FACE_DOWN = Math.PI
@@ -602,6 +686,37 @@ const MAP_EVENT_SIGNAL_STYLES = {
     bobAmount: 0.012,
     corePulseScale: 0.035,
     ringSpinSpeed: 0.035
+  },
+  hidden_gate: {
+    label: '隐藏入口',
+    tier: 5,
+    colorA: 0xf97316,
+    colorB: 0x67e8f9,
+    radius: 0.48,
+    hoverY: 0.98,
+    ringCount: 3,
+    ringGap: 0.058,
+    ringTube: 0.013,
+    beamCount: 3,
+    coreShape: 'dodeca',
+    coreSize: 0.15,
+    baseOpacity: 0.095,
+    ringOpacity: 0.5,
+    coreOpacity: 0.94,
+    moteCount: 7,
+    moteSize: 0.022,
+    light: 0.24,
+    lightRange: 2.85,
+    pulseSpeed: 1.85,
+    basePulseScale: 0.05,
+    ringPulseScale: 0.085,
+    corePulseScale: 0.14,
+    bobAmount: 0.045,
+    ringSpinSpeed: 0.34,
+    coreSpinSpeed: 0.78,
+    coreTilt: 0.14,
+    objectAnchor: 'modelTop',
+    objectTopGap: 0.14
   },
   info: {
     label: '提示',
@@ -626,15 +741,15 @@ const MAP_EVENT_SIGNAL_STYLES = {
     colorB: 0xfef08a,
     radius: 0.28,
     hoverY: 0.72,
-    ringCount: 2,
+    ringCount: 1,
     ringGap: 0.05,
+    showBase: false,
     coreShape: 'octa',
     coreSize: 0.118,
     baseOpacity: 0.055,
     ringOpacity: 0.32,
     coreOpacity: 0.86,
-    light: 0.14,
-    lightRange: 1.9,
+    light: 0,
     bobAmount: 0.028,
     ringSpinSpeed: 0.14,
     objectAnchor: 'modelTop',
@@ -647,15 +762,15 @@ const MAP_EVENT_SIGNAL_STYLES = {
     colorB: 0xfef08a,
     radius: 0.28,
     hoverY: 0.72,
-    ringCount: 2,
+    ringCount: 1,
     ringGap: 0.05,
+    showBase: false,
     coreShape: 'octa',
     coreSize: 0.118,
     baseOpacity: 0.055,
     ringOpacity: 0.32,
     coreOpacity: 0.86,
-    light: 0.14,
-    lightRange: 1.9,
+    light: 0,
     bobAmount: 0.028,
     ringSpinSpeed: 0.14,
     objectAnchor: 'modelTop',
@@ -833,6 +948,40 @@ function resolvePickupRewardSignalEventType(eventType) {
   return PICKUP_REWARD_EVENT_TYPES.has(eventType) ? 'item' : eventType
 }
 
+const EVENT_VISUAL_ANCHOR_TYPES = {
+  heal: ['town_fountain_round'],
+  warp: ['nature_path_stone']
+}
+
+function getEventVisualAnchor(mapInfo, eventId, eventType) {
+  if (typeof eventId !== 'string' || eventId.length === 0) return null
+  if (typeof eventType !== 'string' || eventType.length === 0) return null
+
+  const candidates = (Array.isArray(mapInfo?.decorativeObjects) ? mapInfo.decorativeObjects : [])
+    .filter((object) => (
+      object?.eventId === eventId &&
+      (object?.eventType === eventType || object?.fixedSceneEventType === eventType)
+    ))
+  if (candidates.length === 0) return null
+
+  const preferredTypes = EVENT_VISUAL_ANCHOR_TYPES[eventType] || []
+  const selected = preferredTypes
+    .map((type) => candidates.find((object) => object?.type === type))
+    .find(Boolean) || candidates[0]
+  const x = Number(selected?.x)
+  const y = Number(selected?.y)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+
+  const offsetX = Number(selected?.offsetX)
+  const offsetZ = Number(selected?.offsetZ)
+  return {
+    x,
+    y,
+    offsetX: Number.isFinite(offsetX) ? offsetX : 0,
+    offsetZ: Number.isFinite(offsetZ) ? offsetZ : 0
+  }
+}
+
 function resolveDecorationRotationY(object) {
   if (isRoadSignDecoration(object)) return ROADSIDE_SIGN_FACE_DOWN
   return object.rotation ?? Math.PI / 6
@@ -894,6 +1043,7 @@ function isAlwaysVisibleMapSignal(eventType, npcRole = null) {
 }
 
 function resolveDecorativeObjectSignalType(object, mapInfo, mapGrid) {
+  if (object?.hiddenGateMarker === true) return 'hidden_gate'
   if (object?.eventType) return MAP_EVENT_SIGNAL_STYLES[object.eventType] ? object.eventType : null
   if (!object || !['sign', 'trail_sign'].includes(object.type)) return null
 
@@ -929,16 +1079,18 @@ function createEventSignal(eventType, options = {}) {
   group.userData.muted = Boolean(options.muted)
   group.position.y = options.baseY ?? 0.02
 
-  const base = new THREE.Mesh(
-    new THREE.CircleGeometry(spec.radius * 1.08, 40),
-    createSpringGlowMaterial(spec.colorA, spec.baseOpacity ?? 0.12, groundMaterialOptions)
-  )
-  base.rotation.x = -Math.PI / 2
-  base.position.y = groundBaseY
-  base.userData.signalPart = 'base'
-  base.userData.baseOpacity = spec.baseOpacity ?? 0.12
-  if (alwaysVisible && !keepUnderPlayer) base.renderOrder = renderOrder
-  group.add(base)
+  if (spec.showBase) {
+    const base = new THREE.Mesh(
+      new THREE.CircleGeometry(spec.radius * 1.08, 40),
+      createSpringGlowMaterial(spec.colorA, spec.baseOpacity ?? 0.12, groundMaterialOptions)
+    )
+    base.rotation.x = -Math.PI / 2
+    base.position.y = groundBaseY
+    base.userData.signalPart = 'base'
+    base.userData.baseOpacity = spec.baseOpacity ?? 0.12
+    if (alwaysVisible && !keepUnderPlayer) base.renderOrder = renderOrder
+    group.add(base)
+  }
 
   for (let i = 0; i < spec.ringCount; i += 1) {
     const ring = new THREE.Mesh(
@@ -1273,42 +1425,15 @@ function createPickupCollectBurstEffect(seed = 0) {
   group.userData.active = false
   group.visible = false
 
-  const halo = new THREE.Mesh(
-    new THREE.CircleGeometry(0.2, 32),
-    createSpringGlowMaterial(0xfef08a, 0.22)
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.14, 0.014, 8, 36),
+    createSpringGlowMaterial(0xfef08a, 0.52)
   )
-  halo.rotation.x = -Math.PI / 2
-  halo.position.y = 0.04
-  halo.userData.pickupPart = 'halo'
-  halo.userData.baseOpacity = 0.22
-  group.add(halo)
-
-  for (let i = 0; i < 2; i += 1) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.12 + i * 0.06, 0.014 - i * 0.002, 8, 36),
-      createSpringGlowMaterial(i === 0 ? 0xfef08a : 0x7dd3fc, i === 0 ? 0.52 : 0.36)
-    )
-    ring.rotation.x = Math.PI / 2
-    ring.position.y = 0.12 + i * 0.05
-    ring.userData.pickupPart = 'ring'
-    ring.userData.index = i
-    ring.userData.baseOpacity = i === 0 ? 0.52 : 0.36
-    group.add(ring)
-  }
-
-  for (let i = 0; i < 8; i += 1) {
-    const spark = new THREE.Mesh(
-      new THREE.SphereGeometry(0.026 + (i % 2) * 0.006, 10, 8),
-      createSpringGlowMaterial(i % 3 === 0 ? 0xffffff : (i % 2 === 0 ? 0xfef08a : 0x7dd3fc), 0.56)
-    )
-    spark.userData.pickupPart = 'spark'
-    spark.userData.angle = (Math.PI * 2 * i) / 8
-    spark.userData.radius = 0.18 + (i % 3) * 0.04
-    spark.userData.speed = 0.85 + (i % 4) * 0.11
-    spark.userData.height = 0.16 + (i % 3) * 0.04
-    spark.userData.baseOpacity = 0.56
-    group.add(spark)
-  }
+  ring.rotation.x = Math.PI / 2
+  ring.position.y = 0.12
+  ring.userData.pickupPart = 'ring'
+  ring.userData.baseOpacity = 0.52
+  group.add(ring)
 
   const core = new THREE.Mesh(
     createSignalCoreGeometry('icosa', 0.072),
@@ -1318,12 +1443,6 @@ function createPickupCollectBurstEffect(seed = 0) {
   core.userData.pickupPart = 'core'
   core.userData.baseOpacity = 0.76
   group.add(core)
-
-  const light = new THREE.PointLight(0xfef08a, 0, 3.6)
-  light.position.y = 0.42
-  light.userData.pickupPart = 'light'
-  light.userData.baseIntensity = 1.6
-  group.add(light)
 
   return group
 }
@@ -1355,33 +1474,17 @@ function updatePickupCollectBursts(bursts, now) {
     burst.position.y = (burst.userData.baseY || 0.22) + easeOut * 0.22
 
     burst.children.forEach((part) => {
-      if (part.userData.pickupPart === 'halo') {
-        const scale = 0.76 + easeOut * 1.18
+      if (part.userData.pickupPart === 'ring') {
+        const scale = 0.64 + easeOut * 1.28
         part.scale.set(scale, scale, scale)
-        part.material.opacity = (part.userData.baseOpacity || 0.2) * fade * (0.74 + pulse * 0.22)
-      } else if (part.userData.pickupPart === 'ring') {
-        const ringIndex = part.userData.index || 0
-        const scale = 0.64 + easeOut * (1.28 + ringIndex * 0.36)
-        part.scale.set(scale, scale, scale)
-        part.rotation.z = burst.userData.phase + now * 0.0015 * (ringIndex % 2 === 0 ? 1 : -1)
-        part.material.opacity = (part.userData.baseOpacity || 0.36) * fade
-      } else if (part.userData.pickupPart === 'spark') {
-        const angle = part.userData.angle + easeOut * (1.3 + part.userData.speed)
-        const radius = part.userData.radius + easeOut * 0.28
-        part.position.x = Math.cos(angle) * radius
-        part.position.z = Math.sin(angle) * radius * 0.82
-        part.position.y = part.userData.height + easeOut * 0.42
-        const scale = 0.72 + pulse * 0.58
-        part.scale.set(scale, scale, scale)
-        part.material.opacity = (part.userData.baseOpacity || 0.56) * fade
+        part.rotation.z = burst.userData.phase + now * 0.0015
+        part.material.opacity = (part.userData.baseOpacity || 0.52) * fade
       } else if (part.userData.pickupPart === 'core') {
         const scale = 0.76 + pulse * 1.06
         part.scale.set(scale, scale, scale)
         part.rotation.y = burst.userData.phase + now * 0.0022
         part.rotation.x = easeOut * 0.55
         part.material.opacity = (part.userData.baseOpacity || 0.76) * fade
-      } else if (part.userData.pickupPart === 'light') {
-        part.intensity = (part.userData.baseIntensity || 1.4) * fade * (0.78 + pulse * 0.32)
       }
     })
   }
@@ -1613,6 +1716,55 @@ function tileObjectKey(x, y) {
   return 'treePine'
 }
 
+const PROCEDURAL_TREE_MODEL_KEYS = ['treeOak', 'treeDefault', 'treePine']
+const PROCEDURAL_FOREST_UNDERGROWTH_MODEL_KEYS = ['bush', 'stone', 'rock', 'grassLarge', 'mushroom', 'flowerYellow']
+const PROCEDURAL_OPEN_GRASS_DETAIL_MODEL_KEYS = ['flowerYellow', 'flowerRed', 'bush', 'stone', 'mushroom']
+const PROCEDURAL_DYNAMIC_BLOCKER_MODEL_KEYS = ['bush', 'stone', 'rock']
+
+function collectRuntimeModelKeys(mapInfo, mapGrid) {
+  const keys = new Set()
+  const addKeys = (modelKeys) => modelKeys.forEach((key) => keys.add(key))
+  const hasGrid = Array.isArray(mapGrid) && mapGrid.length > 0 && Array.isArray(mapGrid[0])
+
+  if (hasGrid) {
+    let hasForestTile = false
+    let hasTallGrassTile = false
+    let hasOpenGrassTile = false
+    let hasDynamicBlockerTile = false
+
+    for (let y = 0; y < mapGrid.length; y += 1) {
+      const row = mapGrid[y]
+      if (!Array.isArray(row)) continue
+      for (let x = 0; x < row.length; x += 1) {
+        const tile = row[x]
+        if (tile === 1) hasForestTile = true
+        else if (tile === 8) hasTallGrassTile = true
+        else if (tile === 0) hasOpenGrassTile = true
+        else if (tile === 20) hasDynamicBlockerTile = true
+      }
+    }
+
+    if (hasForestTile) {
+      if (mapInfo?.renderForestWallTrees !== false) addKeys(PROCEDURAL_TREE_MODEL_KEYS)
+      addKeys(PROCEDURAL_FOREST_UNDERGROWTH_MODEL_KEYS)
+    }
+    if (hasTallGrassTile) addKeys(['grass', 'grassLarge'])
+    if (hasOpenGrassTile) addKeys(PROCEDURAL_OPEN_GRASS_DETAIL_MODEL_KEYS)
+    if (hasDynamicBlockerTile) addKeys(PROCEDURAL_DYNAMIC_BLOCKER_MODEL_KEYS)
+  }
+
+  ;(Array.isArray(mapInfo?.decorativeObjects) ? mapInfo.decorativeObjects : []).forEach((object) => {
+    const spec = getDecorativeModel(object?.type)
+    if (spec?.key) keys.add(spec.key)
+  })
+
+  if (keys.size === 0) {
+    getRequiredModelKeys(mapInfo).forEach((key) => keys.add(key))
+  }
+
+  return keys
+}
+
 const ROAD_CLEAR_DECOR_TYPES = new Set([
   'tree-oak',
   'tree-default',
@@ -1673,6 +1825,44 @@ function isInRoadClearance(mapInfo, tileX, tileY, padding = 0.45) {
   return isNearVisualPath(mapInfo, tileX, tileY, padding) || isNearBridge(mapInfo, tileX, tileY, padding)
 }
 
+function getMapScopedCollectedEventId(mapName, eventId) {
+  if (typeof mapName !== 'string' || mapName.length === 0) return null
+  if (typeof eventId !== 'string' || eventId.length === 0) return null
+  return `${mapName}:${eventId}`
+}
+
+function isCollectedMapEventId(collectedEventIdSet, mapName, eventId) {
+  if (!(collectedEventIdSet instanceof Set) || typeof eventId !== 'string' || eventId.length === 0) return false
+  return (
+    collectedEventIdSet.has(eventId) ||
+    collectedEventIdSet.has(getMapScopedCollectedEventId(mapName, eventId))
+  )
+}
+
+function isRenderedDecorativeObject(object, collectedEventIdSet, mapName) {
+  if (!object || typeof object !== 'object') return false
+  if (
+    (object.eventType === 'item' || object.eventType === 'pickup') &&
+    typeof object.eventId === 'string' &&
+    isCollectedMapEventId(collectedEventIdSet, mapName, object.eventId)
+  ) {
+    return false
+  }
+  return true
+}
+
+function isDynamicBlockerVisualSuppressed(mapInfo, activeMapGrid, tileX, tileY, collectedEventIdSet, mapName) {
+  const sourceTile = mapInfo?.mapGrid?.[tileY]?.[tileX]
+  if (sourceTile == null || sourceTile === activeMapGrid?.[tileY]?.[tileX]) return false
+  if (sourceTile === 15) return true
+  if (isNearBridge(mapInfo, tileX, tileY, 0.2)) return true
+
+  return (mapInfo?.decorativeObjects || []).some((object) => (
+    isRenderedDecorativeObject(object, collectedEventIdSet, mapName) &&
+    isInsideDecorationFootprint(object, tileX, tileY, 0.14)
+  ))
+}
+
 function ThreeLowPolyMap({
   playerPos,
   mapGrid,
@@ -1686,6 +1876,7 @@ function ThreeLowPolyMap({
   onCollect,
   onMapWarp,
   onZoneEnter,
+  onBlockedMove,
   onEncounterCooldownChange,
   onNavigate,
   collectedEventIds = [],
@@ -1700,10 +1891,11 @@ function ThreeLowPolyMap({
   const recoverAttemptsRef = useRef(0)
   const [renderNonce, setRenderNonce] = useState(0)
   const [renderIssue, setRenderIssue] = useState(null)
+  const mapDebugEnabled = useMemo(() => isMapRuntimeDebugEnabled(), [])
 
   const mapInfo = useMemo(() => {
     const info = getAdventureMapInfo(currentMapName)
-    if (info) {
+    if (info && mapDebugEnabled) {
       console.log(`[Map Debug] ${currentMapName} - Total decorations:`, info.decorativeObjects?.length || 0)
       const rockStoneDecorations = (info.decorativeObjects || []).filter(d =>
         d.type?.includes('rock') || d.type?.includes('stone') || d.type?.includes('bush') || d.type?.includes('log')
@@ -1712,7 +1904,7 @@ function ThreeLowPolyMap({
       console.log(`[Map Debug] ${currentMapName} - Sample decorations:`, rockStoneDecorations.slice(0, 5).map(d => d.type))
     }
     return info
-  }, [currentMapName])
+  }, [currentMapName, mapDebugEnabled])
   const requestRendererRestart = useCallback((reason = 'manual') => {
     console.warn(`[ThreeLowPolyMap] Restarting renderer: ${reason}`)
     setRenderNonce((value) => value + 1)
@@ -1763,7 +1955,7 @@ function ThreeLowPolyMap({
     let resizeObserver = null
     let healthTimerId = 0
     let recoveryTimerId = 0
-    const perfProbeEnabled = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('perf') === '1'
+    const perfProbeEnabled = mapDebugEnabled
 
     const reportRenderIssue = (message, error) => {
       if (disposed) return
@@ -1791,6 +1983,8 @@ function ThreeLowPolyMap({
     scene.fog = new THREE.Fog(0xbfe9ff, 28, 55)
 
     const renderProfile = resolveMapRendererProfile()
+    const runtimeIsMobile = renderProfile.isMobile
+    let idleFrameIntervalMs = renderProfile.idleFrameMs
 
     try {
       renderer = new THREE.WebGLRenderer({
@@ -1880,6 +2074,8 @@ function ThreeLowPolyMap({
     const clampCameraOut = new THREE.Vector3()
     const visibleChunkIds = new Set()
     const activeTrampleGrassKeys = new Set()
+    let visibilityDirty = true
+    let cachedVisibleChunkCount = 0
 
     function updateCameraBounds() {
       const width = mapGrid[0].length
@@ -1924,6 +2120,7 @@ function ThreeLowPolyMap({
       const clamped = clampCameraTarget(world.x, world.z)
       cameraTarget.copy(clamped)
       if (force) cameraFocus.copy(clamped)
+      visibilityDirty = true
     }
 
 	    stateRef.current = {
@@ -1935,11 +2132,13 @@ function ThreeLowPolyMap({
       collectedEventIdSet,
       currentMapBossCompleted,
       mapEventVisualState: normalizedMapEventVisualState,
+      encounterZoneLocks: normalizedEncounterZoneLocks,
       onPlayerMove,
       onEncounter,
       onCollect,
       onMapWarp,
       onZoneEnter,
+      onBlockedMove,
       onEncounterCooldownChange,
       cloudBlocked,
       mapActive,
@@ -1948,6 +2147,8 @@ function ThreeLowPolyMap({
 	      springEffects: [],
 	      eventSignals: [],
 	      dynamicEventDecorations: [],
+	      npcFacingControllers: [],
+	      npcFacingControllersByEventId: new Map(),
 	      npcRoleEffects: [],
         eventVisualBindings: [],
 	      pickupBursts: [],
@@ -1961,15 +2162,27 @@ function ThreeLowPolyMap({
 
     const resize = () => {
       if (!renderer) return
-      const rect = host.getBoundingClientRect()
-      const width = Math.max(rect.width, 1)
-      const height = Math.max(rect.height, 1)
+      const size = getSafeRendererSize(host)
+      const { width, height } = size
+      if (mapDebugEnabled && size.wasClamped && host.dataset.rendererSizeClamped !== '1') {
+        host.dataset.rendererSizeClamped = '1'
+        console.warn(
+          '[ThreeLowPolyMap] Renderer host reported an abnormal size; clamped canvas buffer.',
+          {
+            rawWidth: Math.round(size.rawWidth),
+            rawHeight: Math.round(size.rawHeight),
+            width: Math.round(width),
+            height: Math.round(height)
+          }
+        )
+      }
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
       renderer.setSize(width, height, false)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
       updateCameraBounds()
       syncCameraTargetToTile(pointer.tileX, pointer.tileY, true)
+      visibilityDirty = true
     }
 
     const buildWorld = async () => {
@@ -1991,19 +2204,22 @@ function ThreeLowPolyMap({
 	      const springEffects = []
 	      const eventSignals = []
 	      const dynamicEventDecorations = []
+	      const npcFacingControllers = []
+	      const npcFacingControllersByEventId = new Map()
 	      const npcRoleEffects = []
         const eventVisualBindings = []
 	      const pickupBursts = []
 	      const pickupBurstPool = []
-	      const healEvents = (Array.isArray(mapInfo?.runtimeEvents) ? mapInfo.runtimeEvents : [])
-	        .filter((event) => event?.type === 'heal')
+      const healEvents = (Array.isArray(mapInfo?.runtimeEvents) ? mapInfo.runtimeEvents : [])
+        .filter((event) => event?.type === 'heal')
       healEvents.forEach((event, index) => {
-        const tileX = Math.trunc(Number(event.position?.x))
-        const tileY = Math.trunc(Number(event.position?.y))
-        if (!Number.isSafeInteger(tileX) || !Number.isSafeInteger(tileY)) return
-        const pos = worldFromTile(tileX, tileY, width, height)
+        const eventX = Number(event.position?.x)
+        const eventY = Number(event.position?.y)
+        const anchor = getEventVisualAnchor(mapInfo, event.id, event.type) || { x: eventX, y: eventY, offsetX: 0, offsetZ: 0 }
+        if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return
+        const pos = worldFromTile(anchor.x, anchor.y, width, height)
         const effect = createHealingSpringEffect(index)
-        effect.position.set(pos.x, 0, pos.z)
+        effect.position.set(pos.x + (anchor.offsetX ?? 0), 0, pos.z + (anchor.offsetZ ?? 0))
         root.add(effect)
         springEffects.push(effect)
       })
@@ -2027,6 +2243,8 @@ function ThreeLowPolyMap({
 	      stateRef.current.springEffects = springEffects
 	      stateRef.current.eventSignals = eventSignals
 	      stateRef.current.dynamicEventDecorations = dynamicEventDecorations
+	      stateRef.current.npcFacingControllers = npcFacingControllers
+	      stateRef.current.npcFacingControllersByEventId = npcFacingControllersByEventId
 	      stateRef.current.npcRoleEffects = npcRoleEffects
         stateRef.current.eventVisualBindings = eventVisualBindings
 	      stateRef.current.pickupBursts = pickupBursts
@@ -2034,7 +2252,20 @@ function ThreeLowPolyMap({
 	      stateRef.current.restoreBurst = restoreBurst
 	      stateRef.current.triggerPickupBurst = triggerPickupBurst
 
-      const models = await loadModels(getRequiredModelKeys(mapInfo))
+      const legacyRequiredModelKeys = getRequiredModelKeys(mapInfo)
+      const runtimeRequiredModelKeys = collectRuntimeModelKeys(mapInfo, mapGrid)
+      if (mapDebugEnabled) {
+        const skippedKeys = [...legacyRequiredModelKeys].filter((key) => !runtimeRequiredModelKeys.has(key))
+        console.log('[ThreeLowPolyMap] Runtime model key plan:', {
+          mapName: currentMapName,
+          legacyCount: legacyRequiredModelKeys.size,
+          runtimeCount: runtimeRequiredModelKeys.size,
+          skippedKeys
+        })
+      }
+      const models = await loadModels(runtimeRequiredModelKeys, {
+        concurrency: runtimeIsMobile ? 3 : 6
+      })
       if (disposed) return
 
       const pathMaterial = new THREE.MeshStandardMaterial({
@@ -2263,31 +2494,53 @@ function ThreeLowPolyMap({
             eventId = null,
             tileX,
             tileY,
+            visibleTiles = null,
             refs,
+            object3D = null,
         posX,
-        posY,
+          posY,
           posZ,
           rotationY,
           scale,
+          lockedScale = null,
+          lockedScaleTile = REGION_MAP_TILE.objectBlocker,
           signal = null
       }) => {
-        if (!Array.isArray(refs) || refs.length === 0) return null
+        const instancedRefs = Array.isArray(refs) ? refs : []
+        if (instancedRefs.length === 0 && !object3D) return null
+        const baseScale = Number.isFinite(Number(scale)) ? Number(scale) : 1
+        const resolvedLockedScale = Number.isFinite(Number(lockedScale)) && Number(lockedScale) > baseScale
+          ? Number(lockedScale)
+          : baseScale
         const controller = {
           eventType,
           eventId,
           tileX,
           tileY,
-          refs,
+          visibleTiles: Array.isArray(visibleTiles) ? visibleTiles : null,
+          refs: instancedRefs,
+          object3D,
           posX,
           posY,
           posZ,
           rotationY,
-          scale,
+          scale: baseScale,
+          lockedScale: resolvedLockedScale,
+          lockedScaleTile,
+          renderedScale: baseScale,
           signal,
           visible: true,
           collectingStartedAt: 0,
           collectingDurationMs: 260,
+          resolveScaleForTile(tile) {
+            return tile === this.lockedScaleTile ? this.lockedScale : this.scale
+          },
           applyTransform(scaleValue = this.scale, liftY = 0, rotationValue = this.rotationY) {
+            if (this.object3D) {
+              this.object3D.position.set(this.posX, this.posY + liftY, this.posZ)
+              this.object3D.rotation.set(0, rotationValue, 0)
+              this.object3D.scale.setScalar(scaleValue)
+            }
             _instTmpPos.set(this.posX, this.posY + liftY, this.posZ)
             _instTmpEuler.set(0, rotationValue, 0)
             _instTmpQuat.setFromEuler(_instTmpEuler)
@@ -2299,11 +2552,14 @@ function ThreeLowPolyMap({
               ref.mesh.instanceMatrix.needsUpdate = true
             })
           },
-          setVisible(nextVisible) {
+          setVisible(nextVisible, currentTile = null) {
+            const nextScale = nextVisible ? this.resolveScaleForTile(currentTile) : 0.0001
+            const scaleChanged = Math.abs((this.renderedScale ?? this.scale) - nextScale) > 0.001
             if (!nextVisible) {
               this.collectingStartedAt = 0
             }
-            if (this.visible === nextVisible && !this.collectingStartedAt) {
+            if (this.visible === nextVisible && !this.collectingStartedAt && !scaleChanged) {
+              if (this.object3D) this.object3D.visible = nextVisible
               if (this.signal) {
                 this.signal.visible = nextVisible
                 this.signal.scale.setScalar(1)
@@ -2311,7 +2567,9 @@ function ThreeLowPolyMap({
               return
             }
             this.visible = nextVisible
-            this.applyTransform(nextVisible ? this.scale : 0.0001, 0, this.rotationY)
+            this.renderedScale = nextScale
+            this.applyTransform(nextScale, 0, this.rotationY)
+            if (this.object3D) this.object3D.visible = nextVisible
             if (this.signal) {
               this.signal.visible = nextVisible
               this.signal.scale.setScalar(1)
@@ -2338,7 +2596,16 @@ function ThreeLowPolyMap({
           },
           syncFromState(grid, activeCollectedEventIdSet = new Set()) {
             if ((this.eventType === 'item' || this.eventType === 'pickup') && this.eventId) {
-              if (activeCollectedEventIdSet.has(this.eventId)) {
+              const isCollected = isCollectedMapEventId(activeCollectedEventIdSet, currentMapName, this.eventId)
+              if (mapDebugEnabled) {
+                console.log(`[Treasure Visibility] ${this.eventId}:`, {
+                  isCollected,
+                  visible: this.visible,
+                  collecting: !!this.collectingStartedAt,
+                  collectedSet: Array.from(activeCollectedEventIdSet)
+                })
+              }
+              if (isCollected) {
                 if (!this.collectingStartedAt) this.setVisible(false)
                 return
               }
@@ -2348,9 +2615,13 @@ function ThreeLowPolyMap({
               }
               return
             }
-            const expectedTile = getMapEventTile(this.eventType)
             const currentTile = getLegacyTile(grid, this.tileX, this.tileY)
-            this.setVisible(Boolean(expectedTile && currentTile === expectedTile))
+            if (Array.isArray(this.visibleTiles) && this.visibleTiles.length > 0) {
+              this.setVisible(this.visibleTiles.includes(currentTile), currentTile)
+              return
+            }
+            const expectedTile = getMapEventTile(this.eventType)
+            this.setVisible(Boolean(expectedTile && currentTile === expectedTile), currentTile)
           },
           syncFromGrid(grid) {
             this.syncFromState(grid)
@@ -2359,8 +2630,98 @@ function ThreeLowPolyMap({
         return controller
       }
 
+      const createNpcFacingController = ({
+        eventType,
+        eventId = null,
+        tileX,
+        tileY,
+        refs,
+        posX,
+        posY,
+        posZ,
+        rotationY,
+        scale
+      }) => {
+        if (!NPC_INTERACTION_EVENT_TYPES.has(eventType) || typeof eventId !== 'string' || eventId.length === 0) return null
+        const instancedRefs = Array.isArray(refs) ? refs : []
+        if (instancedRefs.length === 0) return null
+        const baseScale = Number.isFinite(Number(scale)) ? Number(scale) : 1
+        const baseRotation = Number.isFinite(Number(rotationY)) ? Number(rotationY) : 0
+        const controller = {
+          eventType,
+          eventId,
+          tileX,
+          tileY,
+          refs: instancedRefs,
+          posX,
+          posY,
+          posZ,
+          scale: baseScale,
+          baseRotation,
+          currentRotation: baseRotation,
+          targetRotation: baseRotation,
+          active: false,
+          applyRotation(rotationValue = this.currentRotation) {
+            _instTmpPos.set(this.posX, this.posY, this.posZ)
+            _instTmpEuler.set(0, rotationValue, 0)
+            _instTmpQuat.setFromEuler(_instTmpEuler)
+            _instTmpScale.setScalar(this.scale)
+            _instTmpComposed.compose(_instTmpPos, _instTmpQuat, _instTmpScale)
+            this.refs.forEach((ref) => {
+              _instTmpMatrix.multiplyMatrices(_instTmpComposed, ref.localOffset)
+              ref.mesh.setMatrixAt(ref.index, _instTmpMatrix)
+              ref.mesh.instanceMatrix.needsUpdate = true
+            })
+          },
+          facePlayer(playerTileX, playerTileY) {
+            if (!isCardinalAdjacentTile(this.tileX, this.tileY, playerTileX, playerTileY)) return false
+            const direction = getDirectionTowardTile(this.tileX, this.tileY, playerTileX, playerTileY)
+            const nextRotation = DIRS[direction]?.rot
+            if (!Number.isFinite(nextRotation)) return false
+            this.targetRotation = nextRotation
+            this.active = true
+            return true
+          },
+          restoreDefault() {
+            if (!this.active && Math.abs(this.currentRotation - this.baseRotation) < 0.001) return false
+            this.targetRotation = this.baseRotation
+            this.active = false
+            return true
+          },
+          syncWithPlayerTile(playerTileX, playerTileY) {
+            if (!this.active) return false
+            if (isCardinalAdjacentTile(this.tileX, this.tileY, playerTileX, playerTileY)) return false
+            return this.restoreDefault()
+          },
+          update() {
+            const delta = Math.atan2(
+              Math.sin(this.targetRotation - this.currentRotation),
+              Math.cos(this.targetRotation - this.currentRotation)
+            )
+            if (Math.abs(delta) < 0.002) {
+              if (this.currentRotation !== this.targetRotation) {
+                this.currentRotation = this.targetRotation
+                this.applyRotation(this.currentRotation)
+              }
+              return false
+            }
+            this.currentRotation = lerpAngle(this.currentRotation, this.targetRotation, 0.28)
+            this.applyRotation(this.currentRotation)
+            return true
+          },
+          isAnimating() {
+            const delta = Math.atan2(
+              Math.sin(this.targetRotation - this.currentRotation),
+              Math.cos(this.targetRotation - this.currentRotation)
+            )
+            return Math.abs(delta) >= 0.002
+          }
+        }
+        return controller
+      }
+
       const addEventSignalAt = (tileX, tileY, eventType, options = {}) => {
-        if (!Number.isSafeInteger(tileX) || !Number.isSafeInteger(tileY)) return null
+        if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return null
         const signal = createEventSignal(eventType, { ...options, seed: eventSignals.length })
         const pos = worldFromTile(tileX, tileY, width, height)
         signal.position.x = pos.x + (options.offsetX ?? 0)
@@ -2370,13 +2731,14 @@ function ThreeLowPolyMap({
         return signal
       }
 
-      const registerEventVisualBinding = ({ eventId, signal = null, npcRoleEffect = null, defaultState = 'available' } = {}) => {
+      const registerEventVisualBinding = ({ eventId, eventType = null, signal = null, npcRoleEffect = null, defaultState = 'available' } = {}) => {
         if (typeof eventId !== 'string' || eventId.length === 0) return
         const visualState = resolveEventVisualStateValue(eventId, normalizedMapEventVisualState, defaultState)
         applyEventSignalVisualState(signal, visualState)
         applyNpcRoleEffectVisualState(npcRoleEffect, visualState)
         eventVisualBindings.push({
           eventId,
+          eventType,
           signal,
           npcRoleEffect,
           defaultState
@@ -2667,6 +3029,41 @@ function ThreeLowPolyMap({
         if (mapInfo?.roadRenderStyle === 'organic') return false
         if (!Array.isArray(mapInfo?.visualPaths) || mapInfo.visualPaths.length === 0) return false
 
+        const joinPatches = new Map()
+        const addJoinPatch = (point, {
+          edgeRadiusX,
+          edgeRadiusZ = edgeRadiusX,
+          roadRadiusX,
+          roadRadiusZ = roadRadiusX
+        }) => {
+          const key = `${point.x.toFixed(3)},${point.z.toFixed(3)}`
+          const current = joinPatches.get(key)
+          if (current) {
+            current.edgeRadiusX = Math.max(current.edgeRadiusX, edgeRadiusX)
+            current.edgeRadiusZ = Math.max(current.edgeRadiusZ, edgeRadiusZ)
+            current.roadRadiusX = Math.max(current.roadRadiusX, roadRadiusX)
+            current.roadRadiusZ = Math.max(current.roadRadiusZ, roadRadiusZ)
+            return
+          }
+          joinPatches.set(key, {
+            point,
+            edgeRadiusX,
+            edgeRadiusZ,
+            roadRadiusX,
+            roadRadiusZ
+          })
+        }
+
+        const isTurnPoint = (points, index) => {
+          if (index <= 0 || index >= points.length - 1) return false
+          const [prevX, prevY] = points[index - 1]
+          const [x, y] = points[index]
+          const [nextX, nextY] = points[index + 1]
+          const sameVertical = prevX === x && x === nextX
+          const sameHorizontal = prevY === y && y === nextY
+          return !(sameVertical || sameHorizontal)
+        }
+
         mapInfo.visualPaths.forEach((path, pathIndex) => {
           const points = Array.isArray(path.points) ? path.points : []
           if (points.length < 2) return
@@ -2692,15 +3089,15 @@ function ThreeLowPolyMap({
           }
 
           worldPoints.forEach((point, pointIndex) => {
-            const edgeJoin = makeHorizontalCircle(edgeRadius, pathEdgeMaterial, 26)
-            edgeJoin.position.set(point.x, 0.105, point.z)
-            root.add(edgeJoin)
-            pathObjects.push(edgeJoin)
-
-            const roadJoin = makeHorizontalCircle(radius, pathMaterial, 28)
-            roadJoin.position.set(point.x, 0.118, point.z)
-            root.add(roadJoin)
-            pathObjects.push(roadJoin)
+            const bendBoost = isTurnPoint(points, pointIndex)
+              ? { edge: CELL * 0.18, road: CELL * 0.16 }
+              : { edge: 0, road: 0 }
+            addJoinPatch(point, {
+              edgeRadiusX: edgeRadius + bendBoost.edge,
+              edgeRadiusZ: edgeRadius + bendBoost.edge,
+              roadRadiusX: radius + bendBoost.road,
+              roadRadiusZ: radius + bendBoost.road
+            })
 
             if (pathIndex === 0 && pointIndex % 3 === 1) {
               const softTone = makeHorizontalCircle(radius * 0.26, pathHighlightMaterial, 20)
@@ -2713,6 +3110,32 @@ function ThreeLowPolyMap({
               pathObjects.push(softTone)
             }
           })
+        })
+
+        ;(mapInfo?.roadJunctions || []).forEach((junction) => {
+          const point = worldFromTile(junction.x, junction.y, width, height)
+          const rx = Number(junction.rx) || 1
+          const ry = Number(junction.ry) || 1
+          addJoinPatch(point, {
+            edgeRadiusX: Math.max(CELL * rx * 0.88, CELL * 0.96),
+            edgeRadiusZ: Math.max(CELL * ry * 0.88, CELL * 0.96),
+            roadRadiusX: Math.max(CELL * rx * 0.74, CELL * 0.82),
+            roadRadiusZ: Math.max(CELL * ry * 0.74, CELL * 0.82)
+          })
+        })
+
+        joinPatches.forEach((patch) => {
+          const edgeJoin = makeHorizontalCircle(1, pathEdgeMaterial, 28)
+          edgeJoin.scale.set(patch.edgeRadiusX, patch.edgeRadiusZ, 1)
+          edgeJoin.position.set(patch.point.x, 0.105, patch.point.z)
+          root.add(edgeJoin)
+          pathObjects.push(edgeJoin)
+
+          const roadJoin = makeHorizontalCircle(1, pathMaterial, 30)
+          roadJoin.scale.set(patch.roadRadiusX, patch.roadRadiusZ, 1)
+          roadJoin.position.set(patch.point.x, 0.118, patch.point.z)
+          root.add(roadJoin)
+          pathObjects.push(roadJoin)
         })
 
         return true
@@ -2903,7 +3326,11 @@ function ThreeLowPolyMap({
             }
           }
 
-          if (legacy === 20 && blockedEdgeTile) {
+          if (
+            legacy === 20 &&
+            blockedEdgeTile &&
+            !isDynamicBlockerVisualSuppressed(mapInfo, mapGrid, x, y, collectedEventIdSet, currentMapName)
+          ) {
             placeForestUndergrowth(x, y, pos, {
               edge: true,
               heavy: true,
@@ -2922,35 +3349,106 @@ function ThreeLowPolyMap({
       })
 
       const signaledEventIds = new Set()
-      let decorationStats = { total: 0, rendered: 0, skippedNoSpec: 0, skippedNoModel: 0, skippedBlocked: 0, skippedRoad: 0 }
+      const renderedPickupEventIds = new Set()
+      const runtimeEventById = new Map(
+        (Array.isArray(mapInfo?.runtimeEvents) ? mapInfo.runtimeEvents : [])
+          .filter((event) => typeof event?.id === 'string')
+          .map((event) => [event.id, event])
+      )
+      const decorationStats = mapDebugEnabled
+        ? { total: 0, rendered: 0, skippedNoSpec: 0, skippedNoModel: 0, skippedBlocked: 0, skippedRoad: 0, treasures: 0, skippedCollected: 0, skippedDuplicateTreasures: 0 }
+        : null
+      const trackDecorationStat = (key) => {
+        if (decorationStats && Object.prototype.hasOwnProperty.call(decorationStats, key)) {
+          decorationStats[key] += 1
+        }
+      }
       mapInfo?.decorativeObjects?.forEach((object) => {
-        decorationStats.total++
-        const spec = getDecorativeModel(object.type)
-        if (!spec) {
-          decorationStats.skippedNoSpec++
+        trackDecorationStat('total')
+
+        // 过滤已拾取的宝箱
+        if ((object.eventType === 'item' || object.eventType === 'pickup') &&
+            typeof object.eventId === 'string' &&
+            isCollectedMapEventId(collectedEventIdSet, currentMapName, object.eventId)) {
+          trackDecorationStat('skippedCollected')
           return
         }
-        if (!models[spec.key]) {
-          decorationStats.skippedNoModel++
-          if (object.type?.includes('rock') || object.type?.includes('stone')) {
-            console.warn(`[Map Debug] Missing model for ${object.type} (key: ${spec.key})`)
+
+        const spec = getDecorativeModel(object.type)
+        if (!spec) {
+          trackDecorationStat('skippedNoSpec')
+          if (mapDebugEnabled && (object.eventType === 'item' || object.eventType === 'pickup')) {
+            console.error(`[Treasure Debug] Missing spec for treasure type: ${object.type}`, object)
           }
           return
         }
+        if (!models[spec.key]) {
+          trackDecorationStat('skippedNoModel')
+          if (mapDebugEnabled && (object.type?.includes('rock') || object.type?.includes('stone'))) {
+            console.warn(`[Map Debug] Missing model for ${object.type} (key: ${spec.key})`)
+          }
+          if (mapDebugEnabled && (object.eventType === 'item' || object.eventType === 'pickup')) {
+            console.error(`[Treasure Debug] Missing model for treasure:`, {
+              type: object.type,
+              specKey: spec.key,
+              eventId: object.eventId,
+              position: { x: object.x, y: object.y }
+            })
+          }
+          return
+        }
+        if (object.eventType === 'item' || object.eventType === 'pickup') {
+          trackDecorationStat('treasures')
+          if (mapDebugEnabled) {
+            console.log(`[Treasure Debug] Rendering treasure:`, {
+              type: object.type,
+              eventId: object.eventId,
+              position: { x: object.x, y: object.y },
+              hasSpec: true,
+              hasModel: true,
+              specKey: spec.key
+            })
+          }
+        }
+        if ((object.eventType === 'item' || object.eventType === 'pickup') && typeof object.eventId === 'string') {
+          if (renderedPickupEventIds.has(object.eventId)) {
+            trackDecorationStat('skippedDuplicateTreasures')
+            return
+          }
+          renderedPickupEventIds.add(object.eventId)
+        }
         if (!object.eventType && shouldHideBlockedLowVegetation(object, mapGrid)) {
-          decorationStats.skippedBlocked++
+          trackDecorationStat('skippedBlocked')
           return
         }
         if (ROAD_CLEAR_DECOR_TYPES.has(object.type) && isInRoadClearance(mapInfo, object.x, object.y, object.roadClearance ?? 0.65)) {
-          decorationStats.skippedRoad++
+          trackDecorationStat('skippedRoad')
           return
         }
-        decorationStats.rendered++
+        trackDecorationStat('rendered')
         const pos = worldFromTile(object.x, object.y, width, height)
         const rawEventType = resolveDecorativeObjectSignalType(object, mapInfo, mapGrid) || object.eventType
         const eventType = rawEventType ? resolvePickupRewardSignalEventType(rawEventType) : null
-        const modelScale = resolveThemeLandmarkRenderScale(object.type, object.scale ?? spec.scale)
-        const modelLift = object.height ?? 0.2
+        const dynamicTileEventType = typeof object.dynamicTileEventType === 'string' ? object.dynamicTileEventType : null
+        const usesDynamicTileVisibility = Boolean(object.dynamicTileVisibility && dynamicTileEventType)
+        const dynamicTileVisibleTiles = Array.isArray(object.dynamicTileVisibleTiles)
+          ? object.dynamicTileVisibleTiles.map((tile) => Math.trunc(Number(tile))).filter(Number.isSafeInteger)
+          : null
+        const baseModelScale = resolveThemeLandmarkRenderScale(object.type, object.scale ?? spec.scale)
+        const lockedModelScale = object.hiddenGateEntranceBlocker === true && Number.isFinite(Number(object.hiddenGateLockedScale))
+          ? resolveThemeLandmarkRenderScale(object.type, object.hiddenGateLockedScale)
+          : baseModelScale
+        const objectTileX = Math.trunc(Number(object.x))
+        const objectTileY = Math.trunc(Number(object.y))
+        const currentObjectTile = Number.isSafeInteger(objectTileX) && Number.isSafeInteger(objectTileY)
+          ? getLegacyTile(mapGrid, objectTileX, objectTileY)
+          : null
+        const modelScale = object.hiddenGateEntranceBlocker === true && currentObjectTile === REGION_MAP_TILE.objectBlocker
+          ? lockedModelScale
+          : baseModelScale
+        const modelLift = (object.eventType === 'item' || object.eventType === 'pickup')
+          ? (object.height ?? -0.05)
+          : (object.height ?? 0.2)
         const decorationRotationY = resolveDecorationRotationY(object)
         const shouldAddGenericSignal = Boolean(eventType)
         const signalBaseY = eventType
@@ -2959,11 +3457,11 @@ function ThreeLowPolyMap({
         const signalOffsetZ = eventType
           ? getNpcSignalForwardOffsetZ(eventType, object.npcRole)
           : 0
-        const alwaysVisibleSignal = isPickupRewardDecoration(object) || isAlwaysVisibleMapSignal(eventType, object.npcRole)
+        const alwaysVisibleSignal = Boolean(object.alwaysVisibleSignal) || isPickupRewardDecoration(object) || isAlwaysVisibleMapSignal(eventType, object.npcRole)
         const signal = shouldAddGenericSignal
           ? addEventSignalAt(
-            Math.trunc(Number(object.x)),
-            Math.trunc(Number(object.y)),
+            Number(object.x),
+            Number(object.y),
             eventType,
             {
               alwaysVisible: alwaysVisibleSignal,
@@ -2983,21 +3481,54 @@ function ThreeLowPolyMap({
           decorationRotationY,
           modelScale
         )
+        if (isNpcInteractionDecoration(object, eventType)) {
+          const npcFacingController = createNpcFacingController({
+            eventType,
+            eventId: object.eventId,
+            tileX: objectTileX,
+            tileY: objectTileY,
+            refs,
+            posX: pos.x + (object.offsetX ?? 0),
+            posY: modelLift,
+            posZ: pos.z + (object.offsetZ ?? 0),
+            rotationY: decorationRotationY,
+            scale: modelScale
+          })
+          if (npcFacingController) {
+            npcFacingControllers.push(npcFacingController)
+            npcFacingControllersByEventId.set(object.eventId, npcFacingController)
+          }
+        }
         if (eventType && typeof object.eventId === 'string' && object.eventId.length > 0) {
           signaledEventIds.add(object.eventId)
         }
-        if (eventType === 'item' || eventType === 'pickup') {
+        if (eventType === 'item' || eventType === 'pickup' || usesDynamicTileVisibility) {
+          const dynamicTileEventId = usesDynamicTileVisibility && typeof object.dynamicTileEventId === 'string'
+            ? object.dynamicTileEventId
+            : null
+          const dynamicTileEvent = dynamicTileEventId ? runtimeEventById.get(dynamicTileEventId) : null
+          const dynamicTileX = usesDynamicTileVisibility && dynamicTileEvent
+            ? Math.trunc(Number(dynamicTileEvent.position?.x))
+            : Math.trunc(Number(object.x))
+          const dynamicTileY = usesDynamicTileVisibility && dynamicTileEvent
+            ? Math.trunc(Number(dynamicTileEvent.position?.y))
+            : Math.trunc(Number(object.y))
           const controller = createDynamicEventDecorationController({
-            eventType,
-            eventId: typeof object.eventId === 'string' ? object.eventId : null,
-            tileX: Math.trunc(Number(object.x)),
-            tileY: Math.trunc(Number(object.y)),
+            eventType: usesDynamicTileVisibility ? dynamicTileEventType : eventType,
+            eventId: typeof (usesDynamicTileVisibility ? object.dynamicTileEventId : object.eventId) === 'string'
+              ? (usesDynamicTileVisibility ? object.dynamicTileEventId : object.eventId)
+              : null,
+            tileX: dynamicTileX,
+            tileY: dynamicTileY,
+            visibleTiles: dynamicTileVisibleTiles,
             refs,
+            object3D: null,
             posX: pos.x + (object.offsetX ?? 0),
-            posY: object.height ?? 0.2,
+            posY: modelLift,
             posZ: pos.z + (object.offsetZ ?? 0),
             rotationY: decorationRotationY,
-            scale: modelScale,
+            scale: baseModelScale,
+            lockedScale: lockedModelScale,
             signal
           })
           if (controller) {
@@ -3022,37 +3553,53 @@ function ThreeLowPolyMap({
         }
         registerEventVisualBinding({
           eventId: typeof object.eventId === 'string' ? object.eventId : null,
+          eventType,
           signal,
           npcRoleEffect
         })
       })
-      console.log(`[Map Debug] Decoration rendering stats:`, decorationStats)
+      if (mapDebugEnabled && decorationStats) {
+        console.log(`[Map Debug] Decoration rendering stats:`, decorationStats)
+      }
 
       ;(Array.isArray(mapInfo?.runtimeEvents) ? mapInfo.runtimeEvents : []).forEach((event) => {
         if (!event?.type || signaledEventIds.has(event.id)) return
-        const tileX = Math.trunc(Number(event.position?.x))
-        const tileY = Math.trunc(Number(event.position?.y))
-        if (!Number.isSafeInteger(tileX) || !Number.isSafeInteger(tileY)) return
+        const eventX = Number(event.position?.x)
+        const eventY = Number(event.position?.y)
+        const visualAnchor = getEventVisualAnchor(mapInfo, event.id, event.type)
+        const signalX = visualAnchor?.x ?? eventX
+        const signalY = visualAnchor?.y ?? eventY
+        const signalOffsetX = visualAnchor?.offsetX ?? 0
+        const signalOffsetZ = visualAnchor?.offsetZ ?? 0
+        if (!Number.isFinite(signalX) || !Number.isFinite(signalY)) return
 
         if (PICKUP_REWARD_EVENT_TYPES.has(event.type)) {
+          if (isCollectedMapEventId(collectedEventIdSet, currentMapName, event.id)) return
           const pickupSignalType = resolvePickupRewardSignalEventType(event.type)
-          const signal = addEventSignalAt(tileX, tileY, pickupSignalType, {
+          const signal = addEventSignalAt(signalX, signalY, pickupSignalType, {
             alwaysVisible: true,
-            eventId: typeof event.id === 'string' ? event.id : null
+            eventId: typeof event.id === 'string' ? event.id : null,
+            offsetX: signalOffsetX,
+            offsetZ: signalOffsetZ
           })
           registerEventVisualBinding({
             eventId: typeof event.id === 'string' ? event.id : null,
+            eventType: event.type,
             signal
           })
           return
         }
 
         if (!['warp', 'fast_travel', 'heal', 'challenge', 'sign', 'info'].includes(event.type)) return
-        const signal = addEventSignalAt(tileX, tileY, event.type, {
-          alwaysVisible: isAlwaysVisibleMapSignal(event.type, event.properties?.role)
+        const signal = addEventSignalAt(signalX, signalY, event.type, {
+          alwaysVisible: isAlwaysVisibleMapSignal(event.type, event.properties?.role),
+          eventId: typeof event.id === 'string' ? event.id : null,
+          offsetX: signalOffsetX,
+          offsetZ: signalOffsetZ
         })
         registerEventVisualBinding({
           eventId: typeof event.id === 'string' ? event.id : null,
+          eventType: event.type,
           signal
         })
       })
@@ -3107,6 +3654,7 @@ function ThreeLowPolyMap({
       if (!state) return true
       state.onPlayerMove?.({ x: step.tileX, y: step.tileY, direction: step.direction })
       state.syncCameraTargetToTile?.(step.tileX, step.tileY)
+      syncNpcFacingWithPlayer(step.tileX, step.tileY)
       const zone = getEncounterZoneAt(state.currentMapName, step.tileX, step.tileY)
       const zoneLock = zone?.id ? state.encounterZoneLocks?.[zone.id] : null
       if (zone?.name && state.lastZoneId !== zone.id) {
@@ -3131,6 +3679,30 @@ function ThreeLowPolyMap({
       }
 
       return handleStepInteractionOrEncounter(step)
+    }
+
+    function faceNpcForInteraction(mapEvent, playerTileX, playerTileY) {
+      if (!mapEvent?.id) return false
+      const state = stateRef.current
+      const controller = state?.npcFacingControllersByEventId?.get(mapEvent.id)
+      if (!controller?.facePlayer) return false
+      const changed = controller.facePlayer(playerTileX, playerTileY)
+      if (changed) state?.kickAnimation?.()
+      return changed
+    }
+
+    function syncNpcFacingWithPlayer(playerTileX, playerTileY) {
+      const state = stateRef.current
+      const controllers = state?.npcFacingControllers
+      if (!Array.isArray(controllers) || controllers.length === 0) return false
+      let changed = false
+      controllers.forEach((controller) => {
+        if (controller?.syncWithPlayerTile?.(playerTileX, playerTileY)) {
+          changed = true
+        }
+      })
+      if (changed) state?.kickAnimation?.()
+      return changed
     }
 
     function setFacing(direction, options = {}) {
@@ -3159,10 +3731,22 @@ function ThreeLowPolyMap({
       const nextY = pointerState.tileY + vec.y
       const legacyTile = getLegacyTile(state.mapGrid, nextX, nextY)
       const { interaction } = resolveInteractionFromEvent(nextX, nextY, INTERACTION_LEGACY_TILES[legacyTile])
+      const lockedEncounterZone = getLockedEncounterZoneAt(state, nextX, nextY)
+      const blockedByInteraction = isBlockingInteraction(interaction)
 
-      if (!isWalkable(state.mapGrid, nextX, nextY) || isBlockingInteraction(interaction)) {
+      if (lockedEncounterZone || !isWalkable(state.mapGrid, nextX, nextY) || blockedByInteraction) {
         setFacing(direction, { notify: true })
-        if (interaction) {
+        state.onBlockedMove?.({
+          tileX: pointerState.tileX,
+          tileY: pointerState.tileY,
+          targetX: nextX,
+          targetY: nextY,
+          direction,
+          legacyTile,
+          zone: lockedEncounterZone?.zone || null,
+          zoneLock: lockedEncounterZone?.zoneLock || null
+        })
+        if (blockedByInteraction && interaction) {
           handleBlockedInteraction({
             tileX: pointerState.tileX,
             tileY: pointerState.tileY,
@@ -3182,6 +3766,7 @@ function ThreeLowPolyMap({
       pointerState.tileY = nextY
       pointerState.direction = direction
       pointerState.moving = true
+      state.kickAnimation?.()
       state.player.rotation.y = vec.rot
       pointerState.target = {
         from,
@@ -3220,6 +3805,7 @@ function ThreeLowPolyMap({
       clearMoveDelayTimer()
 
       state.pointer.holdDirection = direction
+      state.kickAnimation?.()
       if (state.pointer.moving) {
         state.pointer.queued = direction
         return
@@ -3230,7 +3816,7 @@ function ThreeLowPolyMap({
       const nextY = state.pointer.tileY + vec.y
       const legacyTile = getLegacyTile(state.mapGrid, nextX, nextY)
       const { interaction } = resolveInteractionFromEvent(nextX, nextY, INTERACTION_LEGACY_TILES[legacyTile])
-      if (!isWalkable(state.mapGrid, nextX, nextY) || isBlockingInteraction(interaction)) {
+      if (getLockedEncounterZoneAt(state, nextX, nextY) || !isWalkable(state.mapGrid, nextX, nextY) || isBlockingInteraction(interaction)) {
         requestMove(direction)
         return
       }
@@ -3332,9 +3918,18 @@ function ThreeLowPolyMap({
         return { interaction: 'info', mapEvent: null }
       }
       if (!mapEvent) return { interaction: safeFallbackInteraction, mapEvent: null }
+      if (mapEvent.type === 'sign') {
+        const activeGrid = stateRef.current?.mapGrid || mapGrid
+        const activeTile = getLegacyTile(activeGrid, tileX, tileY)
+        const isSignTile = activeTile === getMapEventTile('sign')
+        const isLockedHiddenGateTile = isHiddenEncounterGateMapEvent(mapEvent) && activeTile === REGION_MAP_TILE.objectBlocker
+        if (!isSignTile && !isLockedHiddenGateTile) {
+          return { interaction: safeFallbackInteraction, mapEvent: null }
+        }
+      }
       if (['item', 'pickup'].includes(mapEvent.type)) {
         const activeCollectedEventIdSet = getActiveCollectedEventIds()
-        if (typeof mapEvent.id === 'string' && activeCollectedEventIdSet.has(mapEvent.id)) {
+        if (isCollectedMapEventId(activeCollectedEventIdSet, currentMapName, mapEvent.id)) {
           return { interaction: null, mapEvent: null }
         }
       }
@@ -3359,6 +3954,7 @@ function ThreeLowPolyMap({
       const baseInteraction = INTERACTION_LEGACY_TILES[legacyTile]
       const { interaction, mapEvent } = resolveInteractionFromEvent(targetX, targetY, baseInteraction)
       if (!interaction) return
+      faceNpcForInteraction(mapEvent, tileX, tileY)
       const state = stateRef.current
       if (interaction === 'exit') {
         const warp = mapEvent?.type === 'warp'
@@ -3395,6 +3991,7 @@ function ThreeLowPolyMap({
         direction: stateRef.current?.pointer?.direction || 'down'
       }
       if (interaction) {
+        faceNpcForInteraction(mapEvent, stepPlayerPos.x, stepPlayerPos.y)
         if (interaction === 'exit') {
           const warp = mapEvent?.type === 'warp'
             ? mapEvent
@@ -3425,13 +4022,20 @@ function ThreeLowPolyMap({
       if (Math.random() >= rate) return true
 
       const tableId = zone?.encounterTableId || resolveEncounterTableId(currentMapName, true)
+      const table = getEncounterTable(tableId)
       const encounter = pickWildPokemon(tableId)
       if (!encounter) return true
-      cooldownRef.current = 5
-      stateRef.current?.onEncounterCooldownChange?.(5)
+      const safeStepsRaw = Number(table?.safeStepsAfterBattle)
+      const nextCooldownSteps = Number.isFinite(safeStepsRaw)
+        ? Math.max(0, Math.trunc(safeStepsRaw))
+        : 5
+      cooldownRef.current = nextCooldownSteps
+      stateRef.current?.onEncounterCooldownChange?.(nextCooldownSteps)
       stateRef.current?.onEncounter?.({
         pokemonId: encounter.id,
         level: encounter.level,
+        encounterTableId: tableId,
+        encounterRate: rate,
         zoneId: zone?.id ?? null,
         zoneName: zone?.name ?? null,
         terrainType: legacyTile,
@@ -3450,17 +4054,67 @@ function ThreeLowPolyMap({
 
     let last = performance.now()
     let frameId = null
+    let idleFrameTimerId = 0
+    let lastRenderedAt = 0
 
     // 性能监控：用于检测低帧率
     const frameTimings = []
     const MAX_FRAME_SAMPLES = 60
     let lowFpsWarningShown = false
 
-    const scheduleAnimation = () => {
-      if (frameId != null || disposed) return
+    const scheduleAnimation = (delayMs = 0) => {
+      if (frameId != null || idleFrameTimerId || disposed) return
+      if (delayMs > 1) {
+        idleFrameTimerId = window.setTimeout(() => {
+          idleFrameTimerId = 0
+          if (!disposed && frameId == null) {
+            frameId = requestAnimationFrame(animate)
+          }
+        }, delayMs)
+        return
+      }
       frameId = requestAnimationFrame(animate)
     }
-    stateRef.current.kickAnimation = scheduleAnimation
+
+    const kickAnimation = () => {
+      if (disposed) return
+      if (idleFrameTimerId) {
+        window.clearTimeout(idleFrameTimerId)
+        idleFrameTimerId = 0
+      }
+      scheduleAnimation()
+    }
+    stateRef.current.kickAnimation = kickAnimation
+
+    const hasActiveDynamicDecorationAnimation = (decorations) => (
+      Array.isArray(decorations) && decorations.some((controller) => Boolean(controller?.collectingStartedAt))
+    )
+
+    const hasActiveNpcFacingAnimation = (controllers) => (
+      Array.isArray(controllers) && controllers.some((controller) => Boolean(controller?.isAnimating?.()))
+    )
+
+    const hasActivePickupBurst = (bursts) => (
+      Array.isArray(bursts) && bursts.some((burst) => Boolean(burst?.visible || burst?.userData?.active))
+    )
+
+    const hasActiveRestoreAnimation = (restoreBurst, animation) => {
+      const activeId = restoreBurst?.userData?.activeId
+      if (activeId) return true
+      const animationId = animation?.id
+      return Boolean(animationId && restoreBurst?.userData?.lastCompletedId !== animationId)
+    }
+
+    const shouldRunFullSpeedFrame = (state) => Boolean(
+      state?.pointer?.moving ||
+      state?.pointer?.queued ||
+      state?.pointer?.holdDirection ||
+      activeTrampleGrassKeys.size > 0 ||
+      hasActiveDynamicDecorationAnimation(state?.dynamicEventDecorations) ||
+      hasActiveNpcFacingAnimation(state?.npcFacingControllers) ||
+      hasActivePickupBurst(state?.pickupBursts) ||
+      hasActiveRestoreAnimation(state?.restoreBurst, state?.springRestoreAnimation)
+    )
 
     const animate = (now) => {
       frameId = null
@@ -3474,11 +4128,20 @@ function ThreeLowPolyMap({
         return
       }
 
+      const activeFrameNeeded = shouldRunFullSpeedFrame(state)
+      if (!activeFrameNeeded && lastRenderedAt) {
+        const elapsedSinceRender = now - lastRenderedAt
+        if (elapsedSinceRender < idleFrameIntervalMs) {
+          scheduleAnimation(idleFrameIntervalMs - elapsedSinceRender)
+          return
+        }
+      }
+
       const dt = Math.min((now - last) / 1000, 0.05)
+      const frameTime = now - last
 
       // 性能监控：记录帧时间
-      if (isMobileSafari() || isMobileDevice()) {
-        const frameTime = now - last
+      if (runtimeIsMobile && activeFrameNeeded) {
         frameTimings.push(frameTime)
         if (frameTimings.length > MAX_FRAME_SAMPLES) {
           frameTimings.shift()
@@ -3489,18 +4152,22 @@ function ThreeLowPolyMap({
           const avgFrameTime = frameTimings.reduce((a, b) => a + b, 0) / frameTimings.length
           const avgFps = 1000 / avgFrameTime
 
-          // 如果平均帧率低于25fps，在控制台提示用户
+          // 如果活跃操作期间低于25fps，先降低空闲刷新频率，避免非交互时继续消耗资源。
           if (avgFps < 25) {
-            console.warn(
-              `[ThreeLowPolyMap] 检测到低帧率 (${avgFps.toFixed(1)} FPS)。` +
-              `建议在URL添加 ?mapQuality=lite 以提升性能。`
-            )
+            idleFrameIntervalMs = Math.max(idleFrameIntervalMs, renderProfile.recoveryIdleFrameMs)
+            if (mapDebugEnabled) {
+              console.warn(
+                `[ThreeLowPolyMap] 检测到活跃低帧率 (${avgFps.toFixed(1)} FPS)，` +
+                `已把空闲刷新间隔调整为 ${Math.round(idleFrameIntervalMs)}ms。`
+              )
+            }
             lowFpsWarningShown = true
           }
         }
       }
 
       last = now
+      lastRenderedAt = now
       grassSwayUniforms.uMapTime.value = now
       const player = state?.player
       if (player && state.pointer.moving && state.pointer.target) {
@@ -3557,6 +4224,9 @@ function ThreeLowPolyMap({
 	      if (Array.isArray(state?.dynamicEventDecorations)) {
 	        state.dynamicEventDecorations.forEach((controller) => controller?.update?.(now))
 	      }
+	      if (Array.isArray(state?.npcFacingControllers)) {
+	        state.npcFacingControllers.forEach((controller) => controller?.update?.(now))
+	      }
 	      updatePickupCollectBursts(state?.pickupBursts, now)
 
       if (player) {
@@ -3576,17 +4246,24 @@ function ThreeLowPolyMap({
       const chunkGrid = state?.chunkGrid
       let visibleChunkCount = 0
       if (mapChunks && mapChunks.length > 0) {
-        _frustumMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
-        _viewFrustum.setFromProjectionMatrix(_frustumMat)
-        visibleChunkIds.clear()
-        for (let i = 0; i < mapChunks.length; i += 1) {
-          const ch = mapChunks[i]
-          const visible = _viewFrustum.intersectsBox(ch.boundingBox)
-          ch.group.visible = visible
-          if (visible) {
-            visibleChunkCount += 1
-            visibleChunkIds.add(ch.id)
+        const shouldRefreshChunkVisibility = activeFrameNeeded || visibilityDirty || visibleChunkIds.size === 0
+        if (shouldRefreshChunkVisibility) {
+          _frustumMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+          _viewFrustum.setFromProjectionMatrix(_frustumMat)
+          visibleChunkIds.clear()
+          for (let i = 0; i < mapChunks.length; i += 1) {
+            const ch = mapChunks[i]
+            const visible = _viewFrustum.intersectsBox(ch.boundingBox)
+            ch.group.visible = visible
+            if (visible) {
+              visibleChunkCount += 1
+              visibleChunkIds.add(ch.id)
+            }
           }
+          cachedVisibleChunkCount = visibleChunkCount
+          visibilityDirty = false
+        } else {
+          visibleChunkCount = cachedVisibleChunkCount
         }
       }
 
@@ -3666,7 +4343,7 @@ function ThreeLowPolyMap({
 
       // 性能监控：移动端减少性能统计的频率以节省CPU
       const shouldUpdatePerfStats = perfProbeEnabled && typeof window !== 'undefined'
-      const isMobile = isMobileSafari() || isMobileDevice()
+      const isMobile = runtimeIsMobile
       const perfUpdateInterval = isMobile ? 60 : 1 // 移动端每60帧更新一次
 
       if (shouldUpdatePerfStats) {
@@ -3676,6 +4353,8 @@ function ThreeLowPolyMap({
             mapName: currentMapName,
             mapVisualQuality: readMapVisualQualityPref(),
             isMobile,
+            renderMode: activeFrameNeeded ? 'active' : 'idle',
+            idleFrameMs: Math.round(idleFrameIntervalMs),
             canvasWidth: renderer.domElement.width,
             canvasHeight: renderer.domElement.height,
             cssWidth: renderer.domElement.clientWidth,
@@ -3700,7 +4379,7 @@ function ThreeLowPolyMap({
         state.frameCount = (state.frameCount || 0) + 1
       }
 
-      scheduleAnimation()
+      scheduleAnimation(activeFrameNeeded ? 0 : idleFrameIntervalMs)
     }
     scheduleAnimation()
 
@@ -3744,6 +4423,7 @@ function ThreeLowPolyMap({
       clearActiveThreeMapRenderer(host, cleanupRenderer)
       clearMoveDelayTimer()
       if (frameId != null) cancelAnimationFrame(frameId)
+      if (idleFrameTimerId) window.clearTimeout(idleFrameTimerId)
       window.clearTimeout(healthTimerId)
       window.clearTimeout(recoveryTimerId)
       window.removeEventListener('resize', handleResize)
@@ -3777,18 +4457,25 @@ function ThreeLowPolyMap({
     return () => {
       cleanupRenderer('effect-cleanup')
     }
-  }, [currentMapBossCompleted, currentMapName, renderNonce, requestRendererRestart])
+  }, [currentMapBossCompleted, currentMapName, mapDebugEnabled, renderNonce, requestRendererRestart])
 
   useEffect(() => {
     if (!stateRef.current) return
     stateRef.current.mapEventVisualState = normalizedMapEventVisualState
     if (!Array.isArray(stateRef.current.eventVisualBindings)) return
     stateRef.current.eventVisualBindings.forEach((binding) => {
+      if (
+        PICKUP_REWARD_EVENT_TYPES.has(binding?.eventType) &&
+        isCollectedMapEventId(stateRef.current?.collectedEventIdSet || collectedEventIdSet, currentMapName, binding.eventId)
+      ) {
+        if (binding.signal) binding.signal.visible = false
+        return
+      }
       const visualState = resolveEventVisualStateValue(binding?.eventId, normalizedMapEventVisualState, binding?.defaultState || 'available')
       applyEventSignalVisualState(binding?.signal, visualState)
       applyNpcRoleEffectVisualState(binding?.npcRoleEffect, visualState)
     })
-  }, [currentMapName, normalizedMapEventVisualState])
+  }, [collectedEventIdSet, currentMapName, normalizedMapEventVisualState])
 
   useEffect(() => {
     const previous = collectedEventAnimationStateRef.current
@@ -3809,12 +4496,14 @@ function ThreeLowPolyMap({
     if (newlyCollectedIds.length === 0) return
 
     const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-    newlyCollectedIds.forEach((eventId) => {
-      controllers.forEach((controller) => {
-        if ((controller?.eventType === 'item' || controller?.eventType === 'pickup') && controller.eventId === eventId) {
-          controller.startCollect?.(startedAt, stateRef.current?.triggerPickupBurst)
-        }
-      })
+    const newlyCollectedIdSet = new Set(newlyCollectedIds)
+    controllers.forEach((controller) => {
+      if (
+        (controller?.eventType === 'item' || controller?.eventType === 'pickup') &&
+        isCollectedMapEventId(newlyCollectedIdSet, currentMapName, controller.eventId)
+      ) {
+        controller.startCollect?.(startedAt, stateRef.current?.triggerPickupBurst)
+      }
     })
   }, [collectedEventIdSet, currentMapName])
 
@@ -3832,6 +4521,7 @@ function ThreeLowPolyMap({
     stateRef.current.onCollect = onCollect
     stateRef.current.onMapWarp = onMapWarp
     stateRef.current.onZoneEnter = onZoneEnter
+    stateRef.current.onBlockedMove = onBlockedMove
     stateRef.current.onEncounterCooldownChange = onEncounterCooldownChange
     stateRef.current.cloudBlocked = cloudBlocked
     stateRef.current.mapActive = mapActive
@@ -3852,6 +4542,7 @@ function ThreeLowPolyMap({
     onCollect,
     onEncounter,
     onEncounterCooldownChange,
+    onBlockedMove,
     onMapWarp,
     onPlayerMove,
     onZoneEnter,
@@ -3871,7 +4562,23 @@ function ThreeLowPolyMap({
         controller?.syncFromState?.(mapGrid, activeCollectedEventIdSet)
       })
     }
-  }, [collectedEventIdSet, currentMapName, mapGrid])
+    if (Array.isArray(stateRef.current.eventVisualBindings)) {
+      stateRef.current.eventVisualBindings.forEach((binding) => {
+        if (!PICKUP_REWARD_EVENT_TYPES.has(binding?.eventType)) return
+        const isCollected = isCollectedMapEventId(activeCollectedEventIdSet, currentMapName, binding.eventId)
+        if (isCollected) {
+          if (binding.signal) binding.signal.visible = false
+          return
+        }
+        const visualState = resolveEventVisualStateValue(
+          binding.eventId,
+          stateRef.current?.mapEventVisualState || normalizedMapEventVisualState,
+          binding.defaultState || 'available'
+        )
+        applyEventSignalVisualState(binding.signal, visualState)
+      })
+    }
+  }, [collectedEventIdSet, currentMapName, mapGrid, normalizedMapEventVisualState])
 
   useEffect(() => {
     if (!stateRef.current?.player || !playerPos || stateRef.current.pointer.moving) return
@@ -3893,6 +4600,10 @@ function ThreeLowPolyMap({
     }
     stateRef.current.player.position.set(pos.x, PLAYER_BASE_Y, pos.z)
     stateRef.current.syncCameraTargetToTile?.(playerPos.x, playerPos.y, true)
+    stateRef.current.npcFacingControllers?.forEach((controller) => {
+      controller?.syncWithPlayerTile?.(playerPos.x, playerPos.y)
+    })
+    stateRef.current.kickAnimation?.()
   }, [playerPos?.x, playerPos?.y, playerPos?.direction, currentMapName])
 
   const startMovePress = (direction) => {

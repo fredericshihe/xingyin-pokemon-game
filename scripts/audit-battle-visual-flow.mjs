@@ -5,10 +5,25 @@ import { fileURLToPath } from 'node:url'
 
 const rootDir = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const read = (file) => fs.readFileSync(path.join(rootDir, file), 'utf8')
+const readCssWithImports = (file, seen = new Set()) => {
+  const absolutePath = path.join(rootDir, file)
+  if (seen.has(absolutePath)) return ''
+  seen.add(absolutePath)
+
+  const content = fs.readFileSync(absolutePath, 'utf8')
+  const directory = path.dirname(file)
+  const imports = [...content.matchAll(/@import\s+['"](.+?)['"];/g)]
+    .map((match) => path.normalize(path.join(directory, match[1])))
+
+  return [
+    content,
+    ...imports.map((importPath) => readCssWithImports(importPath, seen))
+  ].join('\n')
+}
 
 const originalGame = read('src/components/Game/OriginalGame.jsx')
 const battlePacing = read('src/utils/battlePacing.js')
-const css = read('src/index.css')
+const css = readCssWithImports('src/index.css')
 
 const checks = [
   {

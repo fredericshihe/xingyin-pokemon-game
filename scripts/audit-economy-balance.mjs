@@ -26,6 +26,36 @@ const summarize = (values) => ({
   max: percentile(values, 1),
 })
 
+const toPokemonId = (entry) => {
+  const id = Math.trunc(Number(entry?.pokemonId ?? entry?.id ?? entry))
+  return Number.isInteger(id) ? id : null
+}
+
+const pickRepresentativeLevels = (entry, fallbackMin, fallbackMax) => {
+  const min = Math.trunc(Number(entry?.minLevel ?? entry?.level ?? fallbackMin))
+  const max = Math.trunc(Number(entry?.maxLevel ?? entry?.level ?? fallbackMax ?? min))
+  if (!Number.isInteger(min) && !Number.isInteger(max)) return []
+  const low = Number.isInteger(min) ? min : max
+  const high = Number.isInteger(max) ? max : low
+  const sorted = [Math.min(low, high), Math.round((low + high) / 2), Math.max(low, high)]
+    .filter((level) => Number.isInteger(level) && level > 0)
+  return [...new Set(sorted)]
+}
+
+const PAID_HIDDEN_ZONE_IDS = new Set([
+  'meadow_hidden_grove',
+  'lake_hidden_path',
+  'farm_windmill_top',
+  'shore_wreck_inner',
+  'grave_deep_forest',
+  'hex_sealed_chamber',
+  'peak_starwatch_path',
+])
+
+const isHiddenZone = (zone) => (
+  PAID_HIDDEN_ZONE_IDS.has(String(zone?.id || ''))
+)
+
 const estimateRecommendedMoveCost = (move, officialMeta) => {
   if (!move || move.cost === 0) return 0
 
@@ -62,6 +92,9 @@ await withViteAuditServer(async ({ loadModule }) => {
     { OFFICIAL_MOVE_META_BY_KEY },
     { calculateStatsForLevel },
     { isLevelValidForSpecies },
+    { ADVENTURE_MAP_CHAIN, getAdventureMapInfo },
+    { getMapConfig },
+    { ENCOUNTER_TABLES },
   ] = await Promise.all([
     loadModule('/src/utils/gameData.js'),
     loadModule('/src/utils/gameBalance.js'),
@@ -69,15 +102,45 @@ await withViteAuditServer(async ({ loadModule }) => {
     loadModule('/src/utils/officialMoveMeta.js'),
     loadModule('/src/utils/pokemonStats.js'),
     loadModule('/src/utils/wildEncounterRules.js'),
+    loadModule('/src/game/data/overworldMaps.js'),
+    loadModule('/src/data/maps/mapConfig.js'),
+    loadModule('/src/game/data/encounterTables.js'),
   ])
 
   const missingExperienceData = []
   const expCurveMismatches = []
   const growthRateCounts = {}
   const battlePaceRows = []
+  const actualEncounterPaceRows = []
   const moveCostRows = []
   const moveCostWarnings = []
   const moveAffordabilityWarnings = []
+  const monsterById = new Map(MONSTERS.map((monster) => [Number(monster.id), monster]))
+
+  const createBattlePaceRow = (monster, level, extra = {}) => {
+    const expToNext = getExpToNextLevelOfficial(level, monster)
+    const defeatedMon = { ...monster, ...calculateStatsForLevel(monster, level), level }
+    const reward = calculateBattleRewards({
+      defeatedMon,
+      playerAverageLevel: level,
+      battleKind: 'wild',
+      participants: 1,
+    })
+    const battlesToNext = reward.exp > 0 ? expToNext / reward.exp : Infinity
+    return {
+      ...extra,
+      id: monster.id,
+      dexNo: monster.dexNo,
+      name: monster.name,
+      level,
+      validForLevel: isLevelValidForSpecies(monster.id, level),
+      growthRate: getOfficialGrowthRate(monster),
+      baseExperience: getOfficialBaseExperience(monster),
+      expToNext,
+      rewardExp: reward.exp,
+      battlesToNext,
+    }
+  }
 
   for (const monster of MONSTERS) {
     const baseExperience = getOfficialBaseExperience(monster)
@@ -110,27 +173,33 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
 
     for (const level of CHECK_LEVELS) {
-      const expToNext = getExpToNextLevelOfficial(level, monster)
-      const defeatedMon = { ...monster, ...calculateStatsForLevel(monster, level), level }
-      const reward = calculateBattleRewards({
-        defeatedMon,
-        playerAverageLevel: level,
-        battleKind: 'wild',
-        participants: 1,
-      })
-      const battlesToNext = reward.exp > 0 ? expToNext / reward.exp : Infinity
-      battlePaceRows.push({
-        id: monster.id,
-        dexNo: monster.dexNo,
-        name: monster.name,
-        level,
-        validForLevel: isLevelValidForSpecies(monster.id, level),
-        growthRate,
-        baseExperience,
-        expToNext,
-        rewardExp: reward.exp,
-        battlesToNext,
-      })
+      battlePaceRows.push(createBattlePaceRow(monster, level))
+    }
+  }
+
+  for (const mapId of ADVENTURE_MAP_CHAIN) {
+    const mapInfo = getAdventureMapInfo(mapId)
+    const config = getMapConfig(mapId)
+    const mapName = config?.displayName || mapInfo?.displayName || mapId
+    const fallbackMin = Math.max(1, Math.trunc(Number(config?.minLevel ?? 1)) || 1)
+    const fallbackMax = Math.max(fallbackMin, Math.trunc(Number(config?.maxLevel ?? fallbackMin)) || fallbackMin)
+    for (const zone of Array.isArray(mapInfo?.encounterZones) ? mapInfo.encounterZones : []) {
+      const table = ENCOUNTER_TABLES[zone.encounterTableId]
+      const entries = Array.isArray(table?.pokemon) ? table.pokemon : []
+      for (const entry of entries) {
+        const monster = monsterById.get(toPokemonId(entry))
+        if (!monster) continue
+        for (const level of pickRepresentativeLevels(entry, fallbackMin, fallbackMax)) {
+          actualEncounterPaceRows.push(createBattlePaceRow(monster, level, {
+            mapId,
+            mapName,
+            zoneId: zone.id,
+            zoneName: zone.name || zone.id,
+            tableId: zone.encounterTableId,
+            hidden: isHiddenZone(zone),
+          }))
+        }
+      }
     }
   }
 
@@ -214,6 +283,14 @@ await withViteAuditServer(async ({ loadModule }) => {
   const slowLevelingRows = validBattlePaceRows
     .filter((row) => row.battlesToNext > 18)
     .sort((a, b) => b.battlesToNext - a.battlesToNext)
+  const actualFastLevelingRows = actualEncounterPaceRows
+    .filter((row) => row.validForLevel && row.battlesToNext < 1.5)
+    .sort((a, b) => a.battlesToNext - b.battlesToNext)
+  const actualSlowLevelingRows = actualEncounterPaceRows
+    .filter((row) => row.validForLevel && row.battlesToNext > 18)
+    .sort((a, b) => b.battlesToNext - a.battlesToNext)
+  const actualStandardFastLevelingRows = actualFastLevelingRows.filter((row) => !row.hidden)
+  const actualHiddenFastLevelingRows = actualFastLevelingRows.filter((row) => row.hidden)
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -227,6 +304,11 @@ await withViteAuditServer(async ({ loadModule }) => {
       validBattlePaceRows: validBattlePaceRows.length,
       fastLevelingScenarioCount: fastLevelingRows.length,
       slowLevelingScenarioCount: slowLevelingRows.length,
+      actualEncounterPaceRows: actualEncounterPaceRows.length,
+      actualFastLevelingScenarioCount: actualFastLevelingRows.length,
+      actualStandardFastLevelingScenarioCount: actualStandardFastLevelingRows.length,
+      actualHiddenFastLevelingScenarioCount: actualHiddenFastLevelingRows.length,
+      actualSlowLevelingScenarioCount: actualSlowLevelingRows.length,
       moveCostWarningCount: moveCostWarnings.length,
       moveAffordabilityWarningCount: moveAffordabilityWarnings.length,
     },
@@ -234,6 +316,12 @@ await withViteAuditServer(async ({ loadModule }) => {
       battlesToNextByLevel,
       fastLevelingSamples: sample(fastLevelingRows),
       slowLevelingSamples: sample(slowLevelingRows),
+    },
+    actualEncounterPace: {
+      fastLevelingSamples: sample(actualFastLevelingRows),
+      standardFastLevelingSamples: sample(actualStandardFastLevelingRows),
+      hiddenFastLevelingSamples: sample(actualHiddenFastLevelingRows),
+      slowLevelingSamples: sample(actualSlowLevelingRows),
     },
     moveCosts: {
       zeroCostMoves: moveCostRows.filter((row) => row.cost === 0),

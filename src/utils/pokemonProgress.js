@@ -1,7 +1,7 @@
 import { MOVES, MONSTERS, normalizeMovesForPokemonLevel } from './gameData'
 import { getOfficialExpToNextLevel } from './officialExperience'
 import { getEvolutionDueByLevel, getEvolutionTargetsAtLevel, getMovesLearnedAtLevel } from './pokemonGrowth'
-import { calculateStatsForLevel } from './pokemonStats'
+import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts } from './pokemonStats'
 
 const asPositiveInteger = (value) => {
   const number = Number(value)
@@ -131,9 +131,10 @@ const normalizeRuntimeKnownMoveKeys = (moves = []) => {
 }
 
 const getRuntimeMovesPreservingKnown = (baseMonster, moves = [], level = 1, options = {}) => {
-  const knownMoves = normalizeRuntimeKnownMoveKeys(moves)
-  if (knownMoves.length > 0) return knownMoves
-  return normalizeMovesForPokemonLevel(baseMonster, moves, level, options)
+  return normalizeMovesForPokemonLevel(baseMonster, moves, level, {
+    backfill: false,
+    ...options,
+  })
 }
 
 const getBaseStatsForLevel = (baseMonster) => (
@@ -175,10 +176,12 @@ const preserveCurrentMeter = (currentValue, previousMaxValue, nextMaxValue) => {
 }
 
 const refreshMonsterStatsForLevel = (baseMonster, mon, level) => {
-  const stats = calculateStatsForLevel(getBaseStatsForLevel(baseMonster), level)
+  const statBoosts = normalizeBaseStatBoosts(mon?.statBoosts)
+  const stats = calculateStatsForLevel(applyBaseStatBoosts(getBaseStatsForLevel(baseMonster), statBoosts), level)
   return {
     ...mon,
     ...stats,
+    statBoosts,
     level,
     moves: getRuntimeMovesPreservingKnown(baseMonster, mon?.moves, level, {
       preferBalancedWhenInvalid: true,
@@ -189,11 +192,13 @@ const refreshMonsterStatsForLevel = (baseMonster, mon, level) => {
 }
 
 const buildLeveledMonster = (baseMonster, previousMon, level, currentExp) => {
-  const stats = calculateStatsForLevel(getBaseStatsForLevel(baseMonster), level)
+  const statBoosts = normalizeBaseStatBoosts(previousMon?.statBoosts)
+  const stats = calculateStatsForLevel(applyBaseStatBoosts(getBaseStatsForLevel(baseMonster), statBoosts), level)
 
   return {
     ...baseMonster,
     ...stats,
+    statBoosts,
     id: previousMon?.id,
     baseId: baseMonster.id,
     level,
@@ -202,6 +207,11 @@ const buildLeveledMonster = (baseMonster, previousMon, level, currentExp) => {
     currentMp: stats.maxMp,
     currentExp: level >= 100 ? 0 : currentExp,
     expToNextLevel: getExpToNextLevel(level, baseMonster),
+    // 保留宝可梦的战斗异常状态（从 previousMon 继承，避免升级时丢失）
+    status: previousMon?.status ?? null,
+    statusTurns: previousMon?.statusTurns ?? 0,
+    volatileStatuses: previousMon?.volatileStatuses ?? {},
+    statStages: previousMon?.statStages ?? {},
   }
 }
 
@@ -209,7 +219,8 @@ export const simulateMonsterExpGain = (
   mon,
   xpAmount,
   getBaseMonsterDefinition = null,
-  existingPendingEvents = []
+  existingPendingEvents = [],
+  options = {}
 ) => {
   if (!mon) return { updatedMon: mon, events: [], levelUps: [] }
 
@@ -275,15 +286,20 @@ export const simulateMonsterExpGain = (
     if (evolvedBase) growthBase = evolvedBase
   }
 
-  // 安全计数器：防止无限循环导致浏览器卡死
   let safetyCounter = 0
-  const MAX_LEVEL_UPS_PER_GAIN = 50
+  const maxLevelUpsOption = Math.trunc(Number(options?.maxLevelUps))
+  const repairOverflowCap = hasExistingOverflow && safeXpAmount <= 0
+    ? Math.max(1, 100 - updatedMon.level)
+    : 50
+  const maxLevelUps = Number.isFinite(maxLevelUpsOption) && maxLevelUpsOption > 0
+    ? Math.min(100, maxLevelUpsOption)
+    : repairOverflowCap
 
   while (
     updatedMon.level < 100 &&
     Number.isFinite(updatedMon.expToNextLevel) &&
     updatedMon.currentExp >= updatedMon.expToNextLevel &&
-    safetyCounter < MAX_LEVEL_UPS_PER_GAIN
+    safetyCounter < maxLevelUps
   ) {
     safetyCounter++
 
@@ -306,7 +322,10 @@ export const simulateMonsterExpGain = (
     updatedMon = buildLeveledMonster(baseMonster, updatedMon, newLevel, nextExp)
 
     // 验证升级后的数据
-    if (!Number.isFinite(updatedMon.expToNextLevel) || updatedMon.expToNextLevel <= 0) {
+    if (
+      updatedMon.level < 100 &&
+      (!Number.isFinite(updatedMon.expToNextLevel) || updatedMon.expToNextLevel <= 0)
+    ) {
       console.error('[CRITICAL] Invalid expToNextLevel after level up', {
         level: newLevel,
         expToNextLevel: updatedMon.expToNextLevel
@@ -357,14 +376,19 @@ export const simulateMonsterExpGain = (
     }
   }
 
-  // 如果触发安全限制，记录错误
-  if (safetyCounter >= MAX_LEVEL_UPS_PER_GAIN) {
+  if (
+    updatedMon.level < 100 &&
+    Number.isFinite(updatedMon.expToNextLevel) &&
+    updatedMon.currentExp >= updatedMon.expToNextLevel &&
+    safetyCounter >= maxLevelUps
+  ) {
     console.error('[CRITICAL] Level up loop safety limit reached', {
       monId: mon.id,
       monName: mon.name,
       finalLevel: updatedMon.level,
       xpAmount,
-      safetyCounter
+      safetyCounter,
+      maxLevelUps
     })
   }
 
@@ -382,14 +406,18 @@ export const normalizeRosterExpProgress = ({
   const newEvents = []
   const levelUps = []
   const playerTeamResult = (Array.isArray(playerTeam) ? playerTeam : []).map((mon) => {
-    const result = simulateMonsterExpGain(mon, 0, getBaseMonsterDefinition, [...baseEvents, ...newEvents])
+    const result = simulateMonsterExpGain(mon, 0, getBaseMonsterDefinition, [...baseEvents, ...newEvents], {
+      maxLevelUps: 100,
+    })
     newEvents.push(...result.events)
     levelUps.push(...result.levelUps)
     return result.updatedMon
   })
 
   const storageBoxResult = (Array.isArray(storageBox) ? storageBox : []).map((mon) => (
-    simulateMonsterExpGain(mon, 0, getBaseMonsterDefinition, baseEvents).updatedMon
+    simulateMonsterExpGain(mon, 0, getBaseMonsterDefinition, baseEvents, {
+      maxLevelUps: 100,
+    }).updatedMon
   ))
 
   return {

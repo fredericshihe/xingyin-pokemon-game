@@ -126,6 +126,7 @@ await withViteAuditServer(async ({ loadModule }) => {
         dailyVariantLevelJitter: props.dailyVariantLevelJitter,
         bossTeamConfig: bossTeam,
         challengeRarePool: props.challengeRarePool,
+        challengeBattleGroups: props.challengeBattleGroups,
         enableDailyVariant: true,
       })
     }

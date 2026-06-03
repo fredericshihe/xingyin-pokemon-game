@@ -16,6 +16,7 @@ const SOURCE_FILE_RE = /\.(js|jsx|mjs|json|sql|md)$/
 const ASSET_REF_RE = /['"`](\/assets\/[^'"`\s)]+)['"`]/g
 const RASTER_IMAGE_RE = /\.(png|jpe?g|webp)$/i
 const SVG_IMAGE_RE = /\.svg$/i
+const CONCRETE_ASSET_FILE_RE = /\.[a-z0-9]+(?:[?#].*)?$/i
 
 const runtimeItemCatalogs = [
   ['POKEBALLS', POKEBALLS],
@@ -49,6 +50,7 @@ function findLiteralAssetRefs() {
       let match = null
       while ((match = ASSET_REF_RE.exec(text))) {
         const assetPath = match[1]
+        if (!CONCRETE_ASSET_FILE_RE.test(assetPath)) continue
         const list = refs.get(assetPath) || []
         list.push(path.relative(repoRoot, filePath))
         refs.set(assetPath, list)
@@ -60,7 +62,7 @@ function findLiteralAssetRefs() {
 }
 
 function getPublicAssetFilePath(publicAssetPath) {
-  return path.join(publicRoot, publicAssetPath.replace(/^\//, ''))
+  return path.join(publicRoot, publicAssetPath.split('?')[0].replace(/^\//, ''))
 }
 
 function fileExists(publicAssetPath) {
@@ -69,6 +71,7 @@ function fileExists(publicAssetPath) {
 
 function addAssetRef(refs, assetPath, usage) {
   if (!assetPath || typeof assetPath !== 'string') return
+  if (!CONCRETE_ASSET_FILE_RE.test(assetPath)) return
   const list = refs.get(assetPath) || []
   list.push(usage)
   refs.set(assetPath, list)

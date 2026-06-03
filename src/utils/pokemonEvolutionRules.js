@@ -32,6 +32,7 @@ export const LEVEL_ONLY_EVOLUTION_TARGET_LEVELS = {
   116: { 52: 20 },
   120: { 135: 20 },
   124: { 127: 30 },
+  168: { 201: 30 },
 }
 
 export const getLevelOnlyEvolutionTargetLevel = (baseMonsterId, targetId) => {

@@ -12,6 +12,7 @@ import { withViteAuditServer } from './load-vite-module.mjs'
 
 const MAX_CHAIN_BATTLES = 6
 const MIN_CHAIN_BATTLES = 3
+const CHALLENGE_BATTLE_GROUP_SIZES = [3, 4, 5, 6]
 const ITEM_CATALOGS = {
   pokeball: POKEBALLS,
   potion: POTIONS,
@@ -20,6 +21,7 @@ const ITEM_CATALOGS = {
 const RESERVED_LEGENDARY_DEX_NOS = new Set([144, 145, 146, 150, 151])
 const VARIANT_VICTORY_SAMPLES = [0, 1, 2, 3, 4, 8, 16, 80]
 const CHALLENGE_RARE_UNLOCK_STAGE_COUNT = 4
+const MIN_CHALLENGE_GUARDIAN_BATTLES = 3
 
 const errors = []
 const rows = []
@@ -128,7 +130,9 @@ const getChallengeRareUnlockedCountForStage = (totalCount, stage) => {
   const safeStage = Math.max(0, Math.min(stageCount, Math.trunc(Number(stage)) || 0))
   if (safeStage <= 0) return 0
   if (safeStage >= stageCount) return total
-  return Math.max(1, Math.min(total, Math.round((total * safeStage) / stageCount)))
+  const balancedCount = Math.round((total * safeStage) / stageCount)
+  const guardianFloor = MIN_CHALLENGE_GUARDIAN_BATTLES + safeStage - 1
+  return Math.max(1, Math.min(total, Math.max(balancedCount, guardianFloor)))
 }
 
 const getChallengeRareBatchSizes = (totalCount) => {
@@ -259,6 +263,7 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
   const rewards = Array.isArray(props.rewardItems) ? props.rewardItems : []
   const currentRewardValue = rewardValue(rewards)
   const rarePool = Array.isArray(props.challengeRarePool) ? props.challengeRarePool : []
+  const challengeBattleGroups = Array.isArray(props.challengeBattleGroups) ? props.challengeBattleGroups : []
   const minLevel = Math.max(1, Math.trunc(Number(config.minLevel ?? map.levelRange?.[0] ?? 1)) || 1)
   const maxLevel = Math.max(minLevel, Math.trunc(Number(config.maxLevel ?? map.levelRange?.[1] ?? minLevel)) || minLevel)
   const bossEvent = (map?.runtimeEvents || []).find((event) => event.type === 'boss')
@@ -275,23 +280,14 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
   if (maxChainBattles !== MAX_CHAIN_BATTLES) {
     errors.push(`${mapId}: maxChainBattles should be ${MAX_CHAIN_BATTLES}, got ${maxChainBattles}`)
   }
-  if (typeof props.completedText !== 'string' || !props.completedText.includes('明天凌晨刷新')) {
-    errors.push(`${mapId}: completed challenge text must explain next-day refresh`)
+  if (typeof props.completedText !== 'string' || !props.completedText.includes('可继续挑战')) {
+    errors.push(`${mapId}: completed challenge text must explain repeatable access`)
   }
-  if (typeof props.completedText !== 'string' || !props.completedText.includes('首通奖励不会重复')) {
-    errors.push(`${mapId}: completed challenge text must explain first-clear rewards do not repeat`)
+  if (typeof props.dailyDefeatedText !== 'string' || !props.dailyDefeatedText.includes('可继续挑战')) {
+    errors.push(`${mapId}: challenge repeat text must explain repeatable access`)
   }
-  if (typeof props.completedText !== 'string' || !props.completedText.includes('按批次')) {
-    errors.push(`${mapId}: completed challenge text must explain staged rare ecology unlocks`)
-  }
-  if (typeof props.dailyDefeatedText !== 'string' || !props.dailyDefeatedText.includes('明天凌晨刷新')) {
-    errors.push(`${mapId}: challenge repeat text must explain next-day refresh`)
-  }
-  if (typeof props.dailyDefeatedText !== 'string' || !props.dailyDefeatedText.includes('首通奖励不会重复')) {
-    errors.push(`${mapId}: challenge repeat text must explain first-clear rewards do not repeat`)
-  }
-  if (typeof props.dailyDefeatedText !== 'string' || !props.dailyDefeatedText.includes('按批次')) {
-    errors.push(`${mapId}: challenge repeat text must explain staged rare ecology unlocks`)
+  if (rarePool.length > 0 && (typeof props.challengeRareUnlockText !== 'string' || props.challengeRareUnlockText.trim().length === 0)) {
+    errors.push(`${mapId}: challenge must expose a concise rare ecology unlock hint`)
   }
   if (team.length < MIN_CHAIN_BATTLES || team.length > MAX_CHAIN_BATTLES) {
     errors.push(`${mapId}: challenge team size ${team.length} is outside ${MIN_CHAIN_BATTLES}-${MAX_CHAIN_BATTLES}`)
@@ -312,25 +308,56 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
   if (duplicateFirstClearRewardKeys.length > 0) {
     errors.push(`${mapId}: first-clear challenge rewards contain duplicate items: ${duplicateFirstClearRewardKeys.join(', ')}`)
   }
-  const maxRarePoolSize = getMaxRarePoolSize(chainLength)
+  const maxRarePoolSize = getMaxRarePoolSize(MAX_CHAIN_BATTLES)
   if (rarePool.length > maxRarePoolSize) {
-    errors.push(`${mapId}: ${chainLength}-chain trial rare ecology has ${rarePool.length} species, expected at most ${maxRarePoolSize}`)
+    errors.push(`${mapId}: fixed 3/4/5/6 trial rare ecology has ${rarePool.length} species, expected at most ${maxRarePoolSize}`)
   }
   const rareBatchSizes = getChallengeRareBatchSizes(rarePool.length)
   const rareBatchCount = rareBatchSizes.length
   if (rareBatchCount < 2) {
     errors.push(`${mapId}: challenge rare ecology must have multiple unlock batches, got ${rareBatchCount}`)
   }
-  const rareBatchSpread = rareBatchSizes.length > 0 ? Math.max(...rareBatchSizes) - Math.min(...rareBatchSizes) : 0
-  if (rareBatchSpread > 1) {
-    errors.push(`${mapId}: challenge rare batches are not balanced: ${rareBatchSizes.join('/')}`)
-  }
   if (rareBatchSizes.reduce((sum, size) => sum + size, 0) !== rarePool.length) {
     errors.push(`${mapId}: challenge rare batch sizes do not add up to rare pool size: ${rareBatchSizes.join('/')} vs ${rarePool.length}`)
+  }
+  for (let stage = 0; stage < Math.min(CHALLENGE_RARE_UNLOCK_STAGE_COUNT, rarePool.length); stage += 1) {
+    const requiredGuardianCount = Math.min(MAX_CHAIN_BATTLES, MIN_CHAIN_BATTLES + stage)
+    const cumulativeUnlockCount = getChallengeRareUnlockedCountForStage(rarePool.length, stage + 1)
+    if (cumulativeUnlockCount < Math.min(rarePool.length, requiredGuardianCount)) {
+      errors.push(`${mapId}: challenge rare unlock progress ${stage + 1} only exposes ${cumulativeUnlockCount} guardians for ${requiredGuardianCount}-battle repeat trials`)
+    }
   }
   if (props.teamSource !== 'challengeRarePool') {
     errors.push(`${mapId}: challenge teamSource should be challengeRarePool, got ${props.teamSource || 'missing'}`)
   }
+  if (challengeBattleGroups.length !== CHALLENGE_BATTLE_GROUP_SIZES.length) {
+    errors.push(`${mapId}: challenge must define exactly four fixed battle groups, got ${challengeBattleGroups.length}`)
+  }
+  challengeBattleGroups.forEach((group, index) => {
+    const groupTeam = Array.isArray(group?.team) ? group.team : Array.isArray(group) ? group : []
+    const expectedSize = CHALLENGE_BATTLE_GROUP_SIZES[index]
+    if (groupTeam.length !== expectedSize) {
+      errors.push(`${mapId}: fixed trial group ${index + 1} should be ${expectedSize} battles, got ${groupTeam.length}`)
+    }
+    const groupIds = groupTeam.map((member) => getEntryPokemonId(member)).filter(Number.isInteger)
+    const groupLevels = groupTeam.map((member) => Number(member.level)).filter(Number.isFinite)
+    if (new Set(groupIds).size !== groupIds.length) {
+      const duplicateGroupIds = groupIds.filter((pokemonId, memberIndex, all) => all.indexOf(pokemonId) !== memberIndex)
+      errors.push(`${mapId}: fixed trial group ${index + 1} contains duplicate Pokemon: ${[...new Set(duplicateGroupIds)].map(speciesName).join(', ')}`)
+    }
+    if (bossLevelCap && groupLevels.some((level) => level > bossLevelCap)) {
+      errors.push(`${mapId}: fixed trial group ${index + 1} exceeds boss cap Lv.${bossLevelCap}: ${groupLevels.join('/')}`)
+    }
+    const guardianPoolEnd = Math.max(
+      getChallengeRareUnlockedCountForStage(rarePool.length, index + 1),
+      expectedSize
+    )
+    const guardianPool = rarePool.slice(0, Math.min(rarePool.length, guardianPoolEnd))
+    const outsiderGroupMembers = groupTeam.filter((member) => !isTeamMemberFromRarePool(member, guardianPool))
+    if (guardianPool.length > 0 && outsiderGroupMembers.length > 0) {
+      errors.push(`${mapId}: fixed trial group ${index + 1} guardians must come from staged guardian pool: ${outsiderGroupMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
+    }
+  })
   const challengeTeamIds = team
     .map((member) => getEntryPokemonId(member))
     .filter(Number.isInteger)
@@ -429,6 +456,7 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
       mapWildPokemon: mapConfig?.wildPokemon,
       bossTeamConfig: bossTeam,
       challengeRarePool: rarePool,
+      challengeBattleGroups,
       enableDailyVariant: true
     })
     const variantLevels = variantTeam.map((member) => Number(member.level)).filter(Number.isFinite)
@@ -438,11 +466,9 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     if (victoryCount === 0) initialVariantTeamSize = variantTeam.length
     maxVariantTeamSize = Math.max(maxVariantTeamSize, variantTeam.length)
     if (variantLevels.length > 0) maxVariantLevel = Math.max(maxVariantLevel, ...variantLevels)
-    if (victoryCount <= 3) {
-      const expectedTeamSize = Math.min(MAX_CHAIN_BATTLES, MIN_CHAIN_BATTLES + victoryCount)
-      if (variantTeam.length !== expectedTeamSize) {
-        errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} should be ${expectedTeamSize} battles, got ${variantTeam.length}`)
-      }
+    const expectedTeamSize = CHALLENGE_BATTLE_GROUP_SIZES[Math.min(CHALLENGE_BATTLE_GROUP_SIZES.length - 1, victoryCount)]
+    if (variantTeam.length !== expectedTeamSize) {
+      errors.push(`${mapId}: fixed trial victoryCount ${victoryCount} should use ${expectedTeamSize} battles, got ${variantTeam.length}`)
     }
     if (variantTeam.length < roleBalance.minTeamSize || variantTeam.length > MAX_CHAIN_BATTLES || variantTeam.length > roleBalance.maxTeamSize) {
       errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} team size out of range: ${variantTeam.length}`)
@@ -463,13 +489,14 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
       if (outsiderVariantMembers.length > 0) {
         errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} contains species outside unlock pool families: ${outsiderVariantMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
       }
-      const unlockBatch = rarePool.slice(
-        getChallengeRareUnlockedCountForStage(rarePool.length, victoryCount),
-        getChallengeRareUnlockedCountForStage(rarePool.length, victoryCount + 1)
+      const guardianPoolEnd = Math.max(
+        getChallengeRareUnlockedCountForStage(rarePool.length, victoryCount + 1),
+        variantTeam.length
       )
-      const outsiderBatchMembers = variantTeam.filter((member) => !isTeamMemberFromRarePool(member, unlockBatch))
-      if (unlockBatch.length > 0 && outsiderBatchMembers.length > 0) {
-        errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} guardians must match unlock batch: ${outsiderBatchMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
+      const guardianPool = rarePool.slice(0, Math.min(rarePool.length, guardianPoolEnd))
+      const outsiderBatchMembers = variantTeam.filter((member) => !isTeamMemberFromRarePool(member, guardianPool))
+      if (guardianPool.length > 0 && outsiderBatchMembers.length > 0) {
+        errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} guardians must come from current staged guardian pool: ${outsiderBatchMembers.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
       }
     }
     if (challengeDistinctFamilyCount >= variantIds.length) {
@@ -527,6 +554,9 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     mapId,
     title: props.title || '区域试炼',
     teamSize: team.length,
+    fixedGroupSizes: challengeBattleGroups
+      .map((group) => (Array.isArray(group?.team) ? group.team : Array.isArray(group) ? group : []).length)
+      .join('/'),
     initialRepeatSize: initialVariantTeamSize,
     rareBatchCount,
     rareBatchSizes: rareBatchSizes.join('/'),

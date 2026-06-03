@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-06-01T23:48:08.929Z",
+  "args": {
+    "baseUrl": "http://127.0.0.1:4173",
+    "durationMs": 2000,
+    "warmupMs": 800,
+    "readyTimeoutMs": 60000,
+    "mapQuality": "high",
+    "mapSet": "all",
+    "maps": [
+      "GodotMapV2"
+    ],
+    "devices": [
+      "iphone_se"
+    ],
+    "cpuThrottle": false,
+    "outDir": "/Users/shihe/Documents/宝可梦养成/reports/mobile-map-performance"
+  },
+  "maps": [
+    "GodotMapV2"
+  ],
+  "devices": [
+    {
+      "id": "iphone_se",
+      "label": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 4
+    }
+  ],
+  "results": [
+    {
+      "mapId": "GodotMapV2",
+      "mapName": "星音草径",
+      "deviceId": "iphone_se",
+      "deviceLabel": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 1,
+      "mapQuality": "high",
+      "error": "Map canvas/performance probe did not become ready",
+      "browserErrors": [],
+      "networkFailures": [],
+      "assetFailures": [],
+      "diagnostics": {
+        "href": "http://127.0.0.1:4173/map-runtime-preview?map=GodotMapV2&perf=1&mapQuality=high",
+        "title": "宝可梦养成游戏",
+        "bodyText": "星音学院\n星音宝可梦\n\nXINGYIN POKEMON JOURNEY\n\n欢迎回来\n登录账号\n\n输入老师表中记录的用户名和密码。\n\n用户名\n密码\n登录\n还没有账号？\n立即注册",
+        "canvas": null,
+        "perfProbe": null
+      },
+      "status": "FAIL"
+    }
+  ]
+}

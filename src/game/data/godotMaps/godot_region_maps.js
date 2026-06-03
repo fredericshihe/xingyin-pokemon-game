@@ -1,7 +1,10 @@
 import { MONSTERS } from '../../../utils/gameData.js'
 import { isLevelValidForSpecies } from '../../../utils/wildEncounterRules.js'
 import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from '../../../utils/pokemonFamilyVariety.js'
-import { buildChallengeBattleTeamFromUnlockBatch } from '../../../utils/challengeRareUnlock.js'
+import {
+  CHALLENGE_BATTLE_GROUP_SIZES,
+  buildChallengeBattleTeamFromUnlockBatch
+} from '../../../utils/challengeRareUnlock.js'
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
 import { getMapEventTile } from '../mapEventTypes.js'
 import { MAP_ASSET_CATALOG } from '../mapAssetCatalog.js'
@@ -721,7 +724,7 @@ function addThemeCorridorScatter({
   })
 }
 const DEFAULT_BOSS_RARE_CHANCE = 0.18
-const DEFAULT_CHALLENGE_RARE_CHANCE = 0.3
+const DEFAULT_CHALLENGE_RARE_CHANCE = 0.4
 const SIGN_FACE_ROTATIONS = {
   up: 0,
   down: Math.PI,
@@ -1049,6 +1052,114 @@ function fastTravel(id, mapId, label) {
 function sign(id, x, y, message) {
   return event('sign', id, x, y, {
     properties: { message }
+  })
+}
+
+const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
+const HIDDEN_ENCOUNTER_GATE_COST = 100
+
+function isHiddenEncounterGateEvent(evt) {
+  return evt?.type === 'sign' && evt?.properties?.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
+}
+
+function hiddenEncounterGate(id, x, y, {
+  hiddenZoneId,
+  hiddenZoneName,
+  message,
+  interactionObjectName = '入口标记',
+  gateTheme = 'meadow',
+  pathAxis = 'vertical',
+  treeType = 'nature_tree_oak',
+  cost = HIDDEN_ENCOUNTER_GATE_COST,
+  openTile = TILE.road,
+  exclusiveRareCount = 3
+} = {}) {
+  const safeZoneName = hiddenZoneName || '隐藏遭遇区'
+  const safeCost = Math.max(1, Math.trunc(Number(cost)) || HIDDEN_ENCOUNTER_GATE_COST)
+  const safeExclusiveRareCount = Math.max(1, Math.trunc(Number(exclusiveRareCount)) || 3)
+  const safeInteractionObjectName = typeof interactionObjectName === 'string' && interactionObjectName.trim().length > 0
+    ? interactionObjectName.trim()
+    : '入口标记'
+  const safeMessage = typeof message === 'string' && message.length > 0
+    ? message
+    : `调查${safeInteractionObjectName}，支付 ${safeCost} 金币开启${safeZoneName}。里面有 ${safeExclusiveRareCount} 只专属强力稀有宝可梦。`
+  return event('sign', id, x, y, {
+    properties: {
+      message: safeMessage,
+      interactionKind: HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND,
+      hiddenZoneId,
+      hiddenZoneName: safeZoneName,
+      interactionObjectName: safeInteractionObjectName,
+      label: `${safeZoneName}入口`,
+      goldCost: safeCost,
+      gateTheme,
+      pathAxis,
+      treeType,
+      openTile,
+      unlockTitle: `开启${safeZoneName}`,
+      exclusiveRareCount: safeExclusiveRareCount,
+      unlockDescription: `调查${safeInteractionObjectName}并支付 ${safeCost} 金币，就能永久打开通往${safeZoneName}的路。里面有 ${safeExclusiveRareCount} 只专属强力稀有宝可梦，名字要进入后亲自发现。`,
+      unlockSuccessText: `${safeZoneName}的隐秘通路已经打开。`,
+      lockedReason: `${safeZoneName}还没有开启。调查${safeInteractionObjectName}，支付 ${safeCost} 金币开路；里面藏着 ${safeExclusiveRareCount} 只专属强力稀有宝可梦。`,
+      unlockFlag: `hidden_gate:${hiddenZoneId || id}`
+    }
+  })
+}
+
+function rewardTrainer(id, x, y, {
+  name,
+  title,
+  facing = 'down',
+  beforeBattleText,
+  defeatedText,
+  team = [],
+  rewardItems = []
+}) {
+  return event('trainer', id, x, y, {
+    properties: {
+      role: 'reward',
+      facing,
+      name,
+      title,
+      difficultyLabel: '奖励挑战 NPC · 首胜奖励',
+      battleTier: 'reward',
+      battleStyle: 'reward',
+      team,
+      beforeBattleText,
+      defeatedText,
+      completedText: defeatedText,
+      dailyDefeatedText: defeatedText,
+      rewardItems
+    }
+  })
+}
+
+function minigameTrainer(id, x, y, {
+  name,
+  title,
+  facing = 'down',
+  beforeBattleText,
+  ruleDescription,
+  defeatedText,
+  team = []
+}) {
+  return event('trainer', id, x, y, {
+    properties: {
+      role: 'minigame',
+      facing,
+      name,
+      title,
+      difficultyLabel: '循环小游戏 · 金币训练',
+      battleTier: 'minigame',
+      battleStyle: 'minigame',
+      team,
+      beforeBattleText,
+      ruleDescription,
+      defeatedText,
+      completedText: defeatedText,
+      dailyDefeatedText: defeatedText,
+      rewardItems: []
+    }
   })
 }
 
@@ -1583,9 +1694,13 @@ function isInsideBridgeFootprint(bridge, x, y, padding = 0.35) {
 
 function filterBridgeSurfaceDecorations(decorations, bridges) {
   if (!Array.isArray(bridges) || bridges.length === 0) return decorations
-  return decorations.filter((object) => !bridges.some((bridge) => (
-    isInsideBridgeFootprint(bridge, Number(object.x), Number(object.y))
-  )))
+  return decorations.filter((object) => {
+    if (isHiddenZoneRuleDecoration(object)) return true
+    const sourceId = String(object?.sourceId || '')
+    const isDecorativeEventAccent = sourceId.includes('_accent_') || isLowVegetationDecoration(object)
+    if (isRuntimeEventDecoration(object) && !isDecorativeEventAccent) return true
+    return !decorationOverlapsAnyBridge(object, bridges, 0.35)
+  })
 }
 
 const FIXED_LANDMARK_CLEARANCE_RADIUS = {
@@ -1608,7 +1723,7 @@ function filterFixedLandmarkOverlaps(decorations, runtimeEvents) {
   if (landmarks.length === 0) return decorations
 
   return decorations.filter((object) => {
-    if (object?.eventType === 'heal' || object?.eventType === 'challenge') return true
+    if (isRuntimeEventDecoration(object)) return true
     const x = Number(object?.x)
     const y = Number(object?.y)
     if (!Number.isFinite(x) || !Number.isFinite(y)) return true
@@ -1703,6 +1818,43 @@ function filterRuntimeEventTileOverlaps(decorations, runtimeEvents) {
     return !eventKeys.has(`${x},${y}`)
   })
 }
+
+const ROAD_SURFACE_TILES = new Set([TILE.road, TILE.bridge, TILE.exit])
+const ROAD_SURFACE_DECORATION_ALLOWED_TILES = new Set([TILE.grass, TILE.sand, TILE.flowers, TILE.paleGrass])
+const ROAD_SURFACE_WATER_FRIENDLY_TYPES = new Set([
+  'nature_canoe',
+  'nature_lily_large',
+  'wetland_reed_clump',
+  'shore_dock_small',
+  'shore_rowboat',
+  'pirate_boat_row_large',
+  'pirate_ship_wreck',
+  'hex_water_rocks',
+  'hex_building_dock',
+  'hex_bridge'
+])
+
+function buildRoadSurfaceNudgeOffsets(maxRadius = 7) {
+  const offsets = []
+
+  for (let dy = -maxRadius; dy <= maxRadius; dy += 1) {
+    for (let dx = -maxRadius; dx <= maxRadius; dx += 1) {
+      if (dx === 0 && dy === 0) continue
+      const manhattan = Math.abs(dx) + Math.abs(dy)
+      const euclidean = Math.hypot(dx, dy)
+      offsets.push({
+        dx,
+        dy,
+        score: manhattan * 10 + euclidean + (dx === 0 || dy === 0 ? 0 : 0.35)
+      })
+    }
+  }
+
+  offsets.sort((left, right) => left.score - right.score || left.dy - right.dy || left.dx - right.dx)
+  return offsets.map(({ dx, dy }) => [dx, dy])
+}
+
+const ROAD_SURFACE_NUDGE_OFFSETS = buildRoadSurfaceNudgeOffsets()
 
 const DECORATIVE_ASSET_ALIASES = {
   'grass-small': 'nature_grass_small',
@@ -1974,11 +2126,41 @@ function isRuntimeEventDecoration(object) {
   return Boolean(object?.eventId || object?.eventType || object?.fixedSceneEventType)
 }
 
+function isHiddenZoneEdgeRemovableRuntimeAccent(object) {
+  return (
+    object?.fixedSceneEventType === 'item' &&
+    typeof object?.sourceId === 'string' &&
+    object.sourceId.includes('_pickup_accent_')
+  )
+}
+
+function isHiddenZonePerimeterDecoration(object) {
+  return object?.hiddenZonePerimeter === true
+}
+
+function isHiddenZoneCornerDecoration(object) {
+  return object?.hiddenZoneCorner === true
+}
+
+function isHiddenGateEntranceBlockerDecoration(object) {
+  return object?.hiddenGateEntranceBlocker === true
+}
+
+function isHiddenZoneRuleDecoration(object) {
+  return (
+    isHiddenZonePerimeterDecoration(object) ||
+    isHiddenZoneCornerDecoration(object) ||
+    isHiddenGateEntranceBlockerDecoration(object)
+  )
+}
+
 function isPathBlockingDecoration(object) {
   if (isRuntimeEventDecoration(object)) return false
-  if (object?.blocksPath === false) return false
+  if (isHiddenZonePerimeterDecoration(object)) return false
+  if (isHiddenZoneCornerDecoration(object)) return false
   const asset = getDecorationAssetMeta(object?.type)
   return Boolean(
+    object?.forcePathBlocking ||
     DECORATIVE_FOOTPRINT_OVERRIDES[object?.type] ||
     PATH_BLOCKING_DECORATION_TYPES.has(object?.type) ||
     asset?.defaultBlocking
@@ -1997,7 +2179,7 @@ function getDecorationFootprint(object, padding = 0) {
   }
 }
 
-function isInsideDecorationFootprint(object, x, y, padding = 0) {
+export function isInsideDecorationFootprint(object, x, y, padding = 0) {
   const centerX = Number(object?.x)
   const centerY = Number(object?.y)
   if (!Number.isFinite(centerX) || !Number.isFinite(centerY)) return false
@@ -2036,6 +2218,249 @@ function getDecorationFootprintCells(object, padding = 0) {
   }
 
   return cells
+}
+
+function doDecorationFootprintsOverlap(left, right, padding = 0.08) {
+  if (!left || !right) return false
+  const leftX = Number(left?.x)
+  const leftY = Number(left?.y)
+  const rightX = Number(right?.x)
+  const rightY = Number(right?.y)
+  if (
+    !Number.isFinite(leftX) ||
+    !Number.isFinite(leftY) ||
+    !Number.isFinite(rightX) ||
+    !Number.isFinite(rightY)
+  ) {
+    return false
+  }
+
+  if (isInsideDecorationFootprint(left, rightX, rightY, padding)) return true
+  if (isInsideDecorationFootprint(right, leftX, leftY, padding)) return true
+
+  return (
+    getDecorationFootprintCells(left, padding).some((cell) => isInsideDecorationFootprint(right, cell.x, cell.y, padding)) ||
+    getDecorationFootprintCells(right, padding).some((cell) => isInsideDecorationFootprint(left, cell.x, cell.y, padding))
+  )
+}
+
+function decorationOverlapsAnyDecoration(object, decorations, padding = 0.08) {
+  if (!Array.isArray(decorations) || decorations.length === 0) return false
+  return decorations.some((candidate) => (
+    candidate !== object &&
+    doDecorationFootprintsOverlap(object, candidate, padding)
+  ))
+}
+
+function decorationCentersDistance(left, right) {
+  const leftX = Number(left?.x)
+  const leftY = Number(left?.y)
+  const rightX = Number(right?.x)
+  const rightY = Number(right?.y)
+  if (
+    !Number.isFinite(leftX) ||
+    !Number.isFinite(leftY) ||
+    !Number.isFinite(rightX) ||
+    !Number.isFinite(rightY)
+  ) {
+    return Infinity
+  }
+  return Math.hypot(leftX - rightX, leftY - rightY)
+}
+
+function decorationOverlapsAnyBridge(object, bridges, padding = 0.18) {
+  if (!Array.isArray(bridges) || bridges.length === 0) return false
+  const centerX = Number(object?.x)
+  const centerY = Number(object?.y)
+  const footprintCells = getDecorationFootprintCells(object, padding)
+
+  return bridges.some((bridge) => (
+    (Number.isFinite(centerX) && Number.isFinite(centerY) && isInsideBridgeFootprint(bridge, centerX, centerY, padding)) ||
+    footprintCells.some((cell) => isInsideBridgeFootprint(bridge, cell.x, cell.y, padding))
+  ))
+}
+
+function isRoadSurfaceTile(tile) {
+  return ROAD_SURFACE_TILES.has(tile)
+}
+
+function decorationOverlapsRoadSurface(object, grid, padding = 0.08) {
+  const centerX = Math.round(Number(object?.x))
+  const centerY = Math.round(Number(object?.y))
+  if (inBounds(centerX, centerY) && isRoadSurfaceTile(grid[centerY]?.[centerX])) return true
+
+  return getDecorationFootprintCells(object, padding)
+    .some((cell) => isRoadSurfaceTile(grid[cell.y]?.[cell.x]))
+}
+
+function collectRuntimeEventTileKeys(runtimeEvents) {
+  return new Set(
+    (runtimeEvents || [])
+      .map((event) => {
+        const x = Math.trunc(Number(event.position?.x))
+        const y = Math.trunc(Number(event.position?.y))
+        return inBounds(x, y) ? `${x},${y}` : null
+      })
+      .filter(Boolean)
+  )
+}
+
+function translateDecoration(object, dx, dy) {
+  const x = Number(object?.x)
+  const y = Number(object?.y)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return object
+
+  return {
+    ...object,
+    x: Number((x + dx).toFixed(2)),
+    y: Number((y + dy).toFixed(2))
+  }
+}
+
+function canPlaceDecorationOffRoad(object, grid, eventTileKeys, padding = 0.08) {
+  const allowWater = ROAD_SURFACE_WATER_FRIENDLY_TYPES.has(object?.type)
+  const footprintCells = getDecorationFootprintCells(object, padding)
+  if (footprintCells.length === 0) return false
+
+  return footprintCells.every((cell) => {
+    const tile = grid[cell.y]?.[cell.x]
+    if (isRoadSurfaceTile(tile)) return false
+    if (eventTileKeys.has(`${cell.x},${cell.y}`)) return false
+    if (tile === TILE.water) return allowWater
+    return ROAD_SURFACE_DECORATION_ALLOWED_TILES.has(tile)
+  })
+}
+
+function shouldPreserveRoadSurfaceDecoration(object) {
+  return Boolean(object?.preserveRoadPosition)
+}
+
+function relocateRoadSurfaceDecoration(object, grid, eventTileKeys) {
+  if (shouldPreserveRoadSurfaceDecoration(object)) return object
+  if (!decorationOverlapsRoadSurface(object, grid)) return object
+
+  for (const [dx, dy] of ROAD_SURFACE_NUDGE_OFFSETS) {
+    const candidate = translateDecoration(object, dx, dy)
+    if (canPlaceDecorationOffRoad(candidate, grid, eventTileKeys)) return candidate
+  }
+
+  return object
+}
+
+function relocateRoadSurfaceDecorationGroup(group, grid, eventTileKeys) {
+  if (!Array.isArray(group) || group.length === 0) {
+    return { decorations: [], shift: null }
+  }
+
+  const relocatableGroup = group.filter((object) => !shouldPreserveRoadSurfaceDecoration(object))
+  const overlapsRoad = relocatableGroup.some((object) => decorationOverlapsRoadSurface(object, grid))
+  if (!overlapsRoad) {
+    return { decorations: group, shift: null }
+  }
+
+  const groupEvent = group.find((object) => typeof object?.eventId === 'string' && object.eventId.length > 0) || null
+  const ownEventKey = groupEvent ? `${Math.trunc(Number(groupEvent.x))},${Math.trunc(Number(groupEvent.y))}` : null
+  const searchEventKeys = new Set(eventTileKeys || [])
+  if (ownEventKey) searchEventKeys.delete(ownEventKey)
+
+  for (const [dx, dy] of ROAD_SURFACE_NUDGE_OFFSETS) {
+    const candidateGroup = group.map((object) => (
+      shouldPreserveRoadSurfaceDecoration(object) ? object : translateDecoration(object, dx, dy)
+    ))
+    const canPlace = candidateGroup.every((object) => (
+      shouldPreserveRoadSurfaceDecoration(object) ||
+      canPlaceDecorationOffRoad(object, grid, searchEventKeys)
+    ))
+    if (!canPlace) continue
+    return {
+      decorations: candidateGroup,
+      shift: { dx, dy }
+    }
+  }
+
+  return { decorations: group, shift: null }
+}
+
+function relocateRoadSurfaceDecorations(decorations, grid, runtimeEvents) {
+  if (!Array.isArray(decorations) || decorations.length === 0) return decorations
+  const eventTileKeys = collectRuntimeEventTileKeys(runtimeEvents)
+  return decorations.map((object) => relocateRoadSurfaceDecoration(object, grid, eventTileKeys))
+}
+
+function filterRoadSurfaceDecorations(decorations, grid) {
+  return (decorations || []).filter((object) => shouldPreserveRoadSurfaceDecoration(object) || !decorationOverlapsRoadSurface(object, grid))
+}
+
+export function cleanupRoadSurfaceDecorationsWithShifts(decorations, grid, runtimeEvents) {
+  const eventTileKeys = collectRuntimeEventTileKeys(runtimeEvents)
+  const groupedDecorations = new Map()
+  const looseDecorations = []
+
+  ;(decorations || []).forEach((object) => {
+    const eventId = typeof object?.eventId === 'string' && object.eventId.length > 0 ? object.eventId : null
+    if (!eventId) {
+      looseDecorations.push(object)
+      return
+    }
+    if (!groupedDecorations.has(eventId)) groupedDecorations.set(eventId, [])
+    groupedDecorations.get(eventId).push(object)
+  })
+
+  const cleanedDecorations = []
+  const eventShifts = new Map()
+
+  groupedDecorations.forEach((group, eventId) => {
+    const { decorations: shiftedGroup, shift } = relocateRoadSurfaceDecorationGroup(group, grid, eventTileKeys)
+    cleanedDecorations.push(...shiftedGroup)
+    if (shift && !group.some((object) => shouldPreserveRoadSurfaceDecoration(object))) {
+      eventShifts.set(eventId, shift)
+    }
+  })
+
+  const relocatedLooseDecorations = relocateRoadSurfaceDecorations(looseDecorations, grid, runtimeEvents)
+  cleanedDecorations.push(...filterRoadSurfaceDecorations(relocatedLooseDecorations, grid))
+
+  return {
+    decorations: cleanedDecorations,
+    eventShifts
+  }
+}
+
+export function cleanupRoadSurfaceDecorations(decorations, grid, runtimeEvents) {
+  return cleanupRoadSurfaceDecorationsWithShifts(decorations, grid, runtimeEvents).decorations
+}
+
+export function collectRoadSurfaceDecorationOverlapEntries(mapInfo) {
+  if (!mapInfo?.mapGrid || !Array.isArray(mapInfo?.decorativeObjects)) return []
+
+  return mapInfo.decorativeObjects
+    .filter((object) => decorationOverlapsRoadSurface(object, mapInfo.mapGrid))
+    .map((object) => ({
+      sourceId: object?.sourceId || null,
+      type: object?.type || null,
+      x: Number(object?.x),
+      y: Number(object?.y),
+      eventType: object?.eventType || object?.fixedSceneEventType || null
+    }))
+}
+
+export function applyRoadSurfaceEventShifts(runtimeEvents, eventShifts) {
+  if (!(eventShifts instanceof Map) || eventShifts.size === 0) return runtimeEvents
+  return (runtimeEvents || []).map((event) => {
+    const shift = typeof event?.id === 'string' ? eventShifts.get(event.id) : null
+    if (!shift) return event
+    const x = Number(event.position?.x)
+    const y = Number(event.position?.y)
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return event
+    return {
+      ...event,
+      position: {
+        ...event.position,
+        x: Number((x + shift.dx).toFixed(2)),
+        y: Number((y + shift.dy).toFixed(2))
+      }
+    }
+  })
 }
 
 function decorationTouchesBlockedRuntimeTiles(grid, object, padding = 0) {
@@ -2446,7 +2871,10 @@ function paintBlockingDecorationFootprints(grid, decorations, runtimeEvents) {
     getDecorationFootprintCells(object, 0.08).forEach((cell) => {
       if (eventKeys.has(`${cell.x},${cell.y}`)) return
       const tile = grid[cell.y]?.[cell.x]
-      if (DECORATION_BLOCKER_PROTECTED_TILES.has(tile)) return
+      const shouldProtectTile = object?.forcePathBlocking
+        ? [TILE.exit, TILE.heal, TILE.sign, TILE.water].includes(tile)
+        : DECORATION_BLOCKER_PROTECTED_TILES.has(tile)
+      if (shouldProtectTile) return
       grid[cell.y][cell.x] = TILE.objectBlocker
     })
   })
@@ -2454,6 +2882,7 @@ function paintBlockingDecorationFootprints(grid, decorations, runtimeEvents) {
 
 function filterBlockedLowVegetationDecorations(decorations, grid) {
   return (decorations || []).filter((object) => {
+    if (isHiddenZoneRuleDecoration(object)) return true
     if (isRuntimeEventDecoration(object)) return true
     if (!isLowVegetationDecoration(object)) return true
 
@@ -2469,6 +2898,97 @@ const EVENT_ACCESS_STEP_TYPES = new Set(['item', 'pickup', FAST_TRAVEL_EVENT_TYP
 const EVENT_ACCESS_ADJACENT_TYPES = new Set(['warp', 'heal', 'sign', 'info', 'trainer', 'boss', 'challenge'])
 const EVENT_ACCESS_TYPES = new Set([...EVENT_ACCESS_STEP_TYPES, ...EVENT_ACCESS_ADJACENT_TYPES])
 const OPEN_GROUND_TILES = new Set([TILE.grass, TILE.sand, TILE.flowers, TILE.paleGrass])
+const HEAL_EVENT_MIN_ROAD_DISTANCE = 1.35
+const HEAL_EVENT_SEARCH_RADIUS = 8
+
+function isInsideEncounterZoneBounds(definition, x, y, padding = 0) {
+  return (definition.encounterZones || []).some((zone) => (
+    x >= zone.x - padding &&
+    x < zone.x + zone.width + padding &&
+    y >= zone.y - padding &&
+    y < zone.y + zone.height + padding
+  ))
+}
+
+function shouldRelocateHealEvent(definition, layoutGrid, event) {
+  const x = Math.trunc(Number(event?.position?.x))
+  const y = Math.trunc(Number(event?.position?.y))
+  if (!inBounds(x, y)) return false
+  const tile = layoutGrid[y]?.[x]
+  return (
+    isRoadOrBridgeTile(tile) ||
+    distanceToRoadPaths(x, y, definition) <= HEAL_EVENT_MIN_ROAD_DISTANCE ||
+    isInsideEncounterZoneBounds(definition, x, y, 0)
+  )
+}
+
+function findRoadsideHealPosition(definition, layoutGrid, event, occupiedKeys) {
+  const originX = Math.trunc(Number(event?.position?.x))
+  const originY = Math.trunc(Number(event?.position?.y))
+  if (!inBounds(originX, originY)) return null
+
+  const candidates = []
+  for (let y = Math.max(1, originY - HEAL_EVENT_SEARCH_RADIUS); y < Math.min(HEIGHT - 1, originY + HEAL_EVENT_SEARCH_RADIUS + 1); y += 1) {
+    for (let x = Math.max(1, originX - HEAL_EVENT_SEARCH_RADIUS); x < Math.min(WIDTH - 1, originX + HEAL_EVENT_SEARCH_RADIUS + 1); x += 1) {
+      if (occupiedKeys.has(`${x},${y}`)) continue
+      if (!OPEN_GROUND_TILES.has(layoutGrid[y]?.[x])) continue
+      if (!hasAdjacentRoadTile(layoutGrid, x, y)) continue
+      if (isInsideEncounterZoneBounds(definition, x, y, 0)) continue
+      if (isInsideDefinedWater(definition, x, y, 0.85)) continue
+
+      const roadDistance = distanceToRoadPaths(x, y, definition)
+      if (roadDistance <= HEAL_EVENT_MIN_ROAD_DISTANCE) continue
+      const manhattan = Math.abs(x - originX) + Math.abs(y - originY)
+      candidates.push({
+        x,
+        y,
+        score:
+          manhattan * 12 +
+          Math.abs(roadDistance - 2.15) * 3 +
+          seededRandom(x, y, 1511)
+      })
+    }
+  }
+
+  candidates.sort((left, right) => left.score - right.score || left.y - right.y || left.x - right.x)
+  return candidates[0] || null
+}
+
+function relocateRoadSurfaceHealEvents(definition, runtimeEvents) {
+  const layoutGrid = buildRoadsideLayoutGrid(definition)
+  const occupiedKeys = new Set(
+    (runtimeEvents || [])
+      .filter((event) => event?.type !== 'heal')
+      .map((event) => {
+        const x = Math.trunc(Number(event?.position?.x))
+        const y = Math.trunc(Number(event?.position?.y))
+        return inBounds(x, y) ? `${x},${y}` : null
+      })
+      .filter(Boolean)
+  )
+
+  return (runtimeEvents || []).map((event) => {
+    if (event?.type !== 'heal') return event
+    if (!shouldRelocateHealEvent(definition, layoutGrid, event)) {
+      const x = Math.trunc(Number(event.position?.x))
+      const y = Math.trunc(Number(event.position?.y))
+      if (inBounds(x, y)) occupiedKeys.add(`${x},${y}`)
+      return event
+    }
+
+    const position = findRoadsideHealPosition(definition, layoutGrid, event, occupiedKeys)
+    if (!position) return event
+    occupiedKeys.add(`${position.x},${position.y}`)
+    return {
+      ...event,
+      position: {
+        ...event.position,
+        x: position.x,
+        y: position.y
+      }
+    }
+  })
+}
 
 function isProtectedOpenGround(grid, definition, runtimeEvents, x, y) {
   const start = definition.startPosition || { x: 1, y: 1 }
@@ -2800,6 +3320,27 @@ function addProfileClearancePoints(clearancePoints, positions, radius) {
   }
 }
 
+function isInsideHiddenEncounterZoneEdgeBuffer(definition, x, y, padding = 1) {
+  return (definition.encounterZones || []).some((zone) => (
+    zone?.depth === 'deep' &&
+    x >= zone.x - padding &&
+    x < zone.x + zone.width + padding &&
+    y >= zone.y - padding &&
+    y < zone.y + zone.height + padding
+  ))
+}
+
+function isInsideHiddenGateEntranceClearance(definition, x, y, radius = 1.8) {
+  return (definition.runtimeEvents || [])
+    .filter((eventEntry) => isHiddenEncounterGateEvent(eventEntry))
+    .some((eventEntry) => {
+      const eventX = Number(eventEntry?.position?.x)
+      const eventY = Number(eventEntry?.position?.y)
+      if (!Number.isFinite(eventX) || !Number.isFinite(eventY)) return false
+      return Math.hypot(x - eventX, y - eventY) < radius
+    })
+}
+
 function resolveCharacterAnchor(
   definition,
   layoutGrid,
@@ -2824,6 +3365,8 @@ function resolveCharacterAnchor(
     if (!inBounds(x, y)) return
     const key = `${x},${y}`
     if (usedKeys.has(key)) return
+    if (isInsideHiddenEncounterZoneEdgeBuffer(definition, x, y, 1)) return
+    if (isInsideHiddenGateEntranceClearance(definition, x, y)) return
     const tile = layoutGrid[y]?.[x]
     if (!CHARACTER_STANDING_TILES.has(tile) && !(allowTallGrass && tile === TILE.tallGrass)) return
     if (!hasAdjacentInteractionTile(layoutGrid, x, y)) return
@@ -3225,8 +3768,21 @@ const PICKUP_PLACEMENT_AFFINITY_BY_MAP = {
 }
 
 const PINNED_PICKUP_ANCHORS_BY_MAP = {
+  GodotMapV2: {
+    6: [8, 24]
+  },
+  GodotMapV2_PirateShore: {
+    7: [24, 29]
+  },
+  GodotMapV2_HexRuins: {
+    5: [5, 24]
+  },
   GodotMapV2_BossHighland: {
-    3: [21, 28]
+    1: [30, 15],
+    2: [7, 24],
+    3: [21, 28],
+    4: [29, 23],
+    5: [37, 18]
   }
 }
 
@@ -3312,6 +3868,7 @@ export function buildThemedPickupDecorations(definition, evt, pickupIndex) {
     scale: Number((mainScale + hiddenNudge).toFixed(2)),
     height: mainHeight,
     rotation: scene.rotation ?? 0.2,
+    preserveRoadPosition: true,
     sourceId: `${evt.id}_pickup_main`,
     eventId: evt.id,
     eventType: evt.type
@@ -3325,6 +3882,7 @@ export function buildThemedPickupDecorations(definition, evt, pickupIndex) {
     height: accent.height ?? 0.16,
     rotation: accent.rotation ?? Number((seededRandom(x + accentIndex, y, 880 + pickupIndex) * Math.PI * 2).toFixed(4)),
     sourceId: `${evt.id}_pickup_accent_${accentIndex + 1}`,
+    eventId: evt.id,
     fixedSceneEventType: evt.type
   }))
 
@@ -3561,10 +4119,9 @@ function chooseFastTravelRouteSignPosition(definition, fastTravelEvent, occupied
         if (occupiedKeys.has(key)) continue
         if (!OPEN_GROUND_TILES.has(layoutGrid[y]?.[x])) continue
         const adjacentRoad = hasAdjacentRoadTile(layoutGrid, x, y)
-        const adjacentStation = Math.abs(dx) + Math.abs(dy) === 1
-        if (!adjacentRoad && !adjacentStation) continue
+        if (!adjacentRoad) continue
         const facingInfo = getRoadsideSignFacingInfoFromGrid(layoutGrid, x, y)
-        if (adjacentRoad && !facingInfo.facesAdjacentRoad) continue
+        if (!facingInfo.facesAdjacentRoad) continue
         const nearestOccupiedDistance = getNearestPointDistance({ x, y }, occupiedPositions)
         if (nearestOccupiedDistance < minOccupiedDistance) continue
         const spacingPenalty = Number.isFinite(nearestOccupiedDistance)
@@ -3573,7 +4130,6 @@ function chooseFastTravelRouteSignPosition(definition, fastTravelEvent, occupied
         const score =
           Math.abs(dx) * 8 +
           Math.abs(dy) * 8 +
-          (adjacentRoad ? 0 : 6) +
           (dy < 0 ? 0 : 1) +
           (dx < 0 ? 0 : 0.5) +
           spacingPenalty
@@ -3753,10 +4309,11 @@ const REGION_GAMEPLAY_PROFILES = {
     ecologyHint: '西草丛偏草/毒系，南草坡偏普通/飞行系，东花地更容易遇到宝宝丁与喵喵；击败首领后会出现稀有电系气息。',
     bossRarePokemon: { pokemonId: 2, weight: 18 },
     challengeRarePool: [3, 112, 113, 116, 120, 121, 83, 123, 150],
+    bossSupportSpeciesIds: [1, 89, 151, 169, 165],
     signMessages: [
       '星音试炼：击败3名巡守，首领开启。',
       '草径生态：西草毒，南飞行，东有电光。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '完成区域试炼，试炼守护者会分批进入草丛。'
     ],
     speciesPool: [1, 13, 39, 98, 114, 119, 4, 89, 151, 154, 156, 169],
     positions: {
@@ -3774,10 +4331,11 @@ const REGION_GAMEPLAY_PROFILES = {
     ecologyHint: '西岸芦草偏可达鸭与鲤鱼王，南岸有大舌贝，东岸潮草偏墨海马与海星星；击败首领后会出现呆呆兽气息。',
     bossRarePokemon: { pokemonId: 128, weight: 18 },
     challengeRarePool: [33, 71, 40, 73, 90, 91, 93, 75, 152, 163],
+    bossSupportSpeciesIds: [14, 176, 186, 183, 181],
     signMessages: [
       '雾湖试炼：击败3名巡守，首领开启。',
       '苇岸生态：西水系可达鸭，南大舌贝，东海星星。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '完成区域试炼，试炼守护者会分批进入草丛。'
     ],
     speciesPool: [14, 16, 77, 78, 80, 13, 5, 176, 186, 181, 183, 167],
     positions: {
@@ -3805,13 +4363,17 @@ const REGION_GAMEPLAY_PROFILES = {
       { pokemonId: 168, minLevel: 22, maxLevel: 24 },
       { pokemonId: 179, minLevel: 21, maxLevel: 24 },
       { pokemonId: 52, minLevel: 20, maxLevel: 24 },
-      { pokemonId: 56, minLevel: 20, maxLevel: 24 }
+      { pokemonId: 56, minLevel: 20, maxLevel: 24 },
+      { pokemonId: 92, minLevel: 17, maxLevel: 24 },
+      { pokemonId: 95, minLevel: 17, maxLevel: 24 },
+      { pokemonId: 99, minLevel: 17, maxLevel: 24 },
+      { pokemonId: 111, minLevel: 17, maxLevel: 24 }
     ],
-    bossSupportSpeciesIds: [15, 48, 52, 56, 22],
+    bossSupportSpeciesIds: [160, 170, 99, 159, 171],
     signMessages: [
       '农庄试炼：击败3名巡守，首领开启。',
       '田垄生态：北草普，西普斗，东岩斗。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '完成区域试炼，试炼守护者会分批进入草丛。'
     ],
     speciesPool: [87, 88, 119, 106, 96, 22, 30, 102, 160, 170, 155, 157, 174],
     positions: {
@@ -3819,7 +4381,7 @@ const REGION_GAMEPLAY_PROFILES = {
       trainers: [[16, 10], [24, 12], [13, 20], [31, 19]],
       boss: [32, 18],
       challenge: [18, 18],
-      pickups: [[15, 6], [25, 6], [6, 18], [35, 20], [15, 27], [31, 27], [6, 7], [28, 14]],
+      pickups: [[18, 6], [25, 6], [5, 18], [35, 20], [15, 27], [31, 27], [6, 7], [28, 14]],
       signs: [[18, 13], [25, 19], [28, 20]]
     }
   },
@@ -3838,12 +4400,18 @@ const REGION_GAMEPLAY_PROFILES = {
       { pokemonId: 115, minLevel: 30, maxLevel: 30 },
       { pokemonId: 54, minLevel: 28, maxLevel: 30 },
       { pokemonId: 86, minLevel: 28, maxLevel: 30 },
-      { pokemonId: 187, minLevel: 30, maxLevel: 30 }
+      { pokemonId: 187, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 7, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 28, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 29, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 64, minLevel: 30, maxLevel: 30 },
+      { pokemonId: 117, minLevel: 30, maxLevel: 30 }
     ],
+    bossSupportSpeciesIds: [79, 82, 81, 184, 182],
     signMessages: [
       '海岸试炼：击败3名巡守，首领开启。',
       '海岸生态：沙丘水岩，南岸水系，沉船巨钳蟹。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '完成区域试炼，试炼守护者会分批进入草丛。'
     ],
     speciesPool: [79, 77, 80, 82, 81, 44, 54, 5, 184, 185, 182, 177, 175],
     positions: {
@@ -3851,33 +4419,41 @@ const REGION_GAMEPLAY_PROFILES = {
       trainers: [[7, 18], [20, 10], [24, 18], [25, 22]],
       boss: [36, 27],
       challenge: [22, 14],
-      pickups: [[10, 10], [7, 24], [16, 27], [23, 8], [28, 28], [36, 29], [18, 3], [26, 20]],
+      pickups: [[10, 10], [7, 24], [16, 27], [23, 8], [28, 28], [24, 29], [18, 3], [26, 20]],
       signs: [[6, 14], [18, 18], [29, 24]]
     }
   },
   GodotMapV2_Graveyard: {
     chapterTitle: '月影墓园试炼',
     bossName: '月影首领',
-    ecologyHint: '北墓草丛偏幽灵系，南墓荒草偏毒系，月影荒草更容易遇到耿鬼与月亮伊布。',
+    ecologyHint: '北墓草丛偏幽灵梦魇，南墓荒草偏毒雾，月影荒草偏恶系与拟态；耿鬼等守护者需试炼后开启。',
     bossRarePokemon: { pokemonId: 126, weight: 18 },
     challengeRarePool: [
       6,
-      21,
       { pokemonId: 173, minLevel: 31, maxLevel: 36 },
       { pokemonId: 164, minLevel: 32, maxLevel: 36 },
       { pokemonId: 132, minLevel: 30, maxLevel: 36 },
       { pokemonId: 180, minLevel: 33, maxLevel: 36 },
+      21,
       { pokemonId: 134, minLevel: 30, maxLevel: 36 },
       { pokemonId: 50, minLevel: 35, maxLevel: 36 },
       { pokemonId: 30, minLevel: 30, maxLevel: 36 },
       { pokemonId: 70, minLevel: 33, maxLevel: 36 },
       100,
-      101
+      101,
+      { pokemonId: 17, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 19, minLevel: 31, maxLevel: 36 },
+      { pokemonId: 40, minLevel: 34, maxLevel: 36 },
+      { pokemonId: 46, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 133, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 136, minLevel: 30, maxLevel: 36 },
+      { pokemonId: 144, minLevel: 30, maxLevel: 36 }
     ],
+    bossSupportSpeciesIds: [6, 21, 100, 173, 164],
     signMessages: [
       '墓园试炼：击败3名守卫，首领现身。',
-      '墓园生态：北幽灵，南毒系，月影有稀有气息。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '墓园生态：北幽灵，南毒雾，月影恶系拟态。',
+      '完成区域试炼，耿鬼等守护者会分批进入草丛。'
     ],
     speciesPool: [21, 6, 43, 100, 101, 137, 20, 50, 173, 164, 180, 188, 153],
     positions: {
@@ -3906,12 +4482,17 @@ const REGION_GAMEPLAY_PROFILES = {
       { pokemonId: 63, minLevel: 35, maxLevel: 42 },
       { pokemonId: 86, minLevel: 40, maxLevel: 42 },
       58,
-      59
+      59,
+      { pokemonId: 18, minLevel: 35, maxLevel: 39 },
+      { pokemonId: 33, minLevel: 38, maxLevel: 42 },
+      { pokemonId: 36, minLevel: 40, maxLevel: 42 },
+      { pokemonId: 54, minLevel: 35, maxLevel: 39 }
     ],
+    bossSupportSpeciesIds: [38, 45, 108, 143, 168],
     signMessages: [
       '遗迹试炼：击败3名守卫，首领开启。',
       '遗迹生态：北电超，西岩地，东电与多边兽。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '完成区域试炼，试炼守护者会分批进入草丛。'
     ],
     speciesPool: [38, 45, 108, 103, 105, 135, 90, 91, 110, 111, 153, 168],
     positions: {
@@ -3920,21 +4501,21 @@ const REGION_GAMEPLAY_PROFILES = {
       boss: [28, 28],
       challenge: [18, 14],
       pickups: [[12, 8], [23, 8], [7, 24], [15, 29], [25, 24], [34, 29], [12, 14], [31, 22]],
-      signs: [[23, 14], [23, 21], [30, 24]]
+      signs: [[18, 12], [22, 12], [30, 20]]
     }
   },
   GodotMapV2_SurvivalRidge: {
     chapterTitle: '铁木营地试炼',
     bossName: '铁木首领',
-    ecologyHint: '北岭偏格斗/岩石系，南岭偏岩石/地面系，东岭偏钢/普通系。',
+    ecologyHint: '北岭偏格斗/岩石系，训练林偏双拳与体能型宝可梦，南岭偏岩石/地面系，东岭偏钢/人工系。',
     bossRarePokemon: { pokemonId: 140, weight: 18 },
     challengeRarePool: [
       34,
       35,
+      125,
       47,
       60,
       61,
-      125,
       127,
       139,
       141
@@ -3942,8 +4523,8 @@ const REGION_GAMEPLAY_PROFILES = {
     bossSupportSpeciesIds: [34, 35, 51, 104, 109],
     signMessages: [
       '营地试炼：击败3名巡守，首领开启。',
-      '营地生态：北斗岩，南岩地，东钢普。',
-      '完成区域试炼，会解锁隐藏稀有生态。'
+      '营地生态：北格斗岩，训练林双拳，南岩地，东钢工。',
+      '完成区域试炼，怪力等守护者会分批进入草丛。'
     ],
     speciesPool: [34, 35, 51, 131, 109, 139, 142, 104, 143, 159, 161, 155],
     positions: {
@@ -3951,21 +4532,21 @@ const REGION_GAMEPLAY_PROFILES = {
       trainers: [[11, 13], [18, 18], [25, 18], [31, 26]],
       boss: [34, 14],
       challenge: [15, 14],
-      pickups: [[12, 10], [7, 25], [15, 28], [29, 8], [32, 11], [24, 28], [14, 6], [35, 7]],
-      signs: [[23, 14], [23, 18], [31, 14]]
+      pickups: [[12, 10], [7, 25], [15, 28], [34, 20], [37, 24], [24, 28], [14, 6], [35, 7]],
+      signs: [[25, 14], [30, 18], [28, 22]]
     }
   },
   GodotMapV2_BossHighland: {
     chapterTitle: '星雾高地试炼',
     bossName: '星雾首领',
-    ecologyHint: '西高地偏草/龙/岩石系，南高地偏火/水系，东高地偏电/龙系。',
+    ecologyHint: '西高地偏草/龙/岩石，南高地偏火/水/冰，东高地偏电/人工，观星秘径偏传说气息。',
     bossRarePokemon: { pokemonId: 68, weight: 18 },
-    challengeRareChance: 0.36,
+    challengeRareChance: 0.45,
     challengeRarePool: [
       10,
       { pokemonId: 12, minLevel: 55, maxLevel: 55 },
       { pokemonId: 94, minLevel: 47, maxLevel: 50 },
-      63,
+      { pokemonId: 117, minLevel: 52, maxLevel: 60 },
       { pokemonId: 104, minLevel: 50, maxLevel: 50 },
       146,
       { pokemonId: 122, minLevel: 47, maxLevel: 50 },
@@ -3976,11 +4557,11 @@ const REGION_GAMEPLAY_PROFILES = {
       74,
       76
     ],
-    bossSupportSpeciesIds: [63, 122, 104, 146, 142],
+    bossSupportSpeciesIds: [72, 74, 76, 129, 142],
     signMessages: [
       '高地试炼：击败3名巡守，唤醒首领。',
-      '高地生态：西草龙岩，南火水，东电龙。',
-      '完成最终试炼，会解锁高地传说生态。'
+      '高地生态：西草龙岩，南火水冰，东电人工。',
+      '终局提示：先清图、试炼或草丛练级，再挑战首领。'
     ],
     speciesPool: [72, 74, 76, 129, 131, 143, 9, 10, 142, 12, 123, 150],
     positions: {
@@ -4005,7 +4586,7 @@ const REGION_TRAINER_ROSTERS = {
     lieutenants: [
       { name: '苔坡巡队长', speciesIds: [98, 39, 119] },
       { name: '花径哨卫', speciesIds: [114, 119, 13] },
-      { name: '湖畔督导员', speciesIds: [1, 4, 39] }
+      { name: '湖畔督导员', speciesIds: [1, 4, 39], facing: 'down' }
     ]
   },
   GodotMapV2_MistLake: {
@@ -4088,10 +4669,10 @@ const REGION_TRAINER_ROSTERS = {
   },
   GodotMapV2_BossHighland: {
     trainers: [
-      { name: '天幕园艺师', speciesIds: [104, 131], dailyVariantSpeciesIds: [104, 131, 63], dailyVariantLevelJitter: 0, levels: [52, 52] },
-      { name: '峰顶潜修者', speciesIds: [131, 104], dailyVariantSpeciesIds: [131, 104, 63], levels: [52, 52] },
-      { name: '岩龙勘察员', speciesIds: [104, 131], dailyVariantSpeciesIds: [104, 131, 63], levels: [52, 53] },
-      { name: '云海看守人', speciesIds: [131, 104], dailyVariantSpeciesIds: [131, 104, 63], levels: [52, 53] }
+      { name: '天幕园艺师', speciesIds: [136, 123], dailyVariantSpeciesIds: [136, 123, 185], dailyVariantLevelJitter: 0, levels: [51, 51] },
+      { name: '峰顶潜修者', speciesIds: [9, 134], dailyVariantSpeciesIds: [9, 134, 129], levels: [52, 52] },
+      { name: '岩龙勘察员', speciesIds: [129, 131], dailyVariantSpeciesIds: [129, 131, 135], levels: [52, 52] },
+      { name: '云海看守人', speciesIds: [143, 150], dailyVariantSpeciesIds: [143, 150, 63], levels: [52, 52] }
     ],
     lieutenants: [
       { name: '高地巡队长', speciesIds: [122, 145, 104], levels: [54, 55, 56] },
@@ -4238,6 +4819,29 @@ function makeBossTeam(speciesIds, levels, bossAceId, fallbackPool = speciesIds) 
   ]
 }
 
+const PICKUP_STAT_BOOST_KEYS = [
+  'hp_stone',
+  'attack_stone',
+  'defense_stone',
+  'sp_attack_stone',
+  'sp_defense_stone',
+  'speed_stone'
+]
+
+const LATE_PICKUP_STAT_BOOST_BY_REGION = {
+  7: 'speed_stone',
+  8: 'sp_defense_stone'
+}
+
+function getPickupStatBoostKey(regionOrder, index) {
+  const safeRegionOrder = Math.max(0, Math.trunc(Number(regionOrder)) || 0)
+  if (LATE_PICKUP_STAT_BOOST_BY_REGION[safeRegionOrder]) {
+    return LATE_PICKUP_STAT_BOOST_BY_REGION[safeRegionOrder]
+  }
+  const offset = safeRegionOrder + Math.max(0, Math.trunc(Number(index)) || 0)
+  return PICKUP_STAT_BOOST_KEYS[offset % PICKUP_STAT_BOOST_KEYS.length]
+}
+
 function makePickupReward(regionOrder, index) {
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
@@ -4245,26 +4849,22 @@ function makePickupReward(regionOrder, index) {
   const ballKey = isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic'
   const potionKey = isLate ? 'hyper_potion' : isMid ? 'super_potion' : 'potion'
   const pickupExpKey = isLate ? 'exp_potion_large' : isUpperMid ? 'exp_potion_medium' : 'exp_potion_small'
-  const earlyPickupFallback = isMid
-    ? { itemType: 'potion', itemKey: potionKey, quantity: 1 }
-    : { itemType: 'pokeball', itemKey: ballKey, quantity: 1 }
-  const primaryPickupReward = regionOrder <= 4
-    ? earlyPickupFallback
-    : { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
-  const secondaryPickupReward = isUpperMid
-    ? { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
-    : { itemType: 'potion', itemKey: potionKey, quantity: 1 }
+  const growthReward = { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
+  const hiddenGrowthReward = { ...growthReward, hidden: true }
+  const hiddenLateBoostReward = regionOrder >= 7
+    ? { itemType: 'statBoost', itemKey: getPickupStatBoostKey(regionOrder, index), quantity: 1, hidden: true }
+    : hiddenGrowthReward
   const rewards = [
-    { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
     { itemType: 'potion', itemKey: potionKey, quantity: 1 },
-    primaryPickupReward,
-    { itemType: 'pokeball', itemKey: ballKey, quantity: 2 },
+    { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
+    growthReward,
     { itemType: 'potion', itemKey: potionKey, quantity: 2 },
-    secondaryPickupReward,
+    isMid ? growthReward : { itemType: 'potion', itemKey: potionKey, quantity: 1 },
+    { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
     { itemType: 'potion', itemKey: potionKey, quantity: 1, hidden: true },
-    { itemType: 'pokeball', itemKey: ballKey, quantity: 1, hidden: true }
+    hiddenLateBoostReward
   ]
-  return rewards[index % rewards.length]
+  return { ...rewards[index % rewards.length] }
 }
 
 function makeBossReward(regionOrder) {
@@ -4295,6 +4895,7 @@ function makeBossReward(regionOrder) {
 
 const MAX_CHALLENGE_CHAIN_BATTLES = 6
 const CHALLENGE_RARE_UNLOCK_STAGE_COUNT = 4
+const MIN_CHALLENGE_GUARDIAN_BATTLES = 3
 
 function getChallengeChainLength(regionOrder) {
   const order = Math.max(1, Math.trunc(Number(regionOrder)) || 1)
@@ -4302,6 +4903,13 @@ function getChallengeChainLength(regionOrder) {
   if (order >= 5) return 5
   if (order >= 3) return 4
   return 3
+}
+
+function getMaxChallengeRarePoolSize(chainLength) {
+  const length = Math.max(3, Math.min(MAX_CHALLENGE_CHAIN_BATTLES, Math.trunc(Number(chainLength)) || 3))
+  if (length >= 6) return 18
+  if (length >= 5) return 12
+  return 8
 }
 
 function makeChallengeLevels(minLevel, maxLevel, chainLength, regionOrder) {
@@ -4322,7 +4930,9 @@ function getChallengeRareUnlockedCountForStage(totalCount, stage) {
   const safeStage = Math.max(0, Math.min(stageCount, Math.trunc(Number(stage)) || 0))
   if (safeStage <= 0) return 0
   if (safeStage >= stageCount) return total
-  return Math.max(1, Math.min(total, Math.round((total * safeStage) / stageCount)))
+  const balancedCount = Math.round((total * safeStage) / stageCount)
+  const guardianFloor = MIN_CHALLENGE_GUARDIAN_BATTLES + safeStage - 1
+  return Math.max(1, Math.min(total, Math.max(balancedCount, guardianFloor)))
 }
 
 function getChallengeFinalThreeRareEntries(challengeRarePool) {
@@ -4471,6 +5081,31 @@ function pickChallengeTrialSpecies(challengeRarePool, levels, fallbackPool = [])
     .filter(Number.isInteger)
 }
 
+function buildFixedChallengeBattleGroups(definition, challengeRarePool, fallbackPool = []) {
+  const [minLevel, maxLevel] = definition.levelRange
+  const order = Math.max(1, Math.trunc(Number(definition.regionOrder)) || 1)
+  const softCapBonus = order >= 7 ? 2 : order >= 5 ? 1 : 0
+  const levelCap = clampLevel(maxLevel + softCapBonus)
+  const placeholderId = normalizeRarePoolEntries(challengeRarePool)[0]?.pokemonId || normalizeRarePoolEntries(fallbackPool)[0]?.pokemonId
+  if (!Number.isInteger(placeholderId)) return []
+
+  return CHALLENGE_BATTLE_GROUP_SIZES.map((groupSize, stageIndex) => {
+    const groupLevels = makeChallengeLevels(minLevel, maxLevel, groupSize, definition.regionOrder)
+      .map((level) => clampLevel(Math.min(levelCap, level + stageIndex)))
+    return buildChallengeBattleTeamFromUnlockBatch({
+      challengeRarePool,
+      baseTeam: groupLevels.map((level) => ({ pokemonId: placeholderId, level })),
+      unlockStage: stageIndex,
+      targetSize: groupSize,
+      bounds: {
+        minLevel: Math.min(...groupLevels),
+        maxLevel: Math.max(...groupLevels)
+      },
+      victoryBonus: 0
+    })
+  }).filter((team) => team.length > 0)
+}
+
 const LIEUTENANT_STYLE_TEMPLATES = [
   {
     key: 'pressure',
@@ -4480,10 +5115,10 @@ const LIEUTENANT_STYLE_TEMPLATES = [
     sourcePattern: ['wild', 'wild', 'trial'],
     openingText: '先压节奏，再谈胜负',
     beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
-      `${lieutenantName}：先压住你的节奏，再去见${bossName}这位首领。`
+      `${lieutenantName}：先破我的快攻，再去见${bossName}。`
     ),
-    defeatedText: (lieutenantName) => `${lieutenantName}的速攻阵型被你拆开了，印记交给你。`,
-    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：今天先到这里，印记已经交给你，继续去找${bossName}吧。`
+    defeatedText: (lieutenantName) => `${lieutenantName}：速攻被你拆了，印记拿去。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：印记在你手上，去找${bossName}吧。`
   },
   {
     key: 'control',
@@ -4493,10 +5128,10 @@ const LIEUTENANT_STYLE_TEMPLATES = [
     sourcePattern: ['wild', 'trial', 'wild'],
     openingText: '先磨住局面，再慢慢推进',
     beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
-      `${lieutenantName}：我会把场面稳住，别想轻松见到${bossName}这位首领。`
+      `${lieutenantName}：先稳住这局，再说见${bossName}。`
     ),
-    defeatedText: (lieutenantName) => `${lieutenantName}的控场节奏被你打断了，印记给你。`,
-    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：这套磨法今天不管用了，印记已经交给你，去挑战${bossName}吧。`
+    defeatedText: (lieutenantName) => `${lieutenantName}：控场断了，印记给你。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：今天就到这，去找${bossName}吧。`
   },
   {
     key: 'elite',
@@ -4506,12 +5141,55 @@ const LIEUTENANT_STYLE_TEMPLATES = [
     sourcePattern: ['trial', 'wild', 'trial'],
     openingText: '压轴登场，别掉以轻心',
     beforeBattleText: (lieutenantName, chapterTitle, bossName) => (
-      `${lieutenantName}：能走到这里，说明你该认真面对压轴阵容了，首领就在前方。`
+      `${lieutenantName}：过了我这关，你才有资格见${bossName}。`
     ),
-    defeatedText: (lieutenantName) => `${lieutenantName}的精英阵容被你击破了，印记收下。`,
-    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：今天的试炼到这里结束，印记已经给你，去见${bossName}吧。`
+    defeatedText: (lieutenantName) => `${lieutenantName}：这关你过了，印记收下。`,
+    dailyDefeatedText: (lieutenantName, bossName) => `${lieutenantName}：印记已经给你，去见${bossName}吧。`
   }
 ]
+
+const NORMAL_TRAINER_DIALOGUE_TEMPLATES = [
+  {
+    before: (trainerName) => `${trainerName}：让我看看你的队伍节奏。`,
+    defeated: (trainerName) => `${trainerName}：不错，继续往前走吧。`,
+    daily: (trainerName) => `${trainerName}：今天先到这里，明天再来。`
+  },
+  {
+    before: (trainerName) => `${trainerName}：别急着赶路，先打一场。`,
+    defeated: (trainerName) => `${trainerName}：这一段路，你过关了。`,
+    daily: (trainerName) => `${trainerName}：我今天收队了，明天再来。`
+  },
+  {
+    before: (trainerName) => `${trainerName}：来，让我试试你的判断。`,
+    defeated: (trainerName) => `${trainerName}：判断很稳，继续前进吧。`,
+    daily: (trainerName) => `${trainerName}：今天就练到这里，明天继续。`
+  },
+  {
+    before: (trainerName) => `${trainerName}：准备好了就开打吧。`,
+    defeated: (trainerName) => `${trainerName}：这场打得漂亮，往前走吧。`,
+    daily: (trainerName) => `${trainerName}：今天打够了，明天再来。`
+  },
+  {
+    before: (trainerName) => `${trainerName}：这条路，我来考考你。`,
+    defeated: (trainerName) => `${trainerName}：可以，继续去找下一位吧。`,
+    daily: (trainerName) => `${trainerName}：我明天再换新阵容等你。`
+  },
+  {
+    before: (trainerName) => `${trainerName}：用这场对战证明自己吧。`,
+    defeated: (trainerName) => `${trainerName}：证明得很够，继续前进。`,
+    daily: (trainerName) => `${trainerName}：今天先休息，明天见。`
+  }
+]
+
+function buildNormalTrainerDialogue(definition, trainerName, index = 0) {
+  const regionOrder = Math.max(1, Math.trunc(Number(definition?.regionOrder)) || 1)
+  const template = NORMAL_TRAINER_DIALOGUE_TEMPLATES[(regionOrder + index) % NORMAL_TRAINER_DIALOGUE_TEMPLATES.length]
+  return {
+    beforeBattleText: template.before(trainerName),
+    defeatedText: template.defeated(trainerName),
+    dailyDefeatedText: template.daily(trainerName)
+  }
+}
 
 function normalizeIntegerPoolIds(pool = []) {
   return Array.from(new Set(
@@ -4643,9 +5321,11 @@ function hasLegalRareLevel(entry, definition) {
   return false
 }
 
-function normalizeChallengeRarePoolForRegion(pool, definition) {
+function normalizeChallengeRarePoolForRegion(pool, definition, chainLength = getChallengeChainLength(definition?.regionOrder)) {
+  const maxRarePoolSize = getMaxChallengeRarePoolSize(chainLength)
   return normalizeRarePoolEntries(pool)
     .filter((entry) => hasLegalRareLevel(entry, definition))
+    .slice(0, maxRarePoolSize)
 }
 
 function normalizeBossRareForRegion(entry, definition) {
@@ -4666,6 +5346,17 @@ function buildRegionGameplayEvents(definition) {
   const events = []
   const lieutenantUsedSpeciesIds = new Set()
   const lieutenantUsedFamilyKeys = new Set()
+  const bossRarePokemon = normalizeBossRareForRegion(profile.bossRarePokemon, definition)
+  const challengeChainLength = getChallengeChainLength(definition.regionOrder)
+  const challengeRarePool = normalizeChallengeRarePoolForRegion(profile.challengeRarePool, definition, challengeChainLength)
+    .filter((entry) => entry.pokemonId !== bossRarePokemon?.pokemonId)
+  const challengeBattleGroups = buildFixedChallengeBattleGroups(definition, challengeRarePool, profile.speciesPool)
+  const initialChallengeTeam = challengeBattleGroups[0] || []
+  const challengeGroupLevels = challengeBattleGroups
+    .flatMap((team) => team.map((member) => Math.trunc(Number(member.level)) || 0))
+    .filter((level) => level > 0)
+  const minChallengeGroupLevel = challengeGroupLevels.length > 0 ? Math.min(...challengeGroupLevels) : 0
+  const maxChallengeGroupLevelSafe = challengeGroupLevels.length > 0 ? Math.max(...challengeGroupLevels) : 0
 
   profile.positions.trainers.forEach(([x, y], index) => {
     const trainerConfig = rosterConfig.trainers?.[index] || {}
@@ -4676,7 +5367,8 @@ function buildRegionGameplayEvents(definition) {
     const trainerLevels = Array.isArray(trainerConfig.levels) && trainerConfig.levels.length > 0
       ? trainerConfig.levels
       : [minLevel + index, minLevel + index + 1]
-    const facing = inferEventFacing(definition, x, y, 'normal', index)
+    const facing = trainerConfig.facing || inferEventFacing(definition, x, y, 'normal', index)
+    const trainerDialogue = buildNormalTrainerDialogue(definition, trainerName, index)
     events.push(event('trainer', `${prefix}_trainer_${index + 1}`, x, y, {
       properties: {
         role: 'normal',
@@ -4696,9 +5388,9 @@ function buildRegionGameplayEvents(definition) {
           trainerLevels,
           profile.speciesPool
         ),
-        beforeBattleText: `${trainerName}作为普通训练家挡住了你的去路：想继续探索，就来一场认真对战吧！`,
-        defeatedText: `${trainerName}认真记下了这次对战：继续寻找三名部下训练师吧。`,
-        dailyDefeatedText: `${trainerName}：我会变得更强，明天再来吧！`
+        beforeBattleText: trainerDialogue.beforeBattleText,
+        defeatedText: trainerDialogue.defeatedText,
+        dailyDefeatedText: trainerDialogue.dailyDefeatedText
       }
     }))
   })
@@ -4711,14 +5403,14 @@ function buildRegionGameplayEvents(definition) {
       profile,
       lieutenantConfig,
       lieutenantIndex: index,
-      challengeRarePool: profile.challengeRarePool,
-      bossRarePokemon: normalizeBossRareForRegion(profile.bossRarePokemon, definition),
+      challengeRarePool,
+      bossRarePokemon,
       usedSpeciesIds: lieutenantUsedSpeciesIds,
       usedFamilyKeys: lieutenantUsedFamilyKeys
     })
     const lieutenantStyle = lieutenantBattle.styleTemplate
     const lieutenantTeam = lieutenantBattle.team
-    const facing = inferEventFacing(definition, x, y, 'lieutenant', index)
+    const facing = lieutenantConfig.facing || inferEventFacing(definition, x, y, 'lieutenant', index)
     events.push(event('trainer', lieutenantIds[index], x, y, {
       properties: {
         role: 'lieutenant',
@@ -4740,26 +5432,15 @@ function buildRegionGameplayEvents(definition) {
     }))
   })
 
-  const bossRarePokemon = normalizeBossRareForRegion(profile.bossRarePokemon, definition)
   const bossRareName = bossRarePokemon
     ? (MONSTERS.find((monster) => monster.id === bossRarePokemon.pokemonId)?.name || '专属稀有宝可梦')
     : ''
   const bossRareChance = Number(profile.bossRareChance ?? DEFAULT_BOSS_RARE_CHANCE)
-  const bossRareChanceText = `${Math.round(Math.max(0, Math.min(1, bossRareChance)) * 100)}%`
-  const challengeRarePool = normalizeChallengeRarePoolForRegion(profile.challengeRarePool, definition)
-    .filter((entry) => entry.pokemonId !== bossRarePokemon?.pokemonId)
-  const preferredBossSupports = normalizeRarePoolEntries(profile.bossSupportSpeciesIds)
-    .map((entry) => entry.pokemonId)
-    .filter((pokemonId) => pokemonId !== bossRarePokemon?.pokemonId)
-  const bossTeamSpecies = preferredBossSupports.length > 0
-    ? (Number.isInteger(bossRarePokemon?.pokemonId)
-        ? [...pickUniqueFamilyPoolIds(preferredBossSupports, 5), bossRarePokemon.pokemonId]
-        : pickUniqueFamilyPoolIds(preferredBossSupports, 6))
-    : pickBossTeamSpeciesFromChallengeFinalThreeBatches(
-        challengeRarePool,
-        bossRarePokemon,
-        profile.speciesPool
-      )
+  const bossTeamSpecies = pickBossTeamSpeciesFromChallengeFinalThreeBatches(
+    challengeRarePool,
+    bossRarePokemon,
+    profile.speciesPool
+  )
   const bossTeamSourceIds = getChallengeFinalThreeRareEntries(challengeRarePool).map((entry) => entry.pokemonId)
   const bossFacing = inferEventFacing(definition, profile.positions.boss[0], profile.positions.boss[1], 'boss', 0)
   events.push(event('boss', `${prefix}_boss`, profile.positions.boss[0], profile.positions.boss[1], {
@@ -4778,7 +5459,7 @@ function buildRegionGameplayEvents(definition) {
             bossTeamSpecies,
             [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3],
             bossRarePokemon.pokemonId,
-            profile.speciesPool
+            bossTeamSpecies
           )
         : makeTeam(
             bossTeamSpecies,
@@ -4786,29 +5467,24 @@ function buildRegionGameplayEvents(definition) {
           ),
       lockedText: `这里有一股强大的气息。先击败${definition.displayName}里的 3 名部下训练师，${profile.bossName}才会接受挑战。`,
       beforeBattleText: bossRarePokemon
-        ? `${profile.bossName}：三枚试炼印记已经发光。先击败最终三批守护者，最后再面对${bossRareName}的压轴力量！`
-        : `${profile.bossName}：三枚试炼印记已经发光。来吧，证明你能穿过${definition.displayName}的最终试炼。`,
-      defeatedText: `${profile.bossName}收起了气势：这片区域已经认可你了。`,
+        ? `${profile.bossName}：印记齐了，让我看看你能不能撑到最后。`
+        : `${profile.bossName}：印记齐了，来接下这场最终试炼。`,
+      defeatedText: `${profile.bossName}：很好，这片区域认可你了。`,
       rewardItems: makeBossReward(definition.regionOrder),
       bossRarePokemon,
       bossRareChance,
       rareUnlockText: bossRarePokemon
-        ? `${definition.displayName}专属稀有宝可梦解锁：${bossRareName}会以约 ${bossRareChanceText} 的概率在本地图草丛中出现。`
+        ? `${definition.displayName}的专属稀有已苏醒：${bossRareName}开始在草丛中出没。`
         : `${definition.displayName}的稀有气息被唤醒了。`
     }
   }))
 
-  const challengeChainLength = getChallengeChainLength(definition.regionOrder)
-  const challengeLevels = makeChallengeLevels(minLevel, maxLevel, challengeChainLength, definition.regionOrder)
-  const challengeRareNames = formatRarePoolNames(challengeRarePool)
   const challengeRareChance = Number(profile.challengeRareChance ?? DEFAULT_CHALLENGE_RARE_CHANCE)
-  const challengeRareChanceText = `${Math.round(Math.max(0, Math.min(1, challengeRareChance)) * 100)}%`
   const challengeRareUnlockText = challengeRarePool.length > 0
-    ? `${definition.displayName}隐藏生态会按批次解锁：${challengeRareNames}会以约 ${challengeRareChanceText} 的稀有概率在草丛中出现。`
+    ? `${definition.displayName}隐藏生态会逐批开启。`
     : ''
-  const challengeTrialSpecies = pickChallengeTrialSpecies(challengeRarePool, challengeLevels, profile.speciesPool)
-  const challengeLevelText = challengeLevels.length > 0
-    ? `Lv.${Math.min(...challengeLevels)}-${Math.max(...challengeLevels)}`
+  const challengeLevelText = maxChallengeGroupLevelSafe > 0
+    ? `Lv.${minChallengeGroupLevel}-${maxChallengeGroupLevelSafe}`
     : ''
 
   events.push(event('challenge', `${prefix}_challenge_stone`, profile.positions.challenge[0], profile.positions.challenge[1], {
@@ -4820,21 +5496,21 @@ function buildRegionGameplayEvents(definition) {
       battleTier: 'challenge',
       teamSource: 'challengeRarePool',
       maxChainBattles: MAX_CHALLENGE_CHAIN_BATTLES,
-      chainLength: challengeChainLength,
-      team: makeTeam(
-        challengeTrialSpecies,
-        challengeLevels
-      ),
-      beforeBattleText: `试炼标记发出光芒：隐藏生态守护者会从 3 连战开始，逐步提升到最多 ${MAX_CHALLENGE_CHAIN_BATTLES} 连战（${challengeLevelText}）。完成后，它们才会按批次在草丛中出现。`,
-      defeatedText: '试炼标记的光芒安静下来，你已经完成了这次挑战。',
-      completedText: `${definition.displayName}区域试炼今日已完成，明日凌晨刷新。`,
+      chainLength: initialChallengeTeam.length || MIN_CHALLENGE_GUARDIAN_BATTLES,
+      team: initialChallengeTeam,
+      challengeBattleGroups,
+      beforeBattleText: challengeLevelText
+        ? `试炼标记亮了起来：守护者已经就位（${challengeLevelText}）。`
+        : '试炼标记亮了起来：守护者已经就位。',
+      defeatedText: '试炼标记安静下来，这轮试炼完成了。',
+      completedText: `${definition.displayName}区域试炼可继续挑战。`,
       challengeRarePool,
       challengeRareChance,
       challengeRareUnlockText,
       challengeRarePreviewText: challengeRarePool.length > 0
-        ? `每次通关分批解锁隐藏生态：${challengeRareNames}，草丛约 ${challengeRareChanceText} 遇见`
+        ? '通关后会开启新的隐藏生态。'
         : '',
-      dailyDefeatedText: `${definition.displayName}区域试炼今日已完成，明日凌晨刷新。`,
+      dailyDefeatedText: `${definition.displayName}区域试炼可继续挑战。`,
       rewardItems: makeChallengeReward(definition.regionOrder, challengeChainLength)
     }
   }))
@@ -4902,18 +5578,19 @@ function buildRegionGameplayEvents(definition) {
   return events
 }
 
+const REGION_TRAINER_CHARACTER_TYPES = [
+  'blocky_character_a',
+  'blocky_character_b',
+  'blocky_character_c',
+  'blocky_character_d',
+  'blocky_character_e',
+  'blocky_character_f'
+]
+
 function buildRegionGameplayDecorations(definition, gameplayEvents) {
   const profile = REGION_GAMEPLAY_PROFILES[definition.id]
   if (!profile) return []
 
-  const characterTypes = [
-    'blocky_character_a',
-    'blocky_character_b',
-    'blocky_character_c',
-    'blocky_character_d',
-    'blocky_character_e',
-    'blocky_character_f'
-  ]
   const normalTrainerScale = PLAYER_MATCHED_NPC_SCALE
   const normalTrainerHeight = PLAYER_MATCHED_NPC_HEIGHT
   const lieutenantTrainerScale = scaleFromNpcBaseline(1.48)
@@ -4929,8 +5606,8 @@ function buildRegionGameplayDecorations(definition, gameplayEvents) {
       if (evt.type === 'trainer') {
         return [{
           type: evt.properties?.role === 'lieutenant'
-            ? characterTypes[(index + 2) % characterTypes.length]
-            : characterTypes[index % characterTypes.length],
+            ? REGION_TRAINER_CHARACTER_TYPES[(index + 2) % REGION_TRAINER_CHARACTER_TYPES.length]
+            : REGION_TRAINER_CHARACTER_TYPES[index % REGION_TRAINER_CHARACTER_TYPES.length],
           x,
           y,
           scale: evt.properties?.role === 'lieutenant' ? lieutenantTrainerScale : normalTrainerScale,
@@ -4944,7 +5621,7 @@ function buildRegionGameplayDecorations(definition, gameplayEvents) {
       }
       if (evt.type === 'boss') {
         return [{
-          type: characterTypes[(index + 4) % characterTypes.length],
+          type: REGION_TRAINER_CHARACTER_TYPES[(index + 4) % REGION_TRAINER_CHARACTER_TYPES.length],
           x,
           y,
           scale: bossTrainerScale,
@@ -4980,24 +5657,62 @@ function buildRuntimeSignDecorations(definition, runtimeEvents) {
     .flatMap((evt) => {
       const { x, y } = evt.position || {}
       if (!Number.isFinite(x) || !Number.isFinite(y)) return []
+      const isHiddenGate = isHiddenEncounterGateEvent(evt)
+      if (isHiddenGate) return []
       return [{
         type: 'trail_sign',
         x,
         y,
         scale: Number(evt.properties?.scale) || signScale,
-        rotation: SIGN_FACE_DOWN,
-        sourceId: `${evt.id}_sign`,
+        rotation: resolveRoadsideSignRotation(definition, x, y),
+        preserveRoadPosition: true,
+        sourceId: `${evt.id}_${isHiddenGate ? 'gate_sign' : 'sign'}`,
         eventId: evt.id,
         eventType: evt.type
       }]
     })
 }
 
+function buildManualRuntimeTrainerDecoration(evt, index = 0) {
+  const { x, y } = evt.position || {}
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return []
+  const role = evt.properties?.role
+  const npcRole = evt.type === 'boss' || role === 'boss'
+    ? 'boss'
+    : role === 'lieutenant'
+      ? 'lieutenant'
+      : 'normal'
+  const isBoss = npcRole === 'boss'
+  const isLieutenant = npcRole === 'lieutenant'
+  return [{
+    type: REGION_TRAINER_CHARACTER_TYPES[(index + (isBoss ? 4 : isLieutenant ? 2 : 1)) % REGION_TRAINER_CHARACTER_TYPES.length],
+    x,
+    y,
+    scale: isBoss ? scaleFromNpcBaseline(1.68) : isLieutenant ? scaleFromNpcBaseline(1.48) : PLAYER_MATCHED_NPC_SCALE,
+    height: isBoss ? heightFromNpcBaseline(1.5) : isLieutenant ? heightFromNpcBaseline(1.38) : PLAYER_MATCHED_NPC_HEIGHT,
+    rotation: getCharacterRotationFromFacing(evt.properties?.facing),
+    npcRole,
+    sourceId: `${evt.id}_npc`,
+    eventId: evt.id,
+    eventType: evt.type
+  }]
+}
+
 function makeFixedSceneObject(evt, suffix, type, dx, dy, {
   scale = 1,
   rotation = 0,
   height = 0.16,
-  eventType = null
+  eventType = null,
+  dynamicTileVisibility = false,
+  dynamicTileEventType = null,
+  dynamicTileEventId = null,
+  dynamicTileVisibleTiles = null,
+  preserveRoadPosition = false,
+  alwaysVisibleSignal = false,
+  hiddenGateMarker = false,
+  hiddenGateEntranceBlocker = false,
+  hiddenGateLockedScale = null,
+  hiddenZoneId = null
 } = {}) {
   const { x, y } = evt.position || {}
   const eventId = typeof evt?.id === 'string' ? evt.id : null
@@ -5012,7 +5727,21 @@ function makeFixedSceneObject(evt, suffix, type, dx, dy, {
     sourceId: `${evt.id}_${suffix}`,
     ...(eventId ? { eventId } : {}),
     ...(fixedSceneEventType ? { fixedSceneEventType } : {}),
-    ...(eventType ? { eventId: evt.id, eventType } : {})
+    ...(eventType ? { eventId: evt.id, eventType } : {}),
+    ...(dynamicTileVisibility ? {
+      dynamicTileVisibility: true,
+      dynamicTileEventType: dynamicTileEventType || fixedSceneEventType,
+      dynamicTileEventId: dynamicTileEventId || eventId,
+      ...(Array.isArray(dynamicTileVisibleTiles) && dynamicTileVisibleTiles.length > 0
+        ? { dynamicTileVisibleTiles: dynamicTileVisibleTiles.map((tile) => Math.trunc(Number(tile))).filter(Number.isSafeInteger) }
+        : {})
+    } : {}),
+    ...(preserveRoadPosition ? { preserveRoadPosition: true } : {}),
+    ...(alwaysVisibleSignal ? { alwaysVisibleSignal: true } : {}),
+    ...(hiddenGateMarker ? { hiddenGateMarker: true } : {}),
+    ...(hiddenGateEntranceBlocker ? { hiddenGateEntranceBlocker: true } : {}),
+    ...(Number.isFinite(Number(hiddenGateLockedScale)) ? { hiddenGateLockedScale: Number(hiddenGateLockedScale) } : {}),
+    ...(typeof hiddenZoneId === 'string' && hiddenZoneId.length > 0 ? { hiddenZoneId } : {})
   }
 }
 
@@ -5021,7 +5750,8 @@ function buildFixedHealingSpringScene(evt) {
     makeFixedSceneObject(evt, 'spring_fountain', 'town_fountain_round', 0, 0, {
       scale: 1.08,
       height: 0.18,
-      eventType: 'heal'
+      eventType: 'heal',
+      preserveRoadPosition: true
     }),
     makeFixedSceneObject(evt, 'spring_lily_w', 'nature_lily_large', -0.5, -0.38, { scale: 0.55, rotation: 0.2 }),
     makeFixedSceneObject(evt, 'spring_lily_e', 'nature_lily_large', 0.5, 0.38, { scale: 0.52, rotation: -0.35 }),
@@ -5037,7 +5767,8 @@ function buildFixedFastTravelStationScene(evt) {
       scale: 1.16,
       height: 0.13,
       rotation: 0.08,
-      eventType: FAST_TRAVEL_EVENT_TYPE
+      eventType: FAST_TRAVEL_EVENT_TYPE,
+      preserveRoadPosition: true
     }),
     makeFixedSceneObject(evt, 'lamp_left', 'town_lantern', -0.62, -0.42, { scale: 0.7, rotation: -0.22 }),
     makeFixedSceneObject(evt, 'lamp_right', 'town_lantern', 0.62, -0.42, { scale: 0.7, rotation: 0.22 })
@@ -5081,6 +5812,40 @@ function buildFixedFastTravelStationScene(evt) {
   return [...base, ...(themed[terrain] || themed.meadow)]
 }
 
+const HIDDEN_GATE_MARKER_PROFILES = {
+  meadow: { type: 'nature_tree_oak', scale: 2.0, lockedScale: 2.55, height: 0.2 },
+  lake: { type: 'nature_tree_pine', scale: 1.9, lockedScale: 2.4, height: 0.2 },
+  farm: { type: 'nature_tree_default', scale: 1.8, lockedScale: 2.3, height: 0.2 },
+  shore: { type: 'pirate_flag_pennant', scale: 1.08, lockedScale: 1.48, height: 0.24 },
+  grave: { type: 'grave_lantern_glass', scale: 1.55, lockedScale: 2.12, height: 0.22 },
+  ruins: { type: 'hex_stone_hill', scale: 1.2, lockedScale: 1.55, height: 0.2 },
+  ridge: { type: 'survival_signpost', scale: 1.28, lockedScale: 1.6, height: 0.2 },
+  peak: { type: 'ridge_block_grass_edge', scale: 1.35, lockedScale: 1.75, height: 0.2 }
+}
+
+function buildFixedHiddenEncounterGateScene(evt, definition) {
+  const theme = evt?.properties?.gateTheme || 'meadow'
+  const profile = HIDDEN_GATE_MARKER_PROFILES[theme] || HIDDEN_GATE_MARKER_PROFILES.meadow
+  const markerType = evt?.properties?.markerType || evt?.properties?.treeType || profile.type
+  return [
+    makeFixedSceneObject(evt, 'gate_marker', markerType, 0, 0, {
+      scale: profile.scale,
+      height: profile.height,
+      eventType: 'sign',
+      dynamicTileVisibility: true,
+      dynamicTileEventType: 'sign',
+      dynamicTileEventId: evt.id,
+      dynamicTileVisibleTiles: [TILE.sign, TILE.objectBlocker],
+      preserveRoadPosition: true,
+      alwaysVisibleSignal: true,
+      hiddenGateMarker: true,
+      hiddenGateEntranceBlocker: true,
+      hiddenGateLockedScale: profile.lockedScale,
+      hiddenZoneId: evt?.properties?.hiddenZoneId
+    })
+  ]
+}
+
 function getWarpApproachLayout(evt) {
   const x = Number(evt?.position?.x)
   const y = Number(evt?.position?.y)
@@ -5108,8 +5873,8 @@ function getWarpDestinationTheme(targetMapName = '') {
 function buildFixedWarpConnectionScene(evt) {
   const layout = getWarpApproachLayout(evt)
   const theme = getWarpDestinationTheme(evt?.target?.mapName)
-  const cx = layout.dx
-  const cy = layout.dy
+  const cx = 0
+  const cy = 0
   const sx = layout.px
   const sy = layout.py
   const side = 1.14
@@ -5154,7 +5919,8 @@ function buildFixedWarpConnectionScene(evt) {
       scale: 1.22,
       height: 0.13,
       rotation: 0.08,
-      eventType: 'warp'
+      eventType: 'warp',
+      preserveRoadPosition: true
     }),
     makeFixedSceneObject(evt, 'route_flag', 'platformer_flag', cx + layout.dx * 0.58 + sx * 1.54, cy + layout.dy * 0.58 + sy * 1.54, {
       scale: 0.72,
@@ -5165,12 +5931,39 @@ function buildFixedWarpConnectionScene(evt) {
   ]
 }
 
-function buildFixedRuntimeEventSceneDecorations(runtimeEvents) {
+function buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, generatedEventIds = new Set()) {
+  let pickupVisualIndex = 0
+  let manualTrainerVisualIndex = 0
   return (runtimeEvents || []).flatMap((evt) => {
     if (evt.type === 'warp') return buildFixedWarpConnectionScene(evt)
     if (evt.type === 'heal') return buildFixedHealingSpringScene(evt)
     if (evt.type === FAST_TRAVEL_EVENT_TYPE) return buildFixedFastTravelStationScene(evt)
+    if (isHiddenEncounterGateEvent(evt)) return buildFixedHiddenEncounterGateScene(evt, definition)
+    if (evt.type === 'challenge' && !generatedEventIds.has(evt.id)) return buildFixedTrialArenaScene(evt)
+    if ((evt.type === 'trainer' || evt.type === 'boss') && !generatedEventIds.has(evt.id)) {
+      const decorations = buildManualRuntimeTrainerDecoration(evt, manualTrainerVisualIndex)
+      manualTrainerVisualIndex += 1
+      return decorations
+    }
+    if (evt.type === 'item' || evt.type === 'pickup') {
+      if (generatedEventIds.has(evt.id)) return []
+      const decorations = buildThemedPickupDecorations(definition, evt, pickupVisualIndex)
+      pickupVisualIndex += 1
+      return decorations
+    }
     return []
+  })
+}
+
+function filterDuplicateInteractiveEventDecorations(decorations) {
+  const seen = new Set()
+  return (decorations || []).filter((object) => {
+    if (object?.hiddenGateMarker || object?.hiddenGateEntranceBlocker) return true
+    if (typeof object?.eventId !== 'string' || typeof object?.eventType !== 'string') return true
+    const key = `${object.eventType}:${object.eventId}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
   })
 }
 
@@ -5180,14 +5973,15 @@ function buildFixedTrialArenaScene(evt) {
       scale: 1.32,
       height: 0.2,
       rotation: SIGN_FACE_DOWN,
-      eventType: 'challenge'
+      eventType: 'challenge',
+      preserveRoadPosition: true
     }),
-    makeFixedSceneObject(evt, 'trial_stone_n', 'platformer_stones', 0, -0.82, { scale: 0.62, rotation: 0.1 }),
-    makeFixedSceneObject(evt, 'trial_stone_s', 'platformer_stones', 0, 0.82, { scale: 0.62, rotation: Math.PI }),
-    makeFixedSceneObject(evt, 'trial_rock_w', 'hex_stone_rocks', -0.86, 0, { scale: 0.58, rotation: -Math.PI / 2 }),
-    makeFixedSceneObject(evt, 'trial_rock_e', 'hex_stone_rocks', 0.86, 0, { scale: 0.58, rotation: Math.PI / 2 }),
-    makeFixedSceneObject(evt, 'trial_lantern_w', 'grave_lantern_glass', -0.72, -0.58, { scale: 0.56, rotation: -0.2 }),
-    makeFixedSceneObject(evt, 'trial_lantern_e', 'grave_lantern_glass', 0.72, -0.58, { scale: 0.56, rotation: 0.2 })
+    makeFixedSceneObject(evt, 'trial_stone_n', 'platformer_stones', 0, -0.82, { scale: 0.62, rotation: 0.1, preserveRoadPosition: true }),
+    makeFixedSceneObject(evt, 'trial_stone_s', 'platformer_stones', 0, 0.82, { scale: 0.62, rotation: Math.PI, preserveRoadPosition: true }),
+    makeFixedSceneObject(evt, 'trial_rock_w', 'hex_stone_rocks', -0.86, 0, { scale: 0.58, rotation: -Math.PI / 2, preserveRoadPosition: true }),
+    makeFixedSceneObject(evt, 'trial_rock_e', 'hex_stone_rocks', 0.86, 0, { scale: 0.58, rotation: Math.PI / 2, preserveRoadPosition: true }),
+    makeFixedSceneObject(evt, 'trial_lantern_w', 'grave_lantern_glass', -0.72, -0.58, { scale: 0.56, rotation: -0.2, preserveRoadPosition: true }),
+    makeFixedSceneObject(evt, 'trial_lantern_e', 'grave_lantern_glass', 0.72, -0.58, { scale: 0.56, rotation: 0.2, preserveRoadPosition: true })
   ]
 }
 
@@ -5202,6 +5996,518 @@ function isManualFixedSceneDuplicate(object, gameplayEvents) {
     const dy = y - evt.position.y
     return Math.hypot(dx, dy) <= 0.75
   })
+}
+
+const HIDDEN_ZONE_PERIMETER_PROFILES = {
+  meadow: {
+    types: ['town_hedge_large'],
+    scaleRange: [1.64, 1.64]
+  },
+  lake: {
+    types: ['nature_fence_planks'],
+    scaleRange: [2.08, 2.08]
+  },
+  farm: {
+    types: ['survival_fence'],
+    scaleRange: [2.06, 2.06]
+  },
+  shore: {
+    types: ['pirate_structure_fence'],
+    scaleRange: [0.86, 0.86]
+  },
+  grave: {
+    types: ['grave_iron_fence_border'],
+    scaleRange: [2.08, 2.08]
+  },
+  ruins: {
+    types: ['grave_stone_wall_damaged'],
+    scaleRange: [2.02, 2.02]
+  },
+  peak: {
+    types: ['platformer_fence_straight'],
+    scaleRange: [2.04, 2.04],
+    cornerType: 'platformer_fence_straight',
+    cornerScale: 1.72
+  }
+}
+
+const HIDDEN_ZONE_LINEAR_PERIMETER_TYPES = new Set([
+  'nature_fence_planks',
+  'survival_fence',
+  'town_hedge_large',
+  'grave_iron_fence_border',
+  'grave_stone_wall_damaged',
+  'platformer_fence_straight',
+  'pirate_structure_fence'
+])
+
+const HIDDEN_ZONE_LINEAR_PERIMETER_ROTATION_OFFSETS = {
+  // Fantasy town hedges are authored along the opposite axis from the fence assets.
+  town_hedge_large: Math.PI / 2
+}
+
+const HIDDEN_ZONE_PERIMETER_ENTRY_CLEARANCE = 1
+const HIDDEN_ZONE_PERIMETER_EDGE_CLEARANCE_PADDING = 0.65
+
+function getHiddenZonePerimeterOutwardDelta(side) {
+  switch (side) {
+    case 'north':
+      return { dx: 0, dy: -1 }
+    case 'south':
+      return { dx: 0, dy: 1 }
+    case 'west':
+      return { dx: -1, dy: 0 }
+    case 'east':
+      return { dx: 1, dy: 0 }
+    default:
+      return { dx: 0, dy: 0 }
+  }
+}
+
+function getHiddenZoneLinearPerimeterRotation(type, side) {
+  const sideAlignedRotation = (side === 'north' || side === 'south') ? 0 : Math.PI / 2
+  const typeOffset = HIDDEN_ZONE_LINEAR_PERIMETER_ROTATION_OFFSETS[type] || 0
+  return sideAlignedRotation + typeOffset
+}
+
+function createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, index, outwardOffset = 0) {
+  const { dx, dy } = getHiddenZonePerimeterOutwardDelta(candidate.side)
+  const x = Number((candidate.x + dx * outwardOffset).toFixed(2))
+  const y = Number((candidate.y + dy * outwardOffset).toFixed(2))
+  const type = profile.types[(candidate.x * 17 + candidate.y * 13 + index) % profile.types.length]
+  const minScale = profile.scaleRange[0]
+  const maxScale = profile.scaleRange[1]
+  const scale = minScale + seededRandom(candidate.x, candidate.y, 940 + index) * (maxScale - minScale)
+  const rotation = HIDDEN_ZONE_LINEAR_PERIMETER_TYPES.has(type)
+    ? getHiddenZoneLinearPerimeterRotation(type, candidate.side)
+    : seededRandom(candidate.x, candidate.y, 980 + index) * Math.PI * 2
+
+  return themeLandmark(type, x, y, {
+    scale: Number(scale.toFixed(2)),
+    rotation: Number(rotation.toFixed(4)),
+    sourceId: `${zone.id}_perimeter_${candidate.side}_${index}${outwardOffset ? `_outer_${String(outwardOffset).replace('.', '_')}` : ''}`,
+    hiddenZonePerimeter: true,
+    hiddenZoneId: zone.id,
+    hiddenZoneSide: candidate.side,
+    hiddenZoneCellX: candidate.x,
+    hiddenZoneCellY: candidate.y,
+    blocksPath: false,
+    forcePathBlocking: false,
+    preserveRoadPosition: true,
+    preserveBridgePosition: true,
+    landmark: true
+  })
+}
+
+function createHiddenZoneCornerDecoration(zone, profile, corner, index) {
+  if (!profile?.cornerType) return null
+  return themeLandmark(profile.cornerType, corner.x, corner.y, {
+    scale: Number((profile.cornerScale ?? profile.scaleRange?.[0] ?? 1).toFixed(2)),
+    rotation: Number(corner.rotation.toFixed(4)),
+    sourceId: `${zone.id}_corner_${corner.id}`,
+    hiddenZoneCorner: true,
+    hiddenZoneId: zone.id,
+    hiddenZoneSide: corner.id,
+    hiddenZoneCellX: corner.x,
+    hiddenZoneCellY: corner.y,
+    blocksPath: false,
+    forcePathBlocking: false,
+    preserveRoadPosition: true,
+    preserveBridgePosition: true,
+    landmark: true
+  })
+}
+
+function getHiddenZoneCornerDecorations(zone, profile) {
+  if (!profile?.cornerType) return []
+
+  const corners = [
+    { id: 'north_west', x: zone.x - 1, y: zone.y - 1, rotation: -Math.PI / 4 },
+    { id: 'north_east', x: zone.x + zone.width, y: zone.y - 1, rotation: Math.PI / 4 },
+    { id: 'south_west', x: zone.x - 1, y: zone.y + zone.height, rotation: -Math.PI * 3 / 4 },
+    { id: 'south_east', x: zone.x + zone.width, y: zone.y + zone.height, rotation: Math.PI * 3 / 4 }
+  ]
+
+  return corners
+    .filter((corner) => inBounds(corner.x, corner.y))
+    .map((corner, index) => createHiddenZoneCornerDecoration(zone, profile, corner, index))
+    .filter(Boolean)
+}
+
+function hiddenZonePerimeterCellKey(candidate) {
+  return `${candidate.x},${candidate.y}:${candidate.side}`
+}
+
+function collectExistingHiddenZonePerimeterKeys(decorations, zoneId = null) {
+  const keys = new Set()
+  ;(decorations || []).forEach((object) => {
+    if (!isHiddenZonePerimeterDecoration(object)) return
+    if (zoneId && object.hiddenZoneId !== zoneId) return
+    const cellX = Number.isFinite(Number(object.hiddenZoneCellX))
+      ? Math.trunc(Number(object.hiddenZoneCellX))
+      : Math.round(Number(object.x))
+    const cellY = Number.isFinite(Number(object.hiddenZoneCellY))
+      ? Math.trunc(Number(object.hiddenZoneCellY))
+      : Math.round(Number(object.y))
+    if (object.hiddenZoneCorner === true) return
+    const side = object.hiddenZoneSide || 'unknown'
+    if (!Number.isFinite(cellX) || !Number.isFinite(cellY)) return
+    keys.add(`${cellX},${cellY}:${side}`)
+  })
+  return keys
+}
+
+function isWalkableHiddenPerimeterTile(tile) {
+  return [
+    TILE.grass,
+    TILE.tallGrass,
+    TILE.flowers,
+    TILE.sand,
+    TILE.paleGrass,
+    TILE.road,
+    TILE.bridge,
+    TILE.exit
+  ].includes(tile)
+}
+
+const HIDDEN_ENCOUNTER_GATE_PUBLIC_SURFACE_TILES = new Set([
+  TILE.road,
+  TILE.bridge,
+  TILE.exit
+])
+
+function isHiddenEncounterGatePublicSurfaceTile(tile) {
+  return HIDDEN_ENCOUNTER_GATE_PUBLIC_SURFACE_TILES.has(tile)
+}
+
+function collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents = []) {
+  if (!zone || !Array.isArray(grid) || grid.length === 0) return []
+
+  const candidates = []
+  const maybeAddCandidate = (x, y, side) => {
+    if (!inBounds(x, y)) return
+    candidates.push({ x, y, side })
+  }
+
+  for (let x = zone.x; x < zone.x + zone.width; x += 1) {
+    maybeAddCandidate(x, zone.y - 1, 'north')
+    maybeAddCandidate(x, zone.y + zone.height, 'south')
+  }
+  for (let y = zone.y; y < zone.y + zone.height; y += 1) {
+    maybeAddCandidate(zone.x - 1, y, 'west')
+    maybeAddCandidate(zone.x + zone.width, y, 'east')
+  }
+
+  return candidates
+}
+
+const HIDDEN_ENCOUNTER_VISUAL_PERIMETER_BLOCKED_TILES = new Set([
+  TILE.water,
+  TILE.road,
+  TILE.bridge,
+  TILE.exit,
+  TILE.sign,
+  TILE.heal
+])
+
+function collectHiddenEncounterVisualPerimeterCandidates(zone, grid, runtimeEvents = [], gateEvent = null) {
+  if (!zone || !Array.isArray(grid) || grid.length === 0) return []
+
+  const eventTileKeys = new Set(
+    (runtimeEvents || [])
+      .map((evt) => {
+        const x = Math.trunc(Number(evt?.position?.x))
+        const y = Math.trunc(Number(evt?.position?.y))
+        return Number.isSafeInteger(x) && Number.isSafeInteger(y) ? `${x},${y}` : null
+      })
+      .filter(Boolean)
+  )
+  const gateX = Math.trunc(Number(gateEvent?.position?.x))
+  const gateY = Math.trunc(Number(gateEvent?.position?.y))
+  const hasGatePosition = Number.isSafeInteger(gateX) && Number.isSafeInteger(gateY)
+  const candidates = []
+  const seen = new Set()
+
+  const maybeAddCandidate = (x, y, side) => {
+    if (!inBounds(x, y)) return
+    if (eventTileKeys.has(`${x},${y}`)) return
+    if (hasGatePosition && Math.abs(x - gateX) + Math.abs(y - gateY) <= HIDDEN_ZONE_PERIMETER_ENTRY_CLEARANCE) return
+    const key = `${x},${y}:${side}`
+    if (seen.has(key)) return
+    seen.add(key)
+    candidates.push({ x, y, side })
+  }
+
+  for (let x = zone.x; x < zone.x + zone.width; x += 1) {
+    maybeAddCandidate(x, zone.y - 1, 'north')
+    maybeAddCandidate(x, zone.y + zone.height, 'south')
+  }
+  for (let y = zone.y; y < zone.y + zone.height; y += 1) {
+    maybeAddCandidate(zone.x - 1, y, 'west')
+    maybeAddCandidate(zone.x + zone.width, y, 'east')
+  }
+
+  return candidates
+}
+
+function collectHiddenEncounterRequiredPerimeterCandidates(zone, grid, runtimeEvents = [], gateEvent = null) {
+  if (!zone || !Array.isArray(grid) || grid.length === 0) return []
+
+  const gateX = Math.trunc(Number(gateEvent?.position?.x))
+  const gateY = Math.trunc(Number(gateEvent?.position?.y))
+  const hasGatePosition = Number.isSafeInteger(gateX) && Number.isSafeInteger(gateY)
+  const entry = hasGatePosition
+    ? resolveHiddenEncounterGateEntryCandidate(zone, collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents), gateX, gateY)
+    : null
+
+  return collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents)
+    .filter((candidate) => !entry || candidate.x !== entry.x || candidate.y !== entry.y)
+}
+
+function getHiddenEncounterGateZone(mapSource, gateEvent) {
+  const hiddenZoneId = gateEvent?.properties?.hiddenZoneId
+  if (typeof hiddenZoneId !== 'string' || hiddenZoneId.length === 0) return null
+  return (mapSource?.encounterZones || []).find((zone) => zone?.id === hiddenZoneId) || null
+}
+
+function isPointInsideHiddenZone(zone, x, y) {
+  return (
+    x >= zone.x &&
+    x < zone.x + zone.width &&
+    y >= zone.y &&
+    y < zone.y + zone.height
+  )
+}
+
+function getHiddenEncounterCandidateZoneNeighbors(zone, candidate) {
+  return CARDINAL_DIRECTIONS
+    .map(([, dx, dy]) => ({ x: candidate.x + dx, y: candidate.y + dy }))
+    .filter((point) => isPointInsideHiddenZone(zone, point.x, point.y))
+}
+
+function isGateTileZoneEntry(zone, gateX, gateY) {
+  if (isPointInsideHiddenZone(zone, gateX, gateY)) return true
+  return CARDINAL_DIRECTIONS.some(([, dx, dy]) => isPointInsideHiddenZone(zone, gateX + dx, gateY + dy))
+}
+
+function doesCandidatePassThroughGate(zone, candidate, gateX, gateY) {
+  const zoneNeighbors = getHiddenEncounterCandidateZoneNeighbors(zone, candidate)
+  if (zoneNeighbors.length === 0) return false
+  return zoneNeighbors.some((point) => point.x === gateX && point.y === gateY)
+}
+
+function resolveHiddenEncounterGateEntryCandidate(zone, candidates, gateX, gateY) {
+  const exact = (candidates || []).find((candidate) => candidate.x === gateX && candidate.y === gateY)
+  if (exact) return exact
+
+  const touchingGate = (candidates || []).find((candidate) => (
+    getHiddenEncounterCandidateZoneNeighbors(zone, candidate)
+      .some((point) => point.x === gateX && point.y === gateY)
+  ))
+  if (touchingGate) return touchingGate
+
+  return (candidates || [])
+    .slice()
+    .sort((left, right) => (
+      Math.abs(left.x - gateX) + Math.abs(left.y - gateY) -
+      (Math.abs(right.x - gateX) + Math.abs(right.y - gateY))
+    ))[0] || null
+}
+
+function getHiddenEncounterGateCandidateInwardDelta(candidate) {
+  switch (candidate?.side) {
+    case 'north':
+      return { dx: 0, dy: 1 }
+    case 'south':
+      return { dx: 0, dy: -1 }
+    case 'west':
+      return { dx: 1, dy: 0 }
+    case 'east':
+      return { dx: -1, dy: 0 }
+    default:
+      return { dx: 0, dy: 0 }
+  }
+}
+
+function resolveHiddenEncounterGateBarrierTile(zone, grid, candidate) {
+  const candidateTile = grid[candidate.y]?.[candidate.x]
+  if (!isHiddenEncounterGatePublicSurfaceTile(candidateTile)) {
+    return { x: candidate.x, y: candidate.y }
+  }
+
+  const { dx, dy } = getHiddenEncounterGateCandidateInwardDelta(candidate)
+  if (dx === 0 && dy === 0) return { x: candidate.x, y: candidate.y }
+
+  let x = candidate.x + dx
+  let y = candidate.y + dy
+
+  while (isPointInsideHiddenZone(zone, x, y)) {
+    const tile = grid[y]?.[x]
+    if (tile === TILE.sign || isHiddenEncounterGatePublicSurfaceTile(tile)) {
+      x += dx
+      y += dy
+      continue
+    }
+    if (isWalkableHiddenPerimeterTile(tile)) {
+      return { x, y }
+    }
+    return null
+  }
+
+  return null
+}
+
+export function getHiddenEncounterGatePassageTiles(mapSource, grid, gateEvent, runtimeEvents = mapSource?.runtimeEvents || []) {
+  const zone = getHiddenEncounterGateZone(mapSource, gateEvent)
+  if (!zone) return { lockedTiles: [], sealedTiles: [] }
+
+  const gateX = Math.trunc(Number(gateEvent?.position?.x))
+  const gateY = Math.trunc(Number(gateEvent?.position?.y))
+  if (!Number.isSafeInteger(gateX) || !Number.isSafeInteger(gateY)) {
+    return { lockedTiles: [], sealedTiles: [] }
+  }
+
+  const candidates = collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents)
+  if (candidates.length === 0) return { lockedTiles: [], sealedTiles: [] }
+
+  const entry = resolveHiddenEncounterGateEntryCandidate(zone, candidates, gateX, gateY)
+  const lockedTiles = []
+  const sealedTiles = []
+  const lockedTileKeys = new Set()
+  const sealedTileKeys = new Set()
+
+  candidates.forEach((candidate) => {
+    const isEntry = entry && candidate.x === entry.x && candidate.y === entry.y
+    const barrierKey = `${candidate.x},${candidate.y}`
+    if (isEntry) {
+      if (lockedTileKeys.has(barrierKey)) return
+      lockedTileKeys.add(barrierKey)
+      lockedTiles.push({ x: candidate.x, y: candidate.y })
+      return
+    }
+
+    if (sealedTileKeys.has(barrierKey)) return
+    sealedTileKeys.add(barrierKey)
+    sealedTiles.push({ x: candidate.x, y: candidate.y })
+  })
+
+  return { lockedTiles, sealedTiles }
+}
+
+function buildHiddenEncounterPerimeterDecorations(
+  definition,
+  grid,
+  runtimeEvents,
+  occupiedDecorations = [],
+  bridges = []
+) {
+  return []
+}
+
+function getHiddenZoneEdgeClearanceCells(definition, runtimeEvents) {
+  const cells = new Set()
+  const grid = buildRoadsideLayoutGrid(definition)
+
+  ;(definition.encounterZones || [])
+    .filter((zone) => zone?.depth === 'deep')
+    .forEach((zone) => {
+      const gateEvent = (runtimeEvents || []).find((evt) => (
+        isHiddenEncounterGateEvent(evt) &&
+        evt?.properties?.hiddenZoneId === zone.id
+      ))
+      if (!gateEvent) return
+
+      collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents)
+        .forEach((candidate) => {
+          cells.add(`${candidate.x},${candidate.y}`)
+          const { dx, dy } = getHiddenZonePerimeterOutwardDelta(candidate.side)
+          const outwardX = candidate.x + dx
+          const outwardY = candidate.y + dy
+          if (inBounds(outwardX, outwardY)) cells.add(`${outwardX},${outwardY}`)
+        })
+    })
+
+  return cells
+}
+
+function filterHiddenZoneEdgeClearanceDecorations(decorations, definition, runtimeEvents) {
+  const edgeCells = getHiddenZoneEdgeClearanceCells(definition, runtimeEvents)
+  if (edgeCells.size === 0) return decorations
+
+  return (decorations || []).filter((object) => {
+    if (isHiddenZoneRuleDecoration(object)) return true
+    if (isRuntimeEventDecoration(object) && !isHiddenZoneEdgeRemovableRuntimeAccent(object)) return true
+
+    return !getDecorationFootprintCells(object, HIDDEN_ZONE_PERIMETER_EDGE_CLEARANCE_PADDING)
+      .some((cell) => edgeCells.has(`${cell.x},${cell.y}`))
+  })
+}
+
+function filterHiddenGateEntranceClearanceDecorations(decorations, runtimeEvents) {
+  const entrancePoints = (runtimeEvents || [])
+    .filter((eventEntry) => isHiddenEncounterGateEvent(eventEntry))
+    .map((eventEntry) => ({
+      x: Number(eventEntry?.position?.x),
+      y: Number(eventEntry?.position?.y)
+    }))
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+
+  if (entrancePoints.length === 0) return decorations
+
+  return (decorations || []).filter((object) => {
+    if (isHiddenZoneRuleDecoration(object)) return true
+    if (isRuntimeEventDecoration(object)) return true
+
+    return !entrancePoints.some((point) => (
+      decorationCentersDistance(object, point) < 2.4 ||
+      isInsideDecorationFootprint(object, point.x, point.y, 0.9)
+    ))
+  })
+}
+
+function resolveHiddenZonePerimeterPlacement(zone, theme, profile, candidate, index, grid, decorations, bridges) {
+  return createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, index)
+}
+
+function ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, decorations, bridges) {
+  const output = [...(decorations || [])]
+
+  ;(definition.encounterZones || [])
+    .filter((zone) => zone?.depth === 'deep')
+    .forEach((zone) => {
+      const gateEvent = (runtimeEvents || []).find((evt) => (
+        isHiddenEncounterGateEvent(evt) &&
+        evt?.properties?.hiddenZoneId === zone.id
+      ))
+      if (!gateEvent) return
+
+      const theme = gateEvent.properties?.gateTheme || 'meadow'
+      const profile = HIDDEN_ZONE_PERIMETER_PROFILES[theme] || HIDDEN_ZONE_PERIMETER_PROFILES.meadow
+      const existingKeys = collectExistingHiddenZonePerimeterKeys(output, zone.id)
+      const candidates = collectHiddenEncounterRequiredPerimeterCandidates(zone, grid, runtimeEvents, gateEvent)
+
+      candidates.forEach((candidate, index) => {
+        if (existingKeys.has(hiddenZonePerimeterCellKey(candidate))) return
+        const perimeterObject = resolveHiddenZonePerimeterPlacement(zone, theme, profile, candidate, index, grid, output, bridges)
+        if (!perimeterObject) return
+        output.push(perimeterObject)
+        existingKeys.add(hiddenZonePerimeterCellKey(candidate))
+      })
+
+      const existingCornerKeys = new Set(
+        output
+          .filter((object) => object?.hiddenZoneCorner === true && object.hiddenZoneId === zone.id)
+          .map((object) => object.hiddenZoneSide || object.sourceId)
+      )
+      getHiddenZoneCornerDecorations(zone, profile).forEach((cornerObject) => {
+        const cornerKey = cornerObject.hiddenZoneSide || cornerObject.sourceId
+        if (existingCornerKeys.has(cornerKey)) return
+        output.push(cornerObject)
+        existingCornerKeys.add(cornerKey)
+      })
+    })
+
+  return output
 }
 
 function makeVisualPath(points, radius = 0.78, edgeRadius = 0.92) {
@@ -5275,12 +6581,14 @@ export function buildGodotRegionMap(rawDefinition) {
   }
   const grid = makeGrid()
   const gameplayEvents = buildRegionGameplayEvents(definition)
-  const runtimeEvents = [...(definition.runtimeEvents || []), ...gameplayEvents]
+  let runtimeEvents = [...(definition.runtimeEvents || []), ...gameplayEvents]
+  runtimeEvents = relocateRoadSurfaceHealEvents(definition, runtimeEvents)
+  const gameplayEventIds = new Set(gameplayEvents.map((eventEntry) => eventEntry.id))
   const handPlacedDecorations = (definition.decorativeObjects || [])
     .filter((object) => !isManualFixedSceneDuplicate(object, runtimeEvents))
   let decorations = [
     ...handPlacedDecorations,
-    ...buildFixedRuntimeEventSceneDecorations(runtimeEvents),
+    ...buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, gameplayEventIds),
     ...buildRuntimeSignDecorations(definition, runtimeEvents),
     ...buildRegionGameplayDecorations(definition, gameplayEvents)
   ]
@@ -5360,34 +6668,59 @@ export function buildGodotRegionMap(rawDefinition) {
   if (isPirateShoreMap(definition.id)) {
     decorations = tunePirateShoreDecorationScales(decorations)
   }
+  const {
+    decorations: roadSurfaceCleanedDecorations,
+    eventShifts: roadSurfaceEventShifts
+  } = cleanupRoadSurfaceDecorationsWithShifts(decorations, grid, runtimeEvents)
+  decorations = roadSurfaceCleanedDecorations
+  runtimeEvents = applyRoadSurfaceEventShifts(runtimeEvents, roadSurfaceEventShifts)
+  carveEventAccessCorridors(grid, runtimeEvents)
+  clearEvents(grid, runtimeEvents)
   decorations = filterPathClearanceDecorations(decorations, grid, runtimeEvents, definition)
   decorations = filterFixedLandmarkOverlaps(decorations, runtimeEvents)
   decorations = filterBridgeSurfaceDecorations(decorations, bridges)
   decorations = filterRuntimeEventTileOverlaps(decorations, runtimeEvents)
-  paintBlockingDecorationFootprints(grid, decorations, runtimeEvents)
-  decorations = filterBlockedLowVegetationDecorations(decorations, grid)
-  paintRuntimeEventTiles(grid, runtimeEvents)
+  const hiddenEncounterPerimeterDecorations = buildHiddenEncounterPerimeterDecorations(
+    definition,
+    grid,
+    runtimeEvents,
+    decorations,
+    bridges
+  )
+  decorations = [...decorations, ...hiddenEncounterPerimeterDecorations]
 
   const signs = Object.fromEntries(
     runtimeEvents
-      .filter((evt) => evt.type === 'sign' && evt.properties?.message)
+      .filter((evt) => evt.type === 'sign' && evt.properties?.message && !isHiddenEncounterGateEvent(evt))
       .map((evt) => [`${evt.position.x},${evt.position.y}`, evt.properties.message])
   )
 
-  const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
+  const terrainVisualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
   const boundaryVisualBlockers = buildBoundaryVisualBlockers(
     definition.id,
     grid,
     decorations,
     runtimeEvents,
-    visualPaths
+    terrainVisualPaths
   )
   const {
-    blocking: blockingBoundaryVisualBlockers,
     visual: boundaryVisualDecorations
   } = splitBoundaryVisualBlockersByCollision(grid, boundaryVisualBlockers)
-  paintBlockingDecorationFootprints(grid, blockingBoundaryVisualBlockers, runtimeEvents)
+  let visibleDecorations = cleanupRoadSurfaceDecorations(
+    [...decorations, ...boundaryVisualDecorations],
+    grid,
+    runtimeEvents
+  )
+  visibleDecorations = filterPathClearanceDecorations(visibleDecorations, grid, runtimeEvents, definition)
+  visibleDecorations = filterHiddenZoneEdgeClearanceDecorations(visibleDecorations, definition, runtimeEvents)
+  visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
+  visibleDecorations = ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, visibleDecorations, bridges)
+  visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
+  paintBlockingDecorationFootprints(grid, visibleDecorations, runtimeEvents)
+  visibleDecorations = filterBlockedLowVegetationDecorations(visibleDecorations, grid)
   paintRuntimeEventTiles(grid, runtimeEvents)
+  const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
+  visibleDecorations = filterDuplicateInteractiveEventDecorations(visibleDecorations)
 
   return {
     id: definition.id,
@@ -5408,11 +6741,11 @@ export function buildGodotRegionMap(rawDefinition) {
     mapGrid: grid,
     visualPaths,
     roadPathEndpoints: deriveRoadPathEndpoints(definition.roadPaths),
-    forestTrails: [],
+    forestTrails: definition.forestTrails || [],
     roadJunctions: definition.roadJunctions || [],
     waterBodies: definition.waterBodies || [],
     bridges,
-    decorativeObjects: [...decorations, ...boundaryVisualDecorations],
+    decorativeObjects: visibleDecorations,
     encounterZones: definition.encounterZones,
     runtimeEvents,
     signs,
@@ -5442,36 +6775,76 @@ const REGIONS = [
     roadPaths: [
       { points: [[1, 16], [20, 16], [20, 24], [25, 24], [25, 16], [38, 16]], width: 3 },
       { points: [[12, 16], [12, 9]], width: 3 },
-      { points: [[20, 24], [20, 30]], width: 3 }
+      { points: [[20, 24], [20, 30]], width: 3 },
+      // 新增：隐藏支路通往东北角秘境
+      { points: [[33, 16], [33, 8]], width: 1.5 },
+      { points: [[33, 8], [38, 8]], width: 1.5 },
+      { points: [[33, 12], [29, 12], [29, 8]], width: 1.5 },
+      { points: [[33, 16], [31, 16]], width: 1 }
     ],
     roadJunctions: [{ x: 20, y: 16, rx: 1.2, ry: 1.2 }, { x: 20, y: 24, rx: 1.1, ry: 1.1 }],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 4, x2: 18, y2: 10 },
       { shape: 'rect', x1: 5, y1: 22, x2: 16, y2: 28 },
-      { shape: 'rect', x1: 27, y1: 5, x2: 36, y2: 10 }
+      { shape: 'rect', x1: 24, y1: 5, x2: 28, y2: 10 },
+      { shape: 'rect', x1: 31, y1: 5, x2: 37, y2: 9 }
     ],
-    waterBodies: [{ type: 'pond', x: 12, y: 9, rx: 2.2, ry: 1.6, rotation: 0.04, salt: 11 }],
+    waterTiles: [
+      { x: 31.2, y: 8.1, rx: 0.95, ry: 0.72, rotation: 0.04 },
+      { x: 30.6, y: 13.2, rx: 1.0, ry: 0.72, rotation: -0.06 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 12, y: 9, rx: 2.2, ry: 1.6, rotation: 0.04, salt: 11 },
+      { type: 'pond', x: 31.2, y: 8.1, rx: 1.15, ry: 0.92, rotation: 0.04, salt: 12 },
+      { type: 'pond', x: 30.6, y: 13.2, rx: 1.2, ry: 0.92, rotation: -0.06, salt: 13 }
+    ],
     runtimeEvents: [
       warp('warp_meadow_back_valley', 1, 16, 'GodotMap', { x: 36, y: 14, direction: 'left' }, '返回新手山谷'),
       warp('warp_meadow_to_lake', 38, 16, 'GodotMapV2_MistLake', { x: 3, y: 16, direction: 'right' }, '前往雾湖苇岸'),
       warp('warp_meadow_to_farm', 20, 30, 'GodotMapV2_FarmTown', { x: 20, y: 3, direction: 'down' }, '前往风车农庄'),
-      heal('heal_meadow_spring', 12, 11, '星音泉水'),
-      sign('sign_meadow_gate', 2, 14, '星音草径 Lv.5-12：东雾湖，南农庄。')
+      heal('heal_meadow_spring', 30, 14, '星音泉水'),
+      sign('sign_meadow_gate', 2, 14, '星音草径 Lv.5-12：东雾湖，南农庄。'),
+      hiddenEncounterGate('hidden_gate_meadow_grove', 33, 10, {
+        hiddenZoneId: 'meadow_hidden_grove',
+        hiddenZoneName: '星音秘境',
+        message: '星音秘境入口：100金币开启。',
+        gateTheme: 'meadow',
+        pathAxis: 'vertical',
+        treeType: 'nature_tree_oak',
+        openTile: TILE.road
+      }),
+      { id: 'treasure_meadow_hidden', type: 'item', position: { x: 37, y: 8 }, properties: { itemType: 'pokeball', itemKey: 'pokeball_great', quantity: 1, text: '星音秘境捕捉宝箱' } },
+      rewardTrainer('npc_meadow_hermit_reward', 18, 4, {
+        name: '隐居老人',
+        title: '隐居老人 · 速度修行',
+        facing: 'down',
+        team: [
+          { pokemonId: 1, level: 10 },
+          { pokemonId: 4, level: 11 }
+        ],
+        beforeBattleText: '隐居老人：赢了这场修行，速度之石归你。',
+        defeatedText: '隐居老人：速度之石归你了，这场修行到此为止。',
+        rewardItems: [{ itemType: 'statBoost', itemKey: 'speed_stone', quantity: 1 }]
+      })
     ],
     encounterZones: [
       { id: 'meadow_west_grass', name: '星音西草丛', x: 4, y: 4, width: 15, height: 7, encounterTableId: 'region_meadow_5_12', tallGrassRate: 0.22 },
       { id: 'meadow_south_grass', name: '星音南草坡', x: 5, y: 22, width: 12, height: 7, encounterTableId: 'region_meadow_south_5_12', tallGrassRate: 0.24 },
-      { id: 'meadow_east_flowers', name: '星音东花地', x: 27, y: 5, width: 10, height: 6, encounterTableId: 'region_meadow_east_5_12', tallGrassRate: 0.2 }
+      { id: 'meadow_east_flowers', name: '星音东花地', x: 24, y: 5, width: 5, height: 6, encounterTableId: 'region_meadow_east_5_12', tallGrassRate: 0.2 },
+      { id: 'meadow_hidden_grove', name: '星音秘境', x: 31, y: 5, width: 7, height: 5, encounterTableId: 'region_meadow_hidden_grove_5_12', tallGrassRate: 0.34, depth: 'deep', premiumHiddenZone: true, levelRange: [17, 19] }
     ],
     decorativeObjects: [
       // 中央巨大橡树 - 唯一视觉焦点
       themeLandmark('nature_tree_oak', 20, 10, { scale: 3.2 }),
-      // 南侧野营角落（让玩家一眼记住“草径的南口”）
+      // 南侧野营角落（让玩家一眼记住”草径的南口”）
       themeLandmark('nature_tent_detailed_open', 18, 27, { rotation: 0.08 }),
       themeLandmark('nature_canoe', 14, 24, { rotation: -0.5 }),
       // 北侧石阵（与草丛区形成对比）
       themeLandmark('nature_stone_large', 14, 7, { rotation: 0.2 }),
-      themeLandmark('nature_rock_large', 16, 6, { rotation: -0.15 })
+      themeLandmark('nature_rock_large', 16, 6, { rotation: -0.15 }),
+      // 新增：隐藏路径视觉线索
+      themeLandmark('nature_bush_large', 33, 16, { scale: 1.8, rotation: 0.1 }),  // 灌木标记入口
+      themeLandmark('nature_tree_oak', 33, 8, { scale: 2.8 })  // 巨树标记秘境
     ],
     scatter: [
       // 密集的野花海洋 - 营造花海草原氛围
@@ -5495,42 +6868,66 @@ const REGIONS = [
       { shape: 'rect', x1: 20, y1: 23, x2: 26, y2: 30 },
       { shape: 'rect', x1: 31, y1: 13, x2: 38, y2: 19 }
     ],
-    waterTiles: [{ x: 27, y: 16, rx: 8.4, ry: 6.2 }],
+    waterTiles: [
+      { x: 27, y: 16, rx: 8.4, ry: 6.2 },
+      { x: 29.6, y: 27, rx: 1.0, ry: 0.68, rotation: 0.08 }
+    ],
     roadPaths: [
       { points: [[1, 16], [38, 16]], width: 3, bridgeExtraLength: 1.2 },
       { points: [[14, 16], [14, 8], [21, 8]], width: 3 },
       { points: [[36, 16], [36, 24], [21, 24], [21, 30]], width: 3 },
-      { points: [[30, 24], [28, 24], [28, 23]], width: 1 }
+      { points: [[30, 24], [28, 24], [28, 23]], width: 1 },
+      // 新增：环形路线连接北支路和治疗点
+      { points: [[21, 8], [28, 8], [28, 23]], width: 1.5 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 13, y2: 10 },
       { shape: 'rect', x1: 5, y1: 22, x2: 16, y2: 28 },
-      { shape: 'rect', x1: 29, y1: 22, x2: 37, y2: 28 }
+      { shape: 'rect', x1: 29, y1: 22, x2: 37, y2: 28 },
+      { shape: 'rect', x1: 26, y1: 8, x2: 31, y2: 14 }
     ],
-    waterBodies: [{ type: 'lake', x: 27, y: 16, rx: 8.8, ry: 6.5, rotation: -0.05, salt: 31 }],
+    waterBodies: [
+      { type: 'lake', x: 27, y: 16, rx: 8.8, ry: 6.5, rotation: -0.05, salt: 31 },
+      { type: 'pond', x: 29.6, y: 27, rx: 1.2, ry: 0.88, rotation: 0.08, salt: 32 }
+    ],
     runtimeEvents: [
       warp('warp_lake_to_meadow', 1, 16, 'GodotMapV2', { x: 36, y: 16, direction: 'left' }, '返回星音草径'),
       warp('warp_lake_to_shore', 38, 16, 'GodotMapV2_PirateShore', { x: 20, y: 3, direction: 'down' }, '前往贝壳海岸'),
       warp('warp_lake_to_farm', 21, 30, 'GodotMapV2_FarmTown', { x: 28, y: 3, direction: 'down' }, '前往风车农庄'),
-      heal('heal_lake_spring', 28, 23, '雾湖泉水'),
-      sign('sign_lake_reeds', 2, 14, '雾湖苇岸 Lv.11-18：东海岸，南农庄。')
+      heal('heal_lake_spring', 28, 26, '雾湖泉水'),
+      sign('sign_lake_reeds', 2, 14, '雾湖苇岸 Lv.11-18：东海岸，南农庄。'),
+      hiddenEncounterGate('hidden_gate_lake_path', 25, 8, {
+        hiddenZoneId: 'lake_hidden_path',
+        hiddenZoneName: '环湖秘径',
+        message: '环湖秘径入口：100金币开启。',
+        gateTheme: 'lake',
+        pathAxis: 'horizontal',
+        treeType: 'nature_tree_pine',
+        openTile: TILE.road
+      }),
+      // 新增：环湖路径上的隐藏宝箱
+      { id: 'treasure_lake_hidden', type: 'item', position: { x: 29, y: 9 }, properties: { itemType: 'pokeball', itemKey: 'pokeball_great', quantity: 2, text: '环湖秘径捕获箱' } }
     ],
     encounterZones: [
       { id: 'lake_west_reeds', name: '西岸芦草', x: 4, y: 5, width: 10, height: 6, encounterTableId: 'region_lake_11_18', tallGrassRate: 0.22 },
       { id: 'lake_south_reeds', name: '南岸芦草', x: 5, y: 22, width: 12, height: 7, encounterTableId: 'region_lake_south_11_18', tallGrassRate: 0.24 },
-      { id: 'lake_east_reeds', name: '东岸潮草', x: 29, y: 22, width: 9, height: 7, encounterTableId: 'region_lake_east_11_18', tallGrassRate: 0.23 }
+      { id: 'lake_east_reeds', name: '东岸潮草', x: 29, y: 22, width: 9, height: 7, encounterTableId: 'region_lake_east_11_18', tallGrassRate: 0.23 },
+      { id: 'lake_hidden_path', name: '环湖秘径', x: 26, y: 8, width: 6, height: 7, encounterTableId: 'region_lake_hidden_path_11_18', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [23, 25] }
     ],
     decorativeObjects: [
-      // 湖心巨码头（玩家第一眼“雾湖记忆点”）
+      // 湖心巨码头（玩家第一眼”雾湖记忆点”）
       themeLandmark('shore_dock_small', 27, 16, { scale: 3.05 }),
-      // 两侧对称渔船（形成“湖心三件套”）
+      // 两侧对称渔船（形成”湖心三件套”）
       themeLandmark('pirate_boat_row_large', 24, 14, { rotation: 0.35 }),
       themeLandmark('pirate_boat_row_large', 30, 18, { rotation: -0.45 }),
       // 北侧漂流独木舟（指向北支路）
       themeLandmark('nature_canoe', 18, 9, { rotation: 0.25 }),
-      // 南岸石圈（让南出口更像“码头集市”）
+      // 南岸石圈（让南出口更像”码头集市”）
       themeLandmark('hex_water_rocks', 23, 26, { rotation: -0.12 }),
-      themeLandmark('hex_water_rocks', 26, 27, { rotation: 0.35 })
+      themeLandmark('hex_water_rocks', 26, 27, { rotation: 0.35 }),
+      // 新增：环湖路径视觉线索
+      themeLandmark('nature_lily_large', 28, 8, { scale: 1.8 }),  // 荷花标记环湖路径
+      themeLandmark('nature_canoe', 28, 12, { rotation: -0.3 })  // 独木舟指向宝箱
     ],
     scatter: [
       // 密集的芦苇丛 - 营造湖泊氛围
@@ -5557,27 +6954,42 @@ const REGIONS = [
       { points: [[20, 16], [20, 30]], width: 3 },
       { points: [[5, 16], [20, 16]], width: 3 },
       { points: [[28, 1], [28, 16]], width: 3 },
-      { points: [[12, 16], [12, 12]], width: 3 }
+      { points: [[12, 16], [12, 12]], width: 3 },
+      // 新增：隐藏支路通往西北角风车塔顶
+      { points: [[12, 12], [8, 12], [8, 8]], width: 1.5 }
     ],
     tallGrass: [
-      { shape: 'rect', x1: 5, y1: 5, x2: 12, y2: 10 },
+      { shape: 'rect', x1: 6, y1: 6, x2: 10, y2: 10 },
+      { shape: 'rect', x1: 13, y1: 5, x2: 17, y2: 10 },
       { shape: 'rect', x1: 7, y1: 23, x2: 17, y2: 28 },
       { shape: 'rect', x1: 24, y1: 23, x2: 35, y2: 28 }
     ],
-    waterTiles: [{ x: 8.9, y: 11.1, rx: 1.42, ry: 1.18, rotation: -0.08 }],
-    waterBodies: [{ type: 'pond', x: 8.9, y: 11.1, rx: 1.62, ry: 1.32, rotation: -0.08, salt: 320 }],
+    waterTiles: [{ x: 11.8, y: 10.1, rx: 1.35, ry: 1.0, rotation: -0.08 }],
+    waterBodies: [{ type: 'pond', x: 11.8, y: 10.1, rx: 1.55, ry: 1.2, rotation: -0.08, salt: 320 }],
     runtimeEvents: [
       warp('warp_farm_to_meadow', 20, 1, 'GodotMapV2', { x: 20, y: 28, direction: 'up' }, '返回星音草径'),
       warp('warp_farm_to_lake', 28, 1, 'GodotMapV2_MistLake', { x: 21, y: 28, direction: 'up' }, '前往雾湖苇岸'),
       warp('warp_farm_to_shore', 38, 16, 'GodotMapV2_PirateShore', { x: 3, y: 16, direction: 'right' }, '前往贝壳海岸'),
       warp('warp_farm_to_grave', 20, 30, 'GodotMapV2_Graveyard', { x: 20, y: 3, direction: 'down' }, '前往月影墓园'),
-      heal('heal_farm_spring', 11, 11, '农庄泉水'),
-      sign('sign_farm_rows', 22, 3, '风车农庄 Lv.17-24：东海岸，南墓园。')
+      heal('heal_farm_spring', 13, 12, '农庄泉水'),
+      sign('sign_farm_rows', 22, 3, '风车农庄 Lv.17-24：东海岸，南墓园。'),
+      hiddenEncounterGate('hidden_gate_farm_top', 8, 11, {
+        hiddenZoneId: 'farm_windmill_top',
+        hiddenZoneName: '风车塔顶',
+        message: '风车塔顶入口：100金币开启。',
+        gateTheme: 'farm',
+        pathAxis: 'horizontal',
+        treeType: 'nature_tree_default',
+        openTile: TILE.road
+      }),
+      // 新增：风车塔顶宝箱
+      { id: 'treasure_farm_windmill', type: 'item', position: { x: 8, y: 8 }, properties: { itemType: 'potion', itemKey: 'hyper_potion', quantity: 3, text: '风车旁的储备箱' } }
     ],
     encounterZones: [
-      { id: 'farm_north_rows', name: '北田垄', x: 5, y: 5, width: 8, height: 6, encounterTableId: 'region_farm_17_24', tallGrassRate: 0.2 },
+      { id: 'farm_north_rows', name: '北田垄', x: 13, y: 5, width: 5, height: 6, encounterTableId: 'region_farm_17_24', tallGrassRate: 0.2 },
       { id: 'farm_west_rows', name: '西麦田', x: 7, y: 23, width: 11, height: 6, encounterTableId: 'region_farm_west_17_24', tallGrassRate: 0.23 },
-      { id: 'farm_east_rows', name: '东麦田', x: 24, y: 23, width: 12, height: 6, encounterTableId: 'region_farm_east_17_24', tallGrassRate: 0.23 }
+      { id: 'farm_east_rows', name: '东麦田', x: 24, y: 23, width: 12, height: 6, encounterTableId: 'region_farm_east_17_24', tallGrassRate: 0.23 },
+      { id: 'farm_windmill_top', name: '风车塔顶', x: 6, y: 6, width: 5, height: 5, encounterTableId: 'region_farm_windmill_top_17_24', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: [29, 31] }
     ],
     decorativeObjects: [
       // 巨大风车 - 唯一视觉焦点
@@ -5587,7 +6999,10 @@ const REGIONS = [
       themeLandmark('town_stall_red', 17, 15, { rotation: -0.25 }),
       themeLandmark('town_stall_green', 16, 17, { rotation: 0.18 }),
       // 水井旁补一个长凳角落
-      themeLandmark('town_stall_bench', 10, 12, { rotation: 0.45 })
+      themeLandmark('town_stall_bench', 10, 12, { rotation: 0.45 }),
+      // 新增：隐藏路径视觉线索
+      themeLandmark('town_cart', 8, 12, { scale: 1.3, rotation: -0.3 }),  // 推车标记入口
+      themeLandmark('town_windmill', 8, 8, { scale: 2.0 })  // 小风车标记塔顶
     ],
     scatter: [
       // 密集的麦田海洋 - 营造丰收氛围
@@ -5615,34 +7030,64 @@ const REGIONS = [
       { points: [[1, 16], [20, 16], [20, 1]], width: 3 },
       { points: [[20, 16], [38, 16]], width: 3, bridgeExtraLength: 0.1 },
       { points: [[31, 16], [31, 28]], width: 3, bridgeExtraLength: 0.1 },
-      { points: [[20, 11], [24, 11]], width: 3 }
+      { points: [[20, 11], [23, 11]], width: 3 },
+      // 新增：隐藏支路通往沉船深处
+      { points: [[31, 28], [36, 28], [36, 27]], width: 1.5 }
     ],
     roadJunctions: [
       { x: 20, y: 16, rx: 1.2, ry: 1.2 },
-      { x: 28, y: 28, rx: 1.1, ry: 1.1 },
-      { x: 31, y: 16, rx: 1.0, ry: 1.0 }
+      { x: 28, y: 28, rx: 1.1, ry: 1.1 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 13, y2: 10 },
       { shape: 'rect', x1: 6, y1: 23, x2: 17, y2: 28 },
-      { shape: 'rect', x1: 24, y1: 24, x2: 36, y2: 29 }
+      { shape: 'rect', x1: 24, y1: 24, x2: 31, y2: 29 },
+      { shape: 'rect', x1: 34, y1: 22, x2: 38, y2: 26 }
     ],
     waterBodies: [{ type: 'lake', x: 32, y: 16, rx: 5.7, ry: 10.95, rotation: 0.04, salt: 42 }],
     runtimeEvents: [
       warp('warp_shore_to_farm', 1, 16, 'GodotMapV2_FarmTown', { x: 36, y: 16, direction: 'left' }, '返回风车农庄'),
       warp('warp_shore_to_lake', 20, 1, 'GodotMapV2_MistLake', { x: 36, y: 16, direction: 'left' }, '返回雾湖苇岸'),
       warp('warp_shore_to_hex', 38, 16, 'GodotMapV2_HexRuins', { x: 20, y: 3, direction: 'down' }, '前往六角遗迹'),
-      heal('heal_shore_spring', 25, 11, '海岸泉水'),
-      sign('sign_shore_cargo', 2, 14, '贝壳海岸 Lv.23-30：东遗迹，北雾湖。')
+      heal('heal_shore_spring', 30, 14, '海岸泉水'),
+      sign('sign_shore_cargo', 2, 14, '贝壳海岸 Lv.23-30：东遗迹，北雾湖。'),
+      hiddenEncounterGate('hidden_gate_shore_wreck', 36, 27, {
+        hiddenZoneId: 'shore_wreck_inner',
+        hiddenZoneName: '沉船内舱',
+        message: '沉船内舱入口：100金币开启。',
+        gateTheme: 'shore',
+        pathAxis: 'vertical',
+        treeType: 'pirate_flag_pennant',
+        openTile: TILE.road
+      }),
+      // 新增：沉船宝箱
+      { id: 'treasure_shore_wreck', type: 'item', position: { x: 37, y: 25 }, properties: { itemType: 'pokeball', itemKey: 'pokeball_ultra', quantity: 1, text: '沉船内舱捕获宝箱' } },
+      rewardTrainer('npc_shore_pirate_reward', 29, 9, {
+        name: '老海盗',
+        title: '老海盗 · 沉船试胆',
+        facing: 'right',
+        team: [
+          { pokemonId: 44, level: 29 },
+          { pokemonId: 81, level: 29 },
+          { pokemonId: 82, level: 29 }
+        ],
+        beforeBattleText: '老海盗：赢了这场试胆，高级球就归你。',
+        defeatedText: '老海盗：高级球归你，沉船赠礼只领一次。',
+        rewardItems: [{ itemType: 'pokeball', itemKey: 'pokeball_ultra', quantity: 2 }]
+      })
     ],
     encounterZones: [
       { id: 'shore_dune_grass', name: '沙丘草丛', x: 4, y: 5, width: 10, height: 6, encounterTableId: 'region_shore_23_30', tallGrassRate: 0.22 },
       { id: 'shore_south_grass', name: '南岸潮草', x: 6, y: 23, width: 12, height: 6, encounterTableId: 'region_shore_south_23_30', tallGrassRate: 0.24 },
-      { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 }
+      { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 8, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 },
+      { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: [35, 37] }
     ],
     decorativeObjects: [
-      { type: 'pirate_ship_wreck', x: 33, y: 19, scale: 1.02, rotation: -0.2 },
-      { type: 'pirate_boat_row_large', x: 30, y: 13, scale: 0.92, rotation: 0.45 }
+      { type: 'pirate_ship_wreck', x: 33, y: 19, scale: 0.78, rotation: -0.2 },
+      { type: 'pirate_boat_row_large', x: 30, y: 13, scale: 0.92, rotation: 0.45 },
+      // 新增：沉船入口视觉线索
+      { type: 'pirate_chest', x: 31, y: 28, scale: 0.9, rotation: 0.1 },  // 宝箱标记入口
+      { type: 'pirate_mast', x: 34, y: 24, scale: 0.82, rotation: -0.3 }  // 桅杆移入内舱，避免遮住入口旗
     ],
     scatter: [
       { idPrefix: 'shore_cargo', types: ['pirate_barrel', 'pirate_crate', 'pirate_chest', 'pirate_flag', 'pirate_flag_pennant', 'pirate_bottle'], count: 76, allowedTiles: [TILE.sand], salt: 410, scale: [0.72, 1.02] },
@@ -5668,7 +7113,9 @@ const REGIONS = [
       { points: [[20, 16], [8, 16], [8, 24], [16, 24], [16, 20]], width: 3 },
       { points: [[20, 16], [16, 16], [16, 20]], width: 3 },
       { points: [[12, 8], [28, 8]], width: 3 },
-      { points: [[28, 16], [28, 13]], width: 3 }
+      { points: [[28, 16], [28, 13]], width: 3 },
+      { points: [[16, 24], [16, 27], [12, 27], [12, 30]], width: 1.5 },
+      { points: [[16, 28], [20, 28]], width: 1.5 }
     ],
     roadJunctions: [
       { x: 20, y: 16, rx: 1.25, ry: 1.25 },
@@ -5676,25 +7123,60 @@ const REGIONS = [
       { x: 20, y: 8, rx: 1.0, ry: 1.0 }
     ],
     forestTrails: [
-      { points: [[8, 24], [8, 28], [16, 28]], radius: 0.44 }
+      { points: [[8, 24], [8, 27], [16, 27]], radius: 0.44 },
+      // 新增：隐藏森林小径通往墓园深处
+      { points: [[16, 27], [12, 27], [12, 30]], radius: 0.44 }
     ],
     tallGrass: [
       { shape: 'rect', x1: 5, y1: 5, x2: 13, y2: 10 },
-      { shape: 'rect', x1: 5, y1: 24, x2: 17, y2: 29 },
+      { shape: 'rect', x1: 5, y1: 24, x2: 17, y2: 25 },
+      { shape: 'rect', x1: 10, y1: 28, x2: 15, y2: 30 },
       { shape: 'rect', x1: 24, y1: 24, x2: 36, y2: 29 }
     ],
-    waterTiles: [{ x: 18.1, y: 20.1, rx: 1.65, ry: 1.18, rotation: 0.06 }],
-    waterBodies: [{ type: 'pond', x: 18.1, y: 20.1, rx: 1.86, ry: 1.32, rotation: 0.06, salt: 520 }],
+    waterTiles: [
+      { x: 18.1, y: 20.1, rx: 1.65, ry: 1.18, rotation: 0.06 },
+      { x: 15.8, y: 20.1, rx: 1.0, ry: 0.76, rotation: -0.04 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 18.1, y: 20.1, rx: 1.86, ry: 1.32, rotation: 0.06, salt: 520 },
+      { type: 'pond', x: 15.8, y: 20.1, rx: 1.18, ry: 0.94, rotation: -0.04, salt: 521 }
+    ],
     runtimeEvents: [
       warp('warp_grave_to_farm', 20, 1, 'GodotMapV2_FarmTown', { x: 20, y: 28, direction: 'up' }, '返回风车农庄'),
       warp('warp_grave_to_hex', 38, 16, 'GodotMapV2_HexRuins', { x: 3, y: 16, direction: 'right' }, '前往六角遗迹'),
-      heal('heal_grave_spring', 16, 20, '月影泉水'),
-      sign('sign_grave_warning', 22, 3, '月影墓园 Lv.29-36：东遗迹。幽灵毒系。')
+      heal('heal_grave_spring', 14, 20, '月影泉水'),
+      sign('sign_grave_warning', 22, 3, '月影墓园 Lv.29-36：东遗迹，试炼解锁耿鬼。'),
+      hiddenEncounterGate('hidden_gate_grave_forest', 15, 27, {
+        hiddenZoneId: 'grave_deep_forest',
+        hiddenZoneName: '墓园深林',
+        message: '墓园深林入口：100金币开启。',
+        gateTheme: 'grave',
+        pathAxis: 'horizontal',
+        treeType: 'grave_lantern_glass',
+        openTile: TILE.road
+      }),
+      // 新增：墓园深处宝箱
+      { id: 'treasure_grave_deep', type: 'item', position: { x: 14, y: 29 }, properties: { itemType: 'statBoost', itemKey: 'hp_stone', quantity: 1, text: '墓园深林宝箱' } },
+      { id: 'treasure_grave_crossroad', type: 'item', position: { x: 20, y: 29 }, properties: { itemType: 'potion', itemKey: 'hyper_potion', quantity: 1, text: '墓园岔路补给箱' } },
+      rewardTrainer('npc_grave_keeper_reward', 31, 25, {
+        name: '墓园守护者',
+        title: '墓园守护者 · 静息试炼',
+        facing: 'down',
+        team: [
+          { pokemonId: 21, level: 34 },
+          { pokemonId: 100, level: 34 },
+          { pokemonId: 101, level: 34 }
+        ],
+        beforeBattleText: '墓园守护者：让灵火安静下来，特防之石就给你。',
+        defeatedText: '墓园守护者：特防之石归你，静息试炼结束了。',
+        rewardItems: [{ itemType: 'statBoost', itemKey: 'sp_defense_stone', quantity: 1 }]
+      })
     ],
     encounterZones: [
       { id: 'grave_north_thicket', name: '北墓草丛', x: 5, y: 5, width: 9, height: 6, encounterTableId: 'region_grave_29_36', tallGrassRate: 0.24 },
-      { id: 'grave_south_thicket', name: '南墓荒草', x: 5, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_south_29_36', tallGrassRate: 0.28 },
-      { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 }
+      { id: 'grave_south_thicket', name: '南墓荒草', x: 5, y: 24, width: 2, height: 2, encounterTableId: 'region_grave_south_29_36', tallGrassRate: 0.28 },
+      { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 },
+      { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: [41, 43] }
     ],
     decorativeObjects: [
       // 巨大陵墓 - 中央视觉焦点（偏心一点，避免“正中太死板”）
@@ -5730,7 +7212,8 @@ const REGIONS = [
     clearings: [
       { shape: 'rect', x1: 1, y1: 12, x2: 38, y2: 20, tile: TILE.paleGrass },
       { shape: 'rect', x1: 16, y1: 1, x2: 24, y2: 12, tile: TILE.paleGrass },
-      { shape: 'rect', x1: 10, y1: 22, x2: 29, y2: 30, tile: TILE.paleGrass }
+      { shape: 'rect', x1: 10, y1: 22, x2: 29, y2: 30, tile: TILE.paleGrass },
+      { shape: 'rect', x1: 30, y1: 8, x2: 35, y2: 11, tile: TILE.paleGrass }
     ],
     roadPaths: [
       { points: [[1, 16], [38, 16]], width: 3 },
@@ -5738,7 +7221,9 @@ const REGIONS = [
       { points: [[20, 16], [20, 26], [30, 26]], width: 3 },
       { points: [[28, 16], [28, 12]], width: 3 },
       { points: [[12, 16], [12, 22], [28, 22], [28, 16]], width: 3 },
-      { points: [[32, 16], [32, 12]], width: 3 }
+      { points: [[32, 16], [32, 12]], width: 3 },
+      { points: [[28, 16], [33, 16], [33, 12]], width: 1.5 },
+      { points: [[33, 12], [33, 10], [31, 10]], width: 1.5 }
     ],
     roadJunctions: [
       { x: 20, y: 16, rx: 1.3, ry: 1.3 },
@@ -5749,22 +7234,54 @@ const REGIONS = [
     ],
     tallGrass: [
       { shape: 'rect', x1: 5, y1: 5, x2: 14, y2: 10 },
+      { shape: 'rect', x1: 30, y1: 8, x2: 35, y2: 11 },
+      { shape: 'rect', x1: 27, y1: 13, x2: 27, y2: 13 },
       { shape: 'rect', x1: 5, y1: 23, x2: 15, y2: 29 },
       { shape: 'rect', x1: 25, y1: 23, x2: 35, y2: 29 }
     ],
-    waterTiles: [{ x: 30.1, y: 12.2, rx: 1.58, ry: 1.18, rotation: 0.04 }],
-    waterBodies: [{ type: 'pond', x: 30.1, y: 12.2, rx: 1.78, ry: 1.32, rotation: 0.04, salt: 620 }],
+    waterTiles: [
+      { x: 30.1, y: 12.2, rx: 1.58, ry: 1.18, rotation: 0.04 },
+      { x: 26.7, y: 11.2, rx: 0.95, ry: 0.7, rotation: -0.08 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 30.1, y: 12.2, rx: 1.78, ry: 1.32, rotation: 0.04, salt: 620 },
+      { type: 'pond', x: 26.7, y: 11.2, rx: 1.12, ry: 0.88, rotation: -0.08, salt: 621 }
+    ],
     runtimeEvents: [
       warp('warp_hex_to_grave', 1, 16, 'GodotMapV2_Graveyard', { x: 36, y: 16, direction: 'left' }, '返回月影墓园'),
       warp('warp_hex_to_shore', 20, 1, 'GodotMapV2_PirateShore', { x: 36, y: 16, direction: 'left' }, '返回贝壳海岸'),
       warp('warp_hex_to_ridge', 38, 16, 'GodotMapV2_SurvivalRidge', { x: 3, y: 16, direction: 'right' }, '前往铁木营地'),
-      heal('heal_hex_spring', 28, 12, '遗迹泉水'),
-      sign('sign_hex_ruin', 2, 14, '六角遗迹 Lv.35-42：东营地，北海岸。')
+      heal('heal_hex_spring', 26, 12, '遗迹泉水'),
+      sign('sign_hex_ruin', 2, 14, '六角遗迹 Lv.35-42：东营地，北海岸。'),
+      hiddenEncounterGate('hidden_gate_hex_sealed_chamber', 33, 12, {
+        hiddenZoneId: 'hex_sealed_chamber',
+        hiddenZoneName: '封印密室',
+        message: '封印密室入口：100金币开启。',
+        gateTheme: 'ruins',
+        pathAxis: 'horizontal',
+        treeType: 'hex_stone_hill',
+        openTile: TILE.road
+      }),
+      { id: 'treasure_hex_chamber', type: 'item', position: { x: 33, y: 10 }, properties: { itemType: 'statBoost', itemKey: 'sp_attack_stone', quantity: 1, text: '封印密室宝箱' } },
+      rewardTrainer('npc_hex_researcher_reward', 37, 12, {
+        name: '遗迹研究员',
+        title: '遗迹研究员 · 研究验证',
+        facing: 'left',
+        team: [
+          { pokemonId: 38, level: 38 },
+          { pokemonId: 45, level: 39 },
+          { pokemonId: 135, level: 39 }
+        ],
+        beforeBattleText: '遗迹研究员：陪我验证战术，赢了带走神奇糖果。',
+        defeatedText: '遗迹研究员：神奇糖果归你了，这份成果只送一次。',
+        rewardItems: [{ itemType: 'statBoost', itemKey: 'rare_candy', quantity: 1 }]
+      })
     ],
     encounterZones: [
       { id: 'hex_north_ruins', name: '北遗迹草丛', x: 5, y: 5, width: 10, height: 6, encounterTableId: 'region_ruin_35_42', tallGrassRate: 0.24 },
       { id: 'hex_west_ruins', name: '西遗迹草丛', x: 5, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_west_35_42', tallGrassRate: 0.26 },
-      { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 }
+      { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 },
+      { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [47, 49] }
     ],
     decorativeObjects: [
       // 中央神殿废墟 - 主视觉焦点
@@ -5774,7 +7291,10 @@ const REGIONS = [
       themeLandmark('hex_stone_hill', 28, 16, { scale: 3.05 }),
       // 东北泉水区的桥+码头组合（让“泉水”更像一处景点）
       themeLandmark('hex_bridge', 31, 12, { rotation: 0.5 }),
-      themeLandmark('hex_building_dock', 32, 12, { rotation: 0.15 })
+      themeLandmark('hex_building_dock', 32, 12, { rotation: 0.15 }),
+      // 东北封印密室：让遗迹拥有明确的隐藏探索目标
+      themeLandmark('hex_stone_rocks', 34, 10, { scale: 1.25, rotation: 0.18 }),
+      themeLandmark('platformer_stones', 31, 9, { scale: 1.05, rotation: -0.24 })
     ],
     scatter: [
       // 密集的遗迹碎石 - 营造古老氛围
@@ -5800,12 +7320,16 @@ const REGIONS = [
     roadPaths: [
       { points: [[1, 16], [38, 16]], width: 3 },
       { points: [[20, 16], [13, 16], [13, 8]], width: 3 },
+      { points: [[13, 8], [22, 8], [32, 8]], width: 2 },
       { points: [[20, 16], [26, 16], [26, 26], [22, 26], [22, 24]], width: 3 },
-      { points: [[23, 16], [23, 12]], width: 3 },
-      { points: [[32, 16], [32, 8]], width: 3 }
+      { points: [[23, 16], [23, 12], [25, 12]], width: 3 },
+      { points: [[32, 16], [32, 8]], width: 3 },
+      { points: [[20, 16], [20, 12], [17, 12], [17, 11]], width: 1.5 },
+      { points: [[20, 12], [18, 12], [18, 10]], width: 1.5 }
     ],
     roadJunctions: [
       { x: 20, y: 16, rx: 1.2, ry: 1.2 },
+      { x: 22, y: 8, rx: 0.9, ry: 0.9 },
       { x: 26, y: 26, rx: 1.1, ry: 1.1 }
     ],
     forestTrails: [
@@ -5813,19 +7337,59 @@ const REGIONS = [
     ],
     tallGrass: [
       { shape: 'rect', x1: 4, y1: 5, x2: 12, y2: 10 },
+      { shape: 'rect', x1: 18, y1: 5, x2: 27, y2: 10 },
       { shape: 'rect', x1: 5, y1: 23, x2: 15, y2: 29 },
       { shape: 'rect', x1: 28, y1: 5, x2: 36, y2: 11 }
     ],
-    waterTiles: [{ x: 25.0, y: 12.0, rx: 1.62, ry: 1.16, rotation: -0.08 }],
-    waterBodies: [{ type: 'pond', x: 25.0, y: 12.0, rx: 1.82, ry: 1.3, rotation: -0.08, salt: 720 }],
+    waterTiles: [
+      { x: 25.0, y: 12.0, rx: 1.62, ry: 1.16, rotation: -0.08 },
+      { x: 14.6, y: 9.1, rx: 0.9, ry: 0.62, rotation: 0.06 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 25.0, y: 12.0, rx: 1.82, ry: 1.3, rotation: -0.08, salt: 720 },
+      { type: 'pond', x: 14.6, y: 9.1, rx: 1.08, ry: 0.8, rotation: 0.06, salt: 721 }
+    ],
     runtimeEvents: [
       warp('warp_ridge_to_hex', 1, 16, 'GodotMapV2_HexRuins', { x: 36, y: 16, direction: 'left' }, '返回六角遗迹'),
       warp('warp_ridge_to_peak', 38, 16, 'GodotMapV2_BossHighland', { x: 3, y: 16, direction: 'right' }, '前往星雾高地'),
-      heal('heal_ridge_spring', 23, 12, '铁木泉水'),
-      sign('sign_ridge_camp', 2, 14, '铁木营地 Lv.41-47：东星雾高地。')
+      heal('heal_ridge_spring', 15, 10, '铁木泉水'),
+      sign('sign_ridge_camp', 2, 14, '铁木营地 Lv.41-47：东星雾高地。'),
+      sign('sign_ridge_training_grove', 20, 11, '训练林 Lv.41-47：快拳郎/飞腿郎/葱游兵更多。'),
+      minigameTrainer('npc_ridge_coin_sprint', 20, 10, {
+        name: '铁木计时员',
+        title: '铁木计时员 · 练习赛',
+        facing: 'left',
+        team: [
+          { pokemonId: 34, level: 43 },
+          { pokemonId: 48, level: 43 },
+          { pokemonId: 49, level: 44 },
+          { pokemonId: 141, level: 44 },
+          { pokemonId: 35, level: 45 },
+          { pokemonId: 51, level: 45 }
+        ],
+        beforeBattleText: '铁木计时员：准备好就开始计时挑战。',
+        ruleDescription: '连胜越多，对手越强。',
+        defeatedText: '铁木计时员：打得好，下一轮我会更认真。'
+      }),
+      { id: 'treasure_ridge_camp', type: 'item', position: { x: 4, y: 5 }, properties: { itemType: 'statBoost', itemKey: 'attack_stone', quantity: 1, text: '训练林深处宝箱' } },
+      { id: 'treasure_ridge_defense', type: 'item', position: { x: 12, y: 29 }, properties: { itemType: 'statBoost', itemKey: 'defense_stone', quantity: 1, text: '南岭防御补给箱' } },
+      rewardTrainer('npc_ridge_training_reward', 27, 8, {
+        name: '铁木教官',
+        title: '铁木教官 · 体能课',
+        facing: 'right',
+        team: [
+          { pokemonId: 34, level: 45 },
+          { pokemonId: 35, level: 45 },
+          { pokemonId: 51, level: 46 }
+        ],
+        beforeBattleText: '铁木教官：先上完这节体能课，成长药水就是你的。',
+        defeatedText: '铁木教官：成长药水拿好，补满状态再往东走。',
+        rewardItems: [{ itemType: 'expPotion', itemKey: 'exp_potion_large', quantity: 1 }]
+      })
     ],
     encounterZones: [
       { id: 'ridge_north_grass', name: '北岭草丛', x: 4, y: 5, width: 9, height: 6, encounterTableId: 'region_ridge_41_47', tallGrassRate: 0.26 },
+      { id: 'ridge_training_grove', name: '铁木训练林', x: 18, y: 5, width: 10, height: 6, encounterTableId: 'region_ridge_training_41_47', tallGrassRate: 0.29 },
       { id: 'ridge_south_grass', name: '南岭草丛', x: 5, y: 23, width: 11, height: 7, encounterTableId: 'region_ridge_south_41_47', tallGrassRate: 0.27 },
       { id: 'ridge_east_grass', name: '东岭草丛', x: 28, y: 5, width: 9, height: 7, encounterTableId: 'region_ridge_east_41_47', tallGrassRate: 0.27 }
     ],
@@ -5836,11 +7400,19 @@ const REGIONS = [
       themeLandmark('survival_tent', 22, 17, { rotation: 0.35 }),
       themeLandmark('survival_structure_canvas', 16, 16, { rotation: 0.08 }),
       themeLandmark('survival_workbench', 24, 16, { rotation: -0.12 }),
-      themeLandmark('survival_signpost', 20, 18, { rotation: 0.05 })
+      themeLandmark('survival_signpost', 20, 18, { rotation: 0.05 }),
+      // 北侧训练林：树桩、器材和围栏形成一个有目的的可探索区域
+      themeLandmark('survival_tree_log', 18, 6, { rotation: 0.18 }),
+      themeLandmark('survival_fence', 24, 6, { scale: 1.35, rotation: 1.57 }),
+      themeLandmark('survival_workbench', 25, 10, { scale: 1.15, rotation: -0.32 }),
+      themeLandmark('nature_tree_pine', 20, 4, { scale: 2.35, rotation: 0.12 }),
+      themeLandmark('nature_tree_pine', 27, 5, { scale: 2.1, rotation: -0.18 })
     ],
     scatter: [
       // 物资散落（不阻挡，保证草丛可达）
       { idPrefix: 'ridge_camp', types: ['survival_box', 'survival_barrel', 'survival_chest', 'survival_resource_wood', 'survival_resource_planks'], count: 120, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 710, scale: [1.1, 1.55], minRoadDistance: 2.2, minEventDistance: 2.1, blocksPath: false },
+      // 训练林的小器材和草痕，专门填补北侧空场但不形成空气墙
+      { idPrefix: 'ridge_training_marks', types: ['survival_patch_grass', 'survival_patch_grass_large', 'survival_tool_axe', 'survival_tool_pickaxe'], count: 52, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 713, scale: [0.85, 1.18], minRoadDistance: 0.9, minEventDistance: 2.2, blocksPath: false },
       // 岩石边界
       { idPrefix: 'ridge_edges', types: ['survival_rock_a', 'survival_rock_b', 'survival_rock_c'], count: 60, allowedTiles: [TILE.wall], salt: 718, scale: [2.4, 3.0], height: 0.22 }
     ]
@@ -5851,6 +7423,7 @@ const REGIONS = [
     regionOrder: 8,
     recommendedLevel: 56,
     levelRange: [52, 60],
+    normalTrainerMinLevel: 51,
     corridorScatterCount: 172,
     corridorScatterLayers: 2,
     startPosition: { x: 3, y: 16, direction: 'right' },
@@ -5864,7 +7437,9 @@ const REGIONS = [
       { points: [[20, 16], [20, 26], [24, 26]], width: 3 },
       { points: [[17, 16], [17, 12]], width: 3 },
       { points: [[20, 16], [18, 16], [18, 18]], width: 3 },
-      { points: [[24, 26], [28, 26], [28, 22]], width: 3 }
+      { points: [[24, 26], [28, 26], [28, 22]], width: 3 },
+      { points: [[31, 16], [35, 16], [35, 10], [37, 10], [37, 9]], width: 1.5 },
+      { points: [[12, 10], [8, 10], [8, 12], [7, 12]], width: 1.5 }
     ],
     roadJunctions: [
       { x: 31, y: 10, rx: 1.2, ry: 1.2 },
@@ -5872,10 +7447,11 @@ const REGIONS = [
       { x: 18, y: 18, rx: 1.0, ry: 1.0 }
     ],
     forestTrails: [
-      { points: [[12, 10], [9, 7], [10, 7]], radius: 0.4 }
+      { points: [[12, 10], [9, 11], [7, 12]], radius: 0.46 }
     ],
     tallGrass: [
-      { shape: 'rect', x1: 4, y1: 5, x2: 15, y2: 10 },
+      { shape: 'rect', x1: 4, y1: 5, x2: 9, y2: 10 },
+      { shape: 'rect', x1: 12, y1: 5, x2: 16, y2: 10 },
       { shape: 'rect', x1: 5, y1: 23, x2: 16, y2: 29 },
       { shape: 'rect', x1: 28, y1: 22, x2: 37, y2: 29 },
       { shape: 'rect', x1: 37, y1: 13, x2: 38, y2: 18 }
@@ -5884,13 +7460,38 @@ const REGIONS = [
     waterBodies: [{ type: 'pond', x: 15.1, y: 12.1, rx: 1.82, ry: 1.3, rotation: 0.04, salt: 820 }],
     runtimeEvents: [
       warp('warp_peak_to_ridge', 1, 16, 'GodotMapV2_SurvivalRidge', { x: 36, y: 16, direction: 'left' }, '返回铁木营地'),
-      heal('heal_peak_spring', 17, 12, '星雾泉水'),
-      sign('sign_peak_final', 2, 14, '星雾高地 Lv.52-60：北侧 Boss。')
+      heal('heal_peak_spring', 19, 12, '星雾泉水'),
+      sign('sign_peak_final', 1, 14, '星雾高地 Lv.52-60：清图补强，再挑战北Boss。'),
+      hiddenEncounterGate('hidden_gate_peak_starwatch', 7, 11, {
+        hiddenZoneId: 'peak_starwatch_path',
+        hiddenZoneName: '观星秘径',
+        message: '观星秘径入口：100金币开启。',
+        gateTheme: 'peak',
+        pathAxis: 'vertical',
+        treeType: 'platformer_flag',
+        openTile: TILE.road
+      }),
+      { id: 'treasure_highland_secret', type: 'item', position: { x: 37, y: 9 }, properties: { itemType: 'pokeball', itemKey: 'pokeball_master', quantity: 1, text: '星雾高地终极秘宝' } },
+      { id: 'treasure_peak_starwatch', type: 'item', position: { x: 4, y: 10 }, properties: { itemType: 'statBoost', itemKey: 'rare_candy', quantity: 1, text: '观星秘径奖励箱' } },
+      rewardTrainer('npc_peak_stargazer_reward', 9, 13, {
+        name: '星雾观测者',
+        title: '星雾观测者 · 终局观测',
+        facing: 'down',
+        team: [
+          { pokemonId: 142, level: 58 },
+          { pokemonId: 150, level: 59 },
+          { pokemonId: 204, level: 60 }
+        ],
+        beforeBattleText: '星雾观测者：走到这里，就用一场对战读完最后的星图。',
+        defeatedText: '星雾观测者：这份神奇糖果给你，继续往更高处走吧。',
+        rewardItems: [{ itemType: 'statBoost', itemKey: 'rare_candy', quantity: 1 }]
+      })
     ],
     encounterZones: [
-      { id: 'peak_west_grass', name: '西高地草丛', x: 4, y: 5, width: 12, height: 6, encounterTableId: 'region_peak_52_60', tallGrassRate: 0.27 },
+      { id: 'peak_west_grass', name: '西高地草丛', x: 12, y: 5, width: 5, height: 6, encounterTableId: 'region_peak_52_60', tallGrassRate: 0.27 },
       { id: 'peak_south_grass', name: '南高地草丛', x: 5, y: 23, width: 12, height: 7, encounterTableId: 'region_peak_south_52_60', tallGrassRate: 0.28 },
-      { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 }
+      { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 },
+      { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: [65, 70] }
     ],
     decorativeObjects: [
       // 主记忆点：高地石阵 + 悬台旗帜
@@ -5900,7 +7501,10 @@ const REGIONS = [
       themeLandmark('platformer_flag', 33, 10, { rotation: -0.05 }),
       // 西北“峡口”石门感
       themeLandmark('ridge_block_grass_edge', 12, 12, { rotation: 0.2 }),
-      themeLandmark('ridge_block_grass_edge', 12, 8, { rotation: -0.2 })
+      themeLandmark('ridge_block_grass_edge', 12, 8, { rotation: -0.2 }),
+      // 西北观星秘径：终局隐藏探索点
+      themeLandmark('platformer_platform_overhang', 7, 7, { scale: 0.92, rotation: -0.08 }),
+      themeLandmark('platformer_flag', 6, 7, { scale: 0.82, rotation: 0.12 })
     ],
     scatter: [
       // 巨石群（远离道路，别堵草丛）
@@ -5931,6 +7535,7 @@ export const GODOT_REGION_MAP_CONFIGS = Object.fromEntries(
       difficulty: definition.regionOrder + 1,
       recommendedLevel: definition.recommendedLevel,
       minLevel: definition.levelRange[0],
+      normalTrainerMinLevel: definition.normalTrainerMinLevel,
       maxLevel: definition.levelRange[1],
       encounterRate: definition.tallGrassRate ?? 0.22,
       tallGrassRate: definition.tallGrassRate ?? 0.22,

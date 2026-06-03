@@ -1,6 +1,21 @@
 /** 草丛遇敌表：仅基础形态，等级区间与进化阶段一致 */
 import { pickWildEncounter } from '../../utils/wildEncounterRules'
 
+export const DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID = 'valley_safe_grass'
+export const LEGACY_UNUSED_ENCOUNTER_TABLE_IDS = new Set([
+  'route102_grass',
+  'route102_meadow',
+  'route102_thicket',
+  'route102_lake',
+  'route102_clearing',
+  'route102_pass',
+  'forest_grass',
+  'forest_moss',
+  'forest_spirit',
+  'forest_meadow',
+  'forest_pond'
+])
+
 export const ENCOUNTER_TABLES = {
   /** 新手山谷安全草坡：第一场战斗练手区，避免 Lv.5 初始伙伴开局被压制 */
   valley_safe_grass: {
@@ -8,12 +23,10 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.14,
     safeStepsAfterBattle: 8,
     pokemon: [
-      { id: 114, minLevel: 2, maxLevel: 3, weight: 24 },  // 宝宝丁
-      { id: 98, minLevel: 2, maxLevel: 3, weight: 20 },   // 尼多朗
-      { id: 13, minLevel: 2, maxLevel: 3, weight: 18 },   // 伊布
-      { id: 119, minLevel: 2, maxLevel: 3, weight: 18 },  // 喵喵
-      { id: 16, minLevel: 2, maxLevel: 3, weight: 12 },   // 鲤鱼王
-      { id: 110, minLevel: 2, maxLevel: 3, weight: 8 }    // 凯西
+      { id: 16, minLevel: 3, maxLevel: 4, weight: 70 },   // 鲤鱼王
+      { id: 89, minLevel: 4, maxLevel: 6, weight: 20 },   // 绿毛虫
+      { id: 151, minLevel: 3, maxLevel: 4, weight: 5 },   // 波波
+      { id: 154, minLevel: 3, maxLevel: 4, weight: 5 }    // 小拉达
     ]
   },
   /** 新手山谷花丘：轻微进阶，仍以中性练手对局为主 */
@@ -22,12 +35,13 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.16,
     safeStepsAfterBattle: 7,
     pokemon: [
-      { id: 13, minLevel: 3, maxLevel: 4, weight: 26 },
-      { id: 114, minLevel: 3, maxLevel: 4, weight: 24 },
+      { id: 13, minLevel: 3, maxLevel: 4, weight: 22 },
+      { id: 89, minLevel: 4, maxLevel: 6, weight: 36 },
       { id: 119, minLevel: 3, maxLevel: 4, weight: 14 },
-      { id: 98, minLevel: 3, maxLevel: 4, weight: 18 },
-      { id: 110, minLevel: 4, maxLevel: 5, weight: 12 },
-      { id: 20, minLevel: 4, maxLevel: 5, weight: 6 }
+      { id: 114, minLevel: 3, maxLevel: 4, weight: 10 },
+      { id: 98, minLevel: 3, maxLevel: 4, weight: 10 },
+      { id: 151, minLevel: 3, maxLevel: 4, weight: 8 },
+      { id: 20, minLevel: 4, maxLevel: 5, weight: 4 }
     ]
   },
   /** 新手山谷湖北浅滩：更适合练手与补经验，先让孩子熟悉湖边草丛节奏 */
@@ -36,11 +50,11 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.15,
     safeStepsAfterBattle: 7,
     pokemon: [
-      { id: 16, minLevel: 3, maxLevel: 4, weight: 42 },
-      { id: 114, minLevel: 3, maxLevel: 4, weight: 18 },
-      { id: 13, minLevel: 3, maxLevel: 4, weight: 16 },
-      { id: 119, minLevel: 3, maxLevel: 4, weight: 14 },
-      { id: 110, minLevel: 3, maxLevel: 4, weight: 10 }
+      { id: 16, minLevel: 3, maxLevel: 4, weight: 60 },
+      { id: 89, minLevel: 4, maxLevel: 6, weight: 28 },
+      { id: 13, minLevel: 3, maxLevel: 4, weight: 12 },
+      { id: 119, minLevel: 3, maxLevel: 4, weight: 8 },
+      { id: 151, minLevel: 3, maxLevel: 4, weight: 6 }
     ]
   },
   /** 新手山谷湖边芦草：水系教学区，等级低但生态有差异 */
@@ -63,12 +77,10 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.16,
     safeStepsAfterBattle: 6,
     pokemon: [
-      { id: 13, minLevel: 4, maxLevel: 4, weight: 28 },
-      { id: 119, minLevel: 4, maxLevel: 6, weight: 16 },
-      { id: 110, minLevel: 4, maxLevel: 6, weight: 20 },
-      { id: 20, minLevel: 4, maxLevel: 6, weight: 8 },
-      { id: 114, minLevel: 4, maxLevel: 5, weight: 18 },
-      { id: 98, minLevel: 4, maxLevel: 4, weight: 10 }
+      { id: 89, minLevel: 5, maxLevel: 6, weight: 64 },
+      { id: 119, minLevel: 4, maxLevel: 5, weight: 16 },
+      { id: 151, minLevel: 4, maxLevel: 5, weight: 12 },
+      { id: 154, minLevel: 4, maxLevel: 5, weight: 8 }
     ]
   },
   /** 新手山谷东南草坡：当前图最高等级区，作为去下一张图前的准备区 */
@@ -86,7 +98,7 @@ export const ENCOUNTER_TABLES = {
     ]
   },
 
-  /** 新手入口草坡：给 Lv.5 初始宝可梦的安全练习区 */
+  /** legacy: Route102 旧切片地图入口草坡，保留给旧运行时/历史预览引用 */
   route102_grass: {
     baseRate: 0.10,
     tallGrassRate: 0.22,
@@ -99,7 +111,7 @@ export const ENCOUNTER_TABLES = {
       { id: 114, minLevel: 3, maxLevel: 6, weight: 10 }   // 宝宝丁
     ]
   },
-  /** 花丘草地：普通/可爱系偏多，略高于入口区 */
+  /** legacy: Route102 旧切片地图花丘草地，当前 9 张正式地图不再直接引用 */
   route102_meadow: {
     baseRate: 0.11,
     tallGrassRate: 0.18,
@@ -112,7 +124,7 @@ export const ENCOUNTER_TABLES = {
       { id: 1, minLevel: 4, maxLevel: 7, weight: 12 }     // 妙蛙种子
     ]
   },
-  /** 密林草丛：更适合练级，开始出现超能/幽灵系 */
+  /** legacy: Route102 旧切片地图密林草丛，当前 9 张正式地图不再直接引用 */
   route102_thicket: {
     baseRate: 0.13,
     tallGrassRate: 0.28,
@@ -125,7 +137,7 @@ export const ENCOUNTER_TABLES = {
       { id: 39, minLevel: 6, maxLevel: 10, weight: 14 }   // 大葱鸭
     ]
   },
-  /** 湖畔芦草：水系主题区，等级中等但遇敌率较低 */
+  /** legacy: Route102 旧切片地图湖畔芦草，当前 9 张正式地图不再直接引用 */
   route102_lake: {
     baseRate: 0.10,
     tallGrassRate: 0.22,
@@ -137,7 +149,7 @@ export const ENCOUNTER_TABLES = {
       { id: 39, minLevel: 5, maxLevel: 8, weight: 10 }    // 大葱鸭
     ]
   },
-  /** 东南草坡：当前新手山谷的进阶捕捉区 */
+  /** legacy: Route102 旧切片地图东南草坡，当前 9 张正式地图不再直接引用 */
   route102_clearing: {
     baseRate: 0.12,
     tallGrassRate: 0.26,
@@ -150,7 +162,7 @@ export const ENCOUNTER_TABLES = {
       { id: 110, minLevel: 7, maxLevel: 12, weight: 16 }  // 凯西
     ]
   },
-  /** 备用通道表：给后续地图出口/更深草丛使用 */
+  /** legacy: Route102 旧切片地图备用通道表，当前 9 张正式地图不再直接引用 */
   route102_pass: {
     baseRate: 0.12,
     tallGrassRate: 0.28,
@@ -164,7 +176,7 @@ export const ENCOUNTER_TABLES = {
     ]
   },
 
-  /** 默认森林（非分区） */
+  /** legacy: 旧森林地图默认草丛，保留给历史生成脚本引用 */
   forest_grass: {
     baseRate: 0.12,
     tallGrassRate: 0.30,
@@ -172,13 +184,13 @@ export const ENCOUNTER_TABLES = {
     pokemon: [
       { id: 1, minLevel: 4, maxLevel: 12, weight: 28 },   // 妙蛙种子 <16
       { id: 13, minLevel: 4, maxLevel: 12, weight: 22 },  // 伊布
-      { id: 15, minLevel: 4, maxLevel: 12, weight: 18 },  // 胖丁
+      { id: 114, minLevel: 4, maxLevel: 12, weight: 18 }, // 宝宝丁
       { id: 39, minLevel: 4, maxLevel: 12, weight: 18 },  // 大葱鸭
       { id: 98, minLevel: 4, maxLevel: 12, weight: 14 }  // 尼多朗 <16
     ]
   },
 
-  /** 苔原猎场：草/毒/虫 */
+  /** legacy: 旧森林地图苔原猎场，当前 9 张正式地图不再直接引用 */
   forest_moss: {
     baseRate: 0.14,
     tallGrassRate: 0.38,
@@ -192,7 +204,7 @@ export const ENCOUNTER_TABLES = {
     ]
   },
 
-  /** 萤火树林：幽灵/超能 */
+  /** legacy: 旧森林地图萤火树林，当前 9 张正式地图不再直接引用 */
   forest_spirit: {
     baseRate: 0.13,
     tallGrassRate: 0.34,
@@ -201,25 +213,25 @@ export const ENCOUNTER_TABLES = {
       { id: 20, minLevel: 5, maxLevel: 24, weight: 40 },  // 鬼斯 <25
       { id: 110, minLevel: 5, maxLevel: 14, weight: 25 }, // 凯西
       { id: 13, minLevel: 5, maxLevel: 12, weight: 20 },
-      { id: 15, minLevel: 4, maxLevel: 12, weight: 15 }
+      { id: 114, minLevel: 4, maxLevel: 12, weight: 15 }
     ]
   },
 
-  /** 花之草甸：普通系 */
+  /** legacy: 旧森林地图花之草甸，当前 9 张正式地图不再直接引用 */
   forest_meadow: {
     baseRate: 0.12,
     tallGrassRate: 0.28,
     safeStepsAfterBattle: 5,
     pokemon: [
       { id: 13, minLevel: 4, maxLevel: 12, weight: 30 },
-      { id: 15, minLevel: 4, maxLevel: 12, weight: 28 },
+      { id: 114, minLevel: 4, maxLevel: 12, weight: 28 },
       { id: 39, minLevel: 4, maxLevel: 12, weight: 25 },
       { id: 119, minLevel: 4, maxLevel: 12, weight: 12 }, // 喵喵
       { id: 106, minLevel: 5, maxLevel: 14, weight: 5 }   // 嘟嘟 <31，稀有
     ]
   },
 
-  /** 镜湖岸：水系 */
+  /** legacy: 旧森林地图镜湖岸，当前 9 张正式地图不再直接引用 */
   forest_pond: {
     baseRate: 0.10,
     tallGrassRate: 0.22,
@@ -238,7 +250,7 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.22,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 120, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 162, minLevel: 5, maxLevel: 12, weight: 6 },
       { id: 1, minLevel: 5, maxLevel: 12, weight: 24 },
       { id: 89, minLevel: 5, maxLevel: 6, weight: 22 },
       { id: 148, minLevel: 5, maxLevel: 6, weight: 20 },
@@ -257,7 +269,7 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 113, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 119, minLevel: 5, maxLevel: 12, weight: 6 },
       { id: 154, minLevel: 5, maxLevel: 12, weight: 26 },
       { id: 156, minLevel: 5, maxLevel: 12, weight: 22 },
       { id: 151, minLevel: 5, maxLevel: 12, weight: 18 },
@@ -273,7 +285,7 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.20,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 112, minLevel: 5, maxLevel: 12, weight: 6 },
+      { id: 167, minLevel: 5, maxLevel: 12, weight: 6 },
       { id: 165, minLevel: 5, maxLevel: 12, weight: 24 },
       { id: 162, minLevel: 5, maxLevel: 12, weight: 20 },
       { id: 178, minLevel: 6, maxLevel: 12, weight: 18 },
@@ -281,6 +293,23 @@ export const ENCOUNTER_TABLES = {
       { id: 1, minLevel: 5, maxLevel: 12, weight: 12 },
       { id: 119, minLevel: 6, maxLevel: 12, weight: 8 },
       { id: 39, minLevel: 5, maxLevel: 12, weight: 4 }
+    ]
+  },
+  /** 星音秘境：星光催化出的首领级隐藏生态 */
+  region_meadow_hidden_grove_5_12: {
+    baseRate: 0.12,
+    tallGrassRate: 0.34,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 154, minLevel: 17, maxLevel: 19, weight: 14 },
+      { id: 156, minLevel: 17, maxLevel: 19, weight: 13 },
+      { id: 169, minLevel: 17, maxLevel: 19, weight: 13 },
+      { id: 111, minLevel: 17, maxLevel: 19, weight: 10 },
+      { id: 178, minLevel: 17, maxLevel: 19, weight: 9 },
+      { id: 165, minLevel: 17, maxLevel: 19, weight: 8 },
+      { id: 189, minLevel: 17, maxLevel: 19, weight: 14 },
+      { id: 190, minLevel: 17, maxLevel: 19, weight: 14 },
+      { id: 191, minLevel: 17, maxLevel: 19, weight: 12 }
     ]
   },
 
@@ -327,10 +356,28 @@ export const ENCOUNTER_TABLES = {
       { id: 77, minLevel: 12, maxLevel: 18, weight: 24 },
       { id: 167, minLevel: 11, maxLevel: 18, weight: 20 },
       { id: 78, minLevel: 12, maxLevel: 18, weight: 18 },
-      { id: 163, minLevel: 16, maxLevel: 18, weight: 7 },
+      { id: 181, minLevel: 16, maxLevel: 18, weight: 7 },
       { id: 80, minLevel: 12, maxLevel: 18, weight: 12 },
       { id: 14, minLevel: 11, maxLevel: 18, weight: 8 },
       { id: 16, minLevel: 11, maxLevel: 18, weight: 4 }
+    ]
+  },
+  /** 环湖秘径：雾水倒影里的星光水系与少量迷雾异客 */
+  region_lake_hidden_path_11_18: {
+    baseRate: 0.12,
+    tallGrassRate: 0.36,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 14, minLevel: 23, maxLevel: 25, weight: 15 },
+      { id: 77, minLevel: 23, maxLevel: 25, weight: 13 },
+      { id: 78, minLevel: 23, maxLevel: 25, weight: 11 },
+      { id: 80, minLevel: 23, maxLevel: 25, weight: 10 },
+      { id: 181, minLevel: 23, maxLevel: 25, weight: 9 },
+      { id: 183, minLevel: 23, maxLevel: 25, weight: 8 },
+      { id: 186, minLevel: 23, maxLevel: 25, weight: 7 },
+      { id: 192, minLevel: 23, maxLevel: 25, weight: 14 },
+      { id: 193, minLevel: 23, maxLevel: 25, weight: 14 },
+      { id: 194, minLevel: 23, maxLevel: 25, weight: 12 }
     ]
   },
 
@@ -349,7 +396,13 @@ export const ENCOUNTER_TABLES = {
       { id: 88, minLevel: 17, maxLevel: 24, weight: 16 },
       { id: 106, minLevel: 17, maxLevel: 24, weight: 12 },
       { id: 96, minLevel: 17, maxLevel: 24, weight: 8 },
-      { id: 102, minLevel: 17, maxLevel: 24, weight: 6 }
+      { id: 102, minLevel: 17, maxLevel: 24, weight: 6 },
+      { id: 92, minLevel: 20, maxLevel: 24, weight: 4 },
+      { id: 95, minLevel: 20, maxLevel: 24, weight: 4 },
+      { id: 99, minLevel: 20, maxLevel: 24, weight: 4 },
+      { id: 111, minLevel: 20, maxLevel: 24, weight: 4 },
+      { id: 171, minLevel: 24, maxLevel: 24, weight: 4 },
+      { id: 179, minLevel: 21, maxLevel: 24, weight: 4 }
     ]
   },
   /** 风车农庄西麦田：普通系和格斗练级位 */
@@ -384,6 +437,24 @@ export const ENCOUNTER_TABLES = {
       { id: 88, minLevel: 17, maxLevel: 24, weight: 4 }
     ]
   },
+  /** 风车塔顶：机械火花、风向鸟影和湿木蘑菇混成的首领级隐藏生态 */
+  region_farm_windmill_top_17_24: {
+    baseRate: 0.13,
+    tallGrassRate: 0.38,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 155, minLevel: 29, maxLevel: 31, weight: 13 },
+      { id: 171, minLevel: 29, maxLevel: 31, weight: 12 },
+      { id: 38, minLevel: 30, maxLevel: 31, weight: 10 },
+      { id: 45, minLevel: 30, maxLevel: 31, weight: 10 },
+      { id: 157, minLevel: 29, maxLevel: 31, weight: 10 },
+      { id: 179, minLevel: 29, maxLevel: 31, weight: 8 },
+      { id: 11, minLevel: 30, maxLevel: 31, weight: 8 },
+      { id: 195, minLevel: 29, maxLevel: 31, weight: 14 },
+      { id: 196, minLevel: 29, maxLevel: 31, weight: 14 },
+      { id: 197, minLevel: 29, maxLevel: 31, weight: 12 }
+    ]
+  },
 
   /** 贝壳海岸沙丘草丛：沙岸水系与化石系入口，围绕 Lv.26 */
   region_shore_23_30: {
@@ -412,7 +483,7 @@ export const ENCOUNTER_TABLES = {
     pokemon: [
       { id: 52, minLevel: 23, maxLevel: 29, weight: 7 },
       { id: 84, minLevel: 23, maxLevel: 29, weight: 7 },
-      { id: 182, minLevel: 30, maxLevel: 30, weight: 5 },
+      { id: 183, minLevel: 23, maxLevel: 30, weight: 5 },
       { id: 177, minLevel: 25, maxLevel: 30, weight: 7 },
       { id: 79, minLevel: 23, maxLevel: 30, weight: 18 },
       { id: 77, minLevel: 23, maxLevel: 30, weight: 14 },
@@ -430,12 +501,30 @@ export const ENCOUNTER_TABLES = {
       { id: 130, minLevel: 23, maxLevel: 29, weight: 3 },
       { id: 90, minLevel: 23, maxLevel: 29, weight: 7 },
       { id: 175, minLevel: 26, maxLevel: 30, weight: 7 },
-      { id: 166, minLevel: 28, maxLevel: 30, weight: 7 },
+      { id: 185, minLevel: 28, maxLevel: 30, weight: 7 },
       { id: 44, minLevel: 28, maxLevel: 30, weight: 16 },
       { id: 82, minLevel: 23, maxLevel: 30, weight: 14 },
       { id: 81, minLevel: 23, maxLevel: 30, weight: 12 },
       { id: 80, minLevel: 23, maxLevel: 30, weight: 12 },
       { id: 79, minLevel: 23, maxLevel: 30, weight: 10 }
+    ]
+  },
+  /** 沉船内舱：海雾、化石壳与船舱灵影交错的首领级隐藏生态 */
+  region_shore_wreck_inner_23_30: {
+    baseRate: 0.13,
+    tallGrassRate: 0.40,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 81, minLevel: 35, maxLevel: 37, weight: 13 },
+      { id: 44, minLevel: 35, maxLevel: 37, weight: 12 },
+      { id: 82, minLevel: 35, maxLevel: 37, weight: 11 },
+      { id: 54, minLevel: 35, maxLevel: 37, weight: 10 },
+      { id: 175, minLevel: 35, maxLevel: 37, weight: 9 },
+      { id: 188, minLevel: 35, maxLevel: 37, weight: 8 },
+      { id: 131, minLevel: 35, maxLevel: 37, weight: 8 },
+      { id: 198, minLevel: 35, maxLevel: 37, weight: 14 },
+      { id: 199, minLevel: 35, maxLevel: 37, weight: 14 },
+      { id: 200, minLevel: 35, maxLevel: 37, weight: 12 }
     ]
   },
 
@@ -447,12 +536,12 @@ export const ENCOUNTER_TABLES = {
     pokemon: [
       { id: 32, minLevel: 29, maxLevel: 35, weight: 8 },
       { id: 91, minLevel: 29, maxLevel: 29, weight: 7 },
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 26 },
-      { id: 173, minLevel: 31, maxLevel: 36, weight: 7 },
-      { id: 164, minLevel: 32, maxLevel: 36, weight: 5 },
-      { id: 100, minLevel: 29, maxLevel: 36, weight: 14 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 12 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 10 },
+      { id: 43, minLevel: 29, maxLevel: 36, weight: 26 },
+      { id: 171, minLevel: 31, maxLevel: 36, weight: 7 },
+      { id: 188, minLevel: 32, maxLevel: 36, weight: 5 },
+      { id: 168, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 159, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 124, minLevel: 29, maxLevel: 36, weight: 10 },
       { id: 137, minLevel: 30, maxLevel: 36, weight: 6 }
     ]
   },
@@ -463,12 +552,12 @@ export const ENCOUNTER_TABLES = {
     safeStepsAfterBattle: 5,
     pokemon: [
       { id: 48, minLevel: 29, maxLevel: 36, weight: 8 },
-      { id: 100, minLevel: 29, maxLevel: 36, weight: 24 },
-      { id: 180, minLevel: 33, maxLevel: 36, weight: 5 },
+      { id: 159, minLevel: 29, maxLevel: 36, weight: 24 },
+      { id: 171, minLevel: 33, maxLevel: 36, weight: 5 },
       { id: 153, minLevel: 36, maxLevel: 36, weight: 5 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 14 },
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 12 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 168, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 188, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 185, minLevel: 29, maxLevel: 36, weight: 12 },
       { id: 137, minLevel: 30, maxLevel: 36, weight: 8 }
     ]
   },
@@ -480,13 +569,31 @@ export const ENCOUNTER_TABLES = {
     pokemon: [
       { id: 4, minLevel: 29, maxLevel: 29, weight: 7 },
       { id: 124, minLevel: 29, maxLevel: 29, weight: 8 },
-      { id: 6, minLevel: 29, maxLevel: 36, weight: 24 },
+      { id: 171, minLevel: 29, maxLevel: 36, weight: 24 },
       { id: 188, minLevel: 29, maxLevel: 36, weight: 7 },
       { id: 187, minLevel: 33, maxLevel: 36, weight: 5 },
-      { id: 21, minLevel: 29, maxLevel: 36, weight: 14 },
-      { id: 43, minLevel: 29, maxLevel: 36, weight: 12 },
+      { id: 43, minLevel: 29, maxLevel: 36, weight: 14 },
+      { id: 168, minLevel: 29, maxLevel: 36, weight: 12 },
       { id: 137, minLevel: 30, maxLevel: 36, weight: 12 },
-      { id: 101, minLevel: 29, maxLevel: 36, weight: 8 }
+      { id: 159, minLevel: 29, maxLevel: 36, weight: 8 }
+    ]
+  },
+  /** 墓园深林：月影、毒雾、拟态与恶系回声组成的首领级隐藏生态 */
+  region_grave_deep_forest_29_36: {
+    baseRate: 0.14,
+    tallGrassRate: 0.42,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 171, minLevel: 41, maxLevel: 43, weight: 12 },
+      { id: 188, minLevel: 41, maxLevel: 43, weight: 11 },
+      { id: 153, minLevel: 41, maxLevel: 43, weight: 10 },
+      { id: 157, minLevel: 41, maxLevel: 43, weight: 9 },
+      { id: 43, minLevel: 41, maxLevel: 43, weight: 8 },
+      { id: 137, minLevel: 41, maxLevel: 43, weight: 8 },
+      { id: 185, minLevel: 41, maxLevel: 43, weight: 8 },
+      { id: 201, minLevel: 41, maxLevel: 43, weight: 14 },
+      { id: 202, minLevel: 41, maxLevel: 43, weight: 14 },
+      { id: 203, minLevel: 41, maxLevel: 43, weight: 12 }
     ]
   },
 
@@ -496,7 +603,7 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.24,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 95, minLevel: 35, maxLevel: 39, weight: 6 },
+      { id: 143, minLevel: 35, maxLevel: 42, weight: 6 },
       { id: 56, minLevel: 35, maxLevel: 41, weight: 8 },
       { id: 85, minLevel: 35, maxLevel: 39, weight: 7 },
       { id: 38, minLevel: 35, maxLevel: 42, weight: 22 },
@@ -504,8 +611,10 @@ export const ENCOUNTER_TABLES = {
       { id: 153, minLevel: 36, maxLevel: 42, weight: 5 },
       { id: 11, minLevel: 35, maxLevel: 42, weight: 14 },
       { id: 108, minLevel: 35, maxLevel: 42, weight: 14 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 10 },
-      { id: 103, minLevel: 35, maxLevel: 42, weight: 6 }
+      { id: 157, minLevel: 35, maxLevel: 42, weight: 10 },
+      { id: 103, minLevel: 35, maxLevel: 42, weight: 6 },
+      { id: 18, minLevel: 35, maxLevel: 39, weight: 4 },
+      { id: 54, minLevel: 35, maxLevel: 39, weight: 4 }
     ]
   },
   /** 六角遗迹西遗迹草丛：岩石/地面训练位 */
@@ -517,7 +626,7 @@ export const ENCOUNTER_TABLES = {
       { id: 103, minLevel: 35, maxLevel: 42, weight: 22 },
       { id: 105, minLevel: 35, maxLevel: 42, weight: 20 },
       { id: 175, minLevel: 35, maxLevel: 42, weight: 7 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 14 },
+      { id: 161, minLevel: 35, maxLevel: 42, weight: 14 },
       { id: 38, minLevel: 35, maxLevel: 42, weight: 12 },
       { id: 108, minLevel: 35, maxLevel: 42, weight: 10 },
       { id: 45, minLevel: 35, maxLevel: 42, weight: 6 }
@@ -529,15 +638,31 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 92, minLevel: 35, maxLevel: 39, weight: 6 },
-      { id: 60, minLevel: 35, maxLevel: 42, weight: 8 },
+      { id: 143, minLevel: 35, maxLevel: 42, weight: 6 },
+      { id: 56, minLevel: 35, maxLevel: 42, weight: 8 },
       { id: 45, minLevel: 35, maxLevel: 42, weight: 22 },
-      { id: 168, minLevel: 35, maxLevel: 42, weight: 7 },
+      { id: 157, minLevel: 35, maxLevel: 42, weight: 7 },
       { id: 38, minLevel: 35, maxLevel: 42, weight: 18 },
       { id: 108, minLevel: 35, maxLevel: 42, weight: 14 },
       { id: 11, minLevel: 35, maxLevel: 42, weight: 12 },
       { id: 105, minLevel: 35, maxLevel: 42, weight: 10 },
-      { id: 135, minLevel: 35, maxLevel: 42, weight: 6 }
+      { id: 153, minLevel: 35, maxLevel: 42, weight: 6 }
+    ]
+  },
+  /** 六角遗迹封印密室：机关核心旁的首领级隐藏生态，偏机械与终局守护者 */
+  region_ruin_sealed_chamber_35_42: {
+    baseRate: 0.14,
+    tallGrassRate: 0.36,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 45, minLevel: 47, maxLevel: 49, weight: 11 },
+      { id: 11, minLevel: 47, maxLevel: 49, weight: 10 },
+      { id: 175, minLevel: 47, maxLevel: 49, weight: 10 },
+      { id: 109, minLevel: 47, maxLevel: 49, weight: 9 },
+      { id: 143, minLevel: 47, maxLevel: 49, weight: 8 },
+      { id: 204, minLevel: 47, maxLevel: 49, weight: 14 },
+      { id: 205, minLevel: 47, maxLevel: 49, weight: 14 },
+      { id: 206, minLevel: 47, maxLevel: 49, weight: 12 }
     ]
   },
 
@@ -547,16 +672,40 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.26,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 141, minLevel: 41, maxLevel: 47, weight: 6 },
-      { id: 61, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 33, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 48, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 135, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 105, minLevel: 41, maxLevel: 47, weight: 8 },
       { id: 49, minLevel: 41, maxLevel: 47, weight: 8 },
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 22 },
+      { id: 51, minLevel: 42, maxLevel: 47, weight: 22 },
       { id: 159, minLevel: 41, maxLevel: 47, weight: 7 },
       { id: 157, minLevel: 41, maxLevel: 47, weight: 7 },
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 14 },
-      { id: 51, minLevel: 42, maxLevel: 47, weight: 12 },
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 161, minLevel: 41, maxLevel: 47, weight: 14 },
+      { id: 175, minLevel: 42, maxLevel: 47, weight: 12 },
+      { id: 45, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 109, minLevel: 41, maxLevel: 47, weight: 10 },
       { id: 131, minLevel: 41, maxLevel: 47, weight: 3 }
+    ]
+  },
+  /** 铁木训练林：体能器械旁的格斗/岩地训练生态，区别于北岭 */
+  region_ridge_training_41_47: {
+    baseRate: 0.14,
+    tallGrassRate: 0.29,
+    safeStepsAfterBattle: 4,
+    pokemon: [
+      { id: 49, minLevel: 41, maxLevel: 47, weight: 18 },
+      { id: 48, minLevel: 41, maxLevel: 47, weight: 18 },
+      { id: 146, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 51, minLevel: 42, maxLevel: 47, weight: 16 },
+      { id: 105, minLevel: 41, maxLevel: 47, weight: 14 },
+      { id: 33, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 159, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 157, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 56, minLevel: 41, maxLevel: 41, weight: 6 },
+      { id: 188, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 155, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 109, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 131, minLevel: 41, maxLevel: 47, weight: 4 }
     ]
   },
   /** 铁木营地南岭草丛：岩石/地面系更集中 */
@@ -565,13 +714,16 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 105, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 17, minLevel: 41, maxLevel: 47, weight: 12 },
       { id: 161, minLevel: 41, maxLevel: 47, weight: 7 },
       { id: 51, minLevel: 42, maxLevel: 47, weight: 18 },
       { id: 131, minLevel: 41, maxLevel: 47, weight: 3 },
       { id: 109, minLevel: 41, maxLevel: 47, weight: 12 },
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 8 },
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 6 }
+      { id: 175, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 135, minLevel: 41, maxLevel: 47, weight: 8 },
+      { id: 188, minLevel: 41, maxLevel: 47, weight: 6 },
+      { id: 48, minLevel: 41, maxLevel: 47, weight: 6 }
     ]
   },
   /** 铁木营地东岭草丛：钢系和后期普通系更突出 */
@@ -580,33 +732,36 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 10, minLevel: 41, maxLevel: 47, weight: 7 },
-      { id: 139, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 49, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 145, minLevel: 41, maxLevel: 47, weight: 12 },
+      { id: 143, minLevel: 41, maxLevel: 47, weight: 24 },
+      { id: 45, minLevel: 41, maxLevel: 47, weight: 10 },
       { id: 155, minLevel: 41, maxLevel: 47, weight: 7 },
+      { id: 188, minLevel: 41, maxLevel: 47, weight: 6 },
       { id: 109, minLevel: 41, maxLevel: 47, weight: 16 },
       { id: 51, minLevel: 42, maxLevel: 47, weight: 14 },
-      { id: 35, minLevel: 41, maxLevel: 47, weight: 12 },
-      { id: 34, minLevel: 41, maxLevel: 47, weight: 10 },
+      { id: 105, minLevel: 41, maxLevel: 47, weight: 12 },
+      { id: 48, minLevel: 41, maxLevel: 47, weight: 10 },
       { id: 131, minLevel: 41, maxLevel: 47, weight: 3 }
     ]
   },
 
-  /** 星雾高地西高地草丛：御三家与龙/岩混合，终局 Lv.52-60 区域 */
+  /** 星雾高地西高地草丛：草/龙/岩旁系集中，终局 Lv.52-60 区域 */
   region_peak_52_60: {
     baseRate: 0.14,
     tallGrassRate: 0.27,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 25, minLevel: 55, maxLevel: 60, weight: 3 },
-      { id: 9, minLevel: 52, maxLevel: 60, weight: 6 },
-      { id: 57, minLevel: 52, maxLevel: 60, weight: 8 },
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 123, minLevel: 52, maxLevel: 60, weight: 5 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
-      { id: 131, minLevel: 52, maxLevel: 60, weight: 3 },
-      { id: 143, minLevel: 52, maxLevel: 60, weight: 14 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 10 },
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 8 }
+      { id: 131, minLevel: 52, maxLevel: 60, weight: 24 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 18 },
+      { id: 46, minLevel: 52, maxLevel: 60, weight: 14 },
+      { id: 133, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 136, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 123, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 17, minLevel: 52, maxLevel: 60, weight: 6 },
+      { id: 19, minLevel: 52, maxLevel: 60, weight: 5 },
+      { id: 144, minLevel: 52, maxLevel: 60, weight: 6 },
+      { id: 180, minLevel: 52, maxLevel: 60, weight: 5 }
     ]
   },
   /** 星雾高地南高地草丛：火/水强敌练级位 */
@@ -615,14 +770,16 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.28,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 26, minLevel: 55, maxLevel: 60, weight: 3 },
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 180, minLevel: 52, maxLevel: 60, weight: 5 },
-      { id: 182, minLevel: 52, maxLevel: 60, weight: 5 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 16 },
-      { id: 131, minLevel: 52, maxLevel: 60, weight: 3 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 8 }
+      { id: 182, minLevel: 52, maxLevel: 60, weight: 16 },
+      { id: 57, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 40, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 33, minLevel: 52, maxLevel: 60, weight: 11 },
+      { id: 29, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 36, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 64, minLevel: 52, maxLevel: 60, weight: 8 },
+      { id: 138, minLevel: 52, maxLevel: 60, weight: 7 },
+      { id: 25, minLevel: 55, maxLevel: 60, weight: 6 },
+      { id: 26, minLevel: 55, maxLevel: 60, weight: 6 }
     ]
   },
   /** 星雾高地东高地草丛：电/龙/终盘混合位，遇敌率最高 */
@@ -631,26 +788,43 @@ export const ENCOUNTER_TABLES = {
     tallGrassRate: 0.30,
     safeStepsAfterBattle: 5,
     pokemon: [
-      { id: 69, minLevel: 58, maxLevel: 60, weight: 2 },
-      { id: 27, minLevel: 55, maxLevel: 60, weight: 3 },
-      { id: 143, minLevel: 52, maxLevel: 60, weight: 20 },
-      { id: 150, minLevel: 52, maxLevel: 60, weight: 5 },
-      { id: 164, minLevel: 52, maxLevel: 60, weight: 5 },
-      { id: 129, minLevel: 52, maxLevel: 60, weight: 3 },
-      { id: 74, minLevel: 52, maxLevel: 60, weight: 14 },
-      { id: 76, minLevel: 52, maxLevel: 60, weight: 12 },
-      { id: 72, minLevel: 52, maxLevel: 60, weight: 10 }
+      { id: 143, minLevel: 52, maxLevel: 60, weight: 24 },
+      { id: 129, minLevel: 52, maxLevel: 60, weight: 14 },
+      { id: 28, minLevel: 52, maxLevel: 60, weight: 12 },
+      { id: 150, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 109, minLevel: 52, maxLevel: 60, weight: 10 },
+      { id: 11, minLevel: 52, maxLevel: 60, weight: 8 },
+      { id: 164, minLevel: 52, maxLevel: 60, weight: 7 },
+      { id: 188, minLevel: 52, maxLevel: 60, weight: 6 },
+      { id: 27, minLevel: 55, maxLevel: 60, weight: 6 },
+      { id: 69, minLevel: 58, maxLevel: 60, weight: 4 }
+    ]
+  },
+  /** 星雾高地观星秘径：终局首领级隐藏区，偏传说/龙/岩的高风险高回报遭遇 */
+  region_peak_starwatch_52_60: {
+    baseRate: 0.16,
+    tallGrassRate: 0.38,
+    safeStepsAfterBattle: 5,
+    pokemon: [
+      { id: 25, minLevel: 65, maxLevel: 67, weight: 10 },
+      { id: 26, minLevel: 65, maxLevel: 67, weight: 10 },
+      { id: 27, minLevel: 65, maxLevel: 67, weight: 9 },
+      { id: 109, minLevel: 65, maxLevel: 67, weight: 8 },
+      { id: 143, minLevel: 65, maxLevel: 67, weight: 8 },
+      { id: 207, minLevel: 69, maxLevel: 70, weight: 14 },
+      { id: 208, minLevel: 69, maxLevel: 70, weight: 14 },
+      { id: 209, minLevel: 69, maxLevel: 70, weight: 12 }
     ]
   }
 }
 
 export function getEncounterTable(tableId) {
-  return ENCOUNTER_TABLES[tableId] || ENCOUNTER_TABLES.route102_grass
+  return ENCOUNTER_TABLES[tableId] || ENCOUNTER_TABLES[DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID]
 }
 
 export function pickWildPokemon(tableId) {
   const encounter = pickWildEncounter(getEncounterTable(tableId))
-  return encounter || pickWildEncounter(ENCOUNTER_TABLES.route102_grass)
+  return encounter || pickWildEncounter(ENCOUNTER_TABLES[DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID])
 }
 
 /** @deprecated 请使用 pickWildPokemon，等级已包含在返回值中 */

@@ -24,6 +24,34 @@ const DEFAULT_IMAGE_CONCURRENCY = 3
 const DEFAULT_IMAGE_RETRIES = 4
 const ENGINE_STEP_COUNT = 2
 const PRELOAD_STALL_MS = 50000
+const NON_BLOCKING_DEX_PHASE_BUDGET_MS = 65000
+const NON_BLOCKING_MODEL_PHASE_BUDGET_MS = 70000
+
+const PRELOAD_PHASES = {
+  p0: '正在准备战斗、商店与界面素材',
+  audio: '正在准备地图音乐与战斗音效',
+  p2: '正在缓存完整图鉴立绘',
+  p1: '正在准备当前队伍与遇敌素材',
+  models: '正在搭建全部地图 3D 场景',
+  engine: '正在启动地图引擎',
+  complete: '加载完成'
+}
+
+const PRELOAD_PHASE_ORDER = ['p0', 'audio', 'p2', 'p1', 'models', 'engine']
+
+function resolveProgressStage(phase, buckets, totals) {
+  const phaseKey = PRELOAD_PHASE_ORDER.find((key) => PRELOAD_PHASES[key] === phase)
+    || PRELOAD_PHASE_ORDER.find((key) => (buckets[key] || 0) < (totals[key] || 0))
+    || 'engine'
+  const stageIndex = Math.max(1, PRELOAD_PHASE_ORDER.indexOf(phaseKey) + 1)
+  return {
+    stageKey: phaseKey,
+    stageIndex,
+    stageCount: PRELOAD_PHASE_ORDER.length,
+    stageLoaded: Math.max(0, buckets[phaseKey] || 0),
+    stageTotal: Math.max(0, totals[phaseKey] || 0)
+  }
+}
 
 export function resolvePreloadNetworkOptions() {
   if (typeof navigator === 'undefined') {
@@ -128,20 +156,22 @@ function createProgressReporter({
     const loaded = buckets.p0 + buckets.p2 + buckets.p1 + buckets.audio + buckets.models + buckets.engine
     let phase = phaseOverride
     if (!phase) {
-      if (buckets.p0 < totals.p0) phase = '正在加载战斗、商店与界面素材'
-      else if (buckets.audio < totals.audio) phase = '正在加载地图氛围与战斗音乐'
-      else if (buckets.p2 < totals.p2) phase = '正在加载完整图鉴'
-      else if (buckets.p1 < totals.p1) phase = '正在加载队伍与遇敌图鉴'
-      else if (buckets.models < totals.models) phase = '正在加载全部地图 3D 场景'
-      else if (buckets.engine < totals.engine) phase = '正在初始化地图引擎'
-      else phase = '加载完成'
+      if (buckets.p0 < totals.p0) phase = PRELOAD_PHASES.p0
+      else if (buckets.audio < totals.audio) phase = PRELOAD_PHASES.audio
+      else if (buckets.p2 < totals.p2) phase = PRELOAD_PHASES.p2
+      else if (buckets.p1 < totals.p1) phase = PRELOAD_PHASES.p1
+      else if (buckets.models < totals.models) phase = PRELOAD_PHASES.models
+      else if (buckets.engine < totals.engine) phase = PRELOAD_PHASES.engine
+      else phase = PRELOAD_PHASES.complete
     }
+    const stage = resolveProgressStage(phase, buckets, totals)
     const payload = {
       phase,
       detail,
       percent: totalSteps > 0 ? Math.min(100, Math.round((loaded / totalSteps) * 100)) : 100,
       loaded,
       total: totalSteps,
+      ...stage,
       imageTotal,
       modelTotal,
       mapCount
@@ -166,6 +196,34 @@ function createRetryReporter(tracker, bucketKey, phaseLabel) {
       `网络波动，正在重新加载部分资源 (${successCount}/${total} 已完成)`
     )
   }
+}
+
+function runWithTimeBudget(task, {
+  budgetMs,
+  fallback,
+  onTimeout
+} = {}) {
+  if (typeof window === 'undefined' || !Number.isFinite(budgetMs) || budgetMs <= 0) {
+    return task()
+  }
+
+  let timedOut = false
+  let timer = null
+  return Promise.race([
+    task().then((result) => {
+      if (timer) window.clearTimeout(timer)
+      return result
+    }),
+    new Promise((resolve) => {
+      timer = window.setTimeout(() => {
+        timedOut = true
+        onTimeout?.()
+        resolve(typeof fallback === 'function' ? fallback() : fallback)
+      }, budgetMs)
+    })
+  ]).finally(() => {
+    if (!timedOut && timer) window.clearTimeout(timer)
+  })
 }
 
 /** 进游戏前必须全部就绪：商店/战斗/UI + 完整图鉴 + 全部地图 3D 模型 */
@@ -221,33 +279,94 @@ async function loadImagePhaseUntilComplete(
   tracker.totals[bucketKey] = urls.length
   tracker.report(phaseLabel, `0/${urls.length}`)
 
-  const result = await preloadImageAssetsUntilComplete(urls, {
-    concurrency: isDexArtPhase
+  let acceptingProgress = true
+  const phaseShouldContinue = () => acceptingProgress && shouldContinue()
+  const result = await runWithTimeBudget(() => preloadImageAssetsUntilComplete(urls, {
+    concurrency: phaseOptions.concurrency ?? (isDexArtPhase
       ? Math.max(1, Math.min(2, networkOptions.concurrency))
-      : networkOptions.concurrency,
-    timeoutMs: isDexArtPhase
+      : networkOptions.concurrency),
+    timeoutMs: phaseOptions.timeoutMs ?? (isDexArtPhase
       ? Math.max(45000, networkOptions.timeoutMs)
-      : networkOptions.timeoutMs,
-    retries: isDexArtPhase
+      : networkOptions.timeoutMs),
+    retries: phaseOptions.retries ?? (isDexArtPhase
       ? networkOptions.retries + 2
-      : networkOptions.retries,
+      : networkOptions.retries),
+    maxRounds: phaseOptions.maxRounds ?? Infinity,
     allowPlaceholderFallback: phaseOptions.allowPlaceholderFallback !== false && !isDexArtPhase,
-    shouldContinue,
+    shouldContinue: phaseShouldContinue,
     onRetryRound: createRetryReporter(tracker, bucketKey, phaseLabel),
     onItemComplete: (_result, stats) => {
+      if (!acceptingProgress) return
       tracker.buckets[bucketKey] = Math.min(urls.length, stats.loaded)
       tracker.report(phaseLabel, `${tracker.buckets[bucketKey]}/${urls.length}`)
     }
+  }), {
+    budgetMs: phaseOptions.budgetMs,
+    onTimeout: () => {
+      acceptingProgress = false
+      console.warn(`[preload] ${phaseLabel}达到启动预算，剩余资源转为后台加载`)
+    },
+    fallback: () => ({
+      ok: false,
+      timedOut: true,
+      total: urls.length,
+      loaded: tracker.buckets[bucketKey],
+      failed: urls
+    })
   })
 
-  tracker.buckets[bucketKey] = Math.min(urls.length, result.loaded)
-  tracker.report(phaseLabel, `${tracker.buckets[bucketKey]}/${urls.length}`)
+  const loadedForProgress = phaseOptions.countFailuresAsLoaded && (result.timedOut || result.failed?.length)
+    ? urls.length
+    : Math.min(urls.length, result.loaded)
+  tracker.buckets[bucketKey] = loadedForProgress
+  const detailSuffix = result.timedOut || result.failed?.length
+    ? ' · 剩余后台加载'
+    : ''
+  tracker.report(phaseLabel, `${tracker.buckets[bucketKey]}/${urls.length}${detailSuffix}`)
 
   if (isDexArtPhase && result.failed?.length) {
     console.warn('[preload] 部分图鉴立绘未缓存，进入游戏后将后台补载', result.failed.length)
   }
 
   return result
+}
+
+function warmImagePhaseInBackground(urls, phaseLabel, networkOptions, shouldContinue) {
+  if (!urls?.length) return
+  preloadImageAssetsUntilComplete(urls, {
+    concurrency: 2,
+    timeoutMs: Math.max(30000, networkOptions.timeoutMs),
+    retries: Math.max(1, networkOptions.retries),
+    maxRounds: 2,
+    allowPlaceholderFallback: false,
+    shouldContinue
+  }).then((result) => {
+    if (!result?.ok && result?.failed?.length) {
+      console.warn(`[preload] ${phaseLabel}后台补载仍有失败项，将在打开对应界面时按需加载`, result.failed.length)
+    }
+  }).catch((error) => {
+    if (error?.message === 'aborted') return
+    console.warn(`[preload] ${phaseLabel}后台补载失败`, error)
+  })
+}
+
+function warmModelPhaseInBackground(modelModule, keys, modelLoadOptions, shouldContinue) {
+  if (!keys?.length) return
+  modelModule.preloadModelKeysUntilComplete(keys, {
+    ...modelLoadOptions,
+    concurrency: 1,
+    retries: Math.max(1, modelLoadOptions.retries),
+    maxRounds: 2,
+    onRetryRound: null,
+    shouldContinue
+  }).then((result) => {
+    if (!result?.ok && result?.failed?.length) {
+      console.warn('[preload] 地图 3D 场景后台补载仍有失败项，将在进入地图时按需加载', result.failed.length)
+    }
+  }).catch((error) => {
+    if (error?.message === 'aborted') return
+    console.warn('[preload] 地图 3D 场景后台补载失败', error)
+  })
 }
 
 const AUDIO_PHASE_BUDGET_MS = 90000
@@ -260,18 +379,18 @@ async function loadAudioPhaseUntilComplete(urls, tracker, shouldContinue, networ
   }
 
   tracker.totals.audio = urls.length
-  tracker.report('正在加载地图氛围与战斗音乐', `0/${urls.length}`)
+  tracker.report(PRELOAD_PHASES.audio, `0/${urls.length}`)
 
   const preloadTask = preloadGameAudioAssets({
     urls,
     retries: 2,
     perUrlTimeoutMs: Math.min(35000, Math.max(20000, networkOptions.timeoutMs)),
     shouldContinue,
-    onRetryRound: createRetryReporter(tracker, 'audio', '正在加载地图氛围与战斗音乐'),
+    onRetryRound: createRetryReporter(tracker, 'audio', PRELOAD_PHASES.audio),
     onItemComplete: ({ loaded, total }) => {
       if (!shouldContinue()) return
       tracker.buckets.audio = Math.min(urls.length, loaded)
-      tracker.report('正在加载地图氛围与战斗音乐', `${tracker.buckets.audio}/${total}`)
+      tracker.report(PRELOAD_PHASES.audio, `${tracker.buckets.audio}/${total}`)
     }
   })
 
@@ -289,7 +408,7 @@ async function loadAudioPhaseUntilComplete(urls, tracker, shouldContinue, networ
   }
 
   tracker.buckets.audio = urls.length
-  tracker.report('正在加载地图氛围与战斗音乐', `${urls.length}/${urls.length}`)
+  tracker.report(PRELOAD_PHASES.audio, `${urls.length}/${urls.length}`)
   return result
 }
 
@@ -297,7 +416,7 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
   const plan = await buildFullEntryPreloadPlan({ mapName: DEFAULT_MAP_NAME, playerTeam: [] })
   const { p0Urls, p2Urls, audioUrls, modelKeys, mapCount } = plan
   const imageTotal = p0Urls.length + p2Urls.length
-  const totalSteps = plan.totalSteps
+  const totalSteps = p0Urls.length + audioUrls.length + p2Urls.length + modelKeys.length + ENGINE_STEP_COUNT
   const networkOptions = resolvePreloadNetworkOptions()
 
   const tracker = createProgressReporter({
@@ -322,40 +441,71 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
     retries: networkOptions.retries + 1,
     timeoutMs: Math.max(45000, networkOptions.timeoutMs * 2),
     shouldContinue,
-    onRetryRound: createRetryReporter(tracker, 'models', '正在加载全部地图 3D 场景')
+    onRetryRound: createRetryReporter(tracker, 'models', PRELOAD_PHASES.models)
   }
 
   await loadImagePhaseUntilComplete(
     p0Urls,
-    '正在加载战斗、商店与界面素材',
+    PRELOAD_PHASES.p0,
     tracker,
     'p0',
     networkOptions,
     shouldContinue
   )
   await loadAudioPhaseUntilComplete(audioUrls, tracker, shouldContinue, networkOptions)
-  await loadImagePhaseUntilComplete(
+  const dexResult = await loadImagePhaseUntilComplete(
     p2Urls,
-    '正在加载完整图鉴',
+    PRELOAD_PHASES.p2,
     tracker,
     'p2',
     networkOptions,
-    shouldContinue
-  )
-
-  tracker.report('正在加载全部地图 3D 场景', `0/${modelKeys.length}`)
-  await modelModule.preloadModelKeysUntilComplete(modelKeys, {
-    ...modelLoadOptions,
-    onItemComplete: (_key, stats) => {
-      tracker.buckets.models = stats.loaded
-      tracker.report('正在加载全部地图 3D 场景', `${stats.loaded}/${stats.total}`)
+    shouldContinue,
+    {
+      allowPlaceholderFallback: false,
+      budgetMs: NON_BLOCKING_DEX_PHASE_BUDGET_MS,
+      countFailuresAsLoaded: true,
+      maxRounds: 1
     }
+  )
+  if (!dexResult?.ok && dexResult?.failed?.length) {
+    warmImagePhaseInBackground(dexResult.failed, '完整图鉴', networkOptions, shouldContinue)
+  }
+
+  tracker.report(PRELOAD_PHASES.models, `0/${modelKeys.length}`)
+  let acceptingModelProgress = true
+  const modelResult = await runWithTimeBudget(() => modelModule.preloadModelKeysUntilComplete(modelKeys, {
+    ...modelLoadOptions,
+    maxRounds: 1,
+    shouldContinue: () => acceptingModelProgress && shouldContinue(),
+    onItemComplete: (_key, stats) => {
+      if (!acceptingModelProgress) return
+      tracker.buckets.models = stats.loaded
+      tracker.report(PRELOAD_PHASES.models, `${stats.loaded}/${stats.total}`)
+    }
+  }), {
+    budgetMs: NON_BLOCKING_MODEL_PHASE_BUDGET_MS,
+    onTimeout: () => {
+      acceptingModelProgress = false
+      console.warn('[preload] 地图 3D 场景达到启动预算，剩余模型转为后台加载')
+    },
+    fallback: () => ({
+      ok: false,
+      timedOut: true,
+      total: modelKeys.length,
+      loaded: tracker.buckets.models,
+      failed: modelKeys
+    })
   })
+  if (!modelResult?.ok && modelResult?.failed?.length) {
+    warmModelPhaseInBackground(modelModule, modelResult.failed, modelLoadOptions, shouldContinue)
+  }
+  tracker.buckets.models = modelKeys.length
+  tracker.report(PRELOAD_PHASES.models, `${modelKeys.length}/${modelKeys.length}${modelResult?.ok ? '' : ' · 剩余后台加载'}`)
 
   await mapModulePromise
   tracker.buckets.engine = ENGINE_STEP_COUNT
-  tracker.report('正在初始化地图引擎')
-  tracker.report('正在加载队伍与遇敌图鉴', '等待云端存档…')
+  tracker.report(PRELOAD_PHASES.engine)
+  tracker.report(PRELOAD_PHASES.complete, '核心素材已预热，等待云端进度确认…')
 
   return plan
 }
@@ -470,7 +620,6 @@ export async function runGameEntryPreload({
       markEarlyPhasesComplete(tracker, plan)
       tracker.buckets.p1 = 0
     } else {
-      await runEarlyAssetPreload(onProgress, resolveShouldContinue())
       markEarlyPhasesComplete(tracker, plan)
       tracker.buckets.p1 = 0
     }
@@ -478,7 +627,7 @@ export async function runGameEntryPreload({
     if (p1Urls.length > 0) {
       await loadImagePhaseUntilComplete(
         p1Urls,
-        '正在加载队伍与遇敌图鉴',
+        PRELOAD_PHASES.p1,
         tracker,
         'p1',
         networkOptions,
@@ -489,7 +638,7 @@ export async function runGameEntryPreload({
       tracker.totals.p1 = 0
     }
 
-    tracker.report('加载完成')
+    tracker.report(PRELOAD_PHASES.complete)
     markEntryPreloadComplete()
     earlyPreloadPromise = null
 

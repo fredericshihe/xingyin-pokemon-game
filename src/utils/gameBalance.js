@@ -54,6 +54,38 @@ export const TRAINER_ROLE_BALANCE = {
     potionBudget: 0,
     potionHpThreshold: 0
   },
+  reward: {
+    label: '奖励挑战 NPC',
+    fallbackTeamSize: 2,
+    minTeamSize: 2,
+    maxTeamSize: 3,
+    levelOffset: 0,
+    rewardMultiplier: 0.72,
+    goldMultiplier: 1,
+    goldCapMultiplier: 1,
+    aiSkill: 0.5,
+    switchChance: 0.08,
+    switchScoreGap: 34,
+    switchHpRatio: 0.26,
+    potionBudget: 0,
+    potionHpThreshold: 0
+  },
+  minigame: {
+    label: '循环挑战',
+    fallbackTeamSize: 6,
+    minTeamSize: 6,
+    maxTeamSize: 6,
+    levelOffset: 0,
+    rewardMultiplier: 1.18,
+    goldMultiplier: 2.65,
+    goldCapMultiplier: 3.8,
+    aiSkill: 0.92,
+    switchChance: 0.26,
+    switchScoreGap: 24,
+    switchHpRatio: 0.4,
+    potionBudget: 3,
+    potionHpThreshold: 0.45
+  },
   lieutenant: {
     label: '部下训练家',
     fallbackTeamSize: 3,
@@ -107,6 +139,8 @@ export const TRAINER_ROLE_BALANCE = {
 export const normalizeTrainerRole = (role) => {
   const normalized = typeof role === 'string' ? role.trim().toLowerCase() : ''
   if (normalized === 'boss') return 'boss'
+  if (normalized === 'reward' || normalized === 'prize' || normalized === 'special_reward') return 'reward'
+  if (normalized === 'minigame' || normalized === 'mini_game' || normalized === 'coin_game' || normalized === 'repeatable') return 'minigame'
   if (normalized === 'lieutenant' || normalized === 'subboss' || normalized === 'deputy') return 'lieutenant'
   if (normalized === 'challenge') return 'challenge'
   return 'normal'

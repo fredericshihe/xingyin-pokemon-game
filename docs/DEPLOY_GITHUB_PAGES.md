@@ -40,6 +40,29 @@ VITE_BASE_PATH=/ npm run build
 npx gh-pages -d dist
 ```
 
+## 发布后校验
+
+发布完成后建议立刻执行：
+
+```bash
+npm run verify:deploy
+```
+
+它会自动检查：
+
+- 线上 `version.json` 是否存在且可解析
+- `version.json.entryHash` 是否和首页实际入口 `assets/index-*.js` 一致
+- 当前入口 JS 是否真的能访问
+- `sw.js` 是否带有 `skipWaiting()` / `clientsClaim()`
+- `sw.js` 里的 `game-pages-*` / `game-static-*` buildId 是否与 `version.json.buildId` 一致
+- 本地 `dist/version.json` 与线上版本是否一致
+
+如果你要检查别的域名，也可以直接执行：
+
+```bash
+node scripts/verify-deployed-version.mjs https://your-site.example/
+```
+
 ## 常见问题
 
 **Q: 为什么 GitHub 显示 `github.io/xingyin-pokemon-game/`？**  

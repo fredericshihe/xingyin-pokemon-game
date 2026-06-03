@@ -179,6 +179,7 @@ export async function preloadImageAssetsUntilComplete(urls = [], {
   concurrency = 3,
   timeoutMs = 30000,
   retries = 3,
+  maxRounds = Infinity,
   allowPlaceholderFallback = true,
   onItemComplete = null,
   onRetryRound = null,
@@ -242,6 +243,10 @@ export async function preloadImageAssetsUntilComplete(urls = [], {
         }
       }
       remaining = stillMissing
+    }
+
+    if (remaining.length > 0 && Number.isFinite(maxRounds) && round >= maxRounds) {
+      break
     }
   }
 

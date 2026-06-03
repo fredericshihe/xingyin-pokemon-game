@@ -250,7 +250,7 @@
   {
     "id": 32,
     "dexNo": 57,
-    "name": "火爆猴",
+    "name": "火暴猴",
     "type": "fighting",
     "type2": null,
     "evolvesTo": 126
@@ -474,7 +474,7 @@
   {
     "id": 60,
     "dexNo": 127,
-    "name": "大甲",
+    "name": "凯罗斯",
     "type": "bug",
     "type2": null,
     "evolvesTo": null
@@ -514,7 +514,7 @@
   {
     "id": 65,
     "dexNo": 137,
-    "name": "3D龙",
+    "name": "多边兽",
     "type": "normal",
     "type2": null,
     "evolvesTo": 108
@@ -850,7 +850,7 @@
   {
     "id": 108,
     "dexNo": 233,
-    "name": "多边兽II",
+    "name": "多边兽２型",
     "type": "normal",
     "type2": null,
     "evolvesTo": 109
@@ -858,7 +858,7 @@
   {
     "id": 109,
     "dexNo": 474,
-    "name": "多边兽Z",
+    "name": "多边兽乙型",
     "type": "normal",
     "type2": null,
     "evolvesTo": null

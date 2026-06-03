@@ -160,12 +160,12 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     `}\n\n` +
     `export const getOfficialGrowthRate = (pokemon) => {\n` +
     `  const dexNo = getOfficialPokemonDexNo(pokemon)\n` +
-    `  return OFFICIAL_GROWTH_RATE_BY_DEX_NO[dexNo] || 'medium-fast'\n` +
+    `  return OFFICIAL_GROWTH_RATE_BY_DEX_NO[dexNo] || 'medium'\n` +
     `}\n\n` +
     `export const getOfficialTotalExpForLevel = (level, pokemon) => {\n` +
     `  const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))\n` +
     `  const growthRate = getOfficialGrowthRate(pokemon)\n` +
-    `  return OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE[growthRate]?.[safeLevel] ?? OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE['medium-fast'][safeLevel]\n` +
+    `  return OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE[growthRate]?.[safeLevel] ?? OFFICIAL_TOTAL_EXP_BY_GROWTH_RATE.medium[safeLevel]\n` +
     `}\n\n` +
     `export const getOfficialExpToNextLevel = (level, pokemon) => {\n` +
     `  const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))\n` +

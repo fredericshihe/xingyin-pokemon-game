@@ -137,7 +137,10 @@ function getChallengeRareEntries({ challenge, mapMin, mapMax, pickLevelForSpecie
 await withViteAuditServer(async ({ loadModule }) => {
   const { ADVENTURE_MAP_CHAIN, getAdventureMapInfo } = await loadModule('/src/game/data/overworldMaps.js')
   const { getMapConfig } = await loadModule('/src/data/maps/mapConfig.js')
-  const { ENCOUNTER_TABLES } = await loadModule('/src/game/data/encounterTables.js')
+  const {
+    ENCOUNTER_TABLES,
+    LEGACY_UNUSED_ENCOUNTER_TABLE_IDS = new Set()
+  } = await loadModule('/src/game/data/encounterTables.js')
   const { MONSTERS } = await loadModule('/src/utils/gameData.js')
   const { TYPE_NAMES_CN } = await loadModule('/src/utils/constants.js')
   const { pickLevelForSpecies } = await loadModule('/src/utils/wildEncounterRules.js')
@@ -288,6 +291,11 @@ await withViteAuditServer(async ({ loadModule }) => {
     if (Number.isInteger(bossRareId) && challengeRareEntries.some((entry) => entry.pokemonId === bossRareId)) {
       addError(`${config.displayName} Boss 专属稀有 ${monstersById.get(bossRareId)?.name || bossRareId} 不应同时出现在本地图试炼隐藏生态池`)
     }
+    challengeRareEntries
+      .filter((entry) => directSpecies.has(entry.pokemonId))
+      .forEach((entry) => {
+        addError(`${config.displayName} 试炼隐藏生态 ${monstersById.get(entry.pokemonId)?.name || entry.pokemonId} 已在本地图基础草丛出现，会削弱试炼解锁意义`)
+      })
 
     for (const entry of [...progressRareEntries, ...challengeRareEntries]) {
       if (!entry.legal) {
@@ -335,7 +343,9 @@ await withViteAuditServer(async ({ loadModule }) => {
   const uncoveredSpecies = MONSTERS
     .map((monster) => monster.id)
     .filter((id) => !evolutionReachableSpecies.has(id))
-  const unusedEncounterTables = Object.keys(ENCOUNTER_TABLES).filter((tableId) => !activeEncounterTableIds.has(tableId))
+  const inactiveEncounterTables = Object.keys(ENCOUNTER_TABLES).filter((tableId) => !activeEncounterTableIds.has(tableId))
+  const legacyInactiveEncounterTables = inactiveEncounterTables.filter((tableId) => LEGACY_UNUSED_ENCOUNTER_TABLE_IDS.has(tableId))
+  const unusedEncounterTables = inactiveEncounterTables.filter((tableId) => !LEGACY_UNUSED_ENCOUNTER_TABLE_IDS.has(tableId))
   const duplicateBossRareSpecies = [...bossRareOccurrences.reduce((map, occurrence) => {
     const list = map.get(occurrence.pokemonId) || []
     list.push(occurrence)
@@ -377,6 +387,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   console.log(`- not covered by map wild/unlock/evolution paths: ${uncoveredSpecies.length}`)
   console.log(`- battle-only species not currently wild candidates: ${battleOnlySpecies.size}`)
   console.log(`- unused encounter tables: ${unusedEncounterTables.length > 0 ? unusedEncounterTables.join(', ') : 'none'}`)
+  console.log(`- legacy inactive encounter tables: ${legacyInactiveEncounterTables.length > 0 ? legacyInactiveEncounterTables.join(', ') : 'none'}`)
 
   console.log('\nPer-map coverage')
   mapRows.forEach((row) => {

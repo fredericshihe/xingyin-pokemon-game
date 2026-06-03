@@ -21,7 +21,7 @@ const TO_REMOVE = [3, 112, 113, 116, 120, 121, 83, 92, 93, 95] // 杰尼龟, 魔
 const REPLACEMENTS = {
   'GodotMapV2_PirateShore': [8, 54, 86, 187], // 暴鲤龙, 海刺龙, 刺龙王, 金鱼王
   'GodotMapV2_Graveyard': [6, 21, 100, 101], // 耿鬼, 鬼斯通, 臭泥, 瓦斯弹(保留原有)
-  'GodotMapV2_HexRuins': [38, 45, 108, 143], // 三合一磁怪, 顽皮雷弹, 多边兽II, 自爆磁怪
+  'GodotMapV2_HexRuins': [38, 45, 108, 143], // 三合一磁怪, 顽皮雷弹, 多边兽２型, 自爆磁怪
   'GodotMapV2_SurvivalRidge': [34, 35, 139, 104], // 怪力, 隆隆岩, 大钢蛇, 超甲狂犀
   'GodotMapV2_BossHighland': [12, 72, 74, 76, 142, 129] // 妙蛙花, 喷火龙, 水箭龟, 班基拉斯, 快龙(保留传说)
 }

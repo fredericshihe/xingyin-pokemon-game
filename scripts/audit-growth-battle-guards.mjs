@@ -31,14 +31,14 @@ const requiredMarkers = [
   ['battle no-mp recovery-path helper exists', 'const hasBattleRecoveryPath = ({', originalGameSource],
   ['battle turn blocks unaffordable move before resolution', 'const shortageMessage = getAffordableBattleMoveKeys(currentPlayer).length === 0', originalGameSource],
   ['battle turn shows no-mp notification', "addNotification(shortageMessage, 'warning');", originalGameSource],
-  ['battle scene shows persistent no-mp notice', 'className="battle-no-mp-notice"', originalGameSource],
-  ['battle scene shows no-mp hard-lock warning', 'className="battle-no-mp-notice__warning"', originalGameSource],
+  ['battle scene shows persistent no-mp overlay', 'className="battle-no-mp-overlay"', originalGameSource],
+  ['battle scene shows no-mp hard-lock warning', 'battle-no-mp-overlay__meter--warn', originalGameSource],
   ['battle move buttons disable when mp insufficient', 'disabled={activePlayerActionDisabled || !hasEnoughMp || isMoveDisabledByCharge}', originalGameSource],
   ['battle no-mp hard-lock failover ref exists', 'const battleNoMpResolutionKeyRef = useRef(null);', originalGameSource],
   ['battle no-mp hard-lock failover effect exists', '队伍也没有可恢复战斗的手段。', originalGameSource],
   ['battle potion restores mp in snapshot', 'currentMp: Math.min(baseMaxMp, baseCurrentMp + recoveryProfile.mp)', originalGameSource],
   ['battle potion yields turn to enemy', "turn: shouldYieldTurnToEnemy ? 'enemy' : baseSnapshot.turn,", originalGameSource],
-  ['exp potion blocked in battle bag flow', "if (isBattle && item.type === 'expPotion') {", originalGameSource],
+  ['exp potion blocked in battle bag flow', "if (isBattle && (item.type === 'expPotion' || item.type === 'statBoost')) {", originalGameSource],
   ['enemy ai no-mp fallback handled', 'if (affordableMoves.length === 0) return null', battleAiSource],
   ['progress queue dedupe includes learn move', "if (evt.type === 'learnMove') return `learnMove:${evt.monId}:${evt.moveKey}`", progressSource],
   ['progress queue supports evolution choice events', "if (evt.type === 'evolutionChoice') {", progressSource],
@@ -61,10 +61,11 @@ if (originalGameSource.includes("mon.moves.unshift('tackle');")) {
   failures.push('Forbidden runtime zero-cost move injection detected.')
 }
 
-const noMpHintExists = originalGameSource.includes('battle-no-mp-notice') &&
+const noMpHintExists = originalGameSource.includes('battle-no-mp-overlay') &&
+  originalGameSource.includes('getNoMpOverlayBody()') &&
   originalGameSource.includes('getNoMpBattleHint(battlePlayerMon)')
 if (!noMpHintExists) {
-  failures.push('Battle UI no longer exposes a persistent no-MP notice near the move grid.')
+  failures.push('Battle UI no longer exposes a persistent no-MP overlay near the move grid.')
 }
 
 const warningCopyVariants = [

@@ -1,33 +1,63 @@
-import { EVOLUTION_ITEMS, EXP_POTIONS, POKEBALLS, POTIONS } from './gameData.js'
+import { EVOLUTION_ITEMS, EXP_POTIONS, POKEBALLS, POTIONS, STAT_BOOST_ITEMS } from './gameData.js'
 
 const INVENTORY_ITEM_DEFINITIONS = {
   pokeball: POKEBALLS,
   potion: POTIONS,
   expPotion: EXP_POTIONS,
+  statBoost: STAT_BOOST_ITEMS,
   evolutionItem: EVOLUTION_ITEMS,
 }
 
-const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion'])
+const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion', 'statBoost'])
 const LEGACY_INVENTORY_ITEM_TYPES = new Set(['evolutionItem'])
-const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'evolutionItem']
+const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'statBoost', 'evolutionItem']
+const INVENTORY_ITEM_TYPE_ALIASES = {
+  ball: 'pokeball',
+  balls: 'pokeball',
+  boost: 'statBoost',
+  stat_boost: 'statBoost',
+  statBoostItem: 'statBoost',
+  exp: 'expPotion',
+  exp_potion: 'expPotion',
+}
+
+const normalizeExplicitInventoryItemType = (itemType, itemKey) => {
+  if (typeof itemType !== 'string' || itemType.trim().length === 0) return null
+  const rawType = itemType.trim()
+  if (rawType === 'stone') {
+    if (STAT_BOOST_ITEMS[itemKey]) return 'statBoost'
+    if (EVOLUTION_ITEMS[itemKey]) return 'evolutionItem'
+  }
+  return INVENTORY_ITEM_TYPE_ALIASES[rawType] || rawType
+}
+
+const inferInventoryItemType = (itemKey) => (
+  POKEBALLS[itemKey] ? 'pokeball' :
+    POTIONS[itemKey] ? 'potion' :
+      EXP_POTIONS[itemKey] ? 'expPotion' :
+        STAT_BOOST_ITEMS[itemKey] ? 'statBoost' :
+          EVOLUTION_ITEMS[itemKey] ? 'evolutionItem' :
+            null
+)
 
 export const isActiveInventoryItemType = (itemType) => ACTIVE_INVENTORY_ITEM_TYPES.has(itemType)
 export const isLegacyInventoryItemType = (itemType) => LEGACY_INVENTORY_ITEM_TYPES.has(itemType)
 
-export const resolveInventoryItemType = (slot = {}) => (
-  slot.itemType ||
-  (POKEBALLS[slot.itemKey] ? 'pokeball' :
-    POTIONS[slot.itemKey] ? 'potion' :
-      EXP_POTIONS[slot.itemKey] ? 'expPotion' :
-        EVOLUTION_ITEMS[slot.itemKey] ? 'evolutionItem' :
-          null)
-)
+export const resolveInventoryItemType = (slot = {}) => {
+  const itemKey = typeof slot?.itemKey === 'string' ? slot.itemKey : ''
+  const explicitType = normalizeExplicitInventoryItemType(slot?.itemType, itemKey)
+  if (explicitType && INVENTORY_ITEM_DEFINITIONS[explicitType]?.[itemKey]) {
+    return explicitType
+  }
+  return inferInventoryItemType(itemKey)
+}
 
 export const resolveInventoryItemDetails = (itemType, itemKey) => (
   INVENTORY_ITEM_DEFINITIONS[itemType]?.[itemKey] ||
   POKEBALLS[itemKey] ||
   POTIONS[itemKey] ||
   EXP_POTIONS[itemKey] ||
+  STAT_BOOST_ITEMS[itemKey] ||
   EVOLUTION_ITEMS[itemKey] ||
   null
 )
@@ -85,6 +115,28 @@ export const getPotionEffectParts = (potion = {}) => {
 }
 
 export const getPotionEffectText = (potion) => getPotionEffectParts(potion).join(' / ') || '恢复'
+
+export const STAT_BOOST_STAT_LABELS = {
+  hp: 'HP',
+  maxHp: 'HP',
+  attack: '攻击',
+  atk: '攻击',
+  defense: '防御',
+  def: '防御',
+  spAttack: '特攻',
+  spAtk: '特攻',
+  spDefense: '特防',
+  spDef: '特防',
+  speed: '速度',
+  spd: '速度',
+}
+
+export const getStatBoostEffectText = (item = {}) => {
+  const amount = Math.max(0, Math.trunc(Number(item?.boostAmount) || 0))
+  if (item?.effect === 'stat_boost_all') return `全基础属性 +${amount}`
+  const statLabel = STAT_BOOST_STAT_LABELS[item?.stat] || '基础属性'
+  return `${statLabel} +${amount}`
+}
 
 const collapseInventorySlots = (inventory) => {
   const source = Array.isArray(inventory) ? inventory : []

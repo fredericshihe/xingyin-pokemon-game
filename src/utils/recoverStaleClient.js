@@ -3,6 +3,15 @@ import { clearBgmPreloadCache } from './gameBgm'
 import { clearDecodedImageCache } from './localAssetPreloader'
 
 const RELOAD_GUARD_KEY = 'game:stale-client-reload'
+const PRESERVED_RUNTIME_CACHE_PATTERNS = [
+  /^game-glb(?:-|$)/,
+  /^game-audio(?:-|$)/,
+  /^game-pokemon-art(?:-|$)/
+]
+
+const shouldPreserveRuntimeCache = (cacheName) => (
+  PRESERVED_RUNTIME_CACHE_PATTERNS.some((pattern) => pattern.test(cacheName))
+)
 
 export function getExpectedGameUrl() {
   const base = import.meta.env.BASE_URL || '/'
@@ -22,12 +31,17 @@ export function isLikelyChunkLoadError(error) {
   )
 }
 
-export async function clearClientCaches() {
+export async function clearClientCaches({
+  preserveRuntimeAssetCaches = true,
+  preserveEntryPreloadMarks = preserveRuntimeAssetCaches
+} = {}) {
   if (typeof window === 'undefined') return
 
   clearDecodedImageCache()
   clearBgmPreloadCache()
-  clearEntryPreloadMarks()
+  if (!preserveEntryPreloadMarks) {
+    clearEntryPreloadMarks()
+  }
   try {
     const { resetEntryPreloadSession } = await import('./gameEntryPreload')
     resetEntryPreloadSession({ clearImageCache: false })
@@ -37,7 +51,9 @@ export async function clearClientCaches() {
 
   if ('caches' in window) {
     const keys = await caches.keys()
-    await Promise.all(keys.map((key) => caches.delete(key)))
+    await Promise.all(keys
+      .filter((key) => !preserveRuntimeAssetCaches || !shouldPreserveRuntimeCache(key))
+      .map((key) => caches.delete(key)))
   }
 
   if ('serviceWorker' in navigator) {

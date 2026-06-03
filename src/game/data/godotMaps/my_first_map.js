@@ -1,5 +1,10 @@
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
-import { buildGodotRegionMap, buildThemedPickupDecorations, REGION_MAP_TILE as TILE } from './godot_region_maps.js'
+import {
+  buildGodotRegionMap,
+  buildThemedPickupDecorations,
+  cleanupRoadSurfaceDecorations,
+  REGION_MAP_TILE as TILE
+} from './godot_region_maps.js'
 
 const STARTER_THEME = 'kenney-newbie-valley-v2'
 const NPC_SCALE = 0.62
@@ -188,8 +193,8 @@ const STARTER_SIGNS = [
   sign(
     'sign_valley_grove_warning',
     10,
-    21,
-    '密林入口：野生宝可梦 Lv.4-6，建议先去阳光草坡练习。'
+    22,
+    '密林 Lv.4-6：先练到Lv.5再进。'
   ),
   sign(
     'sign_valley_fork',
@@ -219,7 +224,7 @@ const STARTER_SIGNS = [
     'sign_valley_exit',
     35,
     12,
-    '东侧出口：营地练习后，平均Lv.6可前往星音草径。'
+    '东出口：击败3位训练家，平均Lv.6前往星音草径。'
   )
 ]
 
@@ -231,9 +236,9 @@ const STARTER_TRAINERS = [
       { pokemonId: 114, level: 2 },
       { pokemonId: 1, level: 3 }
     ],
-    beforeBattleText: '营地练习生举起精灵球：我会用最基础的节奏和你练一场！',
-    defeatedText: '营地练习生笑着点头：很稳，记得受伤后去泉水恢复。',
-    dailyDefeatedText: '营地练习生：今天已经练过啦，明天我再陪你对战。'
+    beforeBattleText: '营地练习生：先来一场基础练习吧。',
+    defeatedText: '营地练习生：很稳，受伤了记得去泉水恢复。',
+    dailyDefeatedText: '营地练习生：今天已经练过了，明天再来。'
   }),
   trainer('valley_trainer_grove_guard', 11, 23, {
     name: '密林守卫',
@@ -242,9 +247,9 @@ const STARTER_TRAINERS = [
       { pokemonId: 16, level: 4 },
       { pokemonId: 39, level: 4 }
     ],
-    beforeBattleText: '密林守卫拦住去路：密林草丛野生宝可梦较强，先去阳光草坡练习后再来挑战我！',
-    defeatedText: '密林守卫让开道路：你已经准备好了，密林草丛欢迎你的探索。',
-    dailyDefeatedText: '密林守卫：密林通道已开放，继续你的冒险吧。',
+    beforeBattleText: '密林守卫：先过我这关，再进密林。',
+    defeatedText: '密林守卫：可以，密林通道交给你了。',
+    dailyDefeatedText: '密林守卫：密林已经开放，明天再来。',
     facing: 'down'
   }),
   trainer('valley_trainer_flower_hill', 20, 12, {
@@ -254,9 +259,9 @@ const STARTER_TRAINERS = [
       { pokemonId: 13, level: 4 },
       { pokemonId: 4, level: 4 }
     ],
-    beforeBattleText: '花丘学员整理好背包：这里适合练习属性判断，我们来试试吧！',
-    defeatedText: '花丘学员收起伙伴：你已经能应对花丘的节奏了。',
-    dailyDefeatedText: '花丘学员：我今天的练习结束了，明天再继续。'
+    beforeBattleText: '花丘学员：来练练属性判断吧。',
+    defeatedText: '花丘学员：这片花丘，你已经应付得很好了。',
+    dailyDefeatedText: '花丘学员：我今天练完了，明天继续。'
   }),
   trainer('valley_trainer_lake_path', 36, 23, {
     name: '湖畔观察员',
@@ -265,9 +270,9 @@ const STARTER_TRAINERS = [
       { pokemonId: 14, level: 5 },
       { pokemonId: 5, level: 5 }
     ],
-    beforeBattleText: '湖畔观察员指向芦草：水边的对战更考验准备，来一场吧！',
-    defeatedText: '湖畔观察员把路线让开：去东南草坡前，你已经准备得不错了。',
-    dailyDefeatedText: '湖畔观察员：湖边记录已经完成，明天再来挑战我吧。'
+    beforeBattleText: '湖畔观察员：水边更考验准备，来一场吧。',
+    defeatedText: '湖畔观察员：准备得不错，继续往前走吧。',
+    dailyDefeatedText: '湖畔观察员：今天的记录做完了，明天再来。'
   })
 ]
 
@@ -352,7 +357,11 @@ const STARTER_DEFINITION = {
       '前往星音草径',
       {
         requiredAverageLevel: 6,
-        requiredTrainerIds: ['valley_trainer_camp_path']
+        requiredTrainerIds: [
+          'valley_trainer_camp_path',
+          'valley_trainer_flower_hill',
+          'valley_trainer_lake_path'
+        ]
       }
     ),
     heal('heal_valley_spring', 24, 29, '营地尽头泉水'),
@@ -984,7 +993,6 @@ function buildStarterBoundaryBlockers(map) {
 const generatedStarterMap = buildGodotRegionMap(STARTER_DEFINITION)
 const starterBoundaryBlockers = buildStarterBoundaryBlockers(generatedStarterMap)
 const {
-  blocking: blockingStarterBoundaryBlockers,
   visual: starterBoundaryVisualDecorations
 } = splitStarterBoundaryBlockersByCollision(generatedStarterMap, generatedStarterMap.mapGrid, starterBoundaryBlockers)
 const starterDecorativeObjectsBase = [
@@ -996,9 +1004,14 @@ const starterDecorativeObjectsBase = [
   ...starterBoundaryVisualDecorations
 ]
 const starterMapGridWithBoundaryBlockers = generatedStarterMap.mapGrid.map((row) => [...row])
-paintStarterBoundaryBlockerFootprints(generatedStarterMap, starterMapGridWithBoundaryBlockers, blockingStarterBoundaryBlockers)
-const starterDecorativeObjects = filterStarterBlockedLowVegetationDecorations(
+const starterDecorativeObjectsPreCollision = cleanupRoadSurfaceDecorations(
   starterDecorativeObjectsBase,
+  starterMapGridWithBoundaryBlockers,
+  generatedStarterMap.runtimeEvents
+)
+paintStarterBoundaryBlockerFootprints(generatedStarterMap, starterMapGridWithBoundaryBlockers, starterDecorativeObjectsPreCollision)
+const starterDecorativeObjects = filterStarterBlockedLowVegetationDecorations(
+  starterDecorativeObjectsPreCollision,
   starterMapGridWithBoundaryBlockers,
   generatedStarterMap
 )

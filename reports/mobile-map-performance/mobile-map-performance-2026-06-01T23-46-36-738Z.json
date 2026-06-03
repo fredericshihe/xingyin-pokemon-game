@@ -1,0 +1,105 @@
+{
+  "startedAt": "2026-06-01T23:46:36.738Z",
+  "args": {
+    "baseUrl": "http://127.0.0.1:3003",
+    "durationMs": 2000,
+    "warmupMs": 800,
+    "readyTimeoutMs": 60000,
+    "mapQuality": "high",
+    "mapSet": "all",
+    "maps": [
+      "GodotMapV2"
+    ],
+    "devices": [
+      "iphone_se"
+    ],
+    "cpuThrottle": false,
+    "outDir": "/Users/shihe/Documents/宝可梦养成/reports/mobile-map-performance"
+  },
+  "maps": [
+    "GodotMapV2"
+  ],
+  "devices": [
+    {
+      "id": "iphone_se",
+      "label": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 4
+    }
+  ],
+  "results": [
+    {
+      "mapId": "GodotMapV2",
+      "mapName": "星音草径",
+      "deviceId": "iphone_se",
+      "deviceLabel": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 1,
+      "mapQuality": "high",
+      "readyMs": 2851,
+      "wallMs": 5706,
+      "browserErrors": [],
+      "networkFailures": [],
+      "assetFailures": [],
+      "sampleCount": 240,
+      "averageFrameMs": 8.332500000000001,
+      "avgFps": 120.01200120012,
+      "p10Fps": 108.69565217390982,
+      "p5Fps": 107.52688172042801,
+      "p1Fps": 106.38297872340323,
+      "p90FrameMs": 9.200000000000273,
+      "p95FrameMs": 9.300000000000182,
+      "p99FrameMs": 9.400000000000091,
+      "worstFrameMs": 9.400000000000546,
+      "framesOver33ms": 0,
+      "framesOver50ms": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "readyAtMs": 3654.600000023842,
+      "resourceCount": 145,
+      "assetResourceCount": 61,
+      "transferSize": 9774799,
+      "assetTransferSize": 1292318,
+      "navigation": {
+        "domContentLoaded": 2398.5,
+        "load": 2848.7999999523163,
+        "transferSize": 2939
+      },
+      "heap": {
+        "usedJSHeapSize": 32065918,
+        "totalJSHeapSize": 65341506,
+        "jsHeapSizeLimit": 4294967296
+      },
+      "perfProbe": {
+        "mapName": "GodotMapV2",
+        "mapVisualQuality": "high",
+        "isMobile": true,
+        "renderMode": "active",
+        "idleFrameMs": 42,
+        "canvasWidth": 750,
+        "canvasHeight": 1667,
+        "cssWidth": 750,
+        "cssHeight": 1667,
+        "devicePixelRatio": 2,
+        "pixelRatio": 2,
+        "drawCalls": 139,
+        "triangles": 118500,
+        "points": 0,
+        "lines": 0,
+        "geometries": 119,
+        "textures": 13,
+        "sceneChildren": 4,
+        "rootChildren": 131,
+        "visibleChunks": 2,
+        "totalChunks": 6,
+        "avgFps": "112.5"
+      },
+      "status": "PASS"
+    }
+  ]
+}

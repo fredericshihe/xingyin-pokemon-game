@@ -20,7 +20,7 @@ const checks = [
   },
   {
     name: 'forced_defeat_switch_enters_team_view_with_queued_enemy_sendout',
-    passed: /const handlePlayerDefeatCheck =[\s\S]*?const queuedEnemySendOutPhaseData = buildQueuedEnemySendOutPhaseData\({[\s\S]*?view: 'team'[\s\S]*?battlePhase: queuedEnemySendOutPhaseData \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedEnemySendOutPhaseData/.test(originalGame),
+    passed: /const handlePlayerDefeatCheck =[\s\S]*?const queuedEnemySendOutPhaseData = buildQueuedEnemySendOutPhaseData\({[\s\S]*?view: 'team'[\s\S]*?activeEnemyId: queuedEnemySendOutPhaseData\?\.enemyMon\?\.id \|\| committedSnapshot\.activeEnemyId[\s\S]*?battlePhase: queuedEnemySendOutPhaseData \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedEnemySendOutPhaseData/.test(originalGame),
   },
   {
     name: 'forced_switch_carries_followup_enemy_sendout_through_pending_state',
@@ -28,11 +28,11 @@ const checks = [
   },
   {
     name: 'completed_forced_switch_reenters_enemy_sendout_phase',
-    passed: /const handleSwitch =[\s\S]*?const queuedBattlePhaseData = isForced[\s\S]*?buildQueuedEnemySendOutPhaseData\({[\s\S]*?battlePhase: queuedBattlePhaseData \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedBattlePhaseData/.test(originalGame),
+    passed: /const handleSwitch =[\s\S]*?const queuedBattlePhaseData = isForced[\s\S]*?buildQueuedEnemySendOutPhaseData\({[\s\S]*?activeEnemyId: queuedBattlePhaseData\?\.enemyMon\?\.id \|\| baseSnapshot\.activeEnemyId[\s\S]*?battlePhase: queuedBattlePhaseData \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedBattlePhaseData/.test(originalGame),
   },
   {
     name: 'resolving_turn_recovery_rebuilds_delayed_enemy_sendout',
-    passed: /const recoverResolvingTurn = async \(\) => \{[\s\S]*?const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData\({[\s\S]*?battlePhase: queuedEnemySendOut \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedEnemySendOut/.test(originalGame),
+    passed: /const recoverResolvingTurn = async \(\) => \{[\s\S]*?const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData\({[\s\S]*?activeEnemyId: queuedEnemySendOut\?\.enemyMon\?\.id \|\| baseSnapshot\.activeEnemyId[\s\S]*?battlePhase: queuedEnemySendOut \? 'sendout' : 'active'[\s\S]*?battlePhaseData: queuedEnemySendOut/.test(originalGame),
   },
   {
     name: 'queued_enemy_sendout_phase_uses_shared_builder',

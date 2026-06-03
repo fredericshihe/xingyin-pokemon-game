@@ -1,0 +1,105 @@
+{
+  "startedAt": "2026-06-01T23:59:28.571Z",
+  "args": {
+    "baseUrl": "http://127.0.0.1:3003",
+    "durationMs": 2000,
+    "warmupMs": 800,
+    "readyTimeoutMs": 60000,
+    "mapQuality": "high",
+    "mapSet": "all",
+    "maps": [
+      "GodotMapV2"
+    ],
+    "devices": [
+      "iphone_se"
+    ],
+    "cpuThrottle": true,
+    "outDir": "/Users/shihe/Documents/宝可梦养成/reports/mobile-map-performance"
+  },
+  "maps": [
+    "GodotMapV2"
+  ],
+  "devices": [
+    {
+      "id": "iphone_se",
+      "label": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 4
+    }
+  ],
+  "results": [
+    {
+      "mapId": "GodotMapV2",
+      "mapName": "星音草径",
+      "deviceId": "iphone_se",
+      "deviceLabel": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 4,
+      "mapQuality": "high",
+      "readyMs": 10577.199999928474,
+      "wallMs": 23938,
+      "browserErrors": [],
+      "networkFailures": [],
+      "assetFailures": [],
+      "sampleCount": 240,
+      "averageFrameMs": 8.330416666666663,
+      "avgFps": 120.04201470514685,
+      "p10Fps": 109.89010989010549,
+      "p5Fps": 108.69565217390445,
+      "p1Fps": 106.38297872340837,
+      "p90FrameMs": 9.100000000000364,
+      "p95FrameMs": 9.200000000000728,
+      "p99FrameMs": 9.399999999999636,
+      "worstFrameMs": 9.399999999999636,
+      "framesOver33ms": 0,
+      "framesOver50ms": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "readyAtMs": 11388.5,
+      "resourceCount": 144,
+      "assetResourceCount": 61,
+      "transferSize": 4199741,
+      "assetTransferSize": 1241234,
+      "navigation": {
+        "domContentLoaded": 10263.599999904633,
+        "load": 10266.799999952316,
+        "transferSize": 2955
+      },
+      "heap": {
+        "usedJSHeapSize": 45617184,
+        "totalJSHeapSize": 68130084,
+        "jsHeapSizeLimit": 4294967296
+      },
+      "perfProbe": {
+        "mapName": "GodotMapV2",
+        "mapVisualQuality": "high",
+        "isMobile": true,
+        "renderMode": "active",
+        "idleFrameMs": 42,
+        "canvasWidth": 750,
+        "canvasHeight": 1667,
+        "cssWidth": 750,
+        "cssHeight": 1667,
+        "devicePixelRatio": 2,
+        "pixelRatio": 2,
+        "drawCalls": 129,
+        "triangles": 116004,
+        "points": 0,
+        "lines": 0,
+        "geometries": 111,
+        "textures": 12,
+        "sceneChildren": 4,
+        "rootChildren": 139,
+        "visibleChunks": 2,
+        "totalChunks": 6,
+        "avgFps": "112.1"
+      },
+      "status": "WARN"
+    }
+  ]
+}

@@ -113,12 +113,21 @@ const VOLATILE_BY_AILMENT = {
 
 const SIMPLE_NO_EFFECT_MOVES = new Set(['splash'])
 const SELF_DESTRUCT_MOVES = new Set(['self-destruct', 'explosion'])
+const USABLE_WHILE_ASLEEP_MOVES = new Set(['snore'])
+const SELF_THAWING_MOVES = new Set(['flame-wheel', 'flare-blitz'])
 const DYNAMIC_POWER_DEFAULTS = {
   'electro-ball': 60,
   'grass-knot': 60,
   'gyro-ball': 60,
   'heavy-slam': 60,
   reversal: 50,
+}
+const BALANCE_COST_OVERRIDES_BY_API_NAME = {
+  'ancient-power': 15,
+  'dragon-tail': 7,
+  'fake-out': 12,
+  'life-dew': 12,
+  synthesis: 15,
 }
 const SELF_STAT_CHANGE_DAMAGE_MOVES = new Set([
   'close-combat',
@@ -334,6 +343,11 @@ const buildMoveDefinition = (apiMove) => {
     }
   }
   if (SELF_DESTRUCT_MOVES.has(apiName)) move.selfDestruct = true
+  if (USABLE_WHILE_ASLEEP_MOVES.has(apiName)) {
+    move.requiresUserStatus = 'sleep'
+    move.usableWhileAsleep = true
+  }
+  if (SELF_THAWING_MOVES.has(apiName)) move.thawsUser = true
   if (apiName === 'teleport') move.effect = 'teleport'
   if (SIMPLE_NO_EFFECT_MOVES.has(apiName)) move.effect = 'nothing'
 
@@ -350,7 +364,7 @@ const buildMoveDefinition = (apiMove) => {
   if (category === 'status' && !hasRuntimeEffect) return { skipped: 'status_without_supported_effect' }
   if (category !== 'status' && !(Number(move.power) > 0)) return { skipped: 'damaging_without_power' }
 
-  move.cost = computeCost({ category, power: move.power, pp: apiMove.pp })
+  move.cost = BALANCE_COST_OVERRIDES_BY_API_NAME[apiName] ?? computeCost({ category, power: move.power, pp: apiMove.pp })
   return { move }
 }
 

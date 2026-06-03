@@ -1,15 +1,18 @@
 import React, { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Component, startTransition } from "react"
 import { createPortal } from "react-dom"
 import { TYPES, TYPE_NAMES_CN } from "../../utils/constants"
-import { MOVES, MONSTERS, OFFICIAL_DEX_MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, getBalancedMovesForLevel, normalizeMovesForPokemonLevel } from "../../utils/gameData"
+import { MOVES, MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, STAT_BOOST_ITEMS, getBalancedMovesForLevel, normalizeMovesForPokemonLevel } from "../../utils/gameData"
 import { getMovesLearnedAtLevel, getEvolutionLevelForBranch } from "../../utils/pokemonGrowth"
 import { MAP_CONFIG, getMapConfig, getRandomWildPokemon, getRandomWildLevel } from "../../data/maps/mapConfig"
 import GameCanvas from "../../game/GameCanvas"
 import { applyMapEventsToGrid, getMapEventAt, getMapEvents, getMapStartPosition, getMapSignMessage } from "../../game/data/mapEvents"
 import { getMapEventTile } from "../../game/data/mapEventTypes"
+import { getEncounterTable } from "../../game/data/encounterTables"
+import { REGION_MAP_TILE, getHiddenEncounterGatePassageTiles, isInsideDecorationFootprint } from "../../game/data/godotMaps/godot_region_maps.js"
 import { FAST_TRAVEL_COST, getFastTravelStation, getFastTravelStationMeta } from "../../game/data/fastTravel"
 import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo, hasAdventureMap, hasAdventureMapGridVisualRoadMismatch, loadAdventureMapGrid } from "../../game/data/overworldMaps"
 import { PLAYER_VISUAL_VERSION, getPlayerFigureDataUrl } from "../../game/world/TextureFactory.js"
+import { findLegacySpawn, isWalkable as isLegacyGridWalkable } from "../../game/world/LegacyGridAdapter"
 import { supabase } from "../../supabaseClient"
 import {
   ENCOUNTER_SAFE_STEPS,
@@ -57,7 +60,7 @@ import {
   releaseMonster,
   sanitizeRoster
 } from "../../utils/pokemonRoster"
-import { calculateStatsForLevel } from "../../utils/pokemonStats"
+import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts, OFFICIAL_STAT_KEYS } from "../../utils/pokemonStats"
 import { isLevelValidForSpecies, pickLevelForSpecies } from "../../utils/wildEncounterRules"
 import {
   getTrainerDifficultyBounds,
@@ -68,6 +71,7 @@ import {
 } from "../../utils/trainerBattleScaling"
 import {
   CHALLENGE_RARE_UNLOCK_STAGE_COUNT,
+  normalizeChallengeRarePool,
   getChallengeRareUnlockStageCount as getChallengeRareUnlockStageCountForPool,
   getChallengeRareUnlockedCountForStage as getChallengeRareUnlockedCountForPoolStage,
   getChallengeRareUnlockBatch as getChallengeRareUnlockBatchFromPool
@@ -85,6 +89,7 @@ import {
   getPotionEffectParts,
   getPotionEffectText,
   getPotionRecoveryProfile,
+  getStatBoostEffectText,
   isActiveInventoryItemType,
   isLegacyInventoryItemType,
   mergeInventoryEntries,
@@ -119,7 +124,8 @@ import { assetUrl } from "../../utils/assetUrl"
 // 高清宝可梦素材：运行时只读取 public/assets 本地缓存，避免战斗时依赖外部网络。
 const POKEMON_LOCAL_SPRITE_BASE = assetUrl('/assets/pokemon/official-artwork');
 const POKEMON_LOCAL_PLACEHOLDER = POKEMON_PLACEHOLDER_URL
-const BATTLE_SENDOUT_BALL_SPRITE = assetUrl('/assets/characters/battle-trainer/pokeapi-pokeball-dreamworld.png');
+const DEFAULT_CAPTURE_BALL_KEY = 'pokeball_basic';
+const BATTLE_SENDOUT_BALL_SPRITE = POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.sprite || assetUrl('/assets/characters/battle-trainer/pokeapi-pokeball-dreamworld.png');
 const TRAINER_PORTRAITS = {
   normal: assetUrl('/assets/characters/trainers/trainer-normal.png'),
   lieutenant: assetUrl('/assets/characters/trainers/trainer-lieutenant.png'),
@@ -127,22 +133,44 @@ const TRAINER_PORTRAITS = {
   challenge: assetUrl('/assets/characters/trainers/trainer-challenge.png')
 };
 
+const normalizeCaptureBallKey = (ballKey) => (
+  typeof ballKey === 'string' && POKEBALLS[ballKey]
+    ? ballKey
+    : DEFAULT_CAPTURE_BALL_KEY
+);
+
+const getMonsterCaptureBallKey = (monster) => normalizeCaptureBallKey(
+  monster?.capturedBallKey || monster?.captureBallKey || monster?.pokeballKey || monster?.ballKey
+);
+
+const getMonsterCaptureBall = (monster) => (
+  POKEBALLS[getMonsterCaptureBallKey(monster)] || POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]
+);
+
+const getMonsterCaptureBallSprite = (monster) => (
+  getMonsterCaptureBall(monster)?.sprite || BATTLE_SENDOUT_BALL_SPRITE || POKEMON_LOCAL_PLACEHOLDER
+);
+
+const getMonsterCaptureBallName = (monster) => (
+  getMonsterCaptureBall(monster)?.name || POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.name || '精灵球'
+);
+
 const DeferredDexScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.DexScreen })));
 const DeferredShopScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.ShopScreen })));
 const DeferredTeamScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.TeamScreen })));
 const DeferredBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.BagScreen })));
 const DeferredUnifiedBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.UnifiedBagScreen })));
 
-const DeferredPanelFallback = ({ title = '界面加载中...' }) => (
+const DeferredPanelFallback = ({ title = '正在打开界面' }) => (
   <div className="game-page">
     <div className="game-page-header">
       <div>
         <h2 className="game-page-title">{title}</h2>
-        <div className="game-page-subtitle">正在准备内容</div>
+        <div className="game-page-subtitle">正在准备这个面板</div>
       </div>
     </div>
     <div className="game-scroll-area">
-      <div className="game-card p-4 text-sm font-bold text-slate-500">请稍候...</div>
+      <div className="game-card p-4 text-sm font-bold text-slate-500">马上就好</div>
     </div>
   </div>
 );
@@ -169,6 +197,12 @@ const getTrainerPortraitForRole = (role) => {
 const TRAINER_INTRO_META = {
   normal: {
     promptText: '挡住了去路，准备对战！',
+  },
+  reward: {
+    promptText: '奖励挑战开始！',
+  },
+  minigame: {
+    promptText: '小游戏挑战开始！',
   },
   lieutenant: {
     promptText: '试炼印记之战开始！',
@@ -323,6 +357,7 @@ const normalizeMonsterAssetSource = (monster) => {
   if ((normalized.currentMp === undefined || normalized.currentMp === null || normalized.currentMp === '') && normalized.mp != null) {
     normalized.currentMp = normalized.mp;
   }
+  normalized.capturedBallKey = getMonsterCaptureBallKey(normalized);
   const baseMonster = resolveBaseMonsterForAsset(normalized);
   if (baseMonster) {
     const baseDexNo = Number(baseMonster.dexNo ?? baseMonster.pokedexId);
@@ -470,9 +505,10 @@ const normalizeRuntimeKnownMoveKeys = (moves = []) => {
     .slice(0, 4);
 };
 const getRuntimeMovesPreservingKnown = (baseMonster, moves = [], level = 1, options = {}) => {
-  const knownMoves = normalizeRuntimeKnownMoveKeys(moves);
-  if (knownMoves.length > 0) return knownMoves;
-  return normalizeMovesForPokemonLevel(baseMonster, moves, level, options);
+  return normalizeMovesForPokemonLevel(baseMonster, moves, level, {
+    backfill: false,
+    ...options,
+  });
 };
 const hasZeroCostMove = (moves = []) => (
   normalizeRuntimeKnownMoveKeys(moves).some((moveKey) => getMoveMpCost(MOVES[moveKey]) === 0)
@@ -560,6 +596,10 @@ const getEnemyAiItemIntentMessage = (action) => {
       return '对手眼看宝可梦快要倒下，急忙伸手去拿伤药。';
     case 'sustain_heal':
       return '对手不慌不忙地取出伤药，准备稳住战线。';
+    case 'recover_mp':
+      return '对手发现技能值吃紧，准备使用伤药恢复节奏。';
+    case 'cure_status':
+      return '对手不想被异常状态拖住，准备使用伤药。';
     default:
       return '对手准备使用道具。';
   }
@@ -637,56 +677,101 @@ const handleTrainerPortraitImageError = (event) => {
   applyImageFallback(event, TRAINER_PORTRAITS.normal || POKEMON_LOCAL_PLACEHOLDER);
 };
 
+const toPositiveIntegerOrNull = (value) => {
+  const normalized = Math.trunc(Number(value));
+  return Number.isInteger(normalized) && normalized > 0 ? normalized : null;
+};
+
+const findMonsterByInternalId = (pokemonId) => {
+  const safeId = toPositiveIntegerOrNull(pokemonId);
+  if (!safeId) return null;
+  return MONSTERS.find((monster) => Number(monster?.id) === safeId) || null;
+};
+
+const findMonsterByDexNo = (dexNo) => {
+  const safeDexNo = toPositiveIntegerOrNull(dexNo);
+  if (!safeDexNo) return null;
+  return MONSTERS.find((monster) => Number(monster?.dexNo ?? monster?.pokedexId) === safeDexNo) || null;
+};
+
+const resolveSpeciesPreviewBaseMonster = (entry) => {
+  if (entry === null || entry === undefined) return null;
+
+  if (typeof entry === 'object') {
+    const internalId = toPositiveIntegerOrNull(
+      entry.pokemonId ?? entry.id ?? entry.speciesId ?? entry.monsterId
+    );
+    if (internalId) {
+      const byInternalId = findMonsterByInternalId(internalId);
+      if (byInternalId) return byInternalId;
+    }
+
+    const dexNo = toPositiveIntegerOrNull(entry.dexNo ?? entry.pokedexId);
+    if (dexNo) {
+      const byDexNo = findMonsterByDexNo(dexNo);
+      if (byDexNo) return byDexNo;
+    }
+
+    if (typeof entry.name === 'string' && entry.name.trim().length > 0) {
+      return MONSTERS.find((monster) => monster.name === entry.name.trim()) || null;
+    }
+
+    return null;
+  }
+
+  if (typeof entry === 'string' && entry.trim().length > 0 && Number.isNaN(Number(entry))) {
+    return MONSTERS.find((monster) => monster.name === entry.trim()) || null;
+  }
+
+  return findMonsterByInternalId(entry);
+};
+
+const buildSpeciesPreviewMonster = (baseMonster, extra = {}) => {
+  const normalized = normalizeMonsterAssetSource(baseMonster);
+  if (!normalized?.name) return null;
+  return {
+    id: normalized.id ?? normalized.dexNo ?? normalized.pokedexId ?? normalized.name,
+    name: normalized.name,
+    sprite: normalized.sprite || POKEMON_LOCAL_PLACEHOLDER,
+    type: normalized.type,
+    type2: normalized.type2 || null,
+    dexNo: normalized.dexNo ?? normalized.pokedexId ?? null,
+    ...extra
+  };
+};
+
 const getChallengeUnlockSpeciesPreview = (pool = []) => {
   const seen = new Set();
   return (Array.isArray(pool) ? pool : [])
-    .map((entry) => Math.trunc(Number(entry?.pokemonId ?? entry?.id ?? entry)))
-    .filter(Number.isInteger)
-    .filter((pokemonId) => {
-      if (seen.has(pokemonId)) return false;
-      seen.add(pokemonId);
+    .map((entry) => resolveSpeciesPreviewBaseMonster(entry))
+    .filter(Boolean)
+    .filter((monster) => {
+      const key = Number(monster.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     })
-    .map((pokemonId) => {
-      const baseMonster = MONSTERS.find((monster) => Number(monster?.id) === pokemonId);
-      if (!baseMonster) return null;
-      const dexMonster = OFFICIAL_DEX_MONSTERS.find((monster) => (
-        Number(monster?.id) === Number(baseMonster.id) ||
-        Number(monster?.dexNo ?? monster?.pokedexId) === Number(baseMonster.dexNo ?? baseMonster.pokedexId)
-      ));
-      return normalizeMonsterAssetSource(dexMonster || baseMonster);
-    })
+    .map((monster) => buildSpeciesPreviewMonster(monster))
     .filter(Boolean)
-    .map((monster) => ({
-      id: monster.id,
-      name: monster.name,
-      sprite: monster.sprite || POKEMON_LOCAL_PLACEHOLDER,
-      type: monster.type,
-      type2: monster.type2 || null
-    }));
 };
 
 const getChallengeBattleSpeciesPreview = (teamConfig = []) => (
   Array.isArray(teamConfig)
     ? teamConfig
       .map((entry, index) => {
-        const pokemonId = Math.trunc(Number(entry?.pokemonId ?? entry?.id ?? entry));
-        if (!Number.isInteger(pokemonId)) return null;
-        const baseMonster = MONSTERS.find((monster) => Number(monster?.id) === pokemonId);
+        const baseMonster = resolveSpeciesPreviewBaseMonster(entry);
         if (!baseMonster) return null;
-        const dexMonster = OFFICIAL_DEX_MONSTERS.find((monster) => (
-          Number(monster?.id) === Number(baseMonster.id) ||
-          Number(monster?.dexNo ?? monster?.pokedexId) === Number(baseMonster.dexNo ?? baseMonster.pokedexId)
-        ));
-        const normalized = normalizeMonsterAssetSource(dexMonster || baseMonster);
         const level = Math.trunc(Number(entry?.level));
-        return {
-          id: `${normalized.id}-${index}`,
-          speciesId: normalized.id,
-          name: normalized.name,
-          sprite: normalized.sprite || POKEMON_LOCAL_PLACEHOLDER,
+        const normalized = buildSpeciesPreviewMonster(baseMonster, {
           level: Number.isFinite(level) && level > 0 ? level : null
-        };
+        });
+        return normalized
+          ? {
+            ...normalized,
+            id: `${normalized.id}-${index}`,
+            speciesId: normalized.id
+          }
+          : null;
       })
       .filter(Boolean)
     : []
@@ -1493,7 +1578,25 @@ const getExpToNextLevel = (level, baseMonster = null) => {
   return level >= 100 ? Infinity : getExpToNextLevelOfficial(level, baseMonster);
 };
 
-const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initialCurrentMp, initialCurrentExp) => {
+const getBaseMonsterStatBlock = (baseMonster) => (baseMonster?.stats ? {
+  maxHp: baseMonster.stats.hp,
+  maxMp: Math.floor((baseMonster.stats.sp_attack || 50) * 0.8) + 20,
+  atk: baseMonster.stats.attack,
+  def: baseMonster.stats.defense,
+  spAtk: baseMonster.stats.sp_attack,
+  spDef: baseMonster.stats.sp_defense,
+  spd: baseMonster.stats.speed
+} : {
+  maxHp: baseMonster?.maxHp,
+  maxMp: baseMonster?.maxMp,
+  atk: baseMonster?.atk,
+  def: baseMonster?.def,
+  spAtk: baseMonster?.spAtk,
+  spDef: baseMonster?.spDef,
+  spd: baseMonster?.spd
+});
+
+const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initialCurrentMp, initialCurrentExp, statBoosts = null, options = {}) => {
   // Defensive check to prevent crash if baseMonster is not found (e.g., during level-up)
   if (!baseMonster) {
     console.error(`createMonsterInstance received an undefined 'baseMonster'. This likely means a monster lookup failed, possibly during level-up. ID passed: ${id}.`);
@@ -1509,33 +1612,18 @@ const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initial
   }
 
   // Data normalization to handle different structures (MONSTERS vs BALANCED_MONSTERS)
-  const baseStats = baseMonster.stats ? { // From BALANCED_MONSTERS
-    maxHp: baseMonster.stats.hp,
-    maxMp: Math.floor((baseMonster.stats.sp_attack || 50) * 0.8) + 20, // Calculate MP
-    atk: baseMonster.stats.attack,
-    def: baseMonster.stats.defense,
-    spAtk: baseMonster.stats.sp_attack,
-    spDef: baseMonster.stats.sp_defense,
-    spd: baseMonster.stats.speed
-  } : { // From MONSTERS
-    maxHp: baseMonster.maxHp,
-    maxMp: baseMonster.maxMp,
-    atk: baseMonster.atk,
-    def: baseMonster.def,
-    spAtk: baseMonster.spAtk,
-    spDef: baseMonster.spDef,
-    spd: baseMonster.spd
-  };
-
-  const calculatedStats = calculateStatsForLevel(baseStats, level);
+  const normalizedBoosts = normalizeBaseStatBoosts(statBoosts);
+  const calculatedStats = calculateStatsForLevel(applyBaseStatBoosts(getBaseMonsterStatBlock(baseMonster), normalizedBoosts), level);
 
   return normalizeMonsterAssetSource({
     ...baseMonster,
     ...calculatedStats,
+    ...(Object.keys(normalizedBoosts).length > 0 ? { statBoosts: normalizedBoosts } : {}),
     moves: getBalancedMovesForLevel(baseMonster, level),
     level,
     id,
     baseId: baseMonster.id, // Keep track of the original monster template ID
+    capturedBallKey: normalizeCaptureBallKey(options?.capturedBallKey || options?.captureBallKey || options?.ballKey),
     currentHp: initialCurrentHp ?? calculatedStats.maxHp,
     currentMp: initialCurrentMp ?? calculatedStats.maxMp,
     currentExp: initialCurrentExp ?? 0,
@@ -1543,9 +1631,72 @@ const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initial
   });
 };
 
+const applyStatBoostsToMonster = (monster, baseMonster, nextBoosts = {}) => {
+  if (!monster || !baseMonster) return monster;
+  const normalizedBoosts = normalizeBaseStatBoosts(nextBoosts);
+  const boostedStats = calculateStatsForLevel(
+    applyBaseStatBoosts(getBaseMonsterStatBlock(baseMonster), normalizedBoosts),
+    monster.level
+  );
+  const currentMaxHp = getMonsterMaxHp(monster);
+  const currentMaxMp = getMonsterMaxMp(monster);
+  const nextCurrentHp = Math.min(
+    boostedStats.maxHp,
+    Math.max(0, getMonsterCurrentHp(monster, currentMaxHp) + Math.max(0, boostedStats.maxHp - currentMaxHp))
+  );
+  const nextCurrentMp = Math.min(
+    boostedStats.maxMp,
+    getMonsterCurrentMp(monster, currentMaxMp)
+  );
+
+  return {
+    ...monster,
+    ...boostedStats,
+    statBoosts: normalizedBoosts,
+    currentHp: nextCurrentHp,
+    currentMp: nextCurrentMp,
+  };
+};
+
 const getMapEventProperties = (event) => (
   event?.properties && typeof event.properties === 'object' ? event.properties : {}
 );
+
+const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock';
+const HIDDEN_ENCOUNTER_GATE_DEFAULT_COST = 100;
+const HIDDEN_ENCOUNTER_EXCLUSIVE_RARE_COUNT = 3;
+
+const getHiddenEncounterGateInteractionObjectName = (props = {}) => (
+  typeof props?.interactionObjectName === 'string' && props.interactionObjectName.trim().length > 0
+    ? props.interactionObjectName.trim()
+    : '入口标记'
+);
+
+const getHiddenEncounterGateExclusiveRareCount = (props = {}) => {
+  const count = Math.trunc(Number(props?.exclusiveRareCount ?? props?.hiddenRareCount));
+  return Number.isSafeInteger(count) && count > 0 ? count : HIDDEN_ENCOUNTER_EXCLUSIVE_RARE_COUNT;
+};
+
+const formatHiddenEncounterGateLockedReason = ({
+  hiddenZoneName = '隐藏遭遇区',
+  goldCost = HIDDEN_ENCOUNTER_GATE_DEFAULT_COST,
+  props = {},
+  requireEntry = false
+} = {}) => {
+  const interactionObjectName = getHiddenEncounterGateInteractionObjectName(props);
+  const safeGoldCost = Math.max(1, Math.trunc(Number(goldCost)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+  const rareCount = getHiddenEncounterGateExclusiveRareCount(props);
+  return `${hiddenZoneName}未开启：调查${interactionObjectName}，支付 ${safeGoldCost} 金币${requireEntry ? '后才能进入' : '就能开路'}。里面藏着 ${rareCount} 只专属强力稀有宝可梦。`;
+};
+
+const formatHiddenEncounterGateUnlockDescription = ({
+  hiddenZoneName = '隐藏遭遇区',
+  props = {}
+} = {}) => {
+  const interactionObjectName = getHiddenEncounterGateInteractionObjectName(props);
+  const rareCount = getHiddenEncounterGateExclusiveRareCount(props);
+  return `调查${interactionObjectName}后，通往${hiddenZoneName}的秘路会永久开放。里面有 ${rareCount} 只专属强力稀有宝可梦，名字要进入后亲自发现。`;
+};
 
 const isConfiguredBattleEventType = (type) => (
   type === 'trainer' || type === 'boss' || type === 'challenge'
@@ -1580,11 +1731,16 @@ const getConfiguredBattleLevels = (teamConfig = []) => (
 );
 
 const DAILY_SCALING_TRAINER_ROLES = new Set(['normal']);
+const REPEATABLE_TRAINER_ROLES = new Set(['minigame']);
 
 const isDailyScalingTrainerRole = (role) => DAILY_SCALING_TRAINER_ROLES.has(normalizeTrainerRole(role));
 
 const isDailyScalingTrainerEvent = (eventType, role) => (
   eventType === 'trainer' && isDailyScalingTrainerRole(role)
+);
+
+const isRepeatableTrainerEvent = (eventType, role) => (
+  eventType === 'trainer' && REPEATABLE_TRAINER_ROLES.has(normalizeTrainerRole(role))
 );
 
 const getMapScopedEventId = (mapName, eventId) => {
@@ -1610,6 +1766,7 @@ const getBattleEventCompletedLockKeys = ({ world, mapName, eventType, eventId, e
     eventType,
     getMapEventProperties(getMapEventById(mapName, eventId))
   );
+  if (isRepeatableTrainerEvent(eventType, resolvedEventRole)) return [];
   const isPermanentTrainerEvent = eventType === 'trainer' && normalizeTrainerRole(resolvedEventRole) !== 'normal';
   const dailyKey = typeof world?.dailyRefreshKey === 'string' && world.dailyRefreshKey.length > 0
     ? world.dailyRefreshKey
@@ -1628,7 +1785,8 @@ const getCompletedBattleEventVisualOverrideKey = (mapName, eventId) => (
 
 const resolveCompletedBattleEventVisualOverrideStatus = ({ eventType, eventRole = null } = {}) => {
   if (eventType === 'boss') return 'completed';
-  if (eventType === 'challenge') return 'daily_complete';
+  if (eventType === 'challenge') return null;
+  if (isRepeatableTrainerEvent(eventType, eventRole)) return null;
   if (eventType === 'trainer') {
     return isDailyScalingTrainerEvent(eventType, eventRole) ? 'daily_complete' : 'cleared';
   }
@@ -1714,6 +1872,14 @@ const appendMapScopedWorldEventId = (world, key, mapName, eventId) => {
   const scopedId = getMapScopedEventId(mapName, eventId);
   return appendWorldEventId(world, key, scopedId || eventId);
 };
+
+const hasCollectedMapEvent = (world, mapName, eventId) => (
+  hasMapScopedWorldEventId(world, 'collectedEventIds', mapName, eventId)
+);
+
+const appendCollectedMapEvent = (world, mapName, eventId) => (
+  appendMapScopedWorldEventId(world, 'collectedEventIds', mapName, eventId)
+);
 
 const appendBattleCompletionWorldEventId = (world, key, mapName, eventId) => {
   const scopedId = getMapScopedEventId(mapName, eventId);
@@ -1804,6 +1970,52 @@ const getChallengeUnlockedRarePool = (event, world, mapName = null) => {
   return pool.slice(0, getChallengeRareUnlockedCountForStage(event, stage));
 };
 
+const getChallengeRareUnlockContext = ({
+  event,
+  world,
+  mapName = null,
+  context = null
+} = {}) => {
+  const pool = getChallengeRarePool(event);
+  const completedStage = getChallengeRareUnlockStage(world, event, mapName);
+  const contextHasBatch = Array.isArray(context?.challengeRareUnlockBatch);
+  const contextBatch = contextHasBatch
+    ? normalizeChallengeRarePool(context.challengeRareUnlockBatch)
+    : null;
+  const contextStage = Math.trunc(Number(context?.challengeRareUnlockStage));
+  const unlockStage = Number.isSafeInteger(contextStage) && contextStage > 0
+    ? contextStage
+    : completedStage + 1;
+  const batchCompletedStage = Number.isSafeInteger(contextStage) && contextStage > 0
+    ? Math.max(0, contextStage - 1)
+    : completedStage;
+  const unlockBatch = contextHasBatch
+    ? contextBatch
+    : getChallengeRareUnlockBatch(event, batchCompletedStage);
+  const totalCount = pool.length;
+  const previousUnlockedCount = getChallengeRareUnlockedCountForStage(event, completedStage);
+  const fallbackUnlockedCount = getChallengeRareUnlockedCountForStage(event, unlockStage);
+  const contextUnlockedCount = Math.trunc(Number(context?.challengeRareUnlockedCount));
+  const unlockedCount = Math.min(
+    totalCount,
+    Math.max(
+      previousUnlockedCount,
+      fallbackUnlockedCount,
+      Number.isSafeInteger(contextUnlockedCount) ? contextUnlockedCount : 0
+    )
+  );
+
+  return {
+    completedStage,
+    unlockStage,
+    unlockBatch,
+    previousUnlockedCount,
+    unlockedCount,
+    totalCount,
+    nextBatchIndex: Math.min(getChallengeRareUnlockStageCount(event), Math.max(1, unlockStage))
+  };
+};
+
 const getChallengeRunRewardItems = ({ mapName, teamSize = 3 } = {}) => {
   const mapConfig = getMapConfig(mapName);
   const regionOrder = Math.max(1, Math.trunc(Number(mapConfig?.regionOrder)) || 1);
@@ -1848,12 +2060,17 @@ const resolveDailyBattleTeamConfig = (teamConfig, {
   eventType = 'trainer',
   role = 'normal',
   challengeRarePool = [],
+  challengeBattleGroups = [],
   dailyVariantSpeciesIds = [],
   dailyVariantLevelJitter = null
 } = {}) => {
   if (!Array.isArray(teamConfig) || teamConfig.length === 0) return [];
   const mapConfig = getMapConfig(mapName);
   const bossEvent = getMapBossEvent(mapName);
+  const usesProgressiveBattleState = (
+    isDailyVariantBattleEvent(eventType, role) ||
+    isRepeatableTrainerEvent(eventType, role)
+  );
   return resolveTrainerBattleTeamConfig(teamConfig, {
     role,
     eventType,
@@ -1863,7 +2080,7 @@ const resolveDailyBattleTeamConfig = (teamConfig, {
     victoryCount: getTrainerVictoryCount(
       world,
       eventId,
-      isDailyVariantBattleEvent(eventType, role) ? mapName : null
+      usesProgressiveBattleState ? mapName : null
     ),
     mapConfig,
     mapWildPokemon: mapConfig?.wildPokemon,
@@ -1871,7 +2088,8 @@ const resolveDailyBattleTeamConfig = (teamConfig, {
     dailyVariantLevelJitter,
     bossTeamConfig: getMapEventProperties(bossEvent).team,
     challengeRarePool,
-    enableDailyVariant: isDailyVariantBattleEvent(eventType, role)
+    challengeBattleGroups,
+    enableDailyVariant: usesProgressiveBattleState
   });
 };
 
@@ -1899,6 +2117,7 @@ const getDailyTrainerVictoryText = ({ eventName, mapName, world, eventId } = {})
     eventType: event?.type,
     role: eventRole,
     challengeRarePool: eventProps.challengeRarePool,
+    challengeBattleGroups: eventProps.challengeBattleGroups,
     dailyVariantSpeciesIds: eventProps.dailyVariantSpeciesIds,
     dailyVariantLevelJitter: eventProps.dailyVariantLevelJitter
   });
@@ -1912,8 +2131,14 @@ const getDailyTrainerVictoryText = ({ eventName, mapName, world, eventId } = {})
   const fallbackName = eventName || (event?.type === 'challenge' ? '区域试炼' : '训练家');
   if (event?.type === 'challenge') {
     return isAtCap
-      ? `${fallbackName}已达本区试炼上限，明天会以当前强度再次开放。`
-      : `${fallbackName}明天会更强。`;
+      ? `${fallbackName}已达本区试炼上限，之后会保持 6 连战随机轮换。`
+      : `${fallbackName}下次会更强。`;
+  }
+  if (isRepeatableTrainerEvent(event?.type, eventRole)) {
+    const completedRounds = getTrainerVictoryCount(world, eventId, mapName);
+    return isAtCap
+      ? `${fallbackName}已达到 Lv.${bounds.maxLevel} 顶级阵容，可继续挑战赚取金币。`
+      : `${fallbackName}第 ${completedRounds + 1} 轮会更强。`;
   }
   return isAtCap
     ? `${fallbackName}已达本区训练家上限。`
@@ -2059,6 +2284,45 @@ const calculateBattleRewardTotals = ({
     };
   }, { exp: 0, gold: 0 })
 );
+
+const getRepeatableTrainerGoldBonusMultiplier = (round = 1) => {
+  const safeRound = Math.max(1, Math.trunc(Number(round)) || 1);
+  return Math.min(3.25, 1 + (safeRound - 1) * 0.08);
+};
+
+const calculateConfiguredBattleRewardPreview = ({
+  teamConfig = [],
+  playerAverageLevel = 5,
+  battleKind = 'trainer',
+  trainerRole = 'normal',
+  repeatableRound = 0
+} = {}) => {
+  const defeatedMons = (Array.isArray(teamConfig) ? teamConfig : [])
+    .map((entry) => {
+      const pokemonId = Math.trunc(Number(entry?.pokemonId ?? entry?.id));
+      const level = Math.max(1, Math.min(100, Math.trunc(Number(entry?.level)) || 1));
+      const baseMonster = MONSTERS.find((monster) => Number(monster?.id) === pokemonId);
+      return baseMonster ? { ...baseMonster, level } : null;
+    })
+    .filter(Boolean);
+  const baseRewards = calculateBattleRewardTotals({
+    defeatedMons,
+    playerAverageLevel,
+    battleKind,
+    participants: 1,
+    trainerRole
+  });
+  const repeatableGoldBonus = repeatableRound > 0
+    ? getRepeatableTrainerGoldBonusMultiplier(repeatableRound)
+    : 1;
+
+  return repeatableGoldBonus > 1
+    ? {
+      ...baseRewards,
+      gold: Math.max(baseRewards.gold, Math.round(baseRewards.gold * repeatableGoldBonus))
+    }
+    : baseRewards;
+};
 
 // --- Error Boundary ---
 class ErrorBoundary extends Component {
@@ -2644,6 +2908,15 @@ const ExpBurst = ({ amount = 0, levelUps = [], compact = false }) => {
   );
 };
 
+const StatBoostBurst = ({ label = '', compact = false }) => (
+  <div className={`pokemon-exp-effect ${compact ? 'pokemon-exp-effect--compact' : ''} pokemon-exp-effect--levelup`} aria-hidden="true">
+    <span className="pokemon-exp-aura" />
+    <span className="pokemon-exp-orbit pokemon-exp-orbit--outer" />
+    <span className="pokemon-exp-plus">{label}</span>
+    <span className="pokemon-exp-levelup">STAT UP</span>
+  </div>
+);
+
 const RewardCountUp = ({ value = 0, delay = 0 }) => {
   const targetRef = useRef(null);
   if (targetRef.current === null) {
@@ -2727,22 +3000,64 @@ const buildBattleVictoryDisplaySnapshot = ({ enemyName, isTrainer, rewardSummary
   };
 };
 
+const BATTLE_METER_TONES = {
+  hpHealthy: {
+    className: 'battle-meter-fill-hp-healthy',
+    color: '#00e676',
+    from: '#00e676',
+    to: '#1de9b6'
+  },
+  hpWarning: {
+    className: 'battle-meter-fill-hp-warning',
+    color: '#facc15',
+    from: '#facc15',
+    to: '#f97316'
+  },
+  hpCritical: {
+    className: 'battle-meter-fill-hp-critical',
+    color: '#ef4444',
+    from: '#ef4444',
+    to: '#dc2626'
+  },
+  mp: {
+    className: '',
+    color: '#29b6f6',
+    from: '#29b6f6',
+    to: '#4fc3f7'
+  },
+  exp: {
+    className: '',
+    color: '#d500f9',
+    from: '#d500f9',
+    to: '#ffb300'
+  }
+};
+
+const getBattleMeterTone = (variant, percent) => {
+  if (variant === 'mp') return BATTLE_METER_TONES.mp;
+  if (variant === 'exp') return BATTLE_METER_TONES.exp;
+  if (percent <= 20) return BATTLE_METER_TONES.hpCritical;
+  if (percent <= 50) return BATTLE_METER_TONES.hpWarning;
+  return BATTLE_METER_TONES.hpHealthy;
+};
+
 const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) => {
   const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
-  const safeCurrent = Number.isFinite(current) ? current : 0;
+  const rawCurrent = Number.isFinite(current) ? current : 0;
+  const safeCurrent = Math.max(0, Math.min(safeMax, rawCurrent));
   const percent = Math.max(0, Math.min(100, safeCurrent / safeMax * 100));
   const variantClass = {
     hp: 'battle-meter-fill-hp',
     mp: 'battle-meter-fill-mp',
     exp: 'battle-meter-fill-exp'
   }[variant] || 'battle-meter-fill-hp';
-  const hpToneClass = variant === 'hp'
-    ? percent <= 20
-      ? 'battle-meter-fill-hp-critical'
-      : percent <= 50
-        ? 'battle-meter-fill-hp-warning'
-        : 'battle-meter-fill-hp-healthy'
-	    : '';
+  const tone = getBattleMeterTone(variant, percent);
+  const fillStyle = {
+    width: `${percent}%`,
+    '--battle-meter-color': tone.color,
+    '--battle-meter-from': tone.from,
+    '--battle-meter-to': tone.to
+  };
 
   return (
     <div className={`battle-meter-row battle-meter-row-${variant}`}>
@@ -2750,9 +3065,47 @@ const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) 
         <span>{label}</span>
         {showValue && <span className="text-white/90">{safeCurrent}/{safeMax}</span>}
       </div>
-      <div className={`battle-meter-track battle-meter-track-${variant}`}>
-        <div className={`battle-meter-fill ${variantClass} ${hpToneClass}`} style={{ width: `${percent}%` }} />
+      <div
+        className={`battle-meter-track battle-meter-track-${variant}`}
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={safeMax}
+        aria-valuenow={safeCurrent}
+      >
+        <div
+          className={`battle-meter-fill ${variantClass} ${tone.className} ${percent <= 0 ? 'battle-meter-fill-empty' : ''}`}
+          style={fillStyle}
+        />
       </div>
+    </div>
+  );
+};
+
+const STAT_STAGE_ICONS = { atk: '⚔', def: '🛡', spAtk: '✨', spDef: '💎', spd: '⚡' };
+const STAT_STAGE_LABELS = { atk: '攻', def: '防', spAtk: '特攻', spDef: '特防', spd: '速' };
+
+const BattleStatStages = ({ statStages }) => {
+  if (!statStages) return null;
+  const entries = Object.entries(statStages).filter(([, v]) => v !== 0);
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-0.5 mt-0.5">
+      {entries.map(([stat, stage]) => (
+        <span
+          key={stat}
+          title={`${STAT_STAGE_LABELS[stat] || stat} ${stage > 0 ? '+' : ''}${stage}`}
+          className={`inline-flex items-center gap-0.5 rounded px-1 py-0 text-[9px] font-black leading-tight border ${
+            stage > 0
+              ? 'bg-emerald-500/25 border-emerald-400/50 text-emerald-200'
+              : 'bg-red-500/25 border-red-400/50 text-red-200'
+          }`}
+          style={{ animation: 'battleStatStagePop 0.35s cubic-bezier(.36,1.56,.64,1) both' }}
+        >
+          <span className="opacity-80">{STAT_STAGE_ICONS[stat] || stat}</span>
+          <span>{stage > 0 ? `+${stage}` : stage}</span>
+        </span>
+      ))}
     </div>
   );
 };
@@ -2762,13 +3115,23 @@ const BattleHudCard = ({ mon, stats, hint, align = 'left', playerGold = null, sh
   const layoutClass = className || (align === 'right' ? 'battle-hud-enemy' : 'battle-hud-player');
   const statusNotes = getBattleStatusNotes(mon);
   const hintMeta = hint || { text: '', className: '' };
+  // 低血量外框反馈：阈值与 BattleMeter 的 HP 染色保持一致（≤20% 危急 / ≤50% 警戒）。
+  const hpPercent = stats.maxHp > 0 ? stats.currentHp / stats.maxHp * 100 : 100;
+  const hpDangerClass = stats.currentHp <= 0
+    ? ''
+    : hpPercent <= 20
+      ? 'battle-glass-card--critical'
+      : hpPercent <= 50
+        ? 'battle-glass-card--warning'
+        : '';
   return (
-    <div className={`battle-glass-card ${layoutClass}`}>
+    <div className={`battle-glass-card ${layoutClass} ${hpDangerClass}`}>
       <div className="flex items-start justify-between gap-1.5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
             <div className="truncate text-sm font-black leading-none text-white drop-shadow">{mon.name}</div>
           </div>
+          <BattleStatStages statStages={mon.statStages} />
           <div className="mt-1 flex flex-wrap gap-1">
             {mon.type2 && <TypeBadge type={mon.type2} small />}
             <TypeBadge type={mon.type} small />
@@ -2878,45 +3241,115 @@ const MonsterSprite = ({ monster, isBack = false, animate = false, sizeMultiplie
 
 const CaptureSequenceOverlay = ({ show, data, onComplete, paused = false }) => {
   const [finishing, setFinishing] = useState(false);
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [capturingInBall, setCapturingInBall] = useState(false);
+  const mountedRef = useRef(false);
+  const confirmCompleteTimerRef = useRef(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (confirmCompleteTimerRef.current) {
+        window.clearTimeout(confirmCompleteTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!show || !data || paused) return undefined;
 
+    if (confirmCompleteTimerRef.current) {
+      window.clearTimeout(confirmCompleteTimerRef.current);
+      confirmCompleteTimerRef.current = null;
+    }
     setFinishing(false);
-    const finishDelay = data.success ? 5100 : 4700;
-    const completeDelay = data.success ? 6200 : 5600;
+    setAwaitingConfirm(false);
+    setConfirming(false);
+    setCapturingInBall(false);
+    const finishDelay = data.success ? 6100 : 4700;
+    const completeDelay = data.success ? 7900 : 5600;
 
-    const shake1Timer = setTimeout(() => gameAudio.playCaptureShake(), 1200);
-    const shake2Timer = setTimeout(() => gameAudio.playCaptureShake(), 2400);
-    const shake3Timer = setTimeout(() => gameAudio.playCaptureShake(), 3600);
+    const throwTimer = setTimeout(() => gameAudio.playCaptureThrow(), 120);
+    const shake1Timer = setTimeout(() => gameAudio.playCaptureShake(), 2500);
+    const shake2Timer = setTimeout(() => gameAudio.playCaptureShake(), 3450);
+    const shake3Timer = setTimeout(() => gameAudio.playCaptureShake(), 4350);
+    const resultSfxTimer = setTimeout(() => {
+      if (data.success) {
+        gameAudio.playCaptureSuccess();
+      } else {
+        gameAudio.playCaptureFail();
+      }
+    }, data.success ? 5100 : 4850);
     const finishTimer = setTimeout(() => setFinishing(true), finishDelay);
-    const completeTimer = setTimeout(() => onComplete?.(data), completeDelay);
+    const confirmReadyTimer = data.success
+      ? setTimeout(() => setAwaitingConfirm(true), completeDelay)
+      : null;
+    const completeTimer = data.success
+      ? null
+      : setTimeout(() => onComplete?.(data), completeDelay);
 
     return () => {
+      clearTimeout(throwTimer);
       clearTimeout(shake1Timer);
       clearTimeout(shake2Timer);
       clearTimeout(shake3Timer);
+      clearTimeout(resultSfxTimer);
       clearTimeout(finishTimer);
-      clearTimeout(completeTimer);
+      if (confirmReadyTimer) clearTimeout(confirmReadyTimer);
+      if (completeTimer) clearTimeout(completeTimer);
+      if (confirmCompleteTimerRef.current) {
+        window.clearTimeout(confirmCompleteTimerRef.current);
+        confirmCompleteTimerRef.current = null;
+      }
     };
   }, [show, data, onComplete, paused]);
 
   if (!show || !data) return null;
 
   const success = Boolean(data.success);
-  const resultTitle = success ? '捕捉成功！' : '差一点！';
   const resultText = success
-    ? `${data.pokemonName} 捕捉成功，正在安置`
+    ? '已加入队伍'
     : `${data.pokemonName} 挣脱了精灵球`;
+  const catchRateLabel = Number.isFinite(Number(data.catchRate))
+    ? `${Math.round(Number(data.catchRate))}%`
+    : null;
+  const handleConfirmCapture = () => {
+    if (!success || !awaitingConfirm || confirming) return;
+    setConfirming(true);
+    setCapturingInBall(true);
+    gameAudio.playUiConfirm();
+    confirmCompleteTimerRef.current = window.setTimeout(() => {
+      confirmCompleteTimerRef.current = null;
+      if (!mountedRef.current) return;
+      const completion = onComplete?.(data);
+      if (completion && typeof completion.finally === 'function') {
+        completion.finally(() => {
+          if (mountedRef.current) setConfirming(false);
+        });
+      } else if (mountedRef.current) {
+        setConfirming(false);
+      }
+    }, 1120);
+  };
 
   return (
     <div
-      className={`capture-sequence-overlay ${success ? 'capture-success-mode' : 'capture-fail-mode'} ${finishing ? 'capture-finishing' : ''}`}
+      className={`capture-sequence-overlay ${success ? 'capture-success-mode' : 'capture-fail-mode'} ${finishing ? 'capture-finishing' : ''} ${awaitingConfirm ? 'capture-awaiting-confirm' : ''} ${capturingInBall ? 'capture-confirming-ball' : ''}`}
       aria-live="assertive"
     >
+      <div className="capture-cinema-bars" aria-hidden="true">
+        <span />
+        <span />
+      </div>
       <div className="capture-speed-lines" />
       <div className="capture-stage-glow" />
+      <div className="capture-victory-rays" aria-hidden="true" />
       <div className="capture-throw-arc" />
+      <div className="capture-starfield" aria-hidden="true">
+        {Array.from({ length: 24 }, (_, index) => <span key={index} />)}
+      </div>
 
       <div className="capture-target-wrap">
         <div className="capture-target-ring" />
@@ -2940,14 +3373,38 @@ const CaptureSequenceOverlay = ({ show, data, onComplete, paused = false }) => {
 
       <div className="capture-ball-stage">
         <div className="capture-ball-shadow" />
+        <div className="capture-orbit-field" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="capture-seal-ring capture-seal-ring--outer" />
+        <div className="capture-seal-ring capture-seal-ring--middle" />
+        <div className="capture-seal-ring capture-seal-ring--inner" />
         <img
           src={data.ballSprite || POKEBALLS.pokeball_basic.sprite}
           alt={data.ballName || '精灵球'}
           className="capture-ball-image"
           onError={handleItemImageError}
         />
+        <div className="capture-ball-lock" />
         <div className="capture-ball-flash" />
       </div>
+
+      {success && (
+        <div className="capture-success-burst" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+      )}
+
+      {success && (
+        <div className="capture-success-sparkles" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, index) => <span key={index} />)}
+        </div>
+      )}
 
       <div className="capture-tension-panel">
         <div className="capture-tension-title">{data.ballName || '精灵球'}正在摇晃...</div>
@@ -2959,9 +3416,48 @@ const CaptureSequenceOverlay = ({ show, data, onComplete, paused = false }) => {
       </div>
 
       <div className="capture-result-card">
-        <div className="capture-result-kicker">捕捉结果</div>
-        <div className="capture-result-title">{resultTitle}</div>
+        {!success && <div className="capture-result-kicker">捕捉结果</div>}
+        {!success && <div className="capture-result-title">差一点！</div>}
+        {success && (
+          <div className="capture-result-hero">
+            <div className="capture-result-hero__aura" />
+            <img
+              src={data.pokemonSprite}
+              alt={data.pokemonName}
+              className="capture-result-hero__sprite"
+              onError={handlePokemonImageError}
+            />
+            <div className="capture-result-hero__ball">
+              <img
+                src={data.ballSprite || POKEBALLS.pokeball_basic.sprite}
+                alt={data.ballName || '精灵球'}
+                onError={handleItemImageError}
+              />
+            </div>
+            <div className="capture-result-hero__flash" aria-hidden="true" />
+          </div>
+        )}
+        {success && (
+          <div className="capture-result-nameplate">
+            <strong>{data.pokemonName}</strong>
+            <div>
+              {data.pokemonLevel ? <span>Lv.{data.pokemonLevel}</span> : null}
+              {catchRateLabel ? <span>捕获率 {catchRateLabel}</span> : null}
+            </div>
+          </div>
+        )}
         <div className="capture-result-text">{resultText}</div>
+        {success && (
+          <button
+            type="button"
+            className="capture-result-confirm"
+            onClick={handleConfirmCapture}
+            disabled={!awaitingConfirm || confirming || capturingInBall}
+          >
+            <i className="fa-solid fa-check" aria-hidden="true" />
+            <span>{capturingInBall ? '收进球里' : '确认'}</span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -3593,12 +4089,43 @@ const syncConsumableMapEventsInGrid = (mapName, sourceGrid, world) => {
       return;
     }
 
-    if (hasWorldEventId(world, 'collectedEventIds', event.id)) {
+    if (hasCollectedMapEvent(world, mapName, event.id)) {
       grid[y][x] = baseTile;
       return;
     }
 
     grid[y][x] = tile;
+  });
+
+  return grid;
+};
+
+const syncHiddenEncounterGateTilesInGrid = (mapName, sourceGrid, world) => {
+  const grid = cloneMapGrid(sourceGrid);
+  if (!hasAdventureMap(mapName) || grid.length === 0) return grid;
+  const mapInfo = getAdventureMapInfo(mapName);
+  const runtimeEvents = getMapEvents(mapName);
+
+  getHiddenEncounterGateEvents(mapName).forEach((event) => {
+    const { lockedTiles, sealedTiles } = getHiddenEncounterGatePassageTiles(mapInfo, sourceGrid, event, runtimeEvents);
+    sealedTiles.forEach(({ x, y }) => {
+      if (grid[y]?.[x] === undefined) return;
+      grid[y][x] = REGION_MAP_TILE.objectBlocker;
+    });
+    if (!isHiddenEncounterGateUnlocked(world, mapName, event)) {
+      lockedTiles.forEach(({ x, y }) => {
+        if (grid[y]?.[x] === undefined) return;
+        grid[y][x] = REGION_MAP_TILE.objectBlocker;
+      });
+      return;
+    }
+    const rawOpenTile = Number(getMapEventProperties(event).openTile);
+    if (!Number.isFinite(rawOpenTile)) return;
+    const openTile = Math.trunc(rawOpenTile);
+    lockedTiles.forEach(({ x, y }) => {
+      if (grid[y]?.[x] === undefined) return;
+      grid[y][x] = openTile;
+    });
   });
 
   return grid;
@@ -3638,7 +4165,8 @@ const buildMapGridForWorld = (mapName, world, sourceGrid = null) => {
         ? sourceGrid
         : loadPokemonMap(safeMapName)
     );
-  return syncConsumableMapEventsInGrid(safeMapName, baseGrid, world);
+  const withConsumables = syncConsumableMapEventsInGrid(safeMapName, baseGrid, world);
+  return syncHiddenEncounterGateTilesInGrid(safeMapName, withConsumables, world);
 };
 
 const clearMapTileInGrid = (mapName, grid, tileX, tileY) => {
@@ -3681,6 +4209,7 @@ const UnifiedBagScreen = ({
   onUseItem, // For balls/battle items
   onUsePotion, // For healing
   onUseExpPotion,
+  onUseStatBoostItem,
   onBattleItemConsumed,
   team = [],
   isBattle = false,
@@ -3705,7 +4234,9 @@ const UnifiedBagScreen = ({
   const selectedItemIsDepleted = Boolean(selectedItem) && selectedItemQuantity <= 0;
   const selectedItemEffectText = selectedItem?.type === 'expPotion'
     ? `经验 +${selectedItem?.expAmount || 0}`
-    : getPotionEffectParts(selectedItem).join(' · ');
+    : selectedItem?.type === 'statBoost'
+      ? getStatBoostEffectText(selectedItem)
+      : getPotionEffectParts(selectedItem).join(' · ');
   const selectedItemStockText = selectedItem
     ? (targetItemHeaderNotice?.text || (selectedItemIsDepleted ? '数量不足' : `剩余 x${selectedItemQuantity}`))
     : '';
@@ -3762,9 +4293,9 @@ const UnifiedBagScreen = ({
   const handleItemClick = async (item) => {
     if (pendingItemTargetIdRef.current) return;
 
-    if (item.type === 'potion' || item.type === 'expPotion') {
-      if (isBattle && item.type === 'expPotion') {
-        addLog?.('经验药水只能在战斗之外使用。');
+    if (item.type === 'potion' || item.type === 'expPotion' || item.type === 'statBoost') {
+      if (isBattle && (item.type === 'expPotion' || item.type === 'statBoost')) {
+        addLog?.(`${item.name} 只能在战斗之外使用。`);
         return;
       }
       resetItemUseEffect();
@@ -3807,7 +4338,7 @@ const UnifiedBagScreen = ({
 	      ? Math.max(0, Math.min(recoveryProfile.mp, maxMp - currentMp))
 	      : 0;
     const curesStatus = item.type === 'potion' && hasPotionCurableStatus(targetMon);
-    const remainingQuantityBeforeUse = getInventoryItemQuantity(
+	    const remainingQuantityBeforeUse = getInventoryItemQuantity(
       inventory,
       item.inventoryType,
       item.itemKey
@@ -3828,6 +4359,8 @@ const UnifiedBagScreen = ({
     try {
       if (item.type === 'expPotion') {
         usageResult = await Promise.resolve(onUseExpPotion(monId, item.itemKey));
+      } else if (item.type === 'statBoost') {
+        usageResult = await Promise.resolve(onUseStatBoostItem?.(monId, item.itemKey));
       } else {
         usageResult = await Promise.resolve(onUsePotion(monId, item.itemKey));
       }
@@ -3839,13 +4372,13 @@ const UnifiedBagScreen = ({
         addLog(`使用了 ${item.name}`);
       }
 
-	      if (item.type === 'potion') {
-	        await playItemUseEffect({
-	          type: 'heal',
-	          monId,
-	          amount: { hp: healAmount, mp: mpRestoreAmount, status: curesStatus },
-	          itemName: item.name
-	        }, HEAL_ANIMATION_DURATION_MS);
+      if (item.type === 'potion') {
+        await playItemUseEffect({
+          type: 'heal',
+          monId,
+          amount: { hp: healAmount, mp: mpRestoreAmount, status: curesStatus },
+          itemName: item.name
+        }, HEAL_ANIMATION_DURATION_MS);
       } else if (item.type === 'expPotion') {
         await playItemUseEffect({
           type: 'exp',
@@ -3854,6 +4387,13 @@ const UnifiedBagScreen = ({
           itemName: item.name,
           levelUps: Array.isArray(usageResult?.levelUps) ? usageResult.levelUps : [],
         }, EXP_ANIMATION_DURATION_MS);
+      } else if (item.type === 'statBoost') {
+        await playItemUseEffect({
+          type: 'statBoost',
+          monId,
+          amount: getStatBoostEffectText(item),
+          itemName: item.name,
+        }, HEAL_ANIMATION_DURATION_MS);
       }
 
       const remainingQuantityAfterUse = Math.max(0, remainingQuantityBeforeUse - 1);
@@ -3916,18 +4456,20 @@ const UnifiedBagScreen = ({
             const hasEvolutionTarget = false;
             const battleLocked = item.type === 'ball' && !isBattle;
             const trainerBattleLocked = item.type === 'ball' && isBattle && !canUseBattleBalls;
-            const battleExpLocked = item.type === 'expPotion' && isBattle;
+            const battleGrowthLocked = (item.type === 'expPotion' || item.type === 'statBoost') && isBattle;
             const mapLocked = false;
             const noTargetLocked = isLegacyEvolutionItem && !hasEvolutionTarget;
-            const itemLocked = battleLocked || trainerBattleLocked || battleExpLocked || mapLocked || noTargetLocked;
+            const itemLocked = battleLocked || trainerBattleLocked || battleGrowthLocked || mapLocked || noTargetLocked;
             const effectText = trainerBattleLocked
               ? '训练家对战中不能捕捉'
-              : battleExpLocked
+              : battleGrowthLocked
               ? '仅战斗外使用'
               : item.type === 'ball'
               ? '用于捕捉宝可梦'
               : item.type === 'expPotion'
               ? `经验 +${item.expAmount}`
+              : item.type === 'statBoost'
+              ? getStatBoostEffectText(item)
               : isLegacyEvolutionItem
               ? '旧版进化道具，现已停用'
 	              : getPotionEffectText(item);
@@ -3955,7 +4497,7 @@ const UnifiedBagScreen = ({
                     disabled={itemLocked}
                     className="game-primary-button"
                   >
-                    {battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleExpLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
+                    {battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleGrowthLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
                   </button>
                 </div>
               </CollectionCard>
@@ -4016,6 +4558,7 @@ const UnifiedBagScreen = ({
                 const hpPercent = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
                 const mpPercent = maxMp > 0 ? Math.max(0, Math.min(100, (currentMp / maxMp) * 100)) : 100;
                 const selectedExpPotion = selectedItem?.type === 'expPotion' ? selectedItem : null;
+                const selectedStatBoostItem = selectedItem?.type === 'statBoost' ? selectedItem : null;
                 const selectedPotion = selectedItem?.type === 'potion' ? selectedItem : null;
                 const selectedPotionRecovery = selectedPotion ? getPotionRecoveryProfile(selectedPotion) : { hp: 0, mp: 0 };
                 const expToNextLevel = Number(mon.expToNextLevel);
@@ -4029,6 +4572,7 @@ const UnifiedBagScreen = ({
                   : 0;
                 const isHealing = itemUseEffect?.type === 'heal' && itemUseEffect.monId === mon.id;
                 const isExpBoosting = itemUseEffect?.type === 'exp' && itemUseEffect.monId === mon.id;
+                const isStatBoosting = itemUseEffect?.type === 'statBoost' && itemUseEffect.monId === mon.id;
                 const isPending = pendingItemTargetId === mon.id;
                 const canPotionRestoreHp = Boolean(selectedPotion && selectedPotionRecovery.hp > 0 && currentHp < maxHp);
                 const canPotionRestoreMp = Boolean(selectedPotion && selectedPotionRecovery.mp > 0 && currentMp < maxMp);
@@ -4037,12 +4581,17 @@ const UnifiedBagScreen = ({
                 const mpPreview = Math.min(selectedPotionRecovery.mp, Math.max(0, maxMp - currentMp));
                 const isUnavailable = selectedExpPotion
                   ? isMaxLevel
+                  : selectedStatBoostItem
+                    ? false
                   : !canPotionRestoreHp && !canPotionRestoreMp && !canPotionCureStatus;
                 const isTargetDisabled = isUnavailable || isItemUsePending || selectedItemIsDepleted;
+                const captureBallName = getMonsterCaptureBallName(mon);
                 const statusLabel = selectedItemIsDepleted
                   ? '无库存'
                   : selectedExpPotion
                     ? isMaxLevel ? '满级' : `+${selectedExpPotion.expAmount || 0}`
+                    : selectedStatBoostItem
+                      ? getStatBoostEffectText(selectedStatBoostItem)
                     : isUnavailable
                       ? '已满'
                       : canPotionCureStatus && !canPotionRestoreHp && !canPotionRestoreMp
@@ -4059,13 +4608,17 @@ const UnifiedBagScreen = ({
                       'bag-target-option',
                       isUnavailable || selectedItemIsDepleted ? 'bag-target-option--disabled' : '',
                       isHealing ? 'bag-target-option--healing' : '',
-                      isExpBoosting ? 'bag-target-option--exp' : ''
+                      (isExpBoosting || isStatBoosting) ? 'bag-target-option--exp' : ''
                     ].filter(Boolean).join(' ')}
                   >
                     <div className="bag-target-option__sprite">
+                      <span className="bag-target-capture-ball" title={`收服球：${captureBallName}`} aria-label={`收服球：${captureBallName}`}>
+                        <img src={getMonsterCaptureBallSprite(mon)} alt="" loading="lazy" decoding="async" onError={handlePokeballImageError} draggable="false" />
+                      </span>
                       <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} />
                       {isHealing && <HealingBurst amount={itemUseEffect.amount} compact />}
                       {isExpBoosting && <ExpBurst amount={itemUseEffect.amount} levelUps={itemUseEffect.levelUps || []} compact />}
+                      {isStatBoosting && <StatBoostBurst label={itemUseEffect.amount} compact />}
                     </div>
                     <div className="bag-target-option__main">
                       <div className="bag-target-option__top">
@@ -4074,23 +4627,29 @@ const UnifiedBagScreen = ({
                           <span>Lv.{mon.level}</span>
                         </div>
                         <span className={`bag-target-option__status ${isUnavailable || selectedItemIsDepleted ? 'bag-target-option__status--muted' : ''}`}>
-                          {isPending && !isHealing && !isExpBoosting ? '处理中' : statusLabel}
+                          {isPending && !isHealing && !isExpBoosting && !isStatBoosting ? '处理中' : statusLabel}
                         </span>
                       </div>
-                      {!selectedExpPotion && selectedPotion && (
+                      {!selectedExpPotion && !selectedStatBoostItem && selectedPotion && (
                         <div className="bag-target-restore-preview">
                           <span className={canPotionRestoreHp ? 'bag-target-restore-preview--active' : ''}>HP +{hpPreview}</span>
                           <span className={canPotionRestoreMp ? 'bag-target-restore-preview--active bag-target-restore-preview--mp' : ''}>MP +{mpPreview}</span>
                           <span className={canPotionCureStatus ? 'bag-target-restore-preview--active bag-target-restore-preview--status' : ''}>解除异常</span>
                         </div>
                       )}
+                      {selectedStatBoostItem && (
+                        <div className="bag-target-restore-preview">
+                          <span className="bag-target-restore-preview--active bag-target-restore-preview--status">{getStatBoostEffectText(selectedStatBoostItem)}</span>
+                          <span className="bag-target-restore-preview--active bag-target-restore-preview--mp">永久生效</span>
+                        </div>
+                      )}
                       <div className="bag-target-option__bars">
                         <div className="bag-target-meter">
-                          <span>{selectedExpPotion ? 'EXP' : 'HP'}</span>
+                          <span>{selectedExpPotion ? 'EXP' : selectedStatBoostItem ? '基础值' : 'HP'}</span>
                           <div><i className="bag-target-meter__hp" style={{ width: selectedExpPotion ? `${expPercent}%` : `${hpPercent}%` }}></i></div>
-                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : `${currentHp}/${maxHp}`}</b>
+                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : selectedStatBoostItem ? '永久提升' : `${currentHp}/${maxHp}`}</b>
                         </div>
-                        {!selectedExpPotion && selectedPotion && (
+                        {!selectedExpPotion && !selectedStatBoostItem && selectedPotion && (
                           <div className="bag-target-meter">
                             <span>MP</span>
                             <div><i className="bag-target-meter__mp" style={{ width: `${mpPercent}%` }}></i></div>
@@ -4141,14 +4700,15 @@ const BattlePartyBalls = ({ team = [], activeId = null, className = '', compact 
         const fainted = isBattleMonFainted(mon);
         const active = showActive && !fainted && activeId != null && mon?.id === activeId;
         const ace = aceId != null && mon?.id === aceId;
+        const ballName = getMonsterCaptureBallName(mon);
         return (
           <span
             key={mon?.id || index}
             className={`battle-party-ball ${active ? 'battle-party-ball--active' : ''} ${ace ? 'battle-party-ball--ace' : ''} ${fainted ? 'battle-party-ball--fainted' : ''}`}
             style={{ '--ball-index': index }}
-            title={`${mon?.name || '宝可梦'}${ace ? ' 压轴王牌' : fainted ? ' 已失去战斗能力' : active ? ' 正在场上' : ' 待命中'}`}
+            title={`${mon?.name || '宝可梦'} · ${ballName}${ace ? ' · 压轴王牌' : fainted ? ' · 已失去战斗能力' : active ? ' · 正在场上' : ' · 待命中'}`}
           >
-            <img src={BATTLE_SENDOUT_BALL_SPRITE} alt="" loading="eager" decoding="async" draggable="false" onError={handlePokeballImageError} />
+            <img src={getMonsterCaptureBallSprite(mon)} alt="" loading="eager" decoding="async" draggable="false" onError={handlePokeballImageError} />
           </span>
         );
       })}
@@ -4158,6 +4718,10 @@ const BattlePartyBalls = ({ team = [], activeId = null, className = '', compact 
 
 const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', battleEnvironment, onComplete }) => {
   const isTrainerBattle = battleKind === 'trainer';
+  const encounterRarity = !isTrainerBattle
+    ? normalizeEncounterRarityMeta(battleEnvironment?.encounterRarity)
+    : null;
+  const encounterRarityTier = encounterRarity?.tier || 'common';
   const opponentName = battleEnvironment?.eventName || battleEnvironment?.zoneName || '训练家';
   const trainerRole = normalizeTrainerRole(battleEnvironment?.eventRole || 'normal');
   const trainerPortraitSrc = getTrainerPortraitForRole(trainerRole);
@@ -4179,7 +4743,7 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
 
   return (
     <div
-      className={`battle-intro-overlay ${isTrainerBattle ? `battle-intro-overlay--trainer battle-intro-overlay--${trainerRole}` : ''} absolute inset-0 z-[9500] select-none overflow-hidden`}
+      className={`battle-intro-overlay ${isTrainerBattle ? `battle-intro-overlay--trainer battle-intro-overlay--${trainerRole}` : `battle-intro-overlay--wild-${encounterRarityTier}`} ${encounterRarity?.isExciting ? 'battle-intro-overlay--rare-encounter' : ''} absolute inset-0 z-[9500] select-none overflow-hidden`}
       onClick={onComplete}
     >
       <div className="battle-intro-spotlight" />
@@ -4190,6 +4754,11 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
       >
         <div className="relative">
           <div className="battle-intro-sprite-aura" />
+          {!isTrainerBattle && encounterRarity?.isExciting ? (
+            <div className={`battle-intro-rare-burst battle-intro-rare-burst--${encounterRarityTier}`} aria-hidden="true">
+              <span>{encounterRarity.headline || encounterRarity.label}</span>
+            </div>
+          ) : null}
           {isTrainerBattle ? (
             <div className={`battle-intro-trainer-portrait battle-intro-trainer-portrait--${trainerRole}`} aria-hidden="true">
               <span className="battle-intro-trainer-effect battle-intro-trainer-effect--halo" />
@@ -4267,13 +4836,29 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
             </div>
           </>
         ) : (
-          <div className="mt-2.5 flex items-center justify-center gap-2">
-            <span className="bg-yellow-400/15 text-yellow-200 text-sm font-black px-3 py-1 rounded-full">
-              Lv.{enemyMon?.level}
-            </span>
-            {enemyMon?.type && <TypeBadge type={enemyMon.type} />}
-            {enemyMon?.type2 && <TypeBadge type={enemyMon.type2} />}
-          </div>
+          <>
+            <div className="mt-2.5 flex items-center justify-center gap-2">
+              <span className="bg-yellow-400/15 text-yellow-200 text-sm font-black px-3 py-1 rounded-full">
+                Lv.{enemyMon?.level}
+              </span>
+              {enemyMon?.type && <TypeBadge type={enemyMon.type} />}
+              {enemyMon?.type2 && <TypeBadge type={enemyMon.type2} />}
+            </div>
+            {encounterRarity ? (
+              <div className={`battle-intro-rarity-card battle-intro-rarity-card--${encounterRarityTier}`}>
+                <span className="battle-intro-rarity-card__label">
+                  <i className={`fa-solid ${encounterRarity.isExciting ? 'fa-wand-magic-sparkles' : 'fa-seedling'}`} aria-hidden="true"></i>
+                  {encounterRarity.label}
+                </span>
+                {encounterRarity.chanceText ? (
+                  <strong>{encounterRarity.chanceText}</strong>
+                ) : null}
+                {encounterRarity.stepChanceText ? (
+                  <em>{encounterRarity.stepChanceText}</em>
+                ) : null}
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 
@@ -4287,7 +4872,7 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
   );
 };
 
-const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening' }) => {
+const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening', playerBallSprite, enemyBallSprite }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete?.();
@@ -4296,6 +4881,10 @@ const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening'
   }, [onComplete]);
 
   const sides = mode === 'both' ? ['enemy', 'player'] : [mode === 'enemy' ? 'enemy' : 'player'];
+  const ballSprites = {
+    player: playerBallSprite || BATTLE_SENDOUT_BALL_SPRITE,
+    enemy: enemyBallSprite || BATTLE_SENDOUT_BALL_SPRITE
+  };
 
   return (
     <div className={`battle-sendout-overlay battle-sendout-overlay--${variant} absolute inset-0 z-[9500] select-none overflow-hidden pointer-events-none`} aria-hidden="true">
@@ -4305,7 +4894,7 @@ const BattleSendOutOverlay = ({ onComplete, mode = 'player', variant = 'opening'
           <div className="battle-sendout-arc" />
           <div className={`battle-sendout-ball-shell battle-sendout-ball-shell--${side}`}>
             <img
-              src={BATTLE_SENDOUT_BALL_SPRITE}
+              src={ballSprites[side] || BATTLE_SENDOUT_BALL_SPRITE}
               alt="精灵球"
               className={`battle-sendout-ball battle-sendout-ball--${side}`}
               loading="eager"
@@ -4621,9 +5210,9 @@ const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = fals
 
 const BattleScene = ({
   playerMon, enemyMon, logs, onMove, onSwitch, turn, onNavigate, playerGold,
-  isThrowingPokeball, onGoToLaunchScreen, onRun, escapeRule = null,
+  isThrowingPokeball, captureSequenceData = null, onGoToLaunchScreen, onRun, escapeRule = null,
   // New props for modal screens
-  playerTeam, enemyTeam = [], activeEnemyId = null, playerInventory, onUseItem, onUsePotion, onUseExpPotion, addLog,
+  playerTeam, enemyTeam = [], activeEnemyId = null, playerInventory, onUseItem, onUsePotion, onUseExpPotion, onUseStatBoostItem, addLog,
   canUsePokeballs = true,
   onModalScreenChange,
   moveVisualEvent,
@@ -4728,7 +5317,7 @@ const BattleScene = ({
     const isEnemyAttack = attackerSide === 'enemy';
     const isSecondaryResultPhase = phase === 'secondary';
     const isActorFocusedPhase = ['charge', 'start', 'copy', 'fizzle'].includes(phase);
-    const shouldMoveActor = !event?.suppressActorMotion && !isSecondaryResultPhase && ['start', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
+    const shouldMoveActor = !isSecondaryResultPhase && !event?.suppressActorMotion && ['start', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
     const shouldShowTargetEffect = ['hit', 'status', 'secondary', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
     const shouldApplyTargetReaction = Boolean(event?.forceTargetReaction) || ['hit', 'status', 'heal', 'drain'].includes(phase);
     const explicitTargetSide = ['player', 'enemy'].includes(event?.targetSide) ? event.targetSide : null;
@@ -4930,8 +5519,11 @@ const BattleScene = ({
   );
   const playerStats = normalizeStats(displayPlayerMon);
   const enemyStats = normalizeStats(displayEnemyMon);
+  const hideEnemySpriteForCapture = Boolean(isThrowingPokeball && captureSequenceData);
   const playerEntryMode = getBattleEntryMode(displayPlayerMon);
   const enemyEntryMode = getBattleEntryMode(displayEnemyMon);
+  const playerSendOutBallSprite = getMonsterCaptureBallSprite(displayPlayerMon);
+  const enemySendOutBallSprite = getMonsterCaptureBallSprite(displayEnemyMon);
   const enemySpriteClass = openingIntro
     ? 'battle-opening-hidden'
     : isEnemyOpeningSendOut
@@ -4944,6 +5536,10 @@ const BattleScene = ({
     : isPlayerOpeningSendOut
       ? `battle-opening-send battle-opening-send--${playerEntryMode}`
       : playerAnim;
+  // 濒死动画：当前展示的精灵 HP 归零时下沉淡出。
+  // 排除登场/换人过场，避免与那些动画类冲突；换上新精灵后 HP>0 自动复位。
+  const enemyFainting = !openingIntro && !isEnemyOpeningSendOut && !enemySwitchOverride?.hidden && enemyStats.currentHp <= 0;
+  const playerFainting = !openingIntro && !isPlayerOpeningSendOut && !playerSwitchOverride?.hidden && playerStats.currentHp <= 0;
   const battleDialogueLogs = (Array.isArray(logs) ? logs : [])
     .filter((log) => typeof log === 'string' && log.trim().length > 0);
   const formattedBattleDialogueLogs = battleDialogueLogs
@@ -5105,9 +5701,10 @@ const BattleScene = ({
     return battleEnvironment ? computed : (battleSceneClassRef.current || computed);
   }, [battleEnvironment, battleKind]);
   const battleSceneRoleClass = useMemo(() => {
-    const computed = battleKind !== 'trainer'
-      ? 'battle-scene-role-wild'
-      : `battle-scene-role-${normalizeTrainerRole(battleEnvironment?.eventRole || battleEnvironment?.eventType || 'normal')}`;
+    const computed = getBattleSceneRoleClassName(
+      battleKind,
+      battleEnvironment?.eventRole || battleEnvironment?.eventType || 'normal'
+    );
     if (battleEnvironment) {
       battleSceneRoleClassRef.current = computed;
     }
@@ -5117,13 +5714,14 @@ const BattleScene = ({
   // --- Modal Screen Rendering ---
   if (showBag) {
     return (
-      <Suspense fallback={<DeferredPanelFallback title="背包加载中..." />}>
+      <Suspense fallback={<DeferredPanelFallback title="正在打开背包" />}>
         <DeferredUnifiedBagScreen
           inventory={playerInventory}
           onClose={() => setShowBag(false)}
           onUseItem={onUseItem}
           onUsePotion={onUsePotion}
           onUseExpPotion={onUseExpPotion}
+          onUseStatBoostItem={onUseStatBoostItem}
           onBattleItemConsumed={({ itemType }) => {
             if (itemType !== 'potion') return;
             setShowBag(false);
@@ -5142,7 +5740,7 @@ const BattleScene = ({
 
   if (showTeam) {
     return (
-      <Suspense fallback={<DeferredPanelFallback title="队伍加载中..." />}>
+      <Suspense fallback={<DeferredPanelFallback title="正在打开队伍" />}>
         <DeferredTeamScreen
           team={playerTeam}
           onSelect={async (id) => {
@@ -5250,13 +5848,16 @@ const BattleScene = ({
         {/* 精灵层 */}
         <div className="absolute inset-0 z-10">
           {/* 敌方精灵：右上 */}
-          <div className={`battle-sprite-slot battle-sprite-enemy ${enemySpriteClass} ${battleFeedbackKind ? `battle-sprite-slot--feedback battle-sprite-slot--feedback-${battleFeedbackKind}` : ''}`}>
+          <div
+            className={`battle-sprite-slot battle-sprite-enemy ${enemySpriteClass} ${enemyFainting ? 'battle-sprite-slot--fainted' : ''} ${hideEnemySpriteForCapture ? 'battle-sprite-slot--capturing' : ''} ${battleFeedbackKind ? `battle-sprite-slot--feedback battle-sprite-slot--feedback-${battleFeedbackKind}` : ''}`}
+            aria-hidden={hideEnemySpriteForCapture ? 'true' : undefined}
+          >
             <div ref={enemySpriteAnchorRef} className={openingIntro ? 'battle-intro-enemy-stage' : 'battle-sprite-float'}>
               <MonsterSprite monster={displayEnemyMon} isBattleContext={true} sizeMultiplier={BATTLE_ENEMY_SPRITE_MULTIPLIER} />
             </div>
           </div>
           {/* 我方精灵：左下（背面）*/}
-          <div className={`battle-sprite-slot battle-sprite-player ${playerSpriteClass}`}>
+          <div className={`battle-sprite-slot battle-sprite-player ${playerSpriteClass} ${playerFainting ? 'battle-sprite-slot--fainted' : ''}`}>
             <div ref={playerSpriteAnchorRef} className={openingSendOut ? 'battle-opening-send-stage' : 'battle-sprite-float battle-sprite-float-delayed'}>
               <MonsterSprite monster={displayPlayerMon} isBack={true} isBattleContext={true} sizeMultiplier={BATTLE_PLAYER_SPRITE_MULTIPLIER} />
             </div>
@@ -5274,10 +5875,20 @@ const BattleScene = ({
         />
 
         {battlePhase === 'sendout' && (
-          <BattleSendOutOverlay mode={sendOutMode} onComplete={onOpeningSendOutComplete} />
+          <BattleSendOutOverlay
+            mode={sendOutMode}
+            playerBallSprite={playerSendOutBallSprite}
+            enemyBallSprite={enemySendOutBallSprite}
+            onComplete={onOpeningSendOutComplete}
+          />
         )}
         {switchSendOutMode && (
-          <BattleSendOutOverlay mode={switchSendOutMode} variant="switch" />
+          <BattleSendOutOverlay
+            mode={switchSendOutMode}
+            variant="switch"
+            playerBallSprite={playerSendOutBallSprite}
+            enemyBallSprite={enemySendOutBallSprite}
+          />
         )}
       </div>
 
@@ -5624,7 +6235,7 @@ const MonsterAcquisitionDecisionModal = ({
   );
 };
 
-const BagScreen = ({ playerInventory = [], activePlayerMon, activeEnemyMon, onUseItem, onBack, addLog, turn, playerTeam = [], onUsePotion, onUseExpPotion, canUsePokeballs = true }) => {
+const BagScreen = ({ playerInventory = [], activePlayerMon, activeEnemyMon, onUseItem, onBack, addLog, turn, playerTeam = [], onUsePotion, onUseExpPotion, onUseStatBoostItem, canUsePokeballs = true }) => {
   // Determine if we are in battle context (activeEnemyMon exists)
   const isBattle = !!activeEnemyMon;
   // Fallback to active mon if team is missing
@@ -5637,6 +6248,7 @@ const BagScreen = ({ playerInventory = [], activePlayerMon, activeEnemyMon, onUs
       onUseItem={onUseItem}
       onUsePotion={onUsePotion}
       onUseExpPotion={onUseExpPotion}
+      onUseStatBoostItem={onUseStatBoostItem}
       team={effectiveTeam}
       isBattle={isBattle}
       canUseBattleBalls={canUsePokeballs}
@@ -5712,30 +6324,38 @@ const BATTLE_SCENE_BY_ZONE_ID = {
   grove_grass: 'battle-scene-forest',
   lake_north_reeds: 'battle-scene-lake-reeds',
   southeast_meadow: 'battle-scene-southeast-meadow',
+  meadow_hidden_grove: 'battle-scene-forest',
   meadow_west_grass: 'battle-scene-sunny-meadow',
   meadow_south_grass: 'battle-scene-southeast-meadow',
   meadow_east_flowers: 'battle-scene-flower-hill',
   lake_west_reeds: 'battle-scene-lake-reeds',
   lake_south_reeds: 'battle-scene-wetland',
   lake_east_reeds: 'battle-scene-lake',
+  lake_hidden_path: 'battle-scene-lake-reeds',
   farm_north_rows: 'battle-scene-farm-field',
   farm_west_rows: 'battle-scene-farm-field',
   farm_east_rows: 'battle-scene-farm-field',
+  farm_windmill_top: 'battle-scene-farm-field',
   shore_dune_grass: 'battle-scene-pirate-shore',
   shore_south_grass: 'battle-scene-pirate-shore',
   shore_wreck_grass: 'battle-scene-pirate-shore',
+  shore_wreck_inner: 'battle-scene-pirate-shore',
   grave_north_thicket: 'battle-scene-graveyard',
   grave_south_thicket: 'battle-scene-graveyard',
   grave_moon_grass: 'battle-scene-graveyard',
+  grave_deep_forest: 'battle-scene-graveyard',
   hex_north_ruins: 'battle-scene-hex-ruins',
   hex_west_ruins: 'battle-scene-hex-ruins',
   hex_east_ruins: 'battle-scene-hex-ruins',
+  hex_sealed_chamber: 'battle-scene-hex-ruins',
   ridge_north_grass: 'battle-scene-survival-ridge',
   ridge_south_grass: 'battle-scene-survival-ridge',
   ridge_east_grass: 'battle-scene-survival-ridge',
+  ridge_training_grove: 'battle-scene-survival-ridge',
   peak_west_grass: 'battle-scene-star-peak',
   peak_south_grass: 'battle-scene-star-peak',
   peak_east_grass: 'battle-scene-star-peak',
+  peak_starwatch_path: 'battle-scene-star-peak',
 };
 
 const BATTLE_SCENE_BY_MAP_NAME = {
@@ -5779,6 +6399,13 @@ const BATTLE_SCENE_BY_TERRAIN = {
 
 const isKnownBattleSceneClass = (sceneClass) =>
   typeof sceneClass === 'string' && BATTLE_SCENE_CLASSES.has(sceneClass);
+
+const getBattleSceneRoleClassName = (battleKind, role) => {
+  if (battleKind !== 'trainer') return 'battle-scene-role-wild';
+  const normalizedRole = normalizeTrainerRole(role || 'normal');
+  const visualRole = ['reward', 'minigame'].includes(normalizedRole) ? 'normal' : normalizedRole;
+  return `battle-scene-role-${visualRole}`;
+};
 
 const toBattleEnvironmentText = (value) =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : '';
@@ -5964,6 +6591,32 @@ const resolveBattleSceneClass = ({
   return 'battle-scene-meadow';
 };
 
+const ENCOUNTER_RARITY_TIERS = new Set(['common', 'uncommon', 'rare', 'ultra', 'mythic', 'boosted']);
+
+const formatEncounterPercent = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return '';
+  const percent = numeric <= 1 ? numeric * 100 : numeric;
+  const rounded = percent >= 10
+    ? Math.round(percent)
+    : Math.round(percent * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+};
+
+const normalizeEncounterRarityMeta = (meta) => {
+  if (!meta || typeof meta !== 'object') return null;
+  const tier = ENCOUNTER_RARITY_TIERS.has(meta.tier) ? meta.tier : 'common';
+  return {
+    tier,
+    label: toBattleEnvironmentText(meta.label) || '常见',
+    headline: toBattleEnvironmentText(meta.headline) || '',
+    chanceText: toBattleEnvironmentText(meta.chanceText) || '',
+    stepChanceText: toBattleEnvironmentText(meta.stepChanceText) || '',
+    sourceText: toBattleEnvironmentText(meta.sourceText) || '',
+    isExciting: Boolean(meta.isExciting)
+  };
+};
+
 const normalizeBattleEnvironment = (environment) => {
   if (!environment || typeof environment !== 'object') return null;
 
@@ -5984,6 +6637,13 @@ const normalizeBattleEnvironment = (environment) => {
   const eventName = toBattleEnvironmentText(environment.eventName);
   const eventTitle = toBattleEnvironmentText(environment.eventTitle);
   const introText = toBattleEnvironmentText(environment.introText);
+  const encounterRarity = battleKind === 'wild'
+    ? normalizeEncounterRarityMeta(environment.encounterRarity)
+    : null;
+  const challengeRareUnlockBatch = normalizeChallengeRarePool(environment.challengeRareUnlockBatch);
+  const challengeRareUnlockStage = Math.trunc(Number(environment.challengeRareUnlockStage));
+  const challengeRareUnlockedCount = Math.trunc(Number(environment.challengeRareUnlockedCount));
+  const challengeRareTotalCount = Math.trunc(Number(environment.challengeRareTotalCount));
   const battleEventCompletion = normalizeBattleEventCompletion(environment.battleEventCompletion, {
     mapName: mapName || DEFAULT_WORLD_MAP_NAME,
     eventType,
@@ -6028,6 +6688,11 @@ const normalizeBattleEnvironment = (environment) => {
     eventName: eventName || null,
     eventTitle: eventTitle || null,
     introText: introText || null,
+    encounterRarity,
+    challengeRareUnlockBatch,
+    challengeRareUnlockStage: Number.isSafeInteger(challengeRareUnlockStage) && challengeRareUnlockStage > 0 ? challengeRareUnlockStage : null,
+    challengeRareUnlockedCount: Number.isSafeInteger(challengeRareUnlockedCount) && challengeRareUnlockedCount >= 0 ? challengeRareUnlockedCount : null,
+    challengeRareTotalCount: Number.isSafeInteger(challengeRareTotalCount) && challengeRareTotalCount >= 0 ? challengeRareTotalCount : null,
     battleEventCompletion,
     eventPosition,
     triggerPosition,
@@ -6049,6 +6714,11 @@ const createBattleEnvironment = ({
   eventName,
   eventTitle,
   introText,
+  encounterRarity,
+  challengeRareUnlockBatch,
+  challengeRareUnlockStage,
+  challengeRareUnlockedCount,
+  challengeRareTotalCount,
   battleEventCompletion,
   eventPosition,
   triggerPosition,
@@ -6067,6 +6737,11 @@ const createBattleEnvironment = ({
   eventName,
   eventTitle,
   introText,
+  encounterRarity,
+  challengeRareUnlockBatch,
+  challengeRareUnlockStage,
+  challengeRareUnlockedCount,
+  challengeRareTotalCount,
   battleEventCompletion,
   eventPosition,
   triggerPosition,
@@ -6115,6 +6790,20 @@ const normalizeWorldPosition = (position, fallback = getDefaultWorldPosition()) 
     ? position.direction
     : (fallbackPosition.direction || 'down');
   return { x, y, direction };
+};
+
+const resolveWorldPositionForGrid = (mapName, mapGrid, position, fallback = getMapStartPosition(mapName)) => {
+  const startPosition = normalizeWorldPosition(fallback, getMapStartPosition(mapName));
+  const safePosition = normalizeWorldPosition(position, startPosition);
+  if (!Array.isArray(mapGrid) || mapGrid.length === 0) return safePosition;
+  if (isLegacyGridWalkable(mapGrid, safePosition.x, safePosition.y)) return safePosition;
+  if (isLegacyGridWalkable(mapGrid, startPosition.x, startPosition.y)) return startPosition;
+
+  const fallbackSpawn = findLegacySpawn(mapGrid, startPosition);
+  return normalizeWorldPosition(
+    { ...fallbackSpawn, direction: safePosition.direction || startPosition.direction || 'down' },
+    startPosition
+  );
 };
 
 const buildWorldPositionPatch = (baseSnapshot, position) => {
@@ -6172,7 +6861,7 @@ const normalizeWorldState = (world, fallback = {}) => {
         : currentDailyRefreshTimestamp),
     currentMapName,
     playerPos,
-    collectedEventIds: shouldResetDailyEvents ? [] : uniqueStringList(source.collectedEventIds),
+    collectedEventIds: uniqueStringList(source.collectedEventIds),
     dailyTrainerBattleIds: shouldResetDailyEvents ? [] : uniqueStringList(source.dailyTrainerBattleIds),
     defeatedTrainerIds: uniqueStringList(source.defeatedTrainerIds),
     defeatedBossIds: uniqueStringList(source.defeatedBossIds),
@@ -6221,6 +6910,98 @@ const appendWorldEventId = (world, key, eventId) => {
     ...normalized,
     [key]: Array.from(new Set([...uniqueStringList(normalized[key]), eventId]))
   };
+};
+
+const getWorldFlagValue = (world, flagKey) => (
+  typeof flagKey === 'string' &&
+  flagKey.length > 0 &&
+  Boolean(normalizeWorldState(world)?.flags?.[flagKey])
+);
+
+const setWorldFlagValue = (world, flagKey, enabled = true) => {
+  if (typeof flagKey !== 'string' || flagKey.length === 0) return normalizeWorldState(world);
+  const normalized = normalizeWorldState(world);
+  const nextFlags = {
+    ...(normalized.flags && typeof normalized.flags === 'object' ? normalized.flags : {})
+  };
+  if (enabled) nextFlags[flagKey] = true;
+  else delete nextFlags[flagKey];
+  return {
+    ...normalized,
+    flags: nextFlags
+  };
+};
+
+const isHiddenEncounterGateEvent = (event) => (
+  event?.type === 'sign' &&
+  getMapEventProperties(event).interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
+);
+
+const getHiddenEncounterGateEvents = (mapName) => (
+  getMapEvents(mapName).filter((event) => isHiddenEncounterGateEvent(event))
+);
+
+const getHiddenEncounterGateFlagKey = (mapName, gateEvent) => {
+  if (!gateEvent) return '';
+  const props = getMapEventProperties(gateEvent);
+  if (typeof props.unlockFlag === 'string' && props.unlockFlag.length > 0) return props.unlockFlag;
+  const zoneId = typeof props.hiddenZoneId === 'string' && props.hiddenZoneId.length > 0
+    ? props.hiddenZoneId
+    : gateEvent.id;
+  return `${mapName}:hidden_gate:${zoneId || 'unknown'}`;
+};
+
+const isHiddenEncounterGateUnlocked = (world, mapName, gateEvent) => (
+  getWorldFlagValue(world, getHiddenEncounterGateFlagKey(mapName, gateEvent))
+);
+
+const doesTargetTouchHiddenZonePerimeter = (mapInfo, hiddenZoneId, targetX, targetY) => {
+  if (!mapInfo || typeof hiddenZoneId !== 'string' || hiddenZoneId.length === 0) return false;
+  return (mapInfo.decorativeObjects || []).some((object) => {
+    if (object?.hiddenZonePerimeter !== true || object.hiddenZoneId !== hiddenZoneId) return false;
+    const cellX = Number.isFinite(Number(object.hiddenZoneCellX))
+      ? Math.trunc(Number(object.hiddenZoneCellX))
+      : Math.round(Number(object.x));
+    const cellY = Number.isFinite(Number(object.hiddenZoneCellY))
+      ? Math.trunc(Number(object.hiddenZoneCellY))
+      : Math.round(Number(object.y));
+    if (cellX === targetX && cellY === targetY) return true;
+    return isInsideDecorationFootprint(object, targetX, targetY, 0.18);
+  });
+};
+
+const getHiddenEncounterGateBlockedNotice = (world, mapName, targetX, targetY) => {
+  const x = Math.trunc(Number(targetX));
+  const y = Math.trunc(Number(targetY));
+  if (!Number.isSafeInteger(x) || !Number.isSafeInteger(y)) return null;
+  const mapInfo = getAdventureMapInfo(mapName);
+  if (!mapInfo?.mapGrid) return null;
+  const runtimeEvents = getMapEvents(mapName);
+
+  for (const event of getHiddenEncounterGateEvents(mapName)) {
+    if (isHiddenEncounterGateUnlocked(world, mapName, event)) continue;
+    const { lockedTiles, sealedTiles } = getHiddenEncounterGatePassageTiles(mapInfo, mapInfo.mapGrid, event, runtimeEvents);
+    const props = getMapEventProperties(event);
+    const hiddenZoneId = typeof props.hiddenZoneId === 'string' && props.hiddenZoneId.length > 0
+      ? props.hiddenZoneId
+      : '';
+    const touchesGateBlocker = [...lockedTiles, ...sealedTiles].some((point) => point.x === x && point.y === y);
+    const touchesPerimeterBlocker = doesTargetTouchHiddenZonePerimeter(mapInfo, hiddenZoneId, x, y);
+    if (!touchesGateBlocker && !touchesPerimeterBlocker) continue;
+
+    const hiddenZoneName = typeof props.hiddenZoneName === 'string' && props.hiddenZoneName.length > 0
+      ? props.hiddenZoneName
+      : '隐藏遭遇区';
+    const goldCost = Math.max(1, Math.trunc(Number(props.goldCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+    return {
+      key: `${mapName}:${event.id || hiddenZoneName}:${x},${y}`,
+      message: typeof props.lockedReason === 'string' && props.lockedReason.length > 0
+        ? props.lockedReason
+        : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props })
+    };
+  }
+
+  return null;
 };
 
 const getMapEventById = (mapName, eventId) => (
@@ -6278,9 +7059,7 @@ const mergeMonotonicWorldProgress = (targetWorld, sourceWorld, fallback = {}) =>
     defeatedBossIds: mergeUniqueStringLists(target.defeatedBossIds, source.defeatedBossIds),
     completedChallengeIds: mergeUniqueStringLists(target.completedChallengeIds, source.completedChallengeIds),
     trainerVictoryCounts: mergePositiveIntegerMaps(source.trainerVictoryCounts, target.trainerVictoryCounts),
-    collectedEventIds: sameDailyRefresh
-      ? mergeUniqueStringLists(target.collectedEventIds, source.collectedEventIds)
-      : target.collectedEventIds,
+    collectedEventIds: mergeUniqueStringLists(target.collectedEventIds, source.collectedEventIds),
     dailyTrainerBattleIds: sameDailyRefresh
       ? mergeUniqueStringLists(target.dailyTrainerBattleIds, source.dailyTrainerBattleIds)
       : target.dailyTrainerBattleIds,
@@ -6511,7 +7290,6 @@ const getMapProgressSummary = (mapName, world) => {
   const challengeEvent = getMapChallengeEvent(mapName);
   const challengeRarePool = getChallengeRarePool(challengeEvent);
   const challengeUnlockedRarePool = getChallengeUnlockedRarePool(challengeEvent, world, mapName);
-  const collectedEventIds = uniqueStringList(world?.collectedEventIds);
   const defeatedLieutenantIds = lieutenantEvents
     .map((event) => event.id)
     .filter((id) => hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, id));
@@ -6525,7 +7303,7 @@ const getMapProgressSummary = (mapName, world) => {
     challengeCompleted: Boolean(challengeEvent && hasMapScopedWorldEventId(world, 'completedChallengeIds', mapName, challengeEvent.id)),
     challengeRareUnlocked: challengeUnlockedRarePool.length,
     challengeRareTotal: challengeRarePool.length,
-    collectedItems: itemEvents.filter((event) => collectedEventIds.includes(event.id)).length,
+    collectedItems: itemEvents.filter((event) => hasCollectedMapEvent(world, mapName, event.id)).length,
     totalItems: itemEvents.length,
     encounterTier: getMapEncounterProgressTier(mapName, world),
     rareUnlocked: Boolean(
@@ -6541,6 +7319,14 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
   const role = resolveConfiguredBattleRole(event.type, props);
 
   if (event.type === 'trainer') {
+    if (isRepeatableTrainerEvent(event.type, role)) {
+      return {
+        status: 'available',
+        eventType: event.type,
+        role
+      };
+    }
+
     if (isDailyScalingTrainerEvent(event.type, role)) {
       return {
         status: hasDailyTrainerBattleEvent(world, mapName, event.id) ? 'daily_complete' : 'available',
@@ -6577,7 +7363,7 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
 
   if (event.type === 'challenge') {
     return {
-      status: hasDailyTrainerBattleEvent(world, mapName, event.id) ? 'daily_complete' : 'available',
+      status: 'available',
       eventType: event.type,
       role,
       unlockStage: getChallengeRareUnlockStage(world, event, mapName)
@@ -6724,6 +7510,14 @@ const applyConfiguredBattleCompletionToWorld = (world, completionMeta) => {
 
   if (!mapName || !completionKey || !eventId) {
     return { world: nextWorld, completedNow: false, wasAlreadyCompleted: true };
+  }
+
+  if (eventType === 'challenge' || isRepeatableTrainerEvent(eventType, eventRole)) {
+    return {
+      world: withUpdatedMapProgress(nextWorld, mapName),
+      completedNow: false,
+      wasAlreadyCompleted: false
+    };
   }
 
   const wasAlreadyCompleted = eventType === 'boss'
@@ -6877,26 +7671,22 @@ const formatRareChanceText = (chance, fallbackChance = 0.3) => {
 };
 
 const resolveRareSpeciesPreviewMonster = (entry) => {
-  const rawId = entry && typeof entry === 'object'
-    ? entry.pokemonId ?? entry.id ?? entry.pokedexId ?? entry.dexNo
-    : entry;
-  const pokemonId = Math.trunc(Number(rawId));
   const rawName = typeof entry === 'string'
     ? entry.trim()
     : (typeof entry?.name === 'string' ? entry.name.trim() : '');
-  const baseMonster = Number.isInteger(pokemonId)
-    ? MONSTERS.find((monster) => (
-      monster.id === pokemonId ||
-      Number(monster.dexNo ?? monster.pokedexId) === pokemonId
-    ))
-    : MONSTERS.find((monster) => monster.name === rawName);
+  const fallbackId = toPositiveIntegerOrNull(
+    entry && typeof entry === 'object'
+      ? entry.pokemonId ?? entry.id ?? entry.dexNo ?? entry.pokedexId
+      : entry
+  );
+  const baseMonster = resolveSpeciesPreviewBaseMonster(entry);
   const normalized = baseMonster
     ? normalizeMonsterAssetSource(baseMonster)
     : (rawName || entry?.sprite ? normalizeMonsterAssetSource({
-      id: rawName || pokemonId,
+      id: rawName || fallbackId,
       name: rawName || '稀有宝可梦',
       sprite: entry?.sprite || POKEMON_LOCAL_PLACEHOLDER,
-      pokedexId: Number.isInteger(pokemonId) ? pokemonId : undefined
+      pokedexId: fallbackId || undefined
     }) : null);
   if (!normalized?.name) return null;
   return {
@@ -7036,6 +7826,13 @@ const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam })
   const props = getMapEventProperties(warpEvent);
   const requiredAverageLevel = Number(props.requiredAverageLevel);
   const requiredTrainerIds = normalizeRequiredEventIds(props.requiredTrainerIds);
+  const targetMapName = warpEvent?.target?.mapName;
+  const targetMapConfig = targetMapName ? getMapConfig(targetMapName) : null;
+  const destinationLabel = (
+    targetMapConfig?.displayName ||
+    String(props.label || '').replace(/^前往/u, '').trim() ||
+    '下一张地图'
+  );
   const missingTrainerCount = Math.max(
     0,
     requiredTrainerIds.length - countMapScopedWorldEventIds(world, 'defeatedTrainerIds', currentMapName, requiredTrainerIds)
@@ -7053,21 +7850,34 @@ const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam })
     return { locked: true, reason: explicitText };
   }
 
-  const reasons = [];
-  if (missingTrainerCount > 0) {
-    reasons.push(`再胜 ${missingTrainerCount} 人`);
-  }
-  if (levelLocked) {
-    const targetLevel = Math.trunc(requiredAverageLevel);
-    reasons.push(`平均 Lv.${targetLevel}`);
+  const targetLevel = Number.isFinite(requiredAverageLevel) ? Math.trunc(requiredAverageLevel) : 0;
+  if (missingTrainerCount > 0 && levelLocked) {
+    const trainerLeadText = missingTrainerCount >= requiredTrainerIds.length
+      ? `先击败 ${requiredTrainerIds.length} 位训练家`
+      : `还需击败 ${missingTrainerCount} 位训练家`;
+    return {
+      locked: true,
+      reason: `${trainerLeadText}，再把队伍平均等级提升到 Lv.${targetLevel}，才能前往${destinationLabel}。`
+    };
   }
 
-  return {
-    locked: true,
-    reason: formatMapLockHint({
-      reason: reasons.join('，')
-    })
-  };
+  if (missingTrainerCount > 0) {
+    const trainerLeadText = missingTrainerCount >= requiredTrainerIds.length
+      ? `先击败 ${requiredTrainerIds.length} 位训练家`
+      : `还需击败 ${missingTrainerCount} 位训练家`;
+    return {
+      locked: true,
+      reason: `${trainerLeadText}，才能前往${destinationLabel}。`
+    };
+  }
+
+  if (levelLocked) {
+    return {
+      locked: true,
+      reason: `队伍平均等级达到 Lv.${targetLevel} 后，才能前往${destinationLabel}。`
+    };
+  }
+  return { locked: false, reason: '' };
 };
 
 const getAdventureRouteIndex = (mapName) => {
@@ -7261,16 +8071,95 @@ const isStarterValleyThicketUnlocked = (world, playerTeam = []) => (
 );
 
 const buildEncounterZoneLocks = (mapName, world, playerTeam = []) => {
-  if (mapName !== STARTER_VALLEY_MAP_ID || isStarterValleyThicketUnlocked(world, playerTeam)) {
-    return {};
-  }
+  const locks = {};
 
-  return {
-    [STARTER_VALLEY_THICKET_ZONE_ID]: {
+  if (mapName === STARTER_VALLEY_MAP_ID && !isStarterValleyThicketUnlocked(world, playerTeam)) {
+    locks[STARTER_VALLEY_THICKET_ZONE_ID] = {
       blocked: true,
       reason: STARTER_VALLEY_THICKET_GUIDE_TEXT
-    }
+    };
+  }
+
+  getHiddenEncounterGateEvents(mapName).forEach((event) => {
+    const props = getMapEventProperties(event);
+    const zoneId = typeof props.hiddenZoneId === 'string' && props.hiddenZoneId.length > 0
+      ? props.hiddenZoneId
+      : '';
+    if (!zoneId || isHiddenEncounterGateUnlocked(world, mapName, event)) return;
+
+    const hiddenZoneName = typeof props.hiddenZoneName === 'string' && props.hiddenZoneName.length > 0
+      ? props.hiddenZoneName
+      : '隐藏遭遇区';
+    const goldCost = Math.max(1, Math.trunc(Number(props.goldCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+    locks[zoneId] = {
+      blocked: true,
+      reason: typeof props.lockedReason === 'string' && props.lockedReason.length > 0
+        ? props.lockedReason
+        : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props, requireEntry: true })
+    };
+  });
+
+  return locks;
+};
+
+const resolveEncounterZoneMeta = ({ mapName, zoneId = null, encounterTableId = null } = {}) => {
+  const zones = Array.isArray(getAdventureMapInfo(mapName)?.encounterZones)
+    ? getAdventureMapInfo(mapName).encounterZones
+    : [];
+  const normalizedZoneId = typeof zoneId === 'string' && zoneId.length > 0 ? zoneId : null;
+  const normalizedTableId = typeof encounterTableId === 'string' && encounterTableId.length > 0
+    ? encounterTableId
+    : null;
+  const zone = (
+    (normalizedZoneId ? zones.find((candidate) => candidate?.id === normalizedZoneId) : null) ||
+    (normalizedTableId ? zones.find((candidate) => candidate?.encounterTableId === normalizedTableId) : null) ||
+    null
+  );
+  return {
+    zone,
+    hiddenZone: zone?.depth === 'deep',
+    encounterTableId: zone?.encounterTableId || normalizedTableId || null
   };
+};
+
+const getMapChallengeRareIdSet = (mapName) => {
+  const challengeEvent = getMapChallengeEvent(mapName);
+  return new Set(
+    normalizeChallengeRarePool(getChallengeRarePool(challengeEvent))
+      .map((entry) => entry.pokemonId)
+      .filter(Number.isInteger)
+  );
+};
+
+const getHiddenEncounterBlockedIdSet = () => {
+  const blockedIds = new Set();
+  ADVENTURE_MAP_CHAIN.forEach((mapName) => {
+    getMapChallengeRareIdSet(mapName).forEach((pokemonId) => blockedIds.add(pokemonId));
+    const bossRarePokemonId = Math.trunc(Number(
+      getMapEventProperties(getMapBossEvent(mapName))?.bossRarePokemon?.pokemonId ??
+      getMapEventProperties(getMapBossEvent(mapName))?.bossRarePokemon?.id
+    ));
+    if (Number.isInteger(bossRarePokemonId)) blockedIds.add(bossRarePokemonId);
+  });
+  return blockedIds;
+};
+
+const pickEncounterFromEncounterTable = ({ encounterTableId, excludedPokemonIds = null } = {}) => {
+  if (typeof encounterTableId !== 'string' || encounterTableId.length === 0) return null;
+  const excludedIds = excludedPokemonIds instanceof Set ? excludedPokemonIds : new Set();
+  const table = getEncounterTable(encounterTableId);
+  const candidates = Array.isArray(table?.pokemon)
+    ? table.pokemon.filter((entry) => {
+      const pokemonId = Math.trunc(Number(entry?.id ?? entry?.pokemonId));
+      return Number.isInteger(pokemonId) && !excludedIds.has(pokemonId);
+    })
+    : [];
+  if (candidates.length === 0) return null;
+  return pickProgressEncounterCandidate({
+    candidates,
+    minLevel: 1,
+    maxLevel: 100
+  });
 };
 
 const pickProgressEncounterCandidate = ({ candidates, minLevel, maxLevel, rare = false, progressTier = 0 }) => {
@@ -7351,7 +8240,8 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
         return {
           ...bossRareEncounter,
           bossRare: true,
-          unlockSource: 'boss'
+          unlockSource: 'boss',
+          sourceChance: bossRareChance
         };
       }
     }
@@ -7374,7 +8264,8 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
         return {
           ...challengeRareEncounter,
           challengeRare: true,
-          unlockSource: 'challenge'
+          unlockSource: 'challenge',
+          sourceChance: challengeRareChance
         };
       }
     }
@@ -7394,7 +8285,7 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
       rare: false,
       progressTier
     });
-    if (progressEncounter) return progressEncounter;
+    if (progressEncounter) return { ...progressEncounter, sourceChance: 0.18 };
   }
 
   if (progressTier >= 1 && Math.random() < 0.12) {
@@ -7411,10 +8302,132 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
       rare: false,
       progressTier
     });
-    if (progressEncounter) return progressEncounter;
+    if (progressEncounter) return { ...progressEncounter, sourceChance: 0.12 };
   }
 
   return getProgressBumpedEncounter({ basePokemonId, baseLevel, progressTier, mapMin, mapMax });
+};
+
+const getEncounterShareMeta = ({ encounterTableId, pokemonId }) => {
+  const id = Math.trunc(Number(pokemonId));
+  if (!Number.isInteger(id)) return null;
+
+  const table = getEncounterTable(encounterTableId);
+  const entries = Array.isArray(table?.pokemon) ? table.pokemon : [];
+  const legalEntries = entries.filter((entry) => {
+    const entryId = Math.trunc(Number(entry?.id ?? entry?.pokemonId));
+    if (!Number.isInteger(entryId)) return false;
+    return pickLevelForSpecies(
+      entryId,
+      Math.trunc(Number(entry?.minLevel)) || 1,
+      Math.trunc(Number(entry?.maxLevel)) || 100
+    ) !== null;
+  });
+  const totalWeight = legalEntries.reduce((sum, entry) => (
+    sum + Math.max(1, Number(entry?.weight) || 1)
+  ), 0);
+  if (totalWeight <= 0) return null;
+
+  const ownWeight = legalEntries
+    .filter((entry) => Math.trunc(Number(entry?.id ?? entry?.pokemonId)) === id)
+    .reduce((sum, entry) => sum + Math.max(1, Number(entry?.weight) || 1), 0);
+  if (ownWeight <= 0) return null;
+
+  return {
+    share: ownWeight / totalWeight,
+    totalWeight,
+    ownWeight
+  };
+};
+
+const getEncounterTierFromShare = (share) => {
+  if (share <= 0.04) return 'ultra';
+  if (share <= 0.09) return 'rare';
+  if (share <= 0.18) return 'uncommon';
+  return 'common';
+};
+
+const ENCOUNTER_RARITY_PRESENTATION = {
+  common: { label: '常见', headline: '熟悉的身影' },
+  uncommon: { label: '少见', headline: '不错的发现' },
+  rare: { label: '稀有出现', headline: '稀有气息!' },
+  ultra: { label: '极稀有现身', headline: '天选相遇!' },
+  mythic: { label: '首领稀有', headline: '首领生态现身!' },
+  boosted: { label: '增强生态', headline: '更强的气息!' }
+};
+
+const buildWildEncounterRarityMeta = ({
+  pokemonId,
+  encounterTableId,
+  encounterRate,
+  rareEncounter
+} = {}) => {
+  if (rareEncounter?.bossRare) {
+    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    return normalizeEncounterRarityMeta({
+      tier: 'mythic',
+      label: '首领稀有',
+      headline: '首领生态现身!',
+      chanceText: chance ? `首领生态约 ${chance}` : '首领解锁生态',
+      sourceText: '击败首领后才会出现',
+      isExciting: true
+    });
+  }
+
+  if (rareEncounter?.challengeRare) {
+    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    return normalizeEncounterRarityMeta({
+      tier: 'ultra',
+      label: '隐藏稀有',
+      headline: '隐藏生态现身!',
+      chanceText: chance ? `隐藏生态约 ${chance}` : '试炼解锁生态',
+      sourceText: '试炼奖励池宝可梦',
+      isExciting: true
+    });
+  }
+
+  if (rareEncounter?.rare) {
+    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    return normalizeEncounterRarityMeta({
+      tier: 'rare',
+      label: '稀有生态',
+      headline: '稀有气息!',
+      chanceText: chance ? `稀有生态约 ${chance}` : '稀有生态出现',
+      sourceText: '特殊生态池宝可梦',
+      isExciting: true
+    });
+  }
+
+  if (rareEncounter?.strengthened || rareEncounter?.progressTier >= 1) {
+    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    return normalizeEncounterRarityMeta({
+      tier: 'boosted',
+      label: '增强生态',
+      headline: '更强的气息!',
+      chanceText: chance ? `增强生态约 ${chance}` : '试炼后增强生态',
+      sourceText: '地图进度提升后出现',
+      isExciting: false
+    });
+  }
+
+  const shareMeta = getEncounterShareMeta({ encounterTableId, pokemonId });
+  const share = Number(shareMeta?.share);
+  if (!Number.isFinite(share) || share <= 0) return null;
+
+  const tier = getEncounterTierFromShare(share);
+  const presentation = ENCOUNTER_RARITY_PRESENTATION[tier] || ENCOUNTER_RARITY_PRESENTATION.common;
+  const grassRate = Number(encounterRate);
+  const stepChance = Number.isFinite(grassRate) && grassRate > 0 ? grassRate * share : 0;
+
+  return normalizeEncounterRarityMeta({
+    tier,
+    label: presentation.label,
+    headline: presentation.headline,
+    chanceText: `草丛池约 ${formatEncounterPercent(share)}`,
+    stepChanceText: stepChance > 0 ? `每步约 ${formatEncounterPercent(stepChance)}` : '',
+    sourceText: encounterTableId ? `生态表 ${encounterTableId}` : '',
+    isExciting: tier === 'rare' || tier === 'ultra'
+  });
 };
 
 const createCloudSaveSessionId = () => {
@@ -7442,6 +8455,77 @@ const withCloudSaveMeta = (snapshot, revision, sessionId) => ({
     clientSavedAt: new Date().toISOString()
   }
 });
+
+const normalizePlayerPositionDraft = (draft) => {
+  if (!draft || typeof draft !== 'object') return null;
+  const currentMapName = typeof draft.currentMapName === 'string' && hasAdventureMap(draft.currentMapName)
+    ? draft.currentMapName
+    : null;
+  if (!currentMapName) return null;
+
+  const updatedAtMs = Number(draft.updatedAtMs ?? Date.parse(draft.updatedAt || ''));
+  if (!Number.isFinite(updatedAtMs) || updatedAtMs <= 0) return null;
+
+  const rawCloudRevision = draft.cloudRevision;
+  const cloudRevision = Number(rawCloudRevision);
+  return {
+    currentMapName,
+    playerPos: normalizeWorldPosition(draft.playerPos, getMapStartPosition(currentMapName)),
+    updatedAtMs,
+    cloudRevision: rawCloudRevision !== null && rawCloudRevision !== undefined && Number.isSafeInteger(cloudRevision) && cloudRevision >= 0
+      ? cloudRevision
+      : null
+  };
+};
+
+const getCloudSaveTimestampMs = (gameData, fallbackSavedAt = null) => {
+  const candidates = [
+    fallbackSavedAt,
+    gameData?.[CLOUD_SAVE_SYNC_META_KEY]?.clientSavedAt
+  ];
+  return candidates.reduce((latest, value) => {
+    const timestamp = Date.parse(value || '');
+    return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+  }, 0);
+};
+
+const applyPlayerPositionDraftToGameData = (gameData, draft, {
+  lastSavedAt = null,
+  cloudRevision = 0
+} = {}) => {
+  const normalizedDraft = normalizePlayerPositionDraft(draft);
+  if (!gameData || typeof gameData !== 'object' || !normalizedDraft) return gameData;
+  if (gameData.showLaunchScreen || !Array.isArray(gameData.playerTeam) || gameData.playerTeam.length === 0) return gameData;
+  if (gameData.view === 'battle' || gameData.activeEnemyId) return gameData;
+
+  const normalizedCloudRevision = Number.isSafeInteger(Number(cloudRevision))
+    ? Number(cloudRevision)
+    : getCloudSaveRevision(gameData);
+  if (
+    normalizedDraft.cloudRevision !== null &&
+    normalizedCloudRevision > normalizedDraft.cloudRevision
+  ) {
+    return gameData;
+  }
+
+  if (normalizedDraft.cloudRevision === null) {
+    const cloudSavedAtMs = getCloudSaveTimestampMs(gameData, lastSavedAt);
+    if (cloudSavedAtMs > 0 && normalizedDraft.updatedAtMs <= cloudSavedAtMs + 250) {
+      return gameData;
+    }
+  }
+
+  return {
+    ...gameData,
+    currentMapName: normalizedDraft.currentMapName,
+    playerPos: normalizedDraft.playerPos,
+    world: {
+      ...(gameData.world && typeof gameData.world === 'object' ? gameData.world : {}),
+      currentMapName: normalizedDraft.currentMapName,
+      playerPos: normalizedDraft.playerPos
+    }
+  };
+};
 
 const normalizePendingGrowthEvents = (events) => {
   if (!Array.isArray(events)) return [];
@@ -7597,11 +8681,24 @@ const evolveMonsterInstance = (monster, targetBase) => {
   const currentMaxMp = getMonsterMaxMp(monster);
   const hpRatio = currentMaxHp > 0 ? getMonsterCurrentHp(monster, currentMaxHp) / currentMaxHp : 1;
   const mpRatio = currentMaxMp > 0 ? getMonsterCurrentMp(monster, currentMaxMp) / currentMaxMp : 1;
-  const preservedMoves = normalizeRuntimeKnownMoveKeys(monster.moves);
-  const evolved = createMonsterInstance(targetBase, monster.level, monster.id, null, null, monster.currentExp);
+  const preservedMoves = normalizeMovesForPokemonLevel(targetBase, monster.moves, monster.level, {
+    backfill: false,
+    preferBalancedWhenInvalid: true,
+  });
+  const evolved = createMonsterInstance(
+    targetBase,
+    monster.level,
+    monster.id,
+    null,
+    null,
+    monster.currentExp,
+    monster.statBoosts,
+    { capturedBallKey: getMonsterCaptureBallKey(monster) }
+  );
   return {
     ...evolved,
     baseId: targetBase.id,
+    capturedBallKey: getMonsterCaptureBallKey(monster),
     currentHp: Math.max(1, Math.round(evolved.maxHp * hpRatio)),
     currentMp: Math.max(0, Math.round(evolved.maxMp * mpRatio)),
     moves: preservedMoves.length > 0 ? preservedMoves : getBalancedMovesForLevel(targetBase, monster.level),
@@ -7653,26 +8750,64 @@ const buildExitedBattleSnapshot = (baseSnapshot, overrides = {}) => {
     ? overrides.playerTeam
     : (Array.isArray(baseSnapshot?.playerTeam) ? baseSnapshot.playerTeam : []);
   const defaultActivePlayerId = resolveDefaultActivePlayerId(exitedTeam, baseSnapshot?.activePlayerId);
+  const exitActivePlayerId = Object.prototype.hasOwnProperty.call(overrides, 'activePlayerId')
+    ? overrides.activePlayerId
+    : defaultActivePlayerId;
+  const exitBattleEnvironment = normalizeBattleEnvironment(
+    overrides.battleEnvironment ||
+    baseSnapshot?.battleEnvironment ||
+    baseSnapshot?.battlePhaseData?.battleEnvironment
+  );
+  const exitMapName =
+    overrides.currentMapName ||
+    exitBattleEnvironment?.mapName ||
+    baseSnapshot?.currentMapName ||
+    baseSnapshot?.world?.currentMapName ||
+    DEFAULT_WORLD_MAP_NAME;
+  const fallbackExitPosition = normalizeWorldPosition(
+    baseSnapshot?.playerPos || baseSnapshot?.world?.playerPos || getMapStartPosition(exitMapName),
+    getMapStartPosition(exitMapName)
+  );
+  const exitPosition = normalizeWorldPosition(
+    exitBattleEnvironment?.triggerPosition || overrides.playerPos || baseSnapshot?.playerPos || baseSnapshot?.world?.playerPos,
+    fallbackExitPosition
+  );
+  const exitWorld = normalizeWorldState(
+    overrides.world || baseSnapshot?.world,
+    {
+      currentMapName: exitMapName,
+      playerPos: exitPosition
+    }
+  );
 
   return {
     ...baseSnapshot,
+    ...overrides,
     view: 'map',
+    currentMapName: exitMapName,
+    playerPos: exitPosition,
+    world: {
+      ...exitWorld,
+      currentMapName: exitMapName,
+      playerPos: exitPosition
+    },
     turn: 'player',
     participatedMonIds: [],
     enemyTeam: [],
     activeEnemyId: null,
-    activePlayerId: defaultActivePlayerId,
+    activePlayerId: exitActivePlayerId,
     gameOver: false,
     battleKind: 'wild',
     battlePhase: 'active',
     battlePhaseData: null,
+    battleEnvironment: null,
+    battleEventCompletion: null,
     pendingBattleSwitch: null,
     isThrowingPokeball: false,
     captureSequenceData: null,
     encounterCooldownSteps: ENCOUNTER_SAFE_STEPS,
     activeBattleEnergyCost: 0,
     battleEnergyRefundEligible: false,
-    ...overrides,
   };
 };
 
@@ -7746,6 +8881,7 @@ const normalizeCaptureSequenceData = (data) => {
       : (caughtMonster?.sprite || POKEMON_LOCAL_PLACEHOLDER),
     pokemonLevel,
     ballName: typeof data.ballName === 'string' ? data.ballName : null,
+    ballKey: normalizeCaptureBallKey(data.ballKey || caughtMonster?.capturedBallKey),
     ballSprite: typeof data.ballSprite === 'string' ? data.ballSprite : null,
     catchRate: Number.isFinite(catchRate) ? catchRate : null
   };
@@ -8326,21 +9462,33 @@ const normalizeCloudGameData = (gameData, backendGold) => {
   const safeMapName = hasAdventureMap(normalized.currentMapName)
     ? normalized.currentMapName
     : DEFAULT_WORLD_MAP_NAME;
+  const mapNameWasRepaired = safeMapName !== normalized.currentMapName;
+  const preservedPlayerPos = normalizeWorldPosition(
+    mapNameWasRepaired ? null : (normalized.playerPos || normalized.world?.playerPos),
+    getMapStartPosition(safeMapName)
+  );
   const mapGridVisualMismatch = hasAdventureMapGridVisualRoadMismatch(safeMapName, normalized.mapGrid);
   normalized.mapContentVersion = WORLD_MAP_CONTENT_VERSION;
   normalized.world.mapContentVersion = WORLD_MAP_CONTENT_VERSION;
   normalized.currentMapName = safeMapName;
   normalized.world.currentMapName = safeMapName;
+  normalized.playerPos = preservedPlayerPos;
+  normalized.world.playerPos = preservedPlayerPos;
 
   if (mapContentChanged || mapGridVisualMismatch || !Array.isArray(normalized.mapGrid) || normalized.mapGrid.length === 0) {
     normalized.mapGrid = (mapContentChanged || mapGridVisualMismatch)
       ? loadPokemonMap(safeMapName)
       : getInitialMapGrid(normalized);
-    const startPosition = getMapStartPosition(safeMapName);
-    normalized.playerPos = startPosition;
-    normalized.world.playerPos = startPosition;
   }
   normalized.mapGrid = buildMapGridForWorld(safeMapName, normalized.world, normalized.mapGrid);
+  const resolvedPlayerPos = resolveWorldPositionForGrid(
+    safeMapName,
+    normalized.mapGrid,
+    preservedPlayerPos,
+    getMapStartPosition(safeMapName)
+  );
+  normalized.playerPos = resolvedPlayerPos;
+  normalized.world.playerPos = resolvedPlayerPos;
 
   if (normalized.view === 'battle' && (enemyTeam.length === 0 || !normalized.activeEnemyId)) {
     normalized.view = 'map';
@@ -8541,12 +9689,13 @@ const mergeBootProgress = (cloudLoading, assetProgress) => {
     : 0;
   if (cloudLoading) {
     const assetDetail = assetProgress?.phase
-      ? `后台并行预热：${assetProgress.phase}`
+      ? `正在同步云端进度，同时后台准备素材：${assetProgress.phase}`
       : null;
     return {
       ...(assetProgress || {}),
       phase: '正在读取云端进度',
-      detail: assetDetail || assetProgress?.detail || '正在从 Supabase 读取你的最新进度…',
+      detail: assetDetail || assetProgress?.detail || '正在同步你的队伍、背包、地图位置与奖励记录…',
+      hideResourceCounts: true,
       percent: Math.min(CLOUD_BOOT_PERCENT, Math.max(4, 4 + Math.round(assetPercent * 0.08)))
     };
   }
@@ -8679,6 +9828,143 @@ const ResetProgressConfirmModal = ({ open, busy = false, onCancel, onConfirm }) 
   );
 };
 
+const NPC_DIALOGUE_ROLE_META = {
+  normal: {
+    eyebrow: '普通训练师',
+    icon: 'fa-user',
+    actionText: '开始对战',
+    rewardLabel: '胜利奖励'
+  },
+  reward: {
+    eyebrow: '奖励挑战',
+    icon: 'fa-gift',
+    actionText: '赢取奖励',
+    rewardLabel: '首胜奖励'
+  },
+  lieutenant: {
+    eyebrow: '部下训练师',
+    icon: 'fa-shield-halved',
+    actionText: '接受试炼',
+    rewardLabel: '胜利奖励'
+  },
+  boss: {
+    eyebrow: '区域首领',
+    icon: 'fa-crown',
+    actionText: '挑战首领',
+    rewardLabel: '胜利奖励'
+  },
+  minigame: {
+    eyebrow: '循环挑战',
+    icon: 'fa-stopwatch',
+    actionText: '开始挑战',
+    rewardLabel: '本轮奖励'
+  }
+};
+
+const NPC_DIALOGUE_EXP_REWARD_KEYS = {
+  normal: 'exp_potion_small',
+  reward: 'exp_potion_small',
+  lieutenant: 'exp_potion_medium',
+  boss: 'exp_potion_large',
+  minigame: 'exp_potion_medium'
+};
+
+const getNpcDialogueRoleMeta = (eventRole = 'normal') => {
+  const normalizedRole = normalizeTrainerRole(eventRole);
+  return NPC_DIALOGUE_ROLE_META[normalizedRole] || NPC_DIALOGUE_ROLE_META.normal;
+};
+
+const normalizeNpcDialogueLine = (text, fallbackText) => {
+  const cleaned = typeof text === 'string'
+    ? text.replace(/\s+/g, ' ').trim()
+    : '';
+  return cleaned || fallbackText;
+};
+
+const buildNpcDialogueInfoChips = ({
+  teamSize = 1,
+  levelRangeText = '',
+  energyCost = 1,
+  statusChips = []
+} = {}) => {
+  const chips = [];
+  chips.push(`${Math.max(1, Math.trunc(Number(teamSize)) || 1)} 只`);
+  if (typeof levelRangeText === 'string' && levelRangeText.trim().length > 0) {
+    chips.push(levelRangeText.trim());
+  }
+  chips.push(`消耗 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 能量`);
+  (Array.isArray(statusChips) ? statusChips : []).forEach((chip) => {
+    const label = typeof chip === 'string' ? chip.trim() : '';
+    if (label.length > 0) chips.push(label);
+  });
+  return chips;
+};
+
+const buildNpcDialogueRewardItems = ({
+  eventRole = 'normal',
+  expectedGold = 0,
+  rewardItems = []
+} = {}) => {
+  const normalizedRole = normalizeTrainerRole(eventRole);
+  const normalizedRewardItems = mergeNormalizedMapRewardItems(rewardItems);
+  const expItemKey = NPC_DIALOGUE_EXP_REWARD_KEYS[normalizedRole] || NPC_DIALOGUE_EXP_REWARD_KEYS.normal;
+  const expDetails = resolveInventoryItemDetails('expPotion', expItemKey);
+  const rewardPreviewItems = [];
+
+  rewardPreviewItems.push(...normalizedRewardItems);
+
+  if (expDetails?.sprite) {
+    rewardPreviewItems.push({
+      itemType: 'exp',
+      itemKey: expItemKey,
+      itemName: '经验',
+      quantity: 1,
+      sprite: expDetails.sprite,
+      iconFa: ''
+    });
+  }
+
+  const goldAmount = Math.max(0, Math.trunc(Number(expectedGold)) || 0);
+  if (goldAmount > 0) {
+    rewardPreviewItems.push({
+      itemType: 'gold',
+      itemKey: 'expected-gold',
+      itemName: '金币',
+      quantity: goldAmount,
+      sprite: '',
+      iconFa: 'fa-coins'
+    });
+  }
+
+  return rewardPreviewItems;
+};
+
+const getNpcDialogueRuleCards = (eventRole = 'normal') => {
+  if (normalizeTrainerRole(eventRole) !== 'minigame') return [];
+  return [
+    { icon: 'fa-dice-six', label: '对手队伍', value: '6只宝可梦' },
+    { icon: 'fa-arrow-trend-up', label: '难度变化', value: '连胜变强' },
+    { icon: 'fa-mountain', label: '最高强度', value: '最高 Lv.80' },
+    { icon: 'fa-coins', label: '奖励变化', value: '金币提升' }
+  ];
+};
+
+const getRewardQuantityText = (reward) => {
+  if (!reward || !Number.isFinite(Number(reward.quantity))) return '';
+  const quantity = Math.max(0, Math.trunc(Number(reward.quantity)) || 0);
+  if (quantity <= 0) return '';
+  if (reward.itemType === 'gold') return `+${quantity.toLocaleString('zh-CN')}`;
+  if (quantity <= 1) return '';
+  return `x${quantity}`;
+};
+
+const shouldShowRewardQuantityBadge = (reward) => {
+  const quantityText = getRewardQuantityText(reward);
+  if (!quantityText) return false;
+  if (reward?.itemType === 'gold') return false;
+  return quantityText.length <= 3;
+};
+
 const ChallengeBattleConfirmModal = ({
   open,
   busy = false,
@@ -8720,26 +10006,30 @@ const ChallengeBattleConfirmModal = ({
     }));
   const totalUnlockCount = Math.max(0, Math.trunc(Number(unlockProgress?.totalCount)) || 0);
   const currentUnlockedCount = Math.max(0, Math.trunc(Number(unlockProgress?.unlockedCount)) || 0);
+  const previousUnlockedCount = Math.max(0, Math.trunc(Number(unlockProgress?.previousUnlockedCount)) || 0);
   const nextUnlockedCount = totalUnlockCount > 0
-    ? Math.min(totalUnlockCount, currentUnlockedCount + unlockCount)
+    ? Math.min(
+      totalUnlockCount,
+      Math.max(currentUnlockedCount, previousUnlockedCount + unlockCount)
+    )
     : unlockCount;
   const nextBatchIndex = Math.max(1, Math.trunc(Number(unlockProgress?.nextBatchIndex)) || 1);
   const progressText = totalUnlockCount > 0 ? `累计 ${nextUnlockedCount}/${totalUnlockCount} 种` : '';
   const introText = alreadyCompleted
     ? unlockCount > 0
-      ? `${eventTitle}可继续挑战。本次通关会解锁第 ${nextBatchIndex} 批隐藏生态。`
-      : `${eventTitle}可继续挑战。隐藏生态已全部解锁，首通奖励不会重复领取。`
+      ? `${eventTitle}可继续挑战。通关后开启第 ${nextBatchIndex} 批隐藏生态。`
+      : `${eventTitle}可继续挑战。本次会随机轮换守护者。`
     : unlockCount > 0
-      ? `${eventTitle}会立刻开始。完成后除了拿到奖励，还会解锁第 ${nextBatchIndex} 批野生宝可梦。`
-      : `${eventTitle}会立刻开始。确认后将进入连续对战。`;
+      ? `${eventTitle}会立刻开始。通关后开启第 ${nextBatchIndex} 批隐藏生态。`
+      : `${eventTitle}会立刻开始。确认后直接进入连战。`;
   const unlockLeadText = alreadyCompleted
     ? unlockCount > 0
       ? `通关后新增 ${unlockCount} 种野生宝可梦。${progressText}`
       : (showingBattlePreview
-      ? '隐藏生态已开启，本次试炼会派出以下守护者。'
+      ? '隐藏生态已全部开启，本次守护者会随机轮换。'
       : (unlockDescription || '本区域隐藏生态已全部开启。'))
     : unlockCount > 0
-      ? `完成试炼后，本区域草丛会新增 ${unlockCount} 种野生宝可梦。${progressText}`
+      ? `完成后会解锁 ${unlockCount} 种野生宝可梦。${progressText}`
       : unlockDescription;
 
   return (
@@ -8777,10 +10067,17 @@ const ChallengeBattleConfirmModal = ({
                     ) : (
                       <i className="fa-solid fa-gift"></i>
                     )}
+                    {shouldShowRewardQuantityBadge(reward) ? (
+                      <span className="challenge-confirm-card__reward-icon-badge">
+                        {getRewardQuantityText(reward)}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="challenge-confirm-card__reward-name">{reward.itemName}</span>
-                  {reward.quantity > 1 ? (
-                    <span className="challenge-confirm-card__reward-qty">x{reward.quantity}</span>
+                  {getRewardQuantityText(reward) && !shouldShowRewardQuantityBadge(reward) ? (
+                    <span className="challenge-confirm-card__reward-qty-inline">
+                      {getRewardQuantityText(reward)}
+                    </span>
                   ) : null}
                 </span>
               ))}
@@ -8830,6 +10127,147 @@ const ChallengeBattleConfirmModal = ({
           <button type="button" className="game-primary-button challenge-confirm-card__button challenge-confirm-card__button--confirm" onClick={onConfirm} disabled={busy}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`} aria-hidden="true"></i>
             {busy ? '进入中' : '开始挑战'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NPC_BATTLE_DIALOGUE_DIRECTIONS = new Set(['up', 'down', 'left', 'right']);
+
+const NpcBattleDialogueConfirmModal = ({
+  open,
+  busy = false,
+  eventName = '训练家',
+  eventTitle = '',
+  dialogueText = '',
+  ruleDescription = '',
+  energyCost = 1,
+  teamSize = 1,
+  levelRangeText = '',
+  expectedGold = 0,
+  rewardItems = [],
+  statusChips = [],
+  eventRole = 'normal',
+  anchorDirection = 'up',
+  onCancel,
+  onConfirm
+}) => {
+  if (!open) return null;
+
+  const direction = NPC_BATTLE_DIALOGUE_DIRECTIONS.has(anchorDirection) ? anchorDirection : 'up';
+  const normalizedRole = normalizeTrainerRole(eventRole);
+  const roleMeta = getNpcDialogueRoleMeta(normalizedRole);
+  const infoChips = buildNpcDialogueInfoChips({
+    teamSize,
+    levelRangeText,
+    energyCost,
+    statusChips
+  });
+  const rewardPreviewItems = buildNpcDialogueRewardItems({
+    eventRole: normalizedRole,
+    expectedGold,
+    rewardItems
+  });
+  const ruleCards = getNpcDialogueRuleCards(normalizedRole);
+  const titleText = eventTitle || getTrainerRoleBalance(eventRole).label || '训练家对战';
+  const leadText = normalizeNpcDialogueLine(
+    dialogueText,
+    `${eventName}：要来一场对战吗？`
+  );
+  const ruleText = ruleCards.length === 0
+    ? normalizeNpcDialogueLine(ruleDescription, '')
+    : '';
+
+  return (
+    <div
+      className={`npc-battle-dialogue-overlay npc-battle-dialogue-overlay--${direction}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="npc-battle-dialogue-title"
+    >
+      <div className={`npc-battle-dialogue npc-battle-dialogue--${normalizedRole}`}>
+        <div className="npc-battle-dialogue__speaker">
+          <div className="npc-battle-dialogue__avatar" aria-hidden="true">
+            <i className={`fa-solid ${roleMeta.icon}`}></i>
+          </div>
+          <div className="npc-battle-dialogue__heading">
+            <p>{roleMeta.eyebrow}</p>
+            <h2 id="npc-battle-dialogue-title">{eventName}</h2>
+            <span>{titleText}</span>
+          </div>
+        </div>
+
+        <p className="npc-battle-dialogue__text">
+          {leadText}
+        </p>
+
+        {ruleText ? (
+          <p className="npc-battle-dialogue__rule">
+            {ruleText}
+          </p>
+        ) : null}
+
+        {ruleCards.length > 0 ? (
+          <div className="npc-battle-dialogue__rule-grid" aria-label="挑战规则">
+            {ruleCards.map((card) => (
+              <div key={card.label} className="npc-battle-dialogue__rule-card">
+                <span className="npc-battle-dialogue__rule-card-icon" aria-hidden="true">
+                  <i className={`fa-solid ${card.icon}`}></i>
+                </span>
+                <span className="npc-battle-dialogue__rule-card-copy">
+                  <strong>{card.label}</strong>
+                  <span>{card.value}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="npc-battle-dialogue__chips" aria-label="对战信息">
+          {infoChips.map((chip) => (
+            <span key={chip}>{chip}</span>
+          ))}
+        </div>
+
+        {rewardPreviewItems.length > 0 ? (
+          <div className="npc-battle-dialogue__rewards" aria-label="胜利奖励">
+            <span className="npc-battle-dialogue__reward-label">{roleMeta.rewardLabel}</span>
+            <div className="npc-battle-dialogue__reward-list">
+              {rewardPreviewItems.map((reward, index) => (
+                <span key={`${reward.itemType}-${reward.itemKey}-${index}`} className={`npc-battle-dialogue__reward-pill npc-battle-dialogue__reward-pill--${reward.itemType || 'item'}`}>
+                  <span className="npc-battle-dialogue__reward-icon" aria-hidden="true">
+                    {reward.sprite ? (
+                      <img src={reward.sprite} alt="" onError={handleItemImageError} />
+                    ) : (
+                      <i className={`fa-solid ${reward.iconFa || (reward.itemType === 'gold' ? 'fa-coins' : 'fa-gift')}`}></i>
+                    )}
+                    {shouldShowRewardQuantityBadge(reward) ? (
+                      <span className="npc-battle-dialogue__reward-icon-badge">
+                        {getRewardQuantityText(reward)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="npc-battle-dialogue__reward-name">{reward.itemName}</span>
+                  {getRewardQuantityText(reward) && !shouldShowRewardQuantityBadge(reward) ? (
+                    <span className="npc-battle-dialogue__reward-qty-inline">
+                      {getRewardQuantityText(reward)}
+                    </span>
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="npc-battle-dialogue__actions">
+          <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
+            稍后再说
+          </button>
+          <button type="button" className="game-primary-button" onClick={onConfirm} disabled={busy}>
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`} aria-hidden="true"></i>
+            {busy ? '进入中' : roleMeta.actionText}
           </button>
         </div>
       </div>
@@ -8898,6 +10336,92 @@ const SpringRestoreConfirmModal = ({
           <button type="button" className="game-primary-button spring-restore-card__button spring-restore-card__button--confirm" onClick={onConfirm} disabled={busy || !canAfford}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-droplet'}`} aria-hidden="true"></i>
             {busy ? '恢复中' : `支付 ${displayCost} 金币`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HiddenEncounterUnlockModal = ({
+  open,
+  busy = false,
+  zoneName = '隐藏遭遇区',
+  description = '',
+  exclusiveRareCount = HIDDEN_ENCOUNTER_EXCLUSIVE_RARE_COUNT,
+  cost = HIDDEN_ENCOUNTER_GATE_DEFAULT_COST,
+  currentGold = 0,
+  error = '',
+  onCancel,
+  onConfirm
+}) => {
+  if (!open) return null;
+
+  const displayGold = Number.isFinite(Number(currentGold)) ? Math.max(0, Math.trunc(Number(currentGold))) : 0;
+  const displayCost = Math.max(1, Math.trunc(Number(cost)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+  const formattedGold = displayGold.toLocaleString('zh-CN');
+  const canAfford = displayGold >= displayCost;
+  const rareCount = Math.max(1, Math.trunc(Number(exclusiveRareCount)) || HIDDEN_ENCOUNTER_EXCLUSIVE_RARE_COUNT);
+
+  return (
+    <div className="reset-confirm-overlay spring-restore-overlay" role="dialog" aria-modal="true" aria-labelledby="hidden-encounter-unlock-title">
+      <div className="spring-restore-card">
+        <div className="spring-restore-card__header">
+          <div className="spring-restore-card__icon" aria-hidden="true">
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-unlock'}`}></i>
+          </div>
+          <div className="spring-restore-card__headings">
+            <p className="spring-restore-card__eyebrow">隐藏遭遇区</p>
+            <h2 id="hidden-encounter-unlock-title">{zoneName}</h2>
+          </div>
+        </div>
+
+        <p className="spring-restore-card__lead">
+          {description || formatHiddenEncounterGateUnlockDescription({ hiddenZoneName: zoneName })}
+        </p>
+
+        <div className="hidden-encounter-rare-callout" aria-label={`隐藏区内有 ${rareCount} 只专属强力稀有宝可梦`}>
+          <div className="hidden-encounter-rare-callout__badge" aria-hidden="true">
+            <span>{rareCount}</span>
+          </div>
+          <div className="hidden-encounter-rare-callout__body">
+            <strong>{rareCount} 只专属强力稀有</strong>
+            <span>只在这片隐藏区域出现，开通后去草丛探索。</span>
+          </div>
+          <div className="hidden-encounter-rare-callout__mystery" aria-hidden="true">
+            {Array.from({ length: rareCount }).map((_, index) => (
+              <span key={index}>?</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="spring-restore-card__facts" aria-label="隐藏遭遇区开启信息">
+          <div className="spring-restore-card__fact">
+            <span className="spring-restore-card__fact-label">开路费用</span>
+            <span className="spring-restore-card__fact-value">
+              <i className="fa-solid fa-coins" aria-hidden="true"></i>
+              {displayCost} 金币
+            </span>
+          </div>
+          <div className="spring-restore-card__fact">
+            <span className="spring-restore-card__fact-label">当前金币</span>
+            <span className="spring-restore-card__fact-value">{formattedGold}</span>
+          </div>
+        </div>
+
+        {(!canAfford || error) && (
+          <p className="spring-restore-card__warning" role="alert">
+            {error || `金币不足，还需要 ${(displayCost - displayGold).toLocaleString('zh-CN')} 金币。`}
+          </p>
+        )}
+
+        <div className="spring-restore-card__actions">
+          <button type="button" className="game-soft-button spring-restore-card__button" onClick={onCancel} disabled={busy}>
+            暂不开启
+          </button>
+          <button type="button" className="game-primary-button spring-restore-card__button spring-restore-card__button--confirm" onClick={onConfirm} disabled={busy || !canAfford}>
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-unlock'}`} aria-hidden="true"></i>
+            {busy ? '开启中' : `支付 ${displayCost} 金币`}
           </button>
         </div>
       </div>
@@ -9573,6 +11097,7 @@ export default function OriginalGame({ user, onLogout }) {
   const entryPreloadStallRecoveringRef = useRef(false);
   const [entryPreloadRetryNonce, setEntryPreloadRetryNonce] = useState(0);
   const entryPreloadRunIdRef = useRef(0);
+  const entryPreloadMaxPercentRef = useRef(0);
   const entryPreloadForceRetryRef = useRef(false);
   const entryPreloadCompletedForUserRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('idle');
@@ -9670,6 +11195,7 @@ export default function OriginalGame({ user, onLogout }) {
   useEffect(() => {
     entryPreloadCompletedForUserRef.current = null;
     entryPreloadRunIdRef.current += 1;
+    entryPreloadMaxPercentRef.current = 0;
     setEntryAssetsReady(false);
     setEntryPreloadError(null);
     setEntryPreloadProgress(null);
@@ -9680,7 +11206,7 @@ export default function OriginalGame({ user, onLogout }) {
     entryPreloadStallRecoveringRef.current = true;
     setEntryPreloadStalled(false);
     try {
-      await clearClientCaches();
+      await clearClientCaches({ preserveRuntimeAssetCaches: true });
       resetEntryPreloadSession({ clearImageCache: true });
       clearEntryPreloadMarks();
       entryPreloadCompletedForUserRef.current = null;
@@ -9706,12 +11232,13 @@ export default function OriginalGame({ user, onLogout }) {
 
     const runId = entryPreloadRunIdRef.current + 1;
     entryPreloadRunIdRef.current = runId;
+    entryPreloadMaxPercentRef.current = 0;
     setEntryAssetsReady(false);
     setEntryPreloadError(null);
     setEntryPreloadStalled(false);
     setEntryPreloadProgress({
-      phase: forceRetry ? '正在重新加载游戏素材' : '正在准备冒险世界',
-      detail: '',
+      phase: forceRetry ? '正在重新加载游戏素材' : '正在确认本地缓存',
+      detail: forceRetry ? '正在清理旧缓存并重新准备素材…' : '正在检查已缓存的图鉴、音频和地图素材…',
       percent: 0,
       loaded: 0,
       total: 0
@@ -9745,7 +11272,14 @@ export default function OriginalGame({ user, onLogout }) {
           lastProgressAt = Date.now();
           setEntryPreloadStalled(false);
         }
-        setEntryPreloadProgress(progress);
+        const stableProgress = { ...(progress || {}) };
+        if (Number.isFinite(stableProgress.percent)) {
+          const safePercent = Math.min(100, Math.max(0, Number(stableProgress.percent)));
+          const monotonicPercent = Math.max(entryPreloadMaxPercentRef.current, safePercent);
+          entryPreloadMaxPercentRef.current = monotonicPercent;
+          stableProgress.percent = monotonicPercent;
+        }
+        setEntryPreloadProgress(stableProgress);
       }
     }).then(() => {
       if (cancelled || entryPreloadRunIdRef.current !== runId) return;
@@ -9869,7 +11403,11 @@ export default function OriginalGame({ user, onLogout }) {
   const [legacyTeacherRewardRecovery, setLegacyTeacherRewardRecovery] = useState(null);
   const [pendingMonsterAcquisition, setPendingMonsterAcquisition] = useState(null);
   const [pendingBattleEventConfirm, setPendingBattleEventConfirm] = useState(null);
+  const [pendingNpcBattleConfirm, setPendingNpcBattleConfirm] = useState(null);
   const [battleEventConfirmBusy, setBattleEventConfirmBusy] = useState(false);
+  const [pendingHiddenEncounterUnlock, setPendingHiddenEncounterUnlock] = useState(null);
+  const [hiddenEncounterUnlockBusy, setHiddenEncounterUnlockBusy] = useState(false);
+  const hiddenEncounterBlockedNoticeRef = useRef({ key: '', shownAt: 0 });
   const [pendingSpringRestoreConfirm, setPendingSpringRestoreConfirm] = useState(null);
   const [springRestoreBusy, setSpringRestoreBusy] = useState(false);
   const [springRestoreAnimation, setSpringRestoreAnimation] = useState(null);
@@ -9978,8 +11516,11 @@ export default function OriginalGame({ user, onLogout }) {
     resetConfirmOpen ||
     battleModalScreenOpen ||
     Boolean(pendingBattleEventConfirm) ||
+    Boolean(pendingNpcBattleConfirm) ||
+    Boolean(pendingHiddenEncounterUnlock) ||
     Boolean(pendingSpringRestoreConfirm) ||
     Boolean(pendingFastTravel) ||
+    hiddenEncounterUnlockBusy ||
     Boolean(fastTravelTransitTarget) ||
     fastTravelBusy ||
     Boolean(mapWarpTransitTarget) ||
@@ -9992,7 +11533,7 @@ export default function OriginalGame({ user, onLogout }) {
     gameOver
   );
   const notificationDisplayMode = view === 'battle' ? 'battle' : 'default';
-  const isGrowthModalSuppressed = showLaunchScreen || launchTransitionActive || battleModalScreenOpen || Boolean(pendingBattleEventConfirm) || Boolean(pendingSpringRestoreConfirm) || Boolean(pendingFastTravel) || Boolean(fastTravelTransitTarget) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || view !== 'map';
+  const isGrowthModalSuppressed = showLaunchScreen || launchTransitionActive || battleModalScreenOpen || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || Boolean(pendingFastTravel) || Boolean(fastTravelTransitTarget) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || view !== 'map';
   const hasPendingLevelUpCelebrations = levelUpCelebrationQueue.length > 0;
   const isGrowthEventModalBlocked = (
     isGrowthModalSuppressed ||
@@ -10261,7 +11802,7 @@ export default function OriginalGame({ user, onLogout }) {
       type,
       sequence: notificationSequenceRef.current += 1
     });
-    if (!item) return;
+    if (!item) return false;
 
     const visibleNotifications = notificationVisibleRef.current;
     if (!notificationDisplayBlockedRef.current) {
@@ -10270,12 +11811,13 @@ export default function OriginalGame({ user, onLogout }) {
       notificationActiveRef.current.add(item.dedupeKey);
       notificationVisibleRef.current = [item];
       setNotifications([item]);
-      return;
+      return true;
     }
 
     clearVisibleNotificationRuntime();
     replaceQueuedNotificationRuntime(item);
     bumpNotificationQueueVersion();
+    return true;
   }, [
     bumpNotificationQueueVersion,
     clearNotificationRuntimeItem,
@@ -10460,7 +12002,7 @@ export default function OriginalGame({ user, onLogout }) {
     const resolvedMoveKey = effectMoveKey || moveKey;
     if (!resolvedMove) return;
     const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
-    const visualId = `${resolvedMoveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const visualId = `${moveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setMoveVisualEvent({
       id: visualId,
       moveKey: resolvedMoveKey,
@@ -11137,26 +12679,29 @@ export default function OriginalGame({ user, onLogout }) {
         const backendGold = typeof resources.gold === 'number'
           ? resources.gold
           : (typeof u?.gold === 'number' ? u.gold : DEFAULT_STARTING_GOLD);
-        const cloudGameData = saveRow?.game_data ?? createDefaultCloudGameData(backendGold);
+        const rawCloudGameData = saveRow?.game_data ?? createDefaultCloudGameData(backendGold);
+        const loadedCloudRevision = Number(saveRow?.save_revision) || getCloudSaveRevision(saveRow?.game_data);
+        const cloudGameData = rawCloudGameData;
+        const playerPositionDraftApplied = cloudGameData !== rawCloudGameData;
         const normalized = normalizeCloudGameData(cloudGameData, backendGold);
         if (!normalized) throw new Error('云端存档格式无效。');
         const mapContentMigrated = shouldPersistMapContentMigration(cloudGameData);
 
         resetLocalBattleEventCompletionState();
         applyCloudGameDataRef.current(normalized, resources);
-        cloudSaveRevisionRef.current = Number(saveRow?.save_revision) || getCloudSaveRevision(saveRow?.game_data);
+        cloudSaveRevisionRef.current = loadedCloudRevision;
         const normalizedSnapshot = JSON.stringify(createCloudSnapshot(normalized));
         const rawCloudSnapshot = saveRow?.game_data ? JSON.stringify(saveRow.game_data) : '';
         const hadExpOverflow = findExpOverflowMonsters([
-          ...normalizeMonsterAssetList(cloudGameData.playerTeam),
-          ...normalizeMonsterAssetList(cloudGameData.storageBox),
+          ...normalizeMonsterAssetList(rawCloudGameData.playerTeam),
+          ...normalizeMonsterAssetList(rawCloudGameData.storageBox),
         ]).length > 0;
-        const repairedBattleTurn = shouldRepairBattleTurnOnLoad(cloudGameData);
+        const repairedBattleTurn = shouldRepairBattleTurnOnLoad(rawCloudGameData);
         latestCloudSnapshotRef.current = createCloudSnapshot(normalized);
         lastSavedSnapshotRef.current = saveRow?.game_data
-          ? (hadExpOverflow || repairedBattleTurn || mapContentMigrated ? rawCloudSnapshot : normalizedSnapshot)
+          ? (hadExpOverflow || repairedBattleTurn || mapContentMigrated || playerPositionDraftApplied ? rawCloudSnapshot : normalizedSnapshot)
           : '';
-        if (repairedBattleTurn || mapContentMigrated) {
+        if (repairedBattleTurn || mapContentMigrated || playerPositionDraftApplied) {
           criticalCloudSaveRequestedRef.current = true;
         }
         setLastSavedAt(saveRow?.last_saved ?? null);
@@ -12297,13 +13842,30 @@ export default function OriginalGame({ user, onLogout }) {
     if (defeatedRewardMons.length === 0) return normalizeBattleRewardSummary(null);
     const participants = participatedMonIds.filter(Boolean);
     const targetParticipantIds = participants.length > 0 ? [...new Set(participants)] : [activePlayerId].filter(Boolean);
-    const rewards = calculateBattleRewardTotals({
+    const trainerRole = battleEnvironment?.eventRole || 'normal';
+    const baseRewards = calculateBattleRewardTotals({
       defeatedMons: defeatedRewardMons,
       playerAverageLevel: getPlayerAverageLevel(playerTeam),
       battleKind: defeatedBattleKind,
       participants: targetParticipantIds.length || 1,
-      trainerRole: battleEnvironment?.eventRole || 'normal'
+      trainerRole
     });
+    const repeatableRound = normalizeTrainerRole(trainerRole) === 'minigame'
+      ? getTrainerVictoryCount(
+        worldRef.current,
+        battleEnvironment?.eventId,
+        battleEnvironment?.mapName || currentMapName
+      ) + 1
+      : 0;
+    const repeatableGoldBonus = repeatableRound > 0
+      ? getRepeatableTrainerGoldBonusMultiplier(repeatableRound)
+      : 1;
+    const rewards = repeatableGoldBonus > 1
+      ? {
+        ...baseRewards,
+        gold: Math.max(baseRewards.gold, Math.round(baseRewards.gold * repeatableGoldBonus))
+      }
+      : baseRewards;
 
     const rewardGrowthPreview = applyBattleRewardGrowth({
       playerTeam,
@@ -12346,6 +13908,7 @@ export default function OriginalGame({ user, onLogout }) {
 	        const shouldApplyBattleCompletionWithRewards =
 	          defeatedBattleKind === 'trainer' &&
 	          ['boss', 'trainer'].includes(rewardCompletionMeta.eventType) &&
+            !isRepeatableTrainerEvent(rewardCompletionMeta.eventType, rewardCompletionMeta.eventRole) &&
 	          rewardCompletionMeta.eventId;
 	        const rewardCompletionResult = shouldApplyBattleCompletionWithRewards
 	          ? applyConfiguredBattleCompletionToWorld(rewardSnapshot.world, rewardCompletionMeta)
@@ -13046,6 +14609,7 @@ export default function OriginalGame({ user, onLogout }) {
 	          const completedEventRole = completionMeta.eventRole;
 	          const isDailyScalingTrainer = isDailyScalingTrainerEvent(completedEventType, completedEventRole);
 	          const isDailyVariantBattle = isDailyVariantBattleEvent(completedEventType, completedEventRole);
+          const isRepeatableTrainerBattle = isRepeatableTrainerEvent(completedEventType, completedEventRole);
           const victoryDisplayName = getBattleVictoryDisplayName({
             battleKind,
             battleEnvironment: eventMeta,
@@ -13056,13 +14620,13 @@ export default function OriginalGame({ user, onLogout }) {
             currentMapName: committedSnapshot.currentMapName,
             playerPos: committedSnapshot.playerPos
           });
-          const completionKey = getConfiguredBattleCompletionKey(completedEventType);
+          const completionKey = isRepeatableTrainerBattle ? null : getConfiguredBattleCompletionKey(completedEventType);
           const wasAlreadyCompleted = completedEventType === 'boss'
             ? hasCompletedBossEvent(nextWorld, completedMapName, completedEventId)
             : completionKey
               ? hasMapScopedWorldEventId(nextWorld, completionKey, completedMapName, completedEventId)
               : true;
-          const allowRewardSaveCompletionReplay = completedEventType !== 'challenge';
+          const allowRewardSaveCompletionReplay = completedEventType !== 'challenge' && !isRepeatableTrainerBattle;
           const wasPreCompletedByCurrentBattleRewardSave =
             allowRewardSaveCompletionReplay &&
             wasAlreadyCompleted &&
@@ -13091,7 +14655,7 @@ export default function OriginalGame({ user, onLogout }) {
           let completionLogs = [];
           let unlockSummaries = [];
 
-          let shouldRefreshMapProgress = Boolean(completedEventId);
+          let shouldRefreshMapProgress = Boolean(completedEventId && !isRepeatableTrainerBattle);
 
           if (completionKey && completedEventId && shouldGrantFirstClearCompletion) {
             if (!wasAlreadyCompleted) {
@@ -13116,55 +14680,85 @@ export default function OriginalGame({ user, onLogout }) {
           }
 
           if (isDailyVariantBattle && completedEventId) {
-            const wasAlreadyDailyCompleted = hasDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);
-            const wasDailyPreCompletedByCurrentBattleRewardSave =
-              wasAlreadyDailyCompleted &&
-              committedSnapshot.view === 'battle' &&
-              committedSnapshot.battlePhase !== 'victory' &&
-              battleEventCompletion?.mapName === completedMapName &&
-              battleEventCompletion?.eventType === completedEventType &&
-              battleEventCompletion?.eventId === completedEventId;
-            if (!wasAlreadyDailyCompleted || wasDailyPreCompletedByCurrentBattleRewardSave) {
-              if (!wasAlreadyDailyCompleted) {
-                nextWorld = appendDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);
+            if (isRepeatableChallenge) {
+              const eventMetaUnlockStage = Math.trunc(Number(eventMeta?.challengeRareUnlockStage));
+              const hasCompleteChallengeUnlockSnapshot = (
+                Array.isArray(eventMeta?.challengeRareUnlockBatch) &&
+                Number.isSafeInteger(eventMetaUnlockStage) &&
+                eventMetaUnlockStage > 0
+              );
+              const fallbackChallengeUnlockStage = challengeRareUnlockStageBefore + 1;
+              const challengeRareUnlockSnapshot = hasCompleteChallengeUnlockSnapshot
+                ? eventMeta
+                : {
+                  ...(eventMeta || {}),
+                  challengeRareUnlockBatch: undefined,
+                  challengeRareUnlockStage: fallbackChallengeUnlockStage,
+                  challengeRareUnlockedCount: getChallengeRareUnlockedCountForStage(
+                    completedEvent,
+                    fallbackChallengeUnlockStage
+                  )
+                };
+              const challengeRareUnlockContext = getChallengeRareUnlockContext({
+                event: completedEvent,
+                world: nextWorld,
+                mapName: completedMapName,
+                context: challengeRareUnlockSnapshot
+              });
+              const challengeRareUnlockStage = challengeRareUnlockContext.unlockStage;
+              const challengeRareUnlockBatch = challengeRareUnlockContext.unlockBatch;
+              const challengeRunRewardItems = getChallengeRunRewardItems({
+                mapName: completedMapName,
+                teamSize: completedChallengeTeamSize
+              });
+              const mergedChallengeRewardItems = mergeNormalizedMapRewardItems([
+                ...eventRewardItems,
+                ...challengeRunRewardItems
+              ]);
+              if (mergedChallengeRewardItems.length > 0) {
+                eventRewardItems = mergedChallengeRewardItems;
+                completionLogs.push(`${wasAlreadyCompleted ? '本次试炼奖励' : '试炼奖励'}：${describeMapRewardItems(eventRewardItems).join('、')}。`);
               }
-              if (isRepeatableChallenge) {
-                const challengeRareUnlockStage = challengeRareUnlockStageBefore + 1;
-                const challengeRareUnlockBatch = getChallengeRareUnlockBatch(completedEvent, challengeRareUnlockStageBefore);
-                const challengeRunRewardItems = getChallengeRunRewardItems({
+              nextWorld = setTrainerVictoryCount(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName);
+              if (challengeRareUnlockBatch.length > 0) {
+                completionLogs.push(buildChallengeRareUnlockMessage({
                   mapName: completedMapName,
-                  teamSize: completedChallengeTeamSize
-                });
-                const mergedChallengeRewardItems = mergeNormalizedMapRewardItems([
-                  ...eventRewardItems,
-                  ...challengeRunRewardItems
-                ]);
-                if (mergedChallengeRewardItems.length > 0) {
-                  eventRewardItems = mergedChallengeRewardItems;
-                  completionLogs.push(`${wasAlreadyCompleted ? '本次试炼奖励' : '试炼奖励'}：${describeMapRewardItems(eventRewardItems).join('、')}。`);
-                }
-                nextWorld = setTrainerVictoryCount(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName);
-                if (challengeRareUnlockBatch.length > 0) {
-                  completionLogs.push(buildChallengeRareUnlockMessage({
+                  event: completedEvent,
+                  rarePool: challengeRareUnlockBatch,
+                  unlockStage: challengeRareUnlockStage
+                }));
+                unlockSummaries = [
+                  ...unlockSummaries,
+                  ...buildBattleRareUnlockSummaries({
                     mapName: completedMapName,
                     event: completedEvent,
-                    rarePool: challengeRareUnlockBatch,
-                    unlockStage: challengeRareUnlockStage
-                  }));
-                  unlockSummaries = [
-                    ...unlockSummaries,
-                    ...buildBattleRareUnlockSummaries({
-                      mapName: completedMapName,
-                      event: completedEvent,
-                      rarePoolOverride: challengeRareUnlockBatch,
-                      unlockStage: challengeRareUnlockStage,
-                      unlockedCount: getChallengeRareUnlockedCountForStage(completedEvent, challengeRareUnlockStage)
-                    })
-                  ];
-                } else if (getChallengeRarePool(completedEvent).length > 0) {
-                  completionLogs.push(`${victoryDisplayName}隐藏生态已全部解锁，继续挑战会提升试炼强度。`);
+                    rarePoolOverride: challengeRareUnlockBatch,
+                    unlockStage: challengeRareUnlockStage,
+                    unlockedCount: challengeRareUnlockContext.unlockedCount
+                  })
+                ];
+              } else if (getChallengeRarePool(completedEvent).length > 0) {
+                completionLogs.push(`${victoryDisplayName}隐藏生态已全部解锁，之后会保持 6 连战并随机轮换守护者。`);
+              }
+              completionLogs.push(getDailyTrainerVictoryText({
+                eventName: victoryDisplayName,
+                mapName: completedMapName,
+                world: nextWorld,
+                eventId: completedEventId
+              }));
+            } else {
+              const wasAlreadyDailyCompleted = hasDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);
+              const wasDailyPreCompletedByCurrentBattleRewardSave =
+                wasAlreadyDailyCompleted &&
+                committedSnapshot.view === 'battle' &&
+                committedSnapshot.battlePhase !== 'victory' &&
+                battleEventCompletion?.mapName === completedMapName &&
+                battleEventCompletion?.eventType === completedEventType &&
+                battleEventCompletion?.eventId === completedEventId;
+              if (!wasAlreadyDailyCompleted || wasDailyPreCompletedByCurrentBattleRewardSave) {
+                if (!wasAlreadyDailyCompleted) {
+                  nextWorld = appendDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);
                 }
-              } else {
                 const dailyVictoryCountScope = isDailyScalingTrainer ? completedMapName : null;
                 const hasRewardPhaseVictoryCount = getTrainerVictoryCount(nextWorld, completedEventId, dailyVictoryCountScope) > 0;
                 if (!wasAlreadyDailyCompleted || !hasRewardPhaseVictoryCount) {
@@ -13174,14 +14768,41 @@ export default function OriginalGame({ user, onLogout }) {
                     dailyVictoryCountScope
                   );
                 }
+                completionLogs.push(getDailyTrainerVictoryText({
+                  eventName: victoryDisplayName,
+                  mapName: completedMapName,
+                  world: nextWorld,
+                  eventId: completedEventId
+                }));
               }
-              completionLogs.push(getDailyTrainerVictoryText({
-                eventName: victoryDisplayName,
-                mapName: completedMapName,
-                world: nextWorld,
-                eventId: completedEventId
-              }));
             }
+          }
+
+          if (isRepeatableTrainerBattle && completedEventId) {
+            nextWorld = incrementTrainerVictoryCount(nextWorld, completedEventId, completedMapName);
+            const nextRounds = getTrainerVictoryCount(nextWorld, completedEventId, completedMapName);
+            const scaledNextTeam = resolveDailyBattleTeamConfig(completedEventProps.team, {
+              mapName: completedMapName,
+              world: nextWorld,
+              eventId: completedEventId,
+              eventType: completedEventType,
+              role: completedEventRole,
+              dailyVariantSpeciesIds: completedEventProps.dailyVariantSpeciesIds,
+              dailyVariantLevelJitter: completedEventProps.dailyVariantLevelJitter
+            });
+            const levels = getConfiguredBattleLevels(scaledNextTeam);
+            const nextMaxLevel = levels.length > 0 ? Math.max(...levels) : 0;
+            const bounds = getTrainerDifficultyBounds({
+              role: completedEventRole,
+              mapConfig: getMapConfig(completedMapName),
+              bossLevelCap: getMapBossLevelCap(completedMapName)
+            });
+            const isAtRepeatableCap = nextMaxLevel >= bounds.maxLevel;
+            completionLogs.push(
+              isAtRepeatableCap
+                ? `${victoryDisplayName}第 ${nextRounds} 轮挑战完成，已达到 Lv.${bounds.maxLevel} 顶级阵容。`
+                : `${victoryDisplayName}第 ${nextRounds} 轮挑战完成，下一轮难度提升。`
+            );
           }
 
           if (shouldRefreshMapProgress) {
@@ -13340,6 +14961,7 @@ export default function OriginalGame({ user, onLogout }) {
 	            view: 'team',
               battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
               battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+	            activeEnemyId: queuedEnemySendOutPhaseData?.enemyMon?.id || committedSnapshot.activeEnemyId,
 	            battlePhase: queuedEnemySendOutPhaseData ? 'sendout' : 'active',
 	            battlePhaseData: queuedEnemySendOutPhaseData,
 	            turn: 'player',
@@ -13515,7 +15137,8 @@ export default function OriginalGame({ user, onLogout }) {
 
     if (move.effect === 'mimic') {
       const mimickedMoveKey = getLastExecutedMoveKey(defender);
-      if (!mimickedMoveKey || mimickedMoveKey === 'mimic') {
+      const mimickedMove = MOVES[mimickedMoveKey];
+      if (!mimickedMoveKey || mimickedMove?.effect === 'mimic') {
         await addResultLog(`${attackerName} 使用了 ${move.name}，但没有可模仿的技能。`);
         updateBattleMonBySide({
           side: attackerSide,
@@ -14938,15 +16561,41 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       return;
     }
 
-    const rareEncounter = pickProgressRareEncounter({
+    const encounterZoneMeta = resolveEncounterZoneMeta({
       mapName: currentMapName,
-      world,
-      basePokemonId: payload.pokemonId,
-      baseLevel: payload.level
+      zoneId: payload.zoneId,
+      encounterTableId: payload.encounterTableId
     });
+    const hiddenZoneBlockedSpeciesIds = encounterZoneMeta.hiddenZone
+      ? getHiddenEncounterBlockedIdSet()
+      : null;
+    let basePokemonId = payload.pokemonId ?? getRandomWildPokemon(currentMapName);
+    let baseLevel = payload.level ?? getRandomWildLevel(currentMapName);
+    if (
+      encounterZoneMeta.hiddenZone &&
+      Number.isInteger(basePokemonId) &&
+      hiddenZoneBlockedSpeciesIds?.has(basePokemonId)
+    ) {
+      const rerolledEncounter = pickEncounterFromEncounterTable({
+        encounterTableId: encounterZoneMeta.encounterTableId || payload.encounterTableId,
+        excludedPokemonIds: hiddenZoneBlockedSpeciesIds
+      });
+      if (rerolledEncounter) {
+        basePokemonId = rerolledEncounter.pokemonId;
+        baseLevel = rerolledEncounter.level;
+      }
+    }
+    const rareEncounter = encounterZoneMeta.hiddenZone
+      ? null
+      : pickProgressRareEncounter({
+        mapName: currentMapName,
+        world,
+        basePokemonId,
+        baseLevel
+      });
     const wildPokemonId =
-      rareEncounter?.pokemonId ?? payload.pokemonId ?? getRandomWildPokemon(currentMapName)
-    const newEnemyLevel = rareEncounter?.level ?? payload.level ?? getRandomWildLevel(currentMapName)
+      rareEncounter?.pokemonId ?? basePokemonId ?? getRandomWildPokemon(currentMapName)
+    const newEnemyLevel = rareEncounter?.level ?? baseLevel ?? getRandomWildLevel(currentMapName)
 
     const energyCost = getBattleEnergyCost({ battleKind: 'wild', mapLevel });
     const resources = await refreshPlayerResources();
@@ -14972,6 +16621,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const battleLeadMon = playerTeam.find((mon) => mon.id === battleLeadId) || playerTeam[0];
 
     const mapInfo = getMapConfig(currentMapName).displayName;
+    const encounterRarity = buildWildEncounterRarityMeta({
+      pokemonId: wildPokemonId,
+      encounterTableId: payload.encounterTableId,
+      encounterRate: payload.encounterRate,
+      rareEncounter
+    });
     const battleEnvironment = createBattleEnvironment({
       battleKind: 'wild',
       currentMapName,
@@ -14979,6 +16634,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       zoneId: payload.zoneId,
       zoneName: payload.zoneName,
       terrainType: payload.terrainType,
+      encounterRarity,
       triggerPosition: payload.playerPos,
     });
     const zoneHint = payload.zoneName ? `【${payload.zoneName}】` : '';
@@ -15081,6 +16737,11 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       addNotification('物品无效，无法购买。', 'warning');
       return { success: false, message: '物品无效。' };
     }
+    if (itemDetails.notForSale) {
+      addLog(`商店: ${itemDetails.name} 不能购买，只能通过探索获得。`);
+      addNotification(`${itemDetails.name} 只能通过探索获得。`, 'info');
+      return { success: false, message: '该物品不可购买。' };
+    }
     if (!user?.id || !hasLoadedCloudSave) {
       const message = '云端未就绪，暂不能购买。';
       addLog(`商店: ${message}`);
@@ -15163,6 +16824,69 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     if (effectiveType === 'info') {
       const signX = tileX ?? playerPos?.x;
       const signY = tileY ?? playerPos?.y;
+      if (mapEvent?.type === 'sign' && mapEventProps.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND) {
+        if (!user?.id || !hasLoadedCloudSave) {
+          addNotification('云端未就绪，暂不能开启隐藏通路。', 'error');
+          return false;
+        }
+
+        const hiddenZoneName = typeof mapEventProps.hiddenZoneName === 'string' && mapEventProps.hiddenZoneName.length > 0
+          ? mapEventProps.hiddenZoneName
+          : '隐藏遭遇区';
+        const gateFlagKey = getHiddenEncounterGateFlagKey(currentMapName, mapEvent);
+        if (isHiddenEncounterGateUnlocked(interactionWorld, currentMapName, mapEvent)) {
+          setMapGrid((prev) => buildMapGridForWorld(currentMapName, interactionWorld, prev));
+          addNotification(mapEventProps.unlockSuccessText || `${hiddenZoneName}已经开放。`, 'info');
+          gameAudio.playUiSelect();
+          return false;
+        }
+
+        const unlockCost = Math.max(1, Math.trunc(Number(mapEventProps.goldCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+        const gateKey = `${currentMapName}:${eventId || mapEvent.id || 'hidden_gate'}:${tileX ?? 'x'}:${tileY ?? 'y'}`;
+        const currentGold = latestPlayerResourcesRef.current?.gold ?? playerGold;
+
+        if (pendingHiddenEncounterUnlock?.key === gateKey || hiddenEncounterUnlockBusy) {
+          return false;
+        }
+
+        setPendingHiddenEncounterUnlock({
+          key: gateKey,
+          mapName: currentMapName,
+          zoneName: hiddenZoneName,
+          flagKey: gateFlagKey,
+          unlockCost,
+          currentGold,
+          description: typeof mapEventProps.unlockDescription === 'string' && mapEventProps.unlockDescription.length > 0
+            ? mapEventProps.unlockDescription
+            : formatHiddenEncounterGateUnlockDescription({ hiddenZoneName, props: mapEventProps }),
+          exclusiveRareCount: getHiddenEncounterGateExclusiveRareCount(mapEventProps),
+          successText: typeof mapEventProps.unlockSuccessText === 'string' && mapEventProps.unlockSuccessText.length > 0
+            ? mapEventProps.unlockSuccessText
+            : `${hiddenZoneName}的隐秘通路已经打开。`,
+          error: currentGold < unlockCost ? `开启需要 ${unlockCost} 金币，当前金币不足。` : '',
+          tileX,
+          tileY,
+          context: {
+            ...context,
+            tileX,
+            tileY,
+            mapEvent,
+            playerPos: eventPlayerPos,
+            encounterCooldownSteps: eventCooldown
+          }
+        });
+        refreshPlayerResources()
+          .then((resources) => {
+            setPendingHiddenEncounterUnlock((current) => (
+              current?.key === gateKey
+                ? { ...current, currentGold: resources.gold, error: resources.gold < unlockCost ? `开启需要 ${unlockCost} 金币，当前金币不足。` : '' }
+                : current
+            ));
+          })
+          .catch(() => {});
+        gameAudio.playUiSelect();
+        return false;
+      }
       const battleEventInfoText = getConfiguredBattleEventInfoMessage({
         mapName: currentMapName,
         world: interactionWorld,
@@ -15200,7 +16924,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       const fixedItemDetails = fixedItemType
         ? resolveInventoryItemDetails(fixedItemType, mapEventProps.itemKey)
         : null;
-      const allItems = [...Object.keys(POKEBALLS), ...Object.keys(POTIONS)];
+      const allItems = [
+        ...Object.entries(POKEBALLS).filter(([, item]) => !item.notForSale).map(([key]) => key),
+        ...Object.keys(POTIONS)
+      ];
       const randomKey = allItems[Math.floor(Math.random() * allItems.length)];
       const isBall = Boolean(POKEBALLS[randomKey]);
       const itemType = fixedItemDetails ? fixedItemType : (isBall ? 'pokeball' : 'potion');
@@ -15213,7 +16940,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification('云端未就绪，暂不能拾取。', 'error');
         return false;
       }
-      if (eventId && hasWorldEventId(interactionWorld, 'collectedEventIds', eventId)) {
+      if (eventId && hasCollectedMapEvent(interactionWorld, currentMapName, eventId)) {
         setWorld((current) => (
           JSON.stringify(uniqueStringList(current?.collectedEventIds)) === JSON.stringify(uniqueStringList(interactionWorld?.collectedEventIds))
             ? current
@@ -15242,7 +16969,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           );
           const worldPositionPatch = buildWorldPositionPatch(baseSnapshot, liveSnapshotPlayerPos);
           const nextWorldBase = eventId
-            ? appendWorldEventId(worldPositionPatch.world || baseSnapshot.world, 'collectedEventIds', eventId)
+            ? appendCollectedMapEvent(worldPositionPatch.world || baseSnapshot.world, currentMapName, eventId)
             : worldPositionPatch.world;
           const nextWorld = withUpdatedMapProgress(nextWorldBase, currentMapName);
           const nextInventory = mergeInventoryEntries(baseSnapshot.playerInventory, itemType, itemKey, quantity);
@@ -15482,17 +17209,21 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       const roleBalance = getTrainerRoleBalance(battleEventRole);
       const isDailyScalingTrainer = isDailyScalingTrainerEvent(battleEventType, battleEventRole);
       const isDailyVariantBattle = isDailyVariantBattleEvent(battleEventType, battleEventRole);
+      const isProgressiveRepeatableTrainer = isRepeatableTrainerEvent(battleEventType, battleEventRole);
+      const usesProgressiveBattleState = isDailyVariantBattle || isProgressiveRepeatableTrainer;
       const eventName = battleEventProps.name || (
         battleEventType === 'boss' ? '区域首领' : battleEventType === 'challenge' ? '区域试炼' : '训练家'
       );
       const completionKey = getConfiguredBattleCompletionKey(battleEventType);
-      const isCompletedBattleEvent = battleEventType === 'boss'
-        ? hasCompletedBossEvent(interactionWorld, currentMapName, battleEventId)
-        : Boolean(
-          battleEventId &&
-          completionKey &&
-          hasMapScopedWorldEventId(interactionWorld, completionKey, currentMapName, battleEventId)
-        );
+      const isCompletedBattleEvent = isProgressiveRepeatableTrainer
+        ? false
+        : battleEventType === 'boss'
+          ? hasCompletedBossEvent(interactionWorld, currentMapName, battleEventId)
+          : Boolean(
+            battleEventId &&
+            completionKey &&
+            hasMapScopedWorldEventId(interactionWorld, completionKey, currentMapName, battleEventId)
+          );
       const battleEventLockKey = getBattleEventInteractionLockKey({
         world: interactionWorld,
         mapName: currentMapName,
@@ -15526,7 +17257,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
-      if (battleEventCompletedLockKeys.some((key) => completedBattleEventLockRef.current.has(key))) {
+      if (battleEventType !== 'challenge' && battleEventCompletedLockKeys.some((key) => completedBattleEventLockRef.current.has(key))) {
         markCompletedBattleEventLocally({
           world: interactionWorld,
           mapName: currentMapName,
@@ -15549,7 +17280,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
-      if (isDailyVariantBattle && battleEventId && hasDailyTrainerBattleEvent(interactionWorld, currentMapName, battleEventId)) {
+      if (battleEventType !== 'challenge' && isDailyVariantBattle && battleEventId && hasDailyTrainerBattleEvent(interactionWorld, currentMapName, battleEventId)) {
         markCompletedBattleEventLocally({
           world: interactionWorld,
           mapName: currentMapName,
@@ -15605,7 +17336,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         playerAverageLevel: playerAvgLevel,
         leadLevel: battleLeadMon?.level
       });
-      const baseResolvedTeamConfig = isDailyVariantBattle
+      const baseResolvedTeamConfig = usesProgressiveBattleState
         ? resolveDailyBattleTeamConfig(battleEventProps.team, {
           mapName: currentMapName,
           world: interactionWorld,
@@ -15613,6 +17344,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           eventType: battleEventType,
           role: battleEventRole,
           challengeRarePool: battleEventProps.challengeRarePool,
+          challengeBattleGroups: battleEventProps.challengeBattleGroups,
           dailyVariantSpeciesIds: battleEventProps.dailyVariantSpeciesIds,
           dailyVariantLevelJitter: battleEventProps.dailyVariantLevelJitter
         })
@@ -15624,7 +17356,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         playerLevel: playerPressureLevel
       });
       const energyCost = getBattleEnergyCost({ battleKind: 'trainer', mapLevel });
-      const shouldStartBattleImmediately = battleEventType !== 'challenge' || context.skipBattleConfirm;
+      const shouldStartBattleImmediately = Boolean(context.skipBattleConfirm);
       let battleEventStartLockHeld = false;
       const releaseBattleEventStartLock = () => {
         if (!battleEventStartLockHeld || !battleEventLockKey) return;
@@ -15650,9 +17382,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (battleEventType === 'challenge' && !context.skipBattleConfirm) {
         const resolvedChallengeTeamSize = getConfiguredBattleOpponentCount(resolvedTeamConfig);
         const resolvedChallengeTitle = `${eventName} · ${resolvedChallengeTeamSize} 连战`;
-        const challengeRarePool = getChallengeRarePool(battleMapEvent);
-        const challengeRareUnlockStage = getChallengeRareUnlockStage(interactionWorld, battleMapEvent, currentMapName);
-        const nextChallengeRareUnlockBatch = getChallengeRareUnlockBatch(battleMapEvent, challengeRareUnlockStage);
+        const challengeRareUnlockContext = getChallengeRareUnlockContext({
+          event: battleMapEvent,
+          world: interactionWorld,
+          mapName: currentMapName
+        });
+        const nextChallengeRareUnlockBatch = challengeRareUnlockContext.unlockBatch;
         const challengeRunRewardItems = getChallengeRunRewardItems({
           mapName: currentMapName,
           teamSize: resolvedChallengeTeamSize
@@ -15677,12 +17412,79 @@ const handleEncounter = useCallback(async (encounterPayload) => {
             ? `本次通关会解锁下一批隐藏生态。`
             : `本区域隐藏生态已全部解锁。`,
           unlockProgress: {
-            unlockedCount: getChallengeRareUnlockedCountForStage(battleMapEvent, challengeRareUnlockStage),
-            totalCount: challengeRarePool.length,
-            nextBatchIndex: Math.min(getChallengeRareUnlockStageCount(battleMapEvent), challengeRareUnlockStage + 1)
+            previousUnlockedCount: challengeRareUnlockContext.previousUnlockedCount,
+            unlockedCount: challengeRareUnlockContext.unlockedCount,
+            totalCount: challengeRareUnlockContext.totalCount,
+            nextBatchIndex: challengeRareUnlockContext.nextBatchIndex
           },
           battlePreviewTeam: resolvedTeamConfig,
           alreadyCompleted: isCompletedBattleEvent,
+          context: {
+            ...context,
+            tileX,
+            tileY,
+            mapEvent: battleMapEvent,
+            playerPos: eventPlayerPos,
+            encounterCooldownSteps: eventCooldown,
+            skipBattleConfirm: true,
+            challengeRareUnlockBatch: challengeRareUnlockContext.unlockBatch,
+            challengeRareUnlockStage: challengeRareUnlockContext.unlockStage,
+            challengeRareUnlockedCount: challengeRareUnlockContext.unlockedCount,
+            challengeRareTotalCount: challengeRareUnlockContext.totalCount
+          }
+        });
+        return false;
+      }
+
+      if (battleEventType !== 'challenge' && !context.skipBattleConfirm) {
+        const resolvedNpcTeamSize = getConfiguredBattleOpponentCount(resolvedTeamConfig);
+        const normalizedEventRole = normalizeTrainerRole(battleEventRole);
+        const npcRewardItems = mergeNormalizedMapRewardItems(battleEventProps.rewardItems);
+        const completedRepeatableRounds = normalizedEventRole === 'minigame'
+          ? getTrainerVictoryCount(interactionWorld, battleEventId, currentMapName)
+          : 0;
+        const npcRewardPreview = calculateConfiguredBattleRewardPreview({
+          teamConfig: resolvedTeamConfig,
+          playerAverageLevel: playerAvgLevel,
+          battleKind: 'trainer',
+          trainerRole: battleEventRole,
+          repeatableRound: normalizedEventRole === 'minigame' ? completedRepeatableRounds + 1 : 0
+        });
+        const defaultStatusChips = (() => {
+          if (normalizedEventRole === 'reward') {
+            return ['首胜限定'];
+          }
+          if (normalizedEventRole === 'minigame') {
+            return [
+              `第 ${completedRepeatableRounds + 1} 轮`,
+              '可重复挑战'
+            ];
+          }
+          if (normalizedEventRole === 'lieutenant') {
+            return ['首领印记'];
+          }
+          if (battleEventType === 'boss' || normalizedEventRole === 'boss') {
+            return ['区域关键战'];
+          }
+          return [isDailyScalingTrainer ? '今日首胜' : '常驻奖励'];
+        })();
+        setPendingNpcBattleConfirm({
+          type,
+          amount,
+          eventName,
+          eventTitle: battleEventProps.title || roleBalance.label,
+          dialogueText: battleEventProps.beforeBattleText || `${eventName}：要来一场对战吗？胜利后可以获得奖励。`,
+          ruleDescription: typeof battleEventProps.ruleDescription === 'string'
+            ? battleEventProps.ruleDescription
+            : '',
+          energyCost,
+          teamSize: resolvedNpcTeamSize,
+          levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
+          expectedGold: npcRewardPreview.gold,
+          rewardItems: npcRewardItems,
+          statusChips: defaultStatusChips,
+          eventRole: battleEventRole,
+          anchorDirection: eventPlayerPos?.direction || playerPosRef.current?.direction || 'up',
           context: {
             ...context,
             tileX,
@@ -15696,12 +17498,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
+      const challengeRareUnlockContext = battleEventType === 'challenge'
+        ? getChallengeRareUnlockContext({
+          event: battleMapEvent,
+          world: interactionWorld,
+          mapName: currentMapName,
+          context
+        })
+        : null;
       let newTeam = buildConfiguredOpponentTeam(resolvedTeamConfig, battleEventId || battleEventType);
       if (newTeam.length === 0) {
-        const fallbackLevelBonus = isDailyVariantBattle
+        const fallbackLevelBonus = usesProgressiveBattleState
           ? getTrainerVictoryCount(interactionWorld, battleEventId, currentMapName)
           : 0;
-        const fallbackLevelCap = isDailyVariantBattle
+        const fallbackLevelCap = usesProgressiveBattleState
           ? getTrainerDifficultyBounds({
             role: battleEventRole,
             mapConfig: currentMapConfig,
@@ -15743,6 +17553,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         eventName,
         eventTitle: battleEventProps.title || roleBalance.label,
         introText: battleIntroText,
+        challengeRareUnlockBatch: challengeRareUnlockContext?.unlockBatch || [],
+        challengeRareUnlockStage: challengeRareUnlockContext?.unlockStage || null,
+        challengeRareUnlockedCount: challengeRareUnlockContext?.unlockedCount ?? null,
+        challengeRareTotalCount: challengeRareUnlockContext?.totalCount ?? null,
         battleEventCompletion,
         eventPosition: battleMapEvent?.position || mapEvent?.position || { x: tileX, y: tileY },
         triggerPosition: eventPlayerPos,
@@ -15795,7 +17609,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     return false;
-  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, hasLoadedCloudSave, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
+  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, hasLoadedCloudSave, hiddenEncounterUnlockBusy, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingHiddenEncounterUnlock, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
 
   const handleCancelBattleEventConfirm = useCallback(() => {
     if (battleEventConfirmBusy) return;
@@ -15819,11 +17633,134 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
   }, [battleEventConfirmBusy, handleCollect, pendingBattleEventConfirm]);
 
+  const handleCancelNpcBattleConfirm = useCallback(() => {
+    if (battleEventConfirmBusy) return;
+    setPendingNpcBattleConfirm(null);
+  }, [battleEventConfirmBusy]);
+
+  const handleConfirmNpcBattleEvent = useCallback(async () => {
+    if (!pendingNpcBattleConfirm || battleEventConfirmBusy || battleEventConfirmInFlightRef.current) return;
+    battleEventConfirmInFlightRef.current = true;
+    setBattleEventConfirmBusy(true);
+    try {
+      await handleCollect(
+        pendingNpcBattleConfirm.type,
+        pendingNpcBattleConfirm.amount,
+        pendingNpcBattleConfirm.context
+      );
+    } finally {
+      battleEventConfirmInFlightRef.current = false;
+      setBattleEventConfirmBusy(false);
+      setPendingNpcBattleConfirm(null);
+    }
+  }, [battleEventConfirmBusy, handleCollect, pendingNpcBattleConfirm]);
+
   useEffect(() => {
-    if (view === 'map' || !pendingBattleEventConfirm) return;
-    setPendingBattleEventConfirm(null);
-    setBattleEventConfirmBusy(false);
-  }, [pendingBattleEventConfirm, view]);
+    if (view === 'map') return;
+    if (pendingBattleEventConfirm) setPendingBattleEventConfirm(null);
+    if (pendingNpcBattleConfirm) setPendingNpcBattleConfirm(null);
+    if (pendingBattleEventConfirm || pendingNpcBattleConfirm) setBattleEventConfirmBusy(false);
+  }, [pendingBattleEventConfirm, pendingNpcBattleConfirm, view]);
+
+  const handleCancelHiddenEncounterUnlock = useCallback(() => {
+    if (hiddenEncounterUnlockBusy) return;
+    setPendingHiddenEncounterUnlock(null);
+  }, [hiddenEncounterUnlockBusy]);
+
+  const handleConfirmHiddenEncounterUnlock = useCallback(async () => {
+    if (!pendingHiddenEncounterUnlock || hiddenEncounterUnlockBusy) return;
+    setHiddenEncounterUnlockBusy(true);
+    try {
+      if (!user?.id || !hasLoadedCloudSave) {
+        addNotification('云端未就绪，暂不能开启隐藏通路。', 'error');
+        return;
+      }
+
+      const unlockCost = Math.max(1, Math.trunc(Number(pendingHiddenEncounterUnlock.unlockCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
+      const zoneName = pendingHiddenEncounterUnlock.zoneName || '隐藏遭遇区';
+      const resources = await refreshPlayerResources();
+      if (resources.gold < unlockCost) {
+        const message = `开启需要 ${unlockCost} 金币，当前金币不足。`;
+        setPendingHiddenEncounterUnlock((current) => (
+          current?.key === pendingHiddenEncounterUnlock.key
+            ? { ...current, currentGold: resources.gold, error: message }
+            : current
+        ));
+        addNotification(message, 'warning');
+        return;
+      }
+
+      const unlockContext = pendingHiddenEncounterUnlock.context || {};
+      const eventPlayerPos = normalizeWorldPosition(
+        unlockContext.playerPos || (Number.isSafeInteger(pendingHiddenEncounterUnlock.tileX) && Number.isSafeInteger(pendingHiddenEncounterUnlock.tileY)
+          ? { x: pendingHiddenEncounterUnlock.tileX, y: pendingHiddenEncounterUnlock.tileY, direction: playerPosRef.current?.direction }
+          : null),
+        playerPosRef.current || playerPos
+      );
+      const eventCooldown = Math.max(0, Math.trunc(Number(
+        unlockContext.encounterCooldownSteps ?? encounterCooldownStepsRef.current ?? encounterCooldownSteps
+      ) || 0));
+      const gateEvent = unlockContext.mapEvent || (
+        Number.isSafeInteger(pendingHiddenEncounterUnlock.tileX) && Number.isSafeInteger(pendingHiddenEncounterUnlock.tileY)
+          ? getMapEventAt(currentMapName, pendingHiddenEncounterUnlock.tileX, pendingHiddenEncounterUnlock.tileY, 'sign')
+          : null
+      );
+      const flagKey = pendingHiddenEncounterUnlock.flagKey || getHiddenEncounterGateFlagKey(currentMapName, gateEvent);
+      if (!flagKey) {
+        addNotification('隐藏通路配置缺失，暂时无法开启。', 'error');
+        return;
+      }
+
+      const commitResult = await commitCloudSnapshotWithResources({
+        buildSnapshot: (baseSnapshot) => {
+          const worldPositionPatch = buildWorldPositionPatch(baseSnapshot, eventPlayerPos);
+          const nextWorld = withUpdatedMapProgress(
+            setWorldFlagValue(worldPositionPatch.world || baseSnapshot.world, flagKey, true),
+            currentMapName
+          );
+          return {
+            ...baseSnapshot,
+            ...worldPositionPatch,
+            world: nextWorld,
+            encounterCooldownSteps: eventCooldown,
+            mapGrid: buildMapGridForWorld(currentMapName, nextWorld, baseSnapshot.mapGrid),
+            logs: appendSnapshotLogs(baseSnapshot, [`地图: 支付 ${unlockCost} 金币，开启了${zoneName}的隐藏通路。`])
+          };
+        },
+        goldDelta: -unlockCost,
+        goldReason: `开启${zoneName}隐藏通路`
+      });
+      if (!commitResult.success) {
+        addLog(`隐藏通路开启失败: ${commitResult.message || '云端保存失败。'}`);
+        addNotification(commitResult.message || '开启失败，请重试。', commitResult.requiresReload ? 'error' : 'warning');
+        return;
+      }
+
+      setPendingHiddenEncounterUnlock(null);
+      gameAudio.playItemUse({ category: 'shop' });
+      addNotification(pendingHiddenEncounterUnlock.successText || `${zoneName}的隐秘通路已经打开。`, 'item');
+    } finally {
+      setHiddenEncounterUnlockBusy(false);
+    }
+  }, [
+    addLog,
+    addNotification,
+    commitCloudSnapshotWithResources,
+    currentMapName,
+    encounterCooldownSteps,
+    hasLoadedCloudSave,
+    hiddenEncounterUnlockBusy,
+    pendingHiddenEncounterUnlock,
+    playerPos,
+    refreshPlayerResources,
+    user?.id
+  ]);
+
+  useEffect(() => {
+    if (view === 'map' || !pendingHiddenEncounterUnlock) return;
+    setPendingHiddenEncounterUnlock(null);
+    setHiddenEncounterUnlockBusy(false);
+  }, [pendingHiddenEncounterUnlock, view]);
 
   const handleCancelSpringRestoreConfirm = useCallback(() => {
     if (springRestoreBusy) return;
@@ -16193,6 +18130,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const caughtMonster = caught ? normalizeMonsterAssetSource({
       ...targetMon,
       id: `p${nextPlayerMonsterId}`,
+      capturedBallKey: normalizeCaptureBallKey(itemKey),
       currentHp: getMonsterMaxHp(targetMon),
       currentMp: getMonsterMaxMp(targetMon),
       currentExp: 0,
@@ -16206,6 +18144,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       pokemonSprite: targetMon.sprite,
       pokemonLevel: targetMon.level,
       ballName: pokeball.name,
+      ballKey: normalizeCaptureBallKey(itemKey),
       ballSprite: pokeball.sprite,
       catchRate: finalCatchRate
     };
@@ -16247,7 +18186,6 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
-      gameAudio.playItemUse({ category: 'potion' });
       return true;
     }
 
@@ -16268,7 +18206,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     if (result?.success && result.caughtMonster) {
-      const caughtMonster = sanitizeBattleRuntime(normalizeMonsterAssetSource(result.caughtMonster));
+      const caughtMonster = sanitizeBattleRuntime(normalizeMonsterAssetSource({
+        ...result.caughtMonster,
+        capturedBallKey: normalizeCaptureBallKey(result.caughtMonster?.capturedBallKey || result.ballKey)
+      }));
       const pendingCapture = {
         monster: caughtMonster,
         source: 'capture',
@@ -16312,7 +18253,6 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (commitResult.success) {
         activeBattleEnergyCostRef.current = 0;
         setBattleEnergyRefundEligible(false);
-        gameAudio.playCaptureSuccess();
         if (result.pokemonName && !commitResult.saveRow?.game_data?.pendingMonsterAcquisition) {
           addNotification(`${result.pokemonName} 已加入队伍。`, 'item');
         }
@@ -16345,7 +18285,6 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
-      gameAudio.playCaptureFail();
       return;
     }
 
@@ -16795,6 +18734,120 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     playerInventory,
     playerTeam,
     scheduleLevelUpCelebration,
+    user?.id,
+    view
+  ]);
+
+  const handleUseStatBoostItem = useCallback(async (monsterId, itemKey) => {
+    const item = STAT_BOOST_ITEMS[itemKey];
+    if (!item) {
+      addNotification('属性提升道具无效。', 'warning');
+      return false;
+    }
+    if (view === 'battle') {
+      addNotification(`${item.name} 只能在战斗之外使用。`, 'warning');
+      return false;
+    }
+    if (getInventoryItemQuantity(playerInventory, 'statBoost', itemKey) <= 0) {
+      addNotification(`${item.name} 数量不足。`, 'warning');
+      gameAudio.playError();
+      return false;
+    }
+
+    const targetMon = playerTeam.find((m) => m.id === monsterId);
+    if (!targetMon) {
+      addNotification('只能对队伍宝可梦使用。', 'error');
+      return false;
+    }
+
+    const targetBase =
+      getBaseMonsterDefinition(targetMon.baseId || targetMon.speciesId || targetMon.monsterId || targetMon.templateId || targetMon.id || monsterId) ||
+      MONSTERS.find((monster) => Number(monster.dexNo ?? monster.pokedexId) === Number(targetMon.dexNo ?? targetMon.pokedexId));
+    if (!targetBase) {
+      addNotification('无法识别宝可梦基础形态。', 'error');
+      return false;
+    }
+
+    if (!user?.id || !hasLoadedCloudSave) {
+      const message = '云端未就绪，暂不能使用属性提升道具。';
+      addLog(`属性提升道具使用失败: ${message}`);
+      addNotification(message, 'error');
+      return false;
+    }
+
+    const normalizeNextBoosts = (boosts) => normalizeBaseStatBoosts(boosts);
+    const buildNextBoosts = (baseBoosts) => {
+      const nextBoosts = { ...normalizeNextBoosts(baseBoosts) };
+      if (item.effect === 'stat_boost_all') {
+        OFFICIAL_STAT_KEYS.forEach((statKey) => {
+          nextBoosts[statKey] = (nextBoosts[statKey] || 0) + Math.max(0, Math.trunc(Number(item.boostAmount) || 0));
+        });
+      } else {
+        const boostKey = item.stat === 'hp' ? 'maxHp' : item.stat;
+        if (boostKey) {
+          nextBoosts[boostKey] = (nextBoosts[boostKey] || 0) + Math.max(0, Math.trunc(Number(item.boostAmount) || 0));
+        }
+      }
+      return normalizeNextBoosts(nextBoosts);
+    };
+
+    const resolveBoostTargetBase = (mon) => (
+      getBaseMonsterDefinition(mon?.baseId || mon?.speciesId || mon?.monsterId || mon?.templateId || mon?.id) ||
+      MONSTERS.find((monster) => Number(monster.dexNo ?? monster.pokedexId) === Number(mon?.dexNo ?? mon?.pokedexId)) ||
+      targetBase
+    );
+    const applyBoostToMonster = (mon) => {
+      const nextBoosts = buildNextBoosts(mon?.statBoosts);
+      return applyStatBoostsToMonster(mon, resolveBoostTargetBase(mon), nextBoosts);
+    };
+
+    const commitResult = await commitCloudSnapshot({
+      buildSnapshot: (baseSnapshot) => {
+        const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
+        const baseTarget = baseTeam.find((mon) => mon.id === monsterId);
+        if (!baseTarget) {
+          return abortCloudSnapshotCommit('目标已变化，请重试。');
+        }
+
+        const nextInventory = consumeInventoryFromSnapshot(baseSnapshot, 'statBoost', itemKey, 1);
+        if (!nextInventory || getInventoryItemQuantity(nextInventory, 'statBoost', itemKey) < 0) {
+          return abortCloudSnapshotCommit('属性提升道具数量已变化，请重新读取。');
+        }
+
+        const boostedMon = applyBoostToMonster(baseTarget);
+
+        return {
+          ...baseSnapshot,
+          playerTeam: baseTeam.map((mon) => (mon.id === monsterId ? boostedMon : mon)),
+          playerInventory: nextInventory,
+          logs: appendSnapshotLogs(baseSnapshot, [
+            `${baseTarget.name} 使用了 ${item.name}，${getStatBoostEffectText(item)}！`
+          ])
+        };
+      }
+    });
+
+    if (!commitResult.success) {
+      if (commitResult.message) {
+        addLog(`属性提升道具使用失败: ${commitResult.message}`);
+        addNotification(
+          commitResult.message,
+          commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
+        );
+      }
+      return false;
+    }
+
+    gameAudio.playItemUse({ category: 'exp' });
+    return true;
+  }, [
+    addLog,
+    addNotification,
+    commitCloudSnapshot,
+    getBaseMonsterDefinition,
+    hasLoadedCloudSave,
+    playerInventory,
+    playerTeam,
     user?.id,
     view
   ]);
@@ -17501,6 +19554,7 @@ const handleReorderTeam = useCallback((newTeam) => {
                     view: 'battle',
                     battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
                     battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+                    activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
                     battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
                     battlePhaseData: queuedEnemySendOut,
                     turn: nextTurn,
@@ -17531,6 +19585,7 @@ const handleReorderTeam = useCallback((newTeam) => {
                   view: 'battle',
                   battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
                   battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+                  activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
                   battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
                   battlePhaseData: queuedEnemySendOut,
                   turn: nextTurn,
@@ -17824,7 +19879,10 @@ const handleReorderTeam = useCallback((newTeam) => {
         const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
         return {
           ...baseSnapshot,
-          view: isForced ? 'team' : 'battle',
+          // Once a replacement has been selected, keep the transition in battle view.
+          // Persisting `team` here causes a brief flash back to the party screen
+          // before the final switch commit returns to battle.
+          view: 'battle',
           battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
           battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
           battlePhase: 'active',
@@ -17904,6 +19962,7 @@ const handleReorderTeam = useCallback((newTeam) => {
             view: 'battle',
             battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
             battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+            activeEnemyId: queuedBattlePhaseData?.enemyMon?.id || baseSnapshot.activeEnemyId,
             battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
             battlePhaseData: queuedBattlePhaseData,
             turn: nextTurn,
@@ -17925,6 +19984,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           view: 'battle',
           battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
           battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+          activeEnemyId: queuedBattlePhaseData?.enemyMon?.id || baseSnapshot.activeEnemyId,
           battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
           battlePhaseData: queuedBattlePhaseData,
           turn: nextTurn,
@@ -17949,6 +20009,9 @@ const handleReorderTeam = useCallback((newTeam) => {
           : mon
       )));
       setActivePlayerId(newId);
+      if (queuedEnemySendOutData?.enemyMon?.id) {
+        setActiveEnemyId(queuedEnemySendOutData.enemyMon.id);
+      }
       setView('battle');
       setBattlePhase(queuedEnemySendOutData ? 'sendout' : 'active');
       setBattlePhaseData(queuedEnemySendOutData || null);
@@ -17971,6 +20034,9 @@ const handleReorderTeam = useCallback((newTeam) => {
           view: shouldForceTeam ? 'team' : 'battle',
           battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
           battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+          activeEnemyId: shouldForceTeam && queuedEnemySendOutData
+            ? (queuedEnemySendOutData.enemyMon?.id || baseSnapshot.activeEnemyId)
+            : baseSnapshot.activeEnemyId,
           battlePhase: shouldForceTeam && queuedEnemySendOutData ? 'sendout' : 'active',
           battlePhaseData: shouldForceTeam && queuedEnemySendOutData ? queuedEnemySendOutData : null,
           turn: 'player',
@@ -17979,6 +20045,9 @@ const handleReorderTeam = useCallback((newTeam) => {
       }
     });
     setView(isForced ? 'team' : 'battle');
+    if (isForced && queuedEnemySendOutData?.enemyMon?.id) {
+      setActiveEnemyId(queuedEnemySendOutData.enemyMon.id);
+    }
     setBattlePhase(isForced && queuedEnemySendOutData ? 'sendout' : 'active');
     setBattlePhaseData(isForced && queuedEnemySendOutData ? queuedEnemySendOutData : null);
     setTurn('player');
@@ -18119,6 +20188,22 @@ const handleReorderTeam = useCallback((newTeam) => {
       addNotification(`已进入${zoneName}。`, 'info');
     }
   }, [addNotification]);
+
+  const handleBlockedMove = useCallback(({ targetX, targetY, zone, zoneLock } = {}) => {
+    const notice = getHiddenEncounterGateBlockedNotice(worldRef.current || world, currentMapName, targetX, targetY);
+    const fallbackMessage = zoneLock?.blocked && typeof zoneLock.reason === 'string'
+      ? zoneLock.reason.trim()
+      : '';
+    const message = notice?.message || fallbackMessage;
+    if (!message) return;
+
+    const now = Date.now();
+    const previous = hiddenEncounterBlockedNoticeRef.current;
+    const noticeKey = notice?.key || `${currentMapName}:${zone?.id || 'locked_encounter_zone'}`;
+    if (previous.key === noticeKey && now - previous.shownAt < 1400) return;
+    hiddenEncounterBlockedNoticeRef.current = { key: noticeKey, shownAt: now };
+    addNotification(message, 'warning');
+  }, [addNotification, currentMapName, world]);
 
   const handleMapWarp = useCallback(async (warp) => {
     if (mapWarpBusyRef.current) return;
@@ -18270,7 +20355,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
-  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm);
+  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm);
   const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress);
   const showBootScreen = cloudLoading || Boolean(cloudError) || (hasLoadedCloudSave && !entryAssetsReady);
 
@@ -18333,11 +20418,11 @@ const handleReorderTeam = useCallback((newTeam) => {
       <div className="flex-1 min-h-0 flex flex-col relative z-10 h-full">
         {!activePlayerMon && !showLaunchScreenUnderlay ? (
           <div className="game-app-bg flex flex-1 items-center justify-center">
-            <div className="game-gate-card game-card p-5 font-black text-slate-700">加载中...</div>
+            <div className="game-gate-card game-card p-5 font-black text-slate-700">正在整理队伍...</div>
           </div>
         ) : view === 'battle' && !activeEnemyMon ? (
           <div className="game-app-bg flex flex-1 items-center justify-center">
-            <div className="game-gate-card game-card p-5 font-black text-slate-700">遭遇战...</div>
+            <div className="game-gate-card game-card p-5 font-black text-slate-700">正在进入对战...</div>
           </div>
         ) : (
           <>
@@ -18358,7 +20443,8 @@ const handleReorderTeam = useCallback((newTeam) => {
 	              mapLevel={mapLevel}
 	              onMapWarp={handleMapWarp}
 	              onZoneEnter={handleZoneEnter}
-              cloudBlocked={cloudBlocked || Boolean(pendingBattleEventConfirm) || battleEventConfirmBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy}
+	              onBlockedMove={handleBlockedMove}
+              cloudBlocked={cloudBlocked || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || battleEventConfirmBusy || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy}
 	              encounterCooldownSteps={encounterCooldownSteps}
 	              onEncounterCooldownChange={handleEncounterCooldownChange}
 	              mapActive
@@ -18370,7 +20456,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 	            />
           </div>
         )}
-        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} addLog={addLog} isThrowingPokeball={isThrowingPokeball} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
+        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} onUseStatBoostItem={handleUseStatBoostItem} addLog={addLog} isThrowingPokeball={isThrowingPokeball} captureSequenceData={captureSequenceData} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
 
         {/* ── 战斗过场 Overlay ────────────────────────────────────── */}
         {view === 'battle' && (
@@ -18415,7 +20501,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           />
         )}
         {view === 'team' && (
-          <Suspense fallback={<DeferredPanelFallback title="队伍加载中..." />}>
+          <Suspense fallback={<DeferredPanelFallback title="正在打开队伍" />}>
             <DeferredTeamScreen
               team={playerTeam}
               storageBox={storageBox}
@@ -18439,12 +20525,12 @@ const handleReorderTeam = useCallback((newTeam) => {
           </Suspense>
         )}
         {view === 'dex' && (
-          <Suspense fallback={<DeferredPanelFallback title="图鉴加载中..." />}>
+          <Suspense fallback={<DeferredPanelFallback title="正在打开图鉴" />}>
             <DeferredDexScreen onBack={() => handleNavigateView('map')} />
           </Suspense>
         )}
         {view === 'shop' && (
-          <Suspense fallback={<DeferredPanelFallback title="商店加载中..." />}>
+          <Suspense fallback={<DeferredPanelFallback title="正在打开商店" />}>
             <DeferredShopScreen
               playerGold={playerGold}
               playerInventory={playerInventory}
@@ -18456,7 +20542,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           </Suspense>
         )}
         {view === 'bag' && (
-          <Suspense fallback={<DeferredPanelFallback title="背包加载中..." />}>
+          <Suspense fallback={<DeferredPanelFallback title="正在打开背包" />}>
             <DeferredBagScreen
               playerInventory={playerInventory}
               playerTeam={playerTeam}
@@ -18466,6 +20552,7 @@ const handleReorderTeam = useCallback((newTeam) => {
               onUseItem={handleUseItem}
               onUsePotion={handleUsePotion}
               onUseExpPotion={handleUseExpPotion}
+              onUseStatBoostItem={handleUseStatBoostItem}
               onBack={() => handleNavigateView(activeEnemyMon ? 'battle' : 'map')}
               addLog={addLog}
             />
@@ -18512,6 +20599,36 @@ const handleReorderTeam = useCallback((newTeam) => {
           alreadyCompleted={pendingBattleEventConfirm?.alreadyCompleted}
           onCancel={handleCancelBattleEventConfirm}
           onConfirm={handleConfirmBattleEvent}
+        />
+        <NpcBattleDialogueConfirmModal
+          open={Boolean(pendingNpcBattleConfirm)}
+          busy={battleEventConfirmBusy}
+          eventName={pendingNpcBattleConfirm?.eventName}
+          eventTitle={pendingNpcBattleConfirm?.eventTitle}
+          dialogueText={pendingNpcBattleConfirm?.dialogueText}
+          ruleDescription={pendingNpcBattleConfirm?.ruleDescription}
+          energyCost={pendingNpcBattleConfirm?.energyCost}
+          teamSize={pendingNpcBattleConfirm?.teamSize}
+          levelRangeText={pendingNpcBattleConfirm?.levelRangeText}
+          expectedGold={pendingNpcBattleConfirm?.expectedGold}
+          rewardItems={pendingNpcBattleConfirm?.rewardItems}
+          statusChips={pendingNpcBattleConfirm?.statusChips}
+          eventRole={pendingNpcBattleConfirm?.eventRole}
+          anchorDirection={pendingNpcBattleConfirm?.anchorDirection}
+          onCancel={handleCancelNpcBattleConfirm}
+          onConfirm={handleConfirmNpcBattleEvent}
+        />
+        <HiddenEncounterUnlockModal
+          open={Boolean(pendingHiddenEncounterUnlock)}
+          busy={hiddenEncounterUnlockBusy}
+          zoneName={pendingHiddenEncounterUnlock?.zoneName}
+          description={pendingHiddenEncounterUnlock?.description}
+          exclusiveRareCount={pendingHiddenEncounterUnlock?.exclusiveRareCount}
+          cost={pendingHiddenEncounterUnlock?.unlockCost}
+          currentGold={pendingHiddenEncounterUnlock?.currentGold ?? playerGold}
+          error={pendingHiddenEncounterUnlock?.error}
+          onCancel={handleCancelHiddenEncounterUnlock}
+          onConfirm={handleConfirmHiddenEncounterUnlock}
         />
         <SpringRestoreConfirmModal
           open={Boolean(pendingSpringRestoreConfirm)}
@@ -18652,23 +20769,47 @@ const NotificationToastIcon = ({ type }) => {
   )
 }
 
+const getNotificationVisualLength = (message = '') => (
+  Array.from(typeof message === 'string' ? message : '').reduce((total, char) => {
+    if (/\s/.test(char)) return total + 0.32
+    if (/[\u0000-\u00ff]/.test(char)) return total + 0.58
+    return total + 1
+  }, 0)
+)
+
+const getNotificationSingleLineThreshold = () => {
+  if (typeof window === 'undefined') return 28
+  const viewportWidth = Math.max(0, Number(window.innerWidth) || 0)
+  if (viewportWidth >= 1440) return 40
+  if (viewportWidth >= 1200) return 34
+  if (viewportWidth >= 960) return 28
+  return 18
+}
+
+const shouldUseSingleLineNotification = (message = '', mode = 'default') => (
+  mode !== 'battle' && getNotificationVisualLength(message) <= getNotificationSingleLineThreshold()
+)
+
 const NotificationToast = ({ notifications, mode = 'default' }) => (
   <div
     className={`game-notification-layer game-notification-layer--${mode}`}
     aria-hidden={notifications.length === 0}
   >
     <div className="game-notification-stack" role="status" aria-live="polite">
-      {notifications.map((notif) => (
-        <div
-          key={notif.id}
-          className={`game-notification-toast game-notification-toast--${notif.type || 'info'}`}
-          style={{ '--toast-duration-ms': `${notif.durationMs || getNotificationDurationMs(notif.type, notif.message)}ms` }}
-        >
-          <NotificationToastIcon type={notif.type} />
-          <p className="game-notification-toast__text">{notif.message}</p>
-          <span className="game-notification-toast__timer" aria-hidden="true" />
-        </div>
-      ))}
+      {notifications.map((notif) => {
+        const singleLine = shouldUseSingleLineNotification(notif.message, mode)
+        return (
+          <div
+            key={notif.id}
+            className={`game-notification-toast game-notification-toast--${notif.type || 'info'}${singleLine ? ' game-notification-toast--single-line' : ''}`}
+            style={{ '--toast-duration-ms': `${notif.durationMs || getNotificationDurationMs(notif.type, notif.message)}ms` }}
+          >
+            <NotificationToastIcon type={notif.type} />
+            <p className="game-notification-toast__text">{notif.message}</p>
+            <span className="game-notification-toast__timer" aria-hidden="true" />
+          </div>
+        )
+      })}
     </div>
   </div>
 );

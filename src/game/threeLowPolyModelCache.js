@@ -277,7 +277,7 @@ async function loadModelSceneWithRetry(key, options = {}) {
   return null
 }
 
-function loadModelScene(key) {
+function loadModelScene(key, options = {}) {
   if (MODEL_SCENE_CACHE.has(key)) {
     return Promise.resolve(MODEL_SCENE_CACHE.get(key))
   }
@@ -285,7 +285,7 @@ function loadModelScene(key) {
     return MODEL_LOAD_PROMISE_CACHE.get(key)
   }
 
-  const promise = loadModelSceneWithRetry(key)
+  const promise = loadModelSceneWithRetry(key, options)
     .then((scene) => {
       MODEL_LOAD_PROMISE_CACHE.delete(key)
       return scene
@@ -300,14 +300,29 @@ function loadModelScene(key) {
   return promise
 }
 
-export function loadModels(requiredKeys = null) {
+async function mapModelKeysWithConcurrency(keys, concurrency, loadOne) {
+  const results = new Array(keys.length)
+  let cursor = 0
+  const workerCount = Math.max(1, Math.min(keys.length, concurrency))
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (cursor < keys.length) {
+      const index = cursor
+      cursor += 1
+      results[index] = await loadOne(keys[index])
+    }
+  })
+  await Promise.all(workers)
+  return results
+}
+
+export function loadModels(requiredKeys = null, overrides = {}) {
   const keys = requiredKeys
     ? [...requiredKeys].filter((key) => MODEL_URLS[key])
     : Object.keys(MODEL_URLS)
-  return Promise.all(
-    keys.map((key) =>
-      loadModelScene(key).then((scene) => [key, scene])
-    )
+  const options = resolveModelPreloadOptions(overrides)
+  const concurrency = Math.max(1, Math.trunc(Number(options.concurrency) || DEFAULT_MODEL_CONCURRENCY))
+  return mapModelKeysWithConcurrency(keys, concurrency, (key) =>
+    loadModelScene(key, options).then((scene) => [key, scene])
   ).then((entries) => Object.fromEntries(entries))
 }
 
@@ -353,7 +368,8 @@ export async function preloadModelKeysUntilComplete(keys = [], {
   shouldContinue = () => true,
   concurrency = null,
   retries = null,
-  timeoutMs = null
+  timeoutMs = null,
+  maxRounds = Infinity
 } = {}) {
   const options = resolveModelPreloadOptions({
     concurrency: concurrency ?? undefined,
@@ -414,7 +430,10 @@ export async function preloadModelKeysUntilComplete(keys = [], {
       }
     }))
 
-    if (failed.length === 0) break
+    if (failed.length === 0) {
+      remaining = []
+      break
+    }
 
     const stillMissing = []
     for (const key of failed) {
@@ -428,9 +447,19 @@ export async function preloadModelKeysUntilComplete(keys = [], {
       stillMissing.push(key)
     }
     remaining = stillMissing
+
+    if (remaining.length > 0 && Number.isFinite(maxRounds) && round >= maxRounds) {
+      break
+    }
   }
 
-  return { ok: true, total: pendingKeys.length, loaded: pendingKeys.length, keys: pendingKeys }
+  return {
+    ok: remaining.length === 0,
+    total: pendingKeys.length,
+    loaded: pendingKeys.length - remaining.length,
+    failed: remaining,
+    keys: pendingKeys
+  }
 }
 
 /** @deprecated 内部改用 preloadModelKeysUntilComplete，保留别名避免旧调用抛错 */

@@ -1,11 +1,21 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { EXP_POTIONS, MOVES, OFFICIAL_DEX_MONSTERS, POKEBALLS, POTIONS } from '../../utils/gameData'
+import {
+  DEX_DISPLAY_MONSTERS,
+  EXP_POTIONS,
+  MOVES,
+  OFFICIAL_DEX_MONSTERS,
+  POKEBALLS,
+  POTIONS,
+  getMoveAvailabilityLevel,
+  getMoveKeysAvailableForMonsterLevel,
+} from '../../utils/gameData'
 import {
   getInventoryItemQuantity,
   hasPotionCurableStatus,
   getPotionEffectParts,
   getPotionEffectText,
   getPotionRecoveryProfile,
+  getStatBoostEffectText,
   resolveInventoryItemDetails,
   resolveInventoryItemType,
   sortInventorySlots,
@@ -13,14 +23,42 @@ import {
 import { getEvolutionLevelForBranch } from '../../utils/pokemonGrowth'
 import { MAX_PARTY_SIZE, MAX_STORAGE_SIZE } from '../../utils/pokemonRoster'
 import { applyImageFallback, handlePokemonImageError } from '../../utils/localAssetPreloader'
+import { getPokemonAcquisitionInfo } from '../../utils/pokemonAcquisition'
 import { CollectionCard, CollectionGrid, TypeBadge } from './gameUiPrimitives'
 import { assetUrl } from '../../utils/assetUrl'
 import { gameAudio } from '../../utils/gameAudio'
 
 const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
+const DEFAULT_CAPTURE_BALL_KEY = 'pokeball_basic'
 const SHOP_PURCHASE_FEEDBACK_MS = 1250
 const HEAL_ANIMATION_DURATION_MS = 950
 const EXP_ANIMATION_DURATION_MS = 1150
+
+const normalizeCaptureBallKey = (ballKey) => (
+  typeof ballKey === 'string' && POKEBALLS[ballKey]
+    ? ballKey
+    : DEFAULT_CAPTURE_BALL_KEY
+)
+
+const getMonsterCaptureBallKey = (monster) => normalizeCaptureBallKey(
+  monster?.capturedBallKey || monster?.captureBallKey || monster?.pokeballKey || monster?.ballKey
+)
+
+const getMonsterCaptureBall = (monster) => (
+  POKEBALLS[getMonsterCaptureBallKey(monster)] || POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]
+)
+
+const getMonsterCaptureBallSprite = (monster) => (
+  getMonsterCaptureBall(monster)?.sprite || POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.sprite || POKEMON_LOCAL_PLACEHOLDER
+)
+
+const getMonsterCaptureBallName = (monster) => (
+  getMonsterCaptureBall(monster)?.name || POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.name || '精灵球'
+)
+
+const handlePokeballImageError = (event) => {
+  applyImageFallback(event, POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.sprite || POKEMON_LOCAL_PLACEHOLDER)
+}
 
 const STATUS_LABELS = {
   sleep: '睡眠',
@@ -148,18 +186,19 @@ const DEX_STAT_DEFINITIONS = [
   { key: 'spd', label: '速度', code: 'SPE', max: 180, className: 'dex-stat-spe' }
 ]
 
-const DEX_EVOLUTION_METHOD_LABELS = {
-  thunder_stone: '雷之石',
-  trade_item: '使用道具',
-  level_up_item_day: '白天道具',
-  move_known: '学会招式'
-}
-
 const handleItemImageError = (event) => {
   applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER)
 }
 
 const formatDexNo = (mon) => String(mon?.dexNo ?? mon?.pokedexId ?? mon?.id ?? 0).padStart(3, '0')
+const DEX_DISPLAY_ORDER_BY_ID = new Map(DEX_DISPLAY_MONSTERS.map((monster, index) => [monster.id, index]))
+const compareDexDisplayOrder = (left, right) => (
+  (DEX_DISPLAY_ORDER_BY_ID.get(left?.id) ?? Number.MAX_SAFE_INTEGER) -
+    (DEX_DISPLAY_ORDER_BY_ID.get(right?.id) ?? Number.MAX_SAFE_INTEGER) ||
+  Number(left?.dexNo ?? left?.pokedexId ?? left?.id ?? Number.MAX_SAFE_INTEGER) -
+    Number(right?.dexNo ?? right?.pokedexId ?? right?.id ?? Number.MAX_SAFE_INTEGER) ||
+  String(left?.name || '').localeCompare(String(right?.name || ''), 'zh-CN')
+)
 
 const getMoveMpCost = (move) => Math.max(0, Math.trunc(Number(move?.cost) || 0))
 const getMonsterMaxHp = (mon) => Math.max(0, Number(mon?.maxHp ?? mon?.stats?.hp ?? 0) || 0)
@@ -270,42 +309,96 @@ const getEvolutionConditionLabel = (sourceMon, evolution) => {
   if (!evolution) return ''
   const simplifiedLevel = getEvolutionLevelForBranch(sourceMon, evolution)
   if (Number.isInteger(simplifiedLevel)) return `Lv.${simplifiedLevel}`
-  if (evolution.method && DEX_EVOLUTION_METHOD_LABELS[evolution.method]) return DEX_EVOLUTION_METHOD_LABELS[evolution.method]
-  if (evolution.item) return '道具'
-  if (evolution.move) return '学会招式'
-  return '特殊条件'
+  return ''
 }
 
 const isEnabledDexEvolution = (evolution) => Boolean(evolution) && evolution.disabled !== true
 
-const getDexEvolutionLinks = (mon) => {
-  const previous = OFFICIAL_DEX_MONSTERS.flatMap((candidate) => {
-    const direct = isEnabledDexEvolution(candidate.evolvesTo) && candidate.evolvesTo?.targetId === mon.id
-      ? [{ mon: candidate, condition: getEvolutionConditionLabel(candidate, candidate.evolvesTo) }]
-      : []
-    const alternate = (candidate.alternateEvolutions || [])
-      .filter((evolution) => isEnabledDexEvolution(evolution) && evolution.targetId === mon.id)
-      .map((evolution) => ({ mon: candidate, condition: getEvolutionConditionLabel(candidate, evolution) }))
-    return [...direct, ...alternate]
-  })
+const getDexEvolutionBranches = (sourceMon) => [
+  isEnabledDexEvolution(sourceMon?.evolvesTo) ? sourceMon.evolvesTo : null,
+  ...(Array.isArray(sourceMon?.alternateEvolutions) ? sourceMon.alternateEvolutions.filter(isEnabledDexEvolution) : [])
+]
+  .filter((evolution) => Number.isInteger(Number(evolution?.targetId)))
+  .map((evolution) => ({
+    sourceMon,
+    mon: OFFICIAL_DEX_MONSTERS.find((candidate) => candidate.id === Number(evolution.targetId)),
+    condition: getEvolutionConditionLabel(sourceMon, evolution)
+  }))
+  .filter((link) => link.mon)
 
-  const next = [
-    ...(isEnabledDexEvolution(mon.evolvesTo) && mon.evolvesTo?.targetId
-      ? [{ mon: OFFICIAL_DEX_MONSTERS.find((candidate) => candidate.id === mon.evolvesTo.targetId), condition: getEvolutionConditionLabel(mon, mon.evolvesTo) }]
-      : []),
-    ...(mon.alternateEvolutions || []).filter(isEnabledDexEvolution).map((evolution) => ({
-      mon: OFFICIAL_DEX_MONSTERS.find((candidate) => candidate.id === evolution.targetId),
-      condition: getEvolutionConditionLabel(mon, evolution)
-    }))
-  ].filter((link) => link.mon)
+const getDexPreEvolutionBranches = (targetMon) => (
+  OFFICIAL_DEX_MONSTERS.flatMap((candidate) => (
+    getDexEvolutionBranches(candidate)
+      .filter((link) => link.mon.id === targetMon?.id)
+      .map((link) => ({
+        sourceMon: candidate,
+        mon: candidate,
+        condition: link.condition
+      }))
+  ))
+)
 
-  return { previous, next }
+const getDexEvolutionRoots = (mon, visited = new Set()) => {
+  if (!mon || visited.has(mon.id)) return []
+  const nextVisited = new Set(visited)
+  nextVisited.add(mon.id)
+  const parents = getDexPreEvolutionBranches(mon)
+  if (parents.length === 0) return [mon]
+  const roots = parents.flatMap((link) => getDexEvolutionRoots(link.mon, nextVisited))
+  return [...new Map(roots.map((root) => [root.id, root])).values()].sort(compareDexDisplayOrder)
+}
+
+const getDexEvolutionFamily = (mon) => {
+  if (!mon) return { stages: [], hasEvolution: false }
+
+  const roots = getDexEvolutionRoots(mon)
+  const initialMembers = roots.length > 0 ? roots : [mon]
+  const seenIds = new Set()
+  const stages = []
+  let currentStage = initialMembers.map((root) => ({ mon: root, condition: '' }))
+
+  while (currentStage.length > 0) {
+    const stageMembers = []
+    const nextStage = []
+
+    currentStage.forEach((entry) => {
+      if (!entry.mon || seenIds.has(entry.mon.id)) return
+      seenIds.add(entry.mon.id)
+      stageMembers.push(entry)
+
+      getDexEvolutionBranches(entry.mon).forEach((link) => {
+        if (seenIds.has(link.mon.id)) return
+        nextStage.push({
+          mon: link.mon,
+          condition: link.condition,
+          sourceMon: entry.mon
+        })
+      })
+    })
+
+    if (stageMembers.length > 0) {
+      stageMembers.sort((left, right) => compareDexDisplayOrder(left.mon, right.mon))
+      stages.push({
+        key: `stage-${stages.length}-${stageMembers.map((entry) => entry.mon.id).join('-')}`,
+        members: stageMembers
+      })
+    }
+
+    currentStage = [...new Map(nextStage.map((entry) => [entry.mon.id, entry])).values()]
+      .sort((left, right) => compareDexDisplayOrder(left.mon, right.mon))
+  }
+
+  return {
+    stages,
+    hasEvolution: stages.some((stage) => stage.members.some((entry) => entry.mon.id !== mon.id))
+  }
 }
 
 export function DexScreen({ onBack }) {
   const [selectedMon, setSelectedMon] = useState(null)
   const dexListScrollRef = useRef(0)
   const dexListScrollAreaRef = useRef(null)
+  const dexDetailScrollAreaRef = useRef(null)
   const shouldRestoreDexListScrollRef = useRef(false)
 
   useLayoutEffect(() => {
@@ -323,6 +416,14 @@ export function DexScreen({ onBack }) {
     dexListScrollRef.current = dexListScrollAreaRef.current?.scrollTop || 0
   }, [])
 
+  useLayoutEffect(() => {
+    if (!selectedMon) return
+    const scrollArea = dexDetailScrollAreaRef.current
+    if (!scrollArea) return
+
+    scrollArea.scrollTop = 0
+  }, [selectedMon?.id])
+
   const handleDexCardClick = useCallback((mon) => {
     rememberDexListScroll()
     shouldRestoreDexListScrollRef.current = true
@@ -336,13 +437,52 @@ export function DexScreen({ onBack }) {
   }, [])
 
   if (selectedMon) {
-    const moves = selectedMon.moves
-      .map((moveKey) => ({ key: moveKey, ...MOVES[moveKey] }))
+    const moves = getMoveKeysAvailableForMonsterLevel(selectedMon, 100, { includeEmergencyFallback: false })
+      .map((moveKey) => ({
+        key: moveKey,
+        learnLevel: getMoveAvailabilityLevel(selectedMon, moveKey),
+        ...MOVES[moveKey]
+      }))
       .filter((move) => move.name)
+      .sort((a, b) => (a.learnLevel || 1) - (b.learnLevel || 1) || a.name.localeCompare(b.name, 'zh-CN'))
     const statRows = getDexStatRows(selectedMon)
     const statTotal = statRows.reduce((sum, stat) => sum + stat.value, 0)
     const strongestStat = getStrongestDexStat(statRows)
-    const evolutionLinks = getDexEvolutionLinks(selectedMon)
+    const evolutionFamily = getDexEvolutionFamily(selectedMon)
+    const acquisitionInfo = getPokemonAcquisitionInfo(selectedMon)
+    const renderEvolutionTile = (entry) => {
+      const isCurrent = entry.mon.id === selectedMon.id
+      const content = (
+        <>
+          <img src={entry.mon.sprite} onError={handlePokemonImageError} alt={entry.mon.name} />
+          <span>No.{formatDexNo(entry.mon)}</span>
+          <b>{entry.mon.name}</b>
+          {entry.condition && <em>{entry.condition}</em>}
+        </>
+      )
+
+      if (isCurrent) {
+        return (
+          <div key={`evolution-current-${entry.mon.id}`} className="dex-evolution-tile dex-evolution-current">
+            {content}
+          </div>
+        )
+      }
+
+      return (
+        <button
+          key={`evolution-${entry.mon.id}`}
+          type="button"
+          className="dex-evolution-tile"
+          onClick={() => {
+            setSelectedMon(entry.mon)
+            gameAudio.playUiSelect()
+          }}
+        >
+          {content}
+        </button>
+      )
+    }
 
     return (
       <div className="game-page dex-detail-page">
@@ -358,7 +498,7 @@ export function DexScreen({ onBack }) {
             <i className="fa-solid fa-arrow-left"></i>
           </button>
         </div>
-        <div className="game-scroll-area dex-detail-scroll">
+        <div ref={dexDetailScrollAreaRef} className="game-scroll-area dex-detail-scroll">
           <section className="dex-hero-panel">
             <div className="dex-hero-copy">
               <div className="dex-number-chip">No.{formatDexNo(selectedMon)}</div>
@@ -373,7 +513,7 @@ export function DexScreen({ onBack }) {
                   <b>{statTotal}</b>
                 </div>
                 <div>
-                  <span>最高能力</span>
+                  <span>最高种族值</span>
                   <b>{strongestStat.label} {strongestStat.value}</b>
                 </div>
                 <div>
@@ -387,10 +527,38 @@ export function DexScreen({ onBack }) {
             </div>
           </section>
 
+          <section className="dex-panel dex-acquisition-panel">
+            <div className="dex-section-heading">
+              <span>获取途径</span>
+              <b>Where To Find</b>
+            </div>
+            <div className="dex-acquisition-summary">
+              <i className="fa-solid fa-location-dot"></i>
+              <span>{acquisitionInfo.summary}</span>
+            </div>
+            <div className="dex-acquisition-list">
+              {acquisitionInfo.routes.map((route) => (
+                <div key={route.key} className={`dex-acquisition-route dex-acquisition-route--${route.type}`}>
+                  <div className="dex-acquisition-route__badge">
+                    <i className={`fa-solid ${route.icon}`}></i>
+                    <span>{route.category}</span>
+                  </div>
+                  <div className="dex-acquisition-route__body">
+                    <strong>{route.summary}</strong>
+                    {route.availabilityLabel ? (
+                      <em className="dex-acquisition-route__status">{route.availabilityLabel}</em>
+                    ) : null}
+                    <span>{route.detail}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <div className="dex-detail-grid">
             <section className="dex-panel dex-stat-panel">
               <div className="dex-section-heading">
-                <span>能力分析</span>
+                <span>基础种族值</span>
                 <b>Base Stats</b>
               </div>
               <div className="dex-stat-list">
@@ -415,27 +583,20 @@ export function DexScreen({ onBack }) {
                 <b>Evolution</b>
               </div>
               <div className="dex-evolution-flow">
-                {evolutionLinks.previous.map((link) => (
-                  <button key={`prev-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => { setSelectedMon(link.mon); gameAudio.playUiSelect(); }}>
-                    <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
-                    <span>No.{formatDexNo(link.mon)}</span>
-                    <b>{link.mon.name}</b>
-                  </button>
-                ))}
-                <div className="dex-evolution-tile dex-evolution-current">
-                  <img src={selectedMon.sprite} onError={handlePokemonImageError} alt={selectedMon.name} />
-                  <span>No.{formatDexNo(selectedMon)}</span>
-                  <b>{selectedMon.name}</b>
-                </div>
-                {evolutionLinks.next.map((link) => (
-                  <button key={`next-${link.mon.id}`} type="button" className="dex-evolution-tile" onClick={() => { setSelectedMon(link.mon); gameAudio.playUiSelect(); }}>
-                    <img src={link.mon.sprite} onError={handlePokemonImageError} alt={link.mon.name} />
-                    <span>{link.condition}</span>
-                    <b>{link.mon.name}</b>
-                  </button>
+                {evolutionFamily.stages.map((stage, stageIndex) => (
+                  <React.Fragment key={stage.key}>
+                    {stageIndex > 0 && (
+                      <div className="dex-evolution-arrow" aria-hidden="true">
+                        <i className="fa-solid fa-arrow-right"></i>
+                      </div>
+                    )}
+                    <div className="dex-evolution-stage">
+                      {stage.members.map(renderEvolutionTile)}
+                    </div>
+                  </React.Fragment>
                 ))}
               </div>
-              {evolutionLinks.previous.length === 0 && evolutionLinks.next.length === 0 && (
+              {!evolutionFamily.hasEvolution && (
                 <div className="dex-empty-evolution">暂无可展示的进化路线</div>
               )}
             </section>
@@ -456,7 +617,7 @@ export function DexScreen({ onBack }) {
                     <div className="dex-move-card-top">
                       <div>
                         <h4>{move.name}</h4>
-                        <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'} · Lv.{move.unlockLevel || 1}</span>
+                        <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'} · Lv.{move.learnLevel || 1}</span>
                       </div>
                       <TypeBadge type={move.type} small />
                     </div>
@@ -500,19 +661,26 @@ export function DexScreen({ onBack }) {
         onScroll={rememberDexListScroll}
       >
         <CollectionGrid>
-          {OFFICIAL_DEX_MONSTERS.map((mon) => (
-            <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)}>
-              <div className="game-collection-card__sprite-wrap">
-                <img src={mon.sprite} decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
-              </div>
-              <div className="game-collection-card__dexno">No.{formatDexNo(mon)}</div>
-              <div className="game-collection-card__name">{mon.name}</div>
-              <div className="game-collection-card__types">
-                {mon.type2 && <TypeBadge type={mon.type2} small />}
-                <TypeBadge type={mon.type} small />
-              </div>
-            </CollectionCard>
-          ))}
+          {DEX_DISPLAY_MONSTERS.map((mon) => {
+            const acquisitionInfo = getPokemonAcquisitionInfo(mon)
+            return (
+              <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)}>
+                <div className="game-collection-card__sprite-wrap">
+                  <img src={mon.sprite} decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                </div>
+                <div className="game-collection-card__dexno">No.{formatDexNo(mon)}</div>
+                <div className="game-collection-card__name">{mon.name}</div>
+                <div className="game-collection-card__types">
+                  {mon.type2 && <TypeBadge type={mon.type2} small />}
+                  <TypeBadge type={mon.type} small />
+                </div>
+                <div className="dex-acquisition-card-hint">
+                  <i className={`fa-solid ${acquisitionInfo.routes[0]?.icon || 'fa-location-dot'}`}></i>
+                  <span>{acquisitionInfo.shortSummary}</span>
+                </div>
+              </CollectionCard>
+            )
+          })}
         </CollectionGrid>
       </div>
     </div>
@@ -631,7 +799,7 @@ export function ShopScreen({
               <span className="game-collection-section__desc">{sectionDescriptions[itemType]}</span>
             </div>
             <CollectionGrid>
-              {Object.entries(itemsMap).map(([key, item]) => {
+              {Object.entries(itemsMap).filter(([, item]) => !item.notForSale).map(([key, item]) => {
                 const currentQuantity = getInventoryItemQuantity(playerInventory, itemType, key)
                 const cannotAfford = playerGold < item.price
                 const purchaseKey = `${itemType}:${key}`
@@ -725,6 +893,7 @@ const PokemonDetailDialog = ({
   const expToNextLevel = monster.expToNextLevel || 0
   const currentExp = monster.currentExp || 0
   const expPercent = expToNextLevel > 0 ? Math.max(0, Math.min(100, (currentExp / expToNextLevel) * 100)) : 0
+  const captureBallName = getMonsterCaptureBallName(monster)
   const statTiles = [
     { label: '生命', value: `${stats.currentHp}/${stats.maxHp}`, icon: 'fa-heart-pulse', tone: 'hp' },
     { label: '技能值', value: `${stats.currentMp}/${stats.maxMp}`, icon: 'fa-droplet', tone: 'mp' },
@@ -754,6 +923,10 @@ const PokemonDetailDialog = ({
             <div className="pokemon-detail-name-row">
               <h3 id={dialogTitleId}>{monster.name}</h3>
               <span>Lv.{monster.level}</span>
+            </div>
+            <div className="pokemon-detail-capture-ball" title={`收服球：${captureBallName}`} aria-label={`收服球：${captureBallName}`}>
+              <img src={getMonsterCaptureBallSprite(monster)} alt="" loading="lazy" decoding="async" onError={handlePokeballImageError} draggable="false" />
+              <span>{captureBallName}</span>
             </div>
             <div className="pokemon-detail-type-row">
               {monster.type2 && <TypeBadge type={monster.type2} />}
@@ -806,8 +979,8 @@ const PokemonDetailDialog = ({
 
           <section className="pokemon-detail-panel">
             <div className="pokemon-detail-section-title">
-              <span>能力值</span>
-              <b>Stats</b>
+              <span>当前实战能力</span>
+              <b>Lv.{monster.level} Stats</b>
             </div>
             <div className="pokemon-detail-stat-grid">
               {statTiles.map((stat) => (
@@ -1127,6 +1300,7 @@ export function TeamScreen({
               const hpPercent = stats.maxHp > 0 ? Math.max(0, Math.min(100, (stats.currentHp / stats.maxHp) * 100)) : 0
               const mpPercent = stats.maxMp > 0 ? Math.max(0, Math.min(100, (stats.currentMp / stats.maxMp) * 100)) : 0
               const expPercent = mon.expToNextLevel > 0 ? Math.max(0, Math.min(100, ((mon.currentExp || 0) / mon.expToNextLevel) * 100)) : 0
+              const captureBallName = getMonsterCaptureBallName(mon)
 
               const handleCardClick = async () => {
                 if (isSwitching) {
@@ -1155,6 +1329,9 @@ export function TeamScreen({
                   className={`pokemon-roster-row ${isFainted ? 'opacity-50 grayscale' : ''}`}
                 >
                   <div className="pokemon-roster-row__sprite">
+                    <span className="pokemon-capture-ball-chip" title={`收服球：${captureBallName}`} aria-label={`收服球：${captureBallName}`}>
+                      <img src={getMonsterCaptureBallSprite(mon)} alt="" loading="lazy" decoding="async" onError={handlePokeballImageError} draggable="false" />
+                    </span>
                     <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} style={{ imageRendering: 'auto' }} />
                   </div>
                   <div className="pokemon-roster-row__main">
@@ -1237,6 +1414,7 @@ export function TeamScreen({
               const hpPercent = stats.maxHp > 0 ? Math.max(0, Math.min(100, (stats.currentHp / stats.maxHp) * 100)) : 0
               const mpPercent = stats.maxMp > 0 ? Math.max(0, Math.min(100, (stats.currentMp / stats.maxMp) * 100)) : 0
               const expPercent = mon.expToNextLevel > 0 ? Math.max(0, Math.min(100, ((mon.currentExp || 0) / mon.expToNextLevel) * 100)) : 0
+              const captureBallName = getMonsterCaptureBallName(mon)
               return (
                 <CollectionCard
                   key={mon.id}
@@ -1244,6 +1422,9 @@ export function TeamScreen({
                   asButton={false}
                   active={selectedStorageMonsterId === mon.id}
                 >
+                  <span className="game-collection-card__capture-ball" title={`收服球：${captureBallName}`} aria-label={`收服球：${captureBallName}`}>
+                    <img src={getMonsterCaptureBallSprite(mon)} alt="" loading="lazy" decoding="async" onError={handlePokeballImageError} draggable="false" />
+                  </span>
                   <div className="game-collection-card__sprite-wrap">
                     <img src={mon.sprite} loading="lazy" decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
                   </div>
@@ -1392,15 +1573,21 @@ export function TeamScreen({
             </div>
             <div className="game-screen-swap-list">
               <CollectionGrid>
-                {team.map((mon) => (
-                  <CollectionCard key={mon.id} onClick={() => handleSwapChoice(mon.id)}>
-                    <div className="game-collection-card__sprite-wrap">
-                      <img src={mon.sprite} loading="lazy" decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
-                    </div>
-                    <div className="game-collection-card__name">{mon.name}</div>
-                    <div className="game-collection-card__meta">Lv.{mon.level}</div>
-                  </CollectionCard>
-                ))}
+                {team.map((mon) => {
+                  const captureBallName = getMonsterCaptureBallName(mon)
+                  return (
+                    <CollectionCard key={mon.id} onClick={() => handleSwapChoice(mon.id)}>
+                      <span className="game-collection-card__capture-ball" title={`收服球：${captureBallName}`} aria-label={`收服球：${captureBallName}`}>
+                        <img src={getMonsterCaptureBallSprite(mon)} alt="" loading="lazy" decoding="async" onError={handlePokeballImageError} draggable="false" />
+                      </span>
+                      <div className="game-collection-card__sprite-wrap">
+                        <img src={mon.sprite} loading="lazy" decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                      </div>
+                      <div className="game-collection-card__name">{mon.name}</div>
+                      <div className="game-collection-card__meta">Lv.{mon.level}</div>
+                    </CollectionCard>
+                  )
+                })}
               </CollectionGrid>
             </div>
           </div>
@@ -1490,12 +1677,22 @@ const ExpBurst = ({ amount = 0, levelUps = [], compact = false }) => {
   )
 }
 
+const StatBoostBurst = ({ label = '', compact = false }) => (
+  <div className={`pokemon-exp-effect ${compact ? 'pokemon-exp-effect--compact' : ''} pokemon-exp-effect--levelup`} aria-hidden="true">
+    <span className="pokemon-exp-aura" />
+    <span className="pokemon-exp-orbit pokemon-exp-orbit--outer" />
+    <span className="pokemon-exp-plus">{label}</span>
+    <span className="pokemon-exp-levelup">STAT UP</span>
+  </div>
+)
+
 export function UnifiedBagScreen({
   inventory = [],
   onClose,
   onUseItem,
   onUsePotion,
   onUseExpPotion,
+  onUseStatBoostItem,
   onBattleItemConsumed,
   team = [],
   isBattle = false,
@@ -1519,6 +1716,8 @@ export function UnifiedBagScreen({
   const selectedItemIsDepleted = Boolean(selectedItem) && selectedItemQuantity <= 0
   const selectedItemEffectText = selectedItem?.type === 'expPotion'
     ? `经验 +${selectedItem?.expAmount || 0}`
+    : selectedItem?.type === 'statBoost'
+      ? getStatBoostEffectText(selectedItem)
     : getPotionEffectParts(selectedItem).join(' · ')
   const selectedItemStockText = selectedItem
     ? (targetItemHeaderNotice?.text || (selectedItemIsDepleted ? '数量不足' : `剩余 x${selectedItemQuantity}`))
@@ -1575,9 +1774,9 @@ export function UnifiedBagScreen({
   const handleItemClick = async (item) => {
     if (pendingItemTargetIdRef.current) return
 
-    if (item.type === 'potion' || item.type === 'expPotion') {
-      if (isBattle && item.type === 'expPotion') {
-        addLog?.('经验药水只能在战斗之外使用。')
+    if (item.type === 'potion' || item.type === 'expPotion' || item.type === 'statBoost') {
+      if (isBattle && (item.type === 'expPotion' || item.type === 'statBoost')) {
+        addLog?.(`${item.name} 只能在战斗之外使用。`)
         return
       }
       resetItemUseEffect()
@@ -1637,6 +1836,8 @@ export function UnifiedBagScreen({
     try {
       if (item.type === 'expPotion') {
         usageResult = await Promise.resolve(onUseExpPotion(monId, item.itemKey))
+      } else if (item.type === 'statBoost') {
+        usageResult = await Promise.resolve(onUseStatBoostItem?.(monId, item.itemKey))
       } else {
         usageResult = await Promise.resolve(onUsePotion(monId, item.itemKey))
       }
@@ -1661,6 +1862,13 @@ export function UnifiedBagScreen({
           itemName: item.name,
           levelUps: Array.isArray(usageResult?.levelUps) ? usageResult.levelUps : [],
         }, EXP_ANIMATION_DURATION_MS)
+      } else if (item.type === 'statBoost') {
+        await playItemUseEffect({
+          type: 'statBoost',
+          monId,
+          amount: getStatBoostEffectText(item),
+          itemName: item.name,
+        }, HEAL_ANIMATION_DURATION_MS)
       }
 
       const remainingQuantityAfterUse = Math.max(0, remainingQuantityBeforeUse - 1)
@@ -1722,17 +1930,19 @@ export function UnifiedBagScreen({
             const isLegacyEvolutionItem = item.type === 'evolutionItem'
             const battleLocked = item.type === 'ball' && !isBattle
             const trainerBattleLocked = item.type === 'ball' && isBattle && !canUseBattleBalls
-            const battleExpLocked = item.type === 'expPotion' && isBattle
+            const battleGrowthLocked = (item.type === 'expPotion' || item.type === 'statBoost') && isBattle
             const noTargetLocked = isLegacyEvolutionItem
-            const itemLocked = battleLocked || trainerBattleLocked || battleExpLocked || noTargetLocked
+            const itemLocked = battleLocked || trainerBattleLocked || battleGrowthLocked || noTargetLocked
             const effectText = trainerBattleLocked
               ? '训练家对战中不能捕捉'
-              : battleExpLocked
+              : battleGrowthLocked
                 ? '仅战斗外使用'
                 : item.type === 'ball'
                   ? '用于捕捉宝可梦'
                   : item.type === 'expPotion'
                     ? `经验 +${item.expAmount}`
+                    : item.type === 'statBoost'
+                      ? getStatBoostEffectText(item)
                     : isLegacyEvolutionItem
                       ? '旧版进化道具，现已停用'
                       : getPotionEffectText(item)
@@ -1760,7 +1970,7 @@ export function UnifiedBagScreen({
                     disabled={itemLocked}
                     className="game-primary-button"
                   >
-                    {battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleExpLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
+                    {battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleGrowthLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
                   </button>
                 </div>
               </CollectionCard>
@@ -1820,6 +2030,7 @@ export function UnifiedBagScreen({
                 const hpPercent = Math.max(0, Math.min(100, (currentHp / maxHp) * 100))
                 const mpPercent = maxMp > 0 ? Math.max(0, Math.min(100, (currentMp / maxMp) * 100)) : 100
                 const selectedExpPotion = selectedItem?.type === 'expPotion' ? selectedItem : null
+                const selectedStatBoostItem = selectedItem?.type === 'statBoost' ? selectedItem : null
                 const selectedPotion = selectedItem?.type === 'potion' ? selectedItem : null
                 const selectedPotionRecovery = selectedPotion ? getPotionRecoveryProfile(selectedPotion) : { hp: 0, mp: 0 }
                 const expToNextLevel = Number(mon.expToNextLevel)
@@ -1833,6 +2044,7 @@ export function UnifiedBagScreen({
                   : 0
                 const isHealing = itemUseEffect?.type === 'heal' && itemUseEffect.monId === mon.id
                 const isExpBoosting = itemUseEffect?.type === 'exp' && itemUseEffect.monId === mon.id
+                const isStatBoosting = itemUseEffect?.type === 'statBoost' && itemUseEffect.monId === mon.id
                 const isPending = pendingItemTargetId === mon.id
                 const canPotionRestoreHp = Boolean(selectedPotion && selectedPotionRecovery.hp > 0 && currentHp < maxHp)
                 const canPotionRestoreMp = Boolean(selectedPotion && selectedPotionRecovery.mp > 0 && currentMp < maxMp)
@@ -1841,12 +2053,16 @@ export function UnifiedBagScreen({
                 const mpPreview = Math.min(selectedPotionRecovery.mp, Math.max(0, maxMp - currentMp))
                 const isUnavailable = selectedExpPotion
                   ? isMaxLevel
+                  : selectedStatBoostItem
+                    ? false
                   : !canPotionRestoreHp && !canPotionRestoreMp && !canPotionCureStatus
                 const isTargetDisabled = isUnavailable || isItemUsePending || selectedItemIsDepleted
                 const statusLabel = selectedItemIsDepleted
                   ? '无库存'
                   : selectedExpPotion
                     ? isMaxLevel ? '满级' : `+${selectedExpPotion.expAmount || 0}`
+                    : selectedStatBoostItem
+                      ? getStatBoostEffectText(selectedStatBoostItem)
                     : isUnavailable
                       ? '已满'
                       : canPotionCureStatus && !canPotionRestoreHp && !canPotionRestoreMp
@@ -1863,13 +2079,14 @@ export function UnifiedBagScreen({
                       'bag-target-option',
                       isUnavailable || selectedItemIsDepleted ? 'bag-target-option--disabled' : '',
                       isHealing ? 'bag-target-option--healing' : '',
-                      isExpBoosting ? 'bag-target-option--exp' : ''
+                      (isExpBoosting || isStatBoosting) ? 'bag-target-option--exp' : ''
                     ].filter(Boolean).join(' ')}
                   >
                     <div className="bag-target-option__sprite">
                       <img src={mon.sprite} onError={handlePokemonImageError} alt={mon.name} />
                       {isHealing && <HealingBurst amount={itemUseEffect.amount} compact />}
                       {isExpBoosting && <ExpBurst amount={itemUseEffect.amount} levelUps={itemUseEffect.levelUps || []} compact />}
+                      {isStatBoosting && <StatBoostBurst label={itemUseEffect.amount} compact />}
                     </div>
                     <div className="bag-target-option__main">
                       <div className="bag-target-option__top">
@@ -1879,23 +2096,29 @@ export function UnifiedBagScreen({
                           <PokemonStatusBadges monster={mon} className="bag-target-option__status-badges" />
                         </div>
                         <span className={`bag-target-option__status ${isUnavailable || selectedItemIsDepleted ? 'bag-target-option__status--muted' : ''}`}>
-                          {isPending && !isHealing && !isExpBoosting ? '处理中' : statusLabel}
+                          {isPending && !isHealing && !isExpBoosting && !isStatBoosting ? '处理中' : statusLabel}
                         </span>
                       </div>
-                      {!selectedExpPotion && selectedPotion && (
+                      {!selectedExpPotion && !selectedStatBoostItem && selectedPotion && (
                         <div className="bag-target-restore-preview">
                           <span className={canPotionRestoreHp ? 'bag-target-restore-preview--active' : ''}>HP +{hpPreview}</span>
                           <span className={canPotionRestoreMp ? 'bag-target-restore-preview--active bag-target-restore-preview--mp' : ''}>MP +{mpPreview}</span>
                           <span className={canPotionCureStatus ? 'bag-target-restore-preview--active bag-target-restore-preview--status' : ''}>解除异常</span>
                         </div>
                       )}
+                      {selectedStatBoostItem && (
+                        <div className="bag-target-restore-preview">
+                          <span className="bag-target-restore-preview--active bag-target-restore-preview--status">{getStatBoostEffectText(selectedStatBoostItem)}</span>
+                          <span className="bag-target-restore-preview--active bag-target-restore-preview--mp">永久生效</span>
+                        </div>
+                      )}
                       <div className="bag-target-option__bars">
                         <div className="bag-target-meter">
-                          <span>{selectedExpPotion ? 'EXP' : 'HP'}</span>
+                          <span>{selectedExpPotion ? 'EXP' : selectedStatBoostItem ? '基础值' : 'HP'}</span>
                           <div><i className="bag-target-meter__hp" style={{ width: selectedExpPotion ? `${expPercent}%` : `${hpPercent}%` }}></i></div>
-                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : `${currentHp}/${maxHp}`}</b>
+                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : selectedStatBoostItem ? '永久提升' : `${currentHp}/${maxHp}`}</b>
                         </div>
-                        {!selectedExpPotion && selectedPotion && (
+                        {!selectedExpPotion && !selectedStatBoostItem && selectedPotion && (
                           <div className="bag-target-meter">
                             <span>MP</span>
                             <div><i className="bag-target-meter__mp" style={{ width: `${mpPercent}%` }}></i></div>
@@ -1936,6 +2159,7 @@ export function BagScreen({
   playerTeam = [],
   onUsePotion,
   onUseExpPotion,
+  onUseStatBoostItem,
   canUsePokeballs = true
 }) {
   const effectiveTeam = playerTeam && playerTeam.length > 0 ? playerTeam : (activePlayerMon ? [activePlayerMon] : [])
@@ -1947,6 +2171,7 @@ export function BagScreen({
       onUseItem={onUseItem}
       onUsePotion={onUsePotion}
       onUseExpPotion={onUseExpPotion}
+      onUseStatBoostItem={onUseStatBoostItem}
       team={effectiveTeam}
       isBattle={Boolean(activeEnemyMon)}
       canUseBattleBalls={canUsePokeballs}

@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { MAP_IDS, getMapInfo, getMapRuntimeEvents } from '../src/game/data/mapCatalog.js'
 
 const sourcePath = new URL('../src/components/Game/OriginalGame.jsx', import.meta.url)
 const cssPath = new URL('../src/index.css', import.meta.url)
 
+const readCssWithImports = async (url, seen = new Set()) => {
+  const key = url.href
+  if (seen.has(key)) return ''
+  seen.add(key)
+
+  const content = await readFile(url, 'utf8')
+  const imports = [...content.matchAll(/@import\s+['"](.+?)['"];/g)]
+    .map((match) => new URL(path.posix.normalize(match[1]), url))
+  const importedCss = await Promise.all(imports.map((importUrl) => readCssWithImports(importUrl, seen)))
+  return [content, ...importedCss].join('\n')
+}
+
 const [source, css] = await Promise.all([
   readFile(sourcePath, 'utf8'),
-  readFile(cssPath, 'utf8')
+  readCssWithImports(cssPath)
 ])
 
 const requiredSceneClasses = [
@@ -46,13 +59,13 @@ for (const sceneClass of requiredSceneClasses) {
     errors.push(`OriginalGame.jsx is missing known battle scene class ${sceneClass}`)
   }
   if (!css.includes(`.${sceneClass}`)) {
-    errors.push(`index.css is missing selector for ${sceneClass}`)
+    errors.push(`CSS imports from index.css are missing selector for ${sceneClass}`)
   }
 }
 
 for (const roleClass of requiredRoleClasses) {
   if (!css.includes(`.${roleClass}`)) {
-    errors.push(`index.css is missing role overlay selector for ${roleClass}`)
+    errors.push(`CSS imports from index.css are missing role overlay selector for ${roleClass}`)
   }
 }
 
@@ -92,7 +105,7 @@ for (const mapId of MAP_IDS) {
 
   for (const event of battleEvents) {
     const role = event?.properties?.role || event?.type || 'normal'
-    if (!['normal', 'lieutenant', 'boss', 'challenge'].includes(role)) {
+    if (!['normal', 'lieutenant', 'boss', 'challenge', 'reward', 'minigame'].includes(role)) {
       errors.push(`${mapId}: battle event ${event.id || event.type} has unmapped role ${role}`)
     }
     const sceneClass = event?.properties?.sceneClass

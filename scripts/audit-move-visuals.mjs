@@ -189,7 +189,10 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
 
   const originalGameSource = fs.readFileSync(path.join(rootDir, 'src/components/Game/OriginalGame.jsx'), 'utf8')
   const battleDamageSource = fs.readFileSync(path.join(rootDir, 'src/utils/battleDamage.js'), 'utf8')
-  const cssSource = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8')
+  const cssSource = [
+    fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8'),
+    fs.readFileSync(path.join(rootDir, 'src/game.css'), 'utf8'),
+  ].join('\n')
 
   if (originalGameSource.includes("!['neutral', 'status'].includes(effectivenessMeta.rank)")) {
     issues.push({
@@ -236,14 +239,14 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
   if (!/battle-move-effect--tag-fang/.test(cssSource) || !/battle-move-effect--tag-sound/.test(cssSource) || !/battle-move-effect--tag-shield/.test(cssSource) || !/battle-move-effect--tag-coin/.test(cssSource) || !/battle-move-effect--tag-shell/.test(cssSource)) {
     issues.push({
       issue: 'move_semantic_tag_css_missing',
-      file: 'src/index.css',
+      files: ['src/index.css', 'src/game.css'],
     })
   }
 
   if (!/battle-move-effect--move-solar_beam/.test(cssSource) || !/battle-move-effect--move-will_o_wisp/.test(cssSource) || !/battleVfxElectroWave/.test(cssSource)) {
     issues.push({
       issue: 'move_specific_signature_css_missing',
-      file: 'src/index.css',
+      files: ['src/index.css', 'src/game.css'],
     })
   }
 

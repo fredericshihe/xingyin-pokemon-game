@@ -62,7 +62,17 @@ const checks = [
   {
     name: 'challenge_repeat_rewards_and_unlock_progress_stay_in_victory_phase',
     scope: 'frontend',
-    passed: /if \(isRepeatableChallenge\) \{[\s\S]*?const challengeRareUnlockStage = challengeRareUnlockStageBefore \+ 1;[\s\S]*?const challengeRareUnlockBatch = getChallengeRareUnlockBatch\(completedEvent, challengeRareUnlockStageBefore\);[\s\S]*?nextWorld = setTrainerVictoryCount\(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName\);/.test(originalGame),
+    passed: /if \(isRepeatableChallenge\) \{[\s\S]*?const eventMetaUnlockStage = Math\.trunc\(Number\(eventMeta\?\.challengeRareUnlockStage\)\);[\s\S]*?const hasCompleteChallengeUnlockSnapshot = \([\s\S]*?Array\.isArray\(eventMeta\?\.challengeRareUnlockBatch\)[\s\S]*?eventMetaUnlockStage > 0[\s\S]*?const fallbackChallengeUnlockStage = challengeRareUnlockStageBefore \+ 1;[\s\S]*?challengeRareUnlockBatch: undefined,[\s\S]*?challengeRareUnlockStage: fallbackChallengeUnlockStage,[\s\S]*?const challengeRareUnlockContext = getChallengeRareUnlockContext\(\{[\s\S]*?context: challengeRareUnlockSnapshot[\s\S]*?const challengeRareUnlockStage = challengeRareUnlockContext\.unlockStage;[\s\S]*?const challengeRareUnlockBatch = challengeRareUnlockContext\.unlockBatch;[\s\S]*?nextWorld = setTrainerVictoryCount\(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName\);/.test(originalGame),
+  },
+  {
+    name: 'challenge_unlock_batch_is_snapshotted_from_confirm_to_battle_environment',
+    scope: 'frontend',
+    passed: /setPendingBattleEventConfirm\(\{[\s\S]*?unlockSpeciesPool: nextChallengeRareUnlockBatch[\s\S]*?challengeRareUnlockBatch: challengeRareUnlockContext\.unlockBatch[\s\S]*?challengeRareUnlockStage: challengeRareUnlockContext\.unlockStage[\s\S]*?const battleEnvironment = createBattleEnvironment\(\{[\s\S]*?challengeRareUnlockBatch: challengeRareUnlockContext\?\.unlockBatch \|\| \[\][\s\S]*?challengeRareUnlockStage: challengeRareUnlockContext\?\.unlockStage \|\| null/.test(originalGame),
+  },
+  {
+    name: 'battle_environment_preserves_challenge_unlock_snapshot',
+    scope: 'frontend',
+    passed: /const challengeRareUnlockBatch = normalizeChallengeRarePool\(environment\.challengeRareUnlockBatch\);[\s\S]*?challengeRareUnlockBatch,[\s\S]*?challengeRareUnlockStage: Number\.isSafeInteger\(challengeRareUnlockStage\)/.test(originalGame),
   },
   {
     name: 'battle_completion_context_ref_tracks_latest_configured_event_metadata',

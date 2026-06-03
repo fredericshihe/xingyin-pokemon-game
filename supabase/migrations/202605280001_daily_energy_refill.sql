@@ -541,7 +541,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION refresh_all_students_daily_energy() TO anon, authenticated;
 
-DO $$
+DO $daily_energy_refill$
 BEGIN
   BEGIN
     CREATE EXTENSION IF NOT EXISTS pg_cron;
@@ -564,5 +564,4 @@ BEGIN
     );
   END IF;
 END;
-$$;
-
+$daily_energy_refill$;

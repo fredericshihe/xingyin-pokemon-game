@@ -379,6 +379,7 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['nature_flower_red_b', 'kenney_nature-kit', 'kenney-nature', 'flower_redB.glb', ['nature', 'flower', 'filler'], ['C', 'D', 'G', 'I'], { defaultScale: 1.04 }],
   ['nature_flower_red_c', 'kenney_nature-kit', 'kenney-nature', 'flower_redC.glb', ['nature', 'flower', 'filler'], ['C', 'D', 'G', 'I'], { defaultScale: 1.02 }],
   ['nature_flower_purple_a', 'kenney_nature-kit', 'kenney-nature', 'flower_purpleA.glb', ['nature', 'flower', 'rare_color'], ['C', 'D', 'H', 'I'], { defaultScale: 1.02 }],
+  ['nature_flower_purple_b', 'kenney_nature-kit', 'kenney-nature', 'flower_purpleA.glb', ['nature', 'flower', 'rare_color'], ['C', 'D', 'H', 'I'], { defaultScale: 0.96 }],
   ['nature_mushroom_red_tall', 'kenney_nature-kit', 'kenney-nature', 'mushroom_redTall.glb', ['nature', 'mushroom', 'hidden_hint'], ['H', 'J', 'K'], { defaultScale: 1.02 }],
   ['nature_lily_large', 'kenney_nature-kit', 'kenney-nature', 'lily_large.glb', ['nature', 'wetland', 'water_edge'], ['D', 'E', 'J'], { defaultScale: 0.9 }],
   ['nature_stump_old', 'kenney_nature-kit', 'kenney-nature', 'stump_old.glb', ['nature', 'wood', 'logging'], ['G', 'H'], { defaultScale: 1.0 }],

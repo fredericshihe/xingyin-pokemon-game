@@ -124,20 +124,34 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.endsWith('.glb'),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-glb-${appBuildId}`,
+              cacheName: 'game-glb',
               expiration: {
                 maxEntries: 220,
-                maxAgeSeconds: 60 * 60 * 24 * 30
+                maxAgeSeconds: 60 * 60 * 24 * 180
               }
             }
           },
           {
             urlPattern: ({ url }) => /\/assets\/audio\/.+\.(ogg|wav|mp3|webm)$/i.test(url.pathname),
-            handler: 'NetworkOnly'
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'game-audio',
+              expiration: {
+                maxEntries: 160,
+                maxAgeSeconds: 60 * 60 * 24 * 180
+              }
+            }
           },
           {
             urlPattern: ({ url }) => /\/assets\/pokemon\/official-artwork\/.+\.(webp|png)$/i.test(url.pathname),
-            handler: 'NetworkOnly'
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'game-pokemon-art',
+              expiration: {
+                maxEntries: 520,
+                maxAgeSeconds: 60 * 60 * 24 * 180
+              }
+            }
           },
           {
             urlPattern: ({ url }) => url.pathname.includes('/assets/'),
@@ -160,7 +174,8 @@ export default defineConfig({
       'three',
       'three/examples/jsm/loaders/GLTFLoader.js',
       'three/examples/jsm/loaders/DRACOLoader.js',
-      'three/examples/jsm/utils/SkeletonUtils.js'
+      'three/examples/jsm/utils/SkeletonUtils.js',
+      'three/examples/jsm/utils/BufferGeometryUtils.js'
     ]
   },
   build: {

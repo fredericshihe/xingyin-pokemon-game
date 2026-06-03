@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export default function AppLoadingScreen({ message = '加载中...', slowHintAfterMs = 5000 }) {
+export default function AppLoadingScreen({ message = '正在准备应用', slowHintAfterMs = 5000 }) {
   const [showSlowHint, setShowSlowHint] = useState(false)
 
   useEffect(() => {
@@ -18,10 +18,10 @@ export default function AppLoadingScreen({ message = '加载中...', slowHintAft
         <p className="text-2xl font-bold text-slate-700">{message}</p>
         {showSlowHint ? (
           <p className="text-sm text-slate-600 leading-relaxed">
-            正在下载游戏模块，首次打开约需 10–30 秒。请保持网络畅通；若超过 1 分钟仍停在这里，请刷新页面或换 Wi‑Fi 后重试。
+            首次打开需要准备本地缓存。请保持页面打开，系统会自动继续。
           </p>
         ) : (
-          <p className="text-sm text-slate-500">请稍候，正在准备游戏…</p>
+          <p className="text-sm text-slate-500">请稍候，正在准备内容…</p>
         )}
       </div>
     </div>

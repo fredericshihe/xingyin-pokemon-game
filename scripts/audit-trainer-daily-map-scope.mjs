@@ -19,17 +19,19 @@ const requiredMarkers = [
   ['scoped world event lookup helper', 'const hasMapScopedWorldEventId = (world, key, mapName, eventId) =>'],
   ['daily trainer lookup uses scoped helper', 'const hasDailyTrainerBattleEvent = (world, mapName, eventId) =>'],
   ['daily trainer write uses scoped helper', 'const appendDailyTrainerBattleEvent = (world, mapName, eventId) =>'],
-  ['daily variant battles check current map daily lock at battle start', 'if (isDailyVariantBattle && battleEventId && hasDailyTrainerBattleEvent(interactionWorld, currentMapName, battleEventId)) {'],
+  ['daily variant battles check current map daily lock at battle start', "if (battleEventType !== 'challenge' && isDailyVariantBattle && battleEventId && hasDailyTrainerBattleEvent(interactionWorld, currentMapName, battleEventId)) {"],
   ['victory settlement writes daily lock for all daily variants', 'nextWorld = appendDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);'],
   ['daily variant completion lookup stays map scoped', 'const wasAlreadyDailyCompleted = hasDailyTrainerBattleEvent(nextWorld, completedMapName, completedEventId);'],
   ['challenge victory count keeps map scope', 'setTrainerVictoryCount(nextWorld, completedEventId, challengeRareUnlockStage, completedMapName);'],
-  ['challenge unlock lookup keeps map scope', 'getChallengeRareUnlockStage(interactionWorld, battleMapEvent, currentMapName)'],
-  ['challenge same-day visual state uses daily lock', "status: hasDailyTrainerBattleEvent(world, mapName, event.id) ? 'daily_complete' : 'available'"],
+  ['challenge unlock lookup keeps map scope', 'getChallengeRareUnlockContext({\n          event: battleMapEvent,\n          world: interactionWorld,\n          mapName: currentMapName'],
+  ['challenge stays available after completion', "status: 'available',"],
   ['local completed override helper exists', 'const appendCompletedBattleEventVisualOverride = (overrides, {'],
   ['map visual state merges local completed override', 'const buildMapEventVisualState = (mapName, world, completedBattleEventVisualOverrides = null) =>'],
   ['battle start reads local completed override before reopening battle', 'const localCompletedBattleEventVisualState = getCompletedBattleEventVisualOverride('],
   ['muted battle events route to info on map', 'function shouldRouteBattleEventToInfo(mapEvent, mapEventVisualState, currentMapBossCompleted = false) {'],
   ['configured battle info messages resolved centrally', 'const getConfiguredBattleEventInfoMessage = ({'],
+  ['repeatable trainer and challenge completion do not create permanent lock', "if (eventType === 'challenge' || isRepeatableTrainerEvent(eventType, eventRole)) {\n    return {\n      world: withUpdatedMapProgress(nextWorld, mapName),"],
+  ['repeatable trainer ignores historical completed ids at battle start', 'const isCompletedBattleEvent = isProgressiveRepeatableTrainer\n        ? false'],
   ['accepted cloud snapshot is applied locally', 'applyLocalCommittedCloudSnapshot(normalizedSnapshot);']
 ]
 
@@ -97,11 +99,11 @@ for (const mapName of MAP_CHAIN) {
       if (!hasTeam(props.team)) failures.push(`${eventLabel(mapLabel, event)} has no configured team.`)
       if (!Array.isArray(props.rewardItems)) failures.push(`${eventLabel(mapLabel, event)} is missing rewardItems.`)
       if (!Array.isArray(props.challengeRarePool)) failures.push(`${eventLabel(mapLabel, event)} is missing challengeRarePool.`)
-      if (!String(props.dailyDefeatedText || '').includes('明天')) {
-        warnings.push(`${eventLabel(mapLabel, event)} daily text should mention next-day refresh access.`)
+      if (!String(props.dailyDefeatedText || '').includes('可继续挑战')) {
+        warnings.push(`${eventLabel(mapLabel, event)} daily text should mention repeatable access.`)
       }
-      if (!String(props.dailyDefeatedText || '').includes('首通奖励不会重复')) {
-        warnings.push(`${eventLabel(mapLabel, event)} repeat text should explain first-clear reward behavior.`)
+      if (Array.isArray(props.challengeRarePool) && props.challengeRarePool.length > 0 && !String(props.challengeRareUnlockText || '').trim()) {
+        warnings.push(`${eventLabel(mapLabel, event)} should provide a concise rare ecology unlock hint.`)
       }
     }
   }

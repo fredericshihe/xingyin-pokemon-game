@@ -27,6 +27,30 @@ const getEventProps = (event) => (
   event?.properties && typeof event.properties === 'object' ? event.properties : {}
 )
 
+const isPremiumHiddenZone = (zone) => (
+  zone?.premiumHiddenZone === true &&
+  Array.isArray(zone?.levelRange) &&
+  zone.levelRange.length >= 2
+)
+
+const isAdaptiveDamageMove = (move) => move?.effect === 'mimic'
+
+const hasBattleDamageSource = (moveKeys, MOVES) => (
+  moveKeys.some((moveKey) => {
+    const move = MOVES[moveKey]
+    return (Number(move?.power) > 0 && move?.category !== 'status') || isAdaptiveDamageMove(move)
+  })
+)
+
+const getZoneLevelBounds = (zone, mapMin, mapMax) => {
+  if (isPremiumHiddenZone(zone)) {
+    const minLevel = Math.max(1, Math.trunc(Number(zone.levelRange[0])) || 1)
+    const maxLevel = Math.max(minLevel, Math.trunc(Number(zone.levelRange[1])) || minLevel)
+    return { minLevel, maxLevel, source: 'hidden' }
+  }
+  return { minLevel: mapMin, maxLevel: mapMax, source: 'map' }
+}
+
 await withViteAuditServer(async ({ loadModule }) => {
   const [
     { MONSTERS, MOVES, getBalancedMovesForLevel },
@@ -139,8 +163,20 @@ await withViteAuditServer(async ({ loadModule }) => {
       .map((monster) => createInstance(monster, level))
 
     for (const attacker of pool) {
-      if (!attacker.moves.some((moveKey) => Number(MOVES[moveKey]?.power) > 0)) {
-        aiIssues.noDamagingMove.push({ level, name: attacker.name })
+      if (!hasBattleDamageSource(attacker.moves, MOVES)) {
+        aiIssues.noDamagingMove.push({
+          level,
+          id: attacker.id,
+          dexNo: attacker.dexNo,
+          name: attacker.name,
+          moves: attacker.moves.map((moveKey) => ({
+            moveKey,
+            name: MOVES[moveKey]?.name || moveKey,
+            power: Number(MOVES[moveKey]?.power) || 0,
+            category: MOVES[moveKey]?.category || 'unknown',
+            effect: MOVES[moveKey]?.effect || null
+          }))
+        })
         continue
       }
 
@@ -329,8 +365,11 @@ await withViteAuditServer(async ({ loadModule }) => {
     const zones = Array.isArray(mapInfo.encounterZones) ? mapInfo.encounterZones : []
     const tableIds = [...new Set(zones.map((zone) => zone.encounterTableId).filter(Boolean))]
 
-    for (const tableId of tableIds) {
+    for (const zone of zones) {
+      const tableId = zone.encounterTableId
+      if (!tableId) continue
       const table = getEncounterTable(tableId)
+      const zoneBounds = getZoneLevelBounds(zone, mapMin, mapMax)
       for (const row of table.pokemon || []) {
         const pokemonId = Math.trunc(Number(row.id))
         const minLevel = Math.trunc(Number(row.minLevel))
@@ -339,8 +378,9 @@ await withViteAuditServer(async ({ loadModule }) => {
         if (!monsterById.has(pokemonId) || legalLevel === null) {
           wildTableIssues.push(`${mapId}/${tableId} 存在非法野生宝可梦 ${pokemonId}@${minLevel}-${maxLevel}`)
         }
-        if (minLevel < mapMin || maxLevel > mapMax) {
-          wildTableIssues.push(`${mapId}/${tableId} 野生等级 ${minLevel}-${maxLevel} 超出地图 Lv.${mapMin}-${mapMax}`)
+        if (minLevel < zoneBounds.minLevel || maxLevel > zoneBounds.maxLevel) {
+          const boundLabel = zoneBounds.source === 'hidden' ? '隐藏区' : '地图'
+          wildTableIssues.push(`${mapId}/${tableId} 野生等级 ${minLevel}-${maxLevel} 超出${boundLabel} Lv.${zoneBounds.minLevel}-${zoneBounds.maxLevel}`)
         }
       }
     }
@@ -432,6 +472,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       aiImmuneTopMove: aiIssues.immuneTopMove.slice(0, 8),
       aiMissedFinish: aiIssues.missedFinish.slice(0, 8),
       aiIgnoredTypeEdge: aiIssues.ignoredClearTypeEdge.slice(0, 8),
+      noDamagingMove: aiIssues.noDamagingMove.slice(0, 8),
       mapDifficultyRows
     }
   }

@@ -26,6 +26,8 @@ function parseArgs(argv) {
     baseUrl: 'http://127.0.0.1:4173/xingyin-pokemon-game',
     durationMs: 5000,
     warmupMs: 1800,
+    readyTimeoutMs: 60000,
+    mapQuality: 'high',
     mapSet: 'all',
     maps: null,
     devices: null,
@@ -41,6 +43,8 @@ function parseArgs(argv) {
     if (flag === '--base-url') args.baseUrl = readValue()
     else if (flag === '--duration-ms') args.durationMs = Number(readValue())
     else if (flag === '--warmup-ms') args.warmupMs = Number(readValue())
+    else if (flag === '--ready-timeout-ms') args.readyTimeoutMs = Number(readValue())
+    else if (flag === '--map-quality') args.mapQuality = readValue()
     else if (flag === '--map-set') args.mapSet = readValue()
     else if (flag === '--maps') args.maps = readValue().split(',').map((value) => value.trim()).filter(Boolean)
     else if (flag === '--devices') args.devices = readValue().split(',').map((value) => value.trim()).filter(Boolean)
@@ -54,6 +58,8 @@ function parseArgs(argv) {
 
   if (!Number.isFinite(args.durationMs) || args.durationMs < 1000) args.durationMs = 5000
   if (!Number.isFinite(args.warmupMs) || args.warmupMs < 0) args.warmupMs = 1800
+  if (!Number.isFinite(args.readyTimeoutMs) || args.readyTimeoutMs < 5000) args.readyTimeoutMs = 60000
+  if (!['high', 'lite', 'auto'].includes(args.mapQuality)) args.mapQuality = 'high'
   return args
 }
 
@@ -65,6 +71,8 @@ Options:
   --base-url URL          Built app URL. Default: http://127.0.0.1:4173
   --duration-ms N         Frame sample duration per map/device. Default: 5000
   --warmup-ms N           Wait after scene is ready before sampling. Default: 1800
+  --ready-timeout-ms N    Wait for the Three.js probe before marking a map failed. Default: 60000
+  --map-quality MODE      high|lite|auto. Default: high
   --map-set all|regions   all includes starter + 8 region maps. regions tests only the 8 region maps.
   --maps a,b,c            Explicit comma-separated map ids.
   --devices a,b           Device ids: ${DEFAULT_DEVICES.map((device) => device.id).join(', ')}
@@ -135,12 +143,31 @@ async function launchChrome() {
   const portText = await waitForFile(path.join(userDataDir, 'DevToolsActivePort'))
   const port = Number(portText.split('\n')[0])
   if (!Number.isFinite(port)) throw new Error(`Invalid DevToolsActivePort: ${portText}`)
+  let closed = false
+  const exitPromise = new Promise((resolve) => {
+    chrome.once('exit', resolve)
+  })
 
   return {
     port,
     async close() {
-      chrome.kill('SIGTERM')
-      await rm(userDataDir, { recursive: true, force: true })
+      if (!closed) {
+        closed = true
+        chrome.kill('SIGTERM')
+      }
+      await Promise.race([
+        exitPromise,
+        sleep(2500)
+      ])
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        try {
+          await rm(userDataDir, { recursive: true, force: true })
+          return
+        } catch (error) {
+          if (attempt === 3) throw error
+          await sleep(220 * (attempt + 1))
+        }
+      }
     }
   }
 }
@@ -390,6 +417,28 @@ function bytesToKb(value) {
   return Number.isFinite(value) ? `${Math.round(value / 1024)} KB` : '-'
 }
 
+async function getPageDiagnostics(page) {
+  try {
+    return await evaluate(page, `(() => {
+      const canvas = document.querySelector('canvas.three-map-canvas')
+      return {
+        href: window.location.href,
+        title: document.title,
+        bodyText: document.body?.innerText?.slice(0, 260) || '',
+        canvas: canvas ? {
+          width: canvas.width,
+          height: canvas.height,
+          cssWidth: canvas.clientWidth,
+          cssHeight: canvas.clientHeight
+        } : null,
+        perfProbe: window.__THREE_LOW_POLY_MAP_PERF__ || null
+      }
+    })()`, 5000)
+  } catch (error) {
+    return { diagnosticError: error.message }
+  }
+}
+
 async function runBenchmark(args) {
   const maps = selectMaps(args)
   const devices = selectDevices(args)
@@ -402,47 +451,49 @@ async function runBenchmark(args) {
 
   try {
     for (const device of devices) {
-      const page = await createPage(chrome.port)
-      const browserErrors = []
-      const networkFailures = []
-      const assetFailures = []
-      page.on('Runtime.exceptionThrown', (event) => {
-        const details = event.exceptionDetails
-        browserErrors.push(details?.text || details?.exception?.description || 'Runtime exception')
-      })
-      page.on('Log.entryAdded', (event) => {
-        const entry = event.entry
-        if (entry?.level === 'error' && !/^Failed to load resource\b/.test(entry.text || '')) {
-          browserErrors.push(entry.text)
-        }
-      })
-      page.on('Network.responseReceived', (event) => {
-        const response = event.response
-        if (!response || response.status < 400) return
-        if (/\/favicon\.ico(?:[?#]|$)/.test(response.url)) return
-        const failure = {
-          status: response.status,
-          type: event.type,
-          url: response.url
-        }
-        networkFailures.push(failure)
-        if (/\/assets\/(?:3d|pokemon|characters)\//.test(response.url)) {
-          assetFailures.push(failure)
-        }
-      })
-
-      await preparePage(page, device, args.cpuThrottle)
-
       for (const mapId of maps) {
+        const page = await createPage(chrome.port)
+        const browserErrors = []
+        const networkFailures = []
+        const assetFailures = []
         const mapEntry = MAP_CATALOG[mapId]
-        const url = `${args.baseUrl.replace(/\/$/, '')}/map-runtime-preview?map=${encodeURIComponent(mapId)}&perf=1`
-        browserErrors.length = 0
-        networkFailures.length = 0
-        assetFailures.length = 0
+        const query = new URLSearchParams({
+          map: mapId,
+          perf: '1',
+          mapQuality: args.mapQuality
+        })
+        const url = `${args.baseUrl.replace(/\/$/, '')}/map-runtime-preview?${query.toString()}`
         const started = Date.now()
+
+        page.on('Runtime.exceptionThrown', (event) => {
+          const details = event.exceptionDetails
+          browserErrors.push(details?.text || details?.exception?.description || 'Runtime exception')
+        })
+        page.on('Log.entryAdded', (event) => {
+          const entry = event.entry
+          if (entry?.level === 'error' && !/^Failed to load resource\b/.test(entry.text || '')) {
+            browserErrors.push(entry.text)
+          }
+        })
+        page.on('Network.responseReceived', (event) => {
+          const response = event.response
+          if (!response || response.status < 400) return
+          if (/\/favicon\.ico(?:[?#]|$)/.test(response.url)) return
+          const failure = {
+            status: response.status,
+            type: event.type,
+            url: response.url
+          }
+          networkFailures.push(failure)
+          if (/\/assets\/(?:3d|pokemon|characters)\//.test(response.url)) {
+            assetFailures.push(failure)
+          }
+        })
+
         try {
+          await preparePage(page, device, args.cpuThrottle)
           await navigateAndWait(page, url)
-          const readyAtMs = await waitForSceneReady(page)
+          const readyAtMs = await waitForSceneReady(page, args.readyTimeoutMs)
           await sleep(args.warmupMs)
           const measured = await evaluate(page, buildMeasureExpression(args.durationMs), args.durationMs + 10000)
           const result = {
@@ -454,6 +505,7 @@ async function runBenchmark(args) {
             height: device.height,
             dpr: device.dpr,
             cpuThrottle: args.cpuThrottle ? device.cpuThrottle : 1,
+            mapQuality: args.mapQuality,
             readyMs: readyAtMs,
             wallMs: Date.now() - started,
             browserErrors: [...browserErrors],
@@ -474,18 +526,20 @@ async function runBenchmark(args) {
             height: device.height,
             dpr: device.dpr,
             cpuThrottle: args.cpuThrottle ? device.cpuThrottle : 1,
+            mapQuality: args.mapQuality,
             error: error.message,
             browserErrors: [...browserErrors],
             networkFailures: [...networkFailures],
             assetFailures: [...assetFailures],
+            diagnostics: await getPageDiagnostics(page),
             status: 'FAIL'
           }
           results.push(result)
           console.log(`${result.status.padEnd(4)} ${device.id.padEnd(12)} ${mapId.padEnd(26)} ${error.message}`)
+        } finally {
+          page.close()
         }
       }
-
-      page.close()
     }
   } finally {
     await chrome.close()
@@ -499,10 +553,10 @@ function toMarkdown({ args, maps, devices, results, jsonPath }) {
   lines.push('# Mobile Map Performance Audit')
   lines.push('')
   lines.push(`- Base URL: ${args.baseUrl}`)
-  lines.push(`- Map quality: high (default)`)
+  lines.push(`- Map quality: ${args.mapQuality}`)
   lines.push(`- Maps tested: ${maps.length} (${maps.join(', ')})`)
   lines.push(`- Devices: ${devices.map((device) => device.id).join(', ')}`)
-  lines.push(`- Sample: warmup ${args.warmupMs}ms, measure ${args.durationMs}ms, CPU throttle ${args.cpuThrottle ? 'on' : 'off'}`)
+  lines.push(`- Sample: warmup ${args.warmupMs}ms, measure ${args.durationMs}ms, ready timeout ${args.readyTimeoutMs}ms, CPU throttle ${args.cpuThrottle ? 'on' : 'off'}`)
   lines.push(`- Raw JSON: ${path.relative(PROJECT_ROOT, jsonPath)}`)
   lines.push('')
   lines.push('| Status | Device | Map | Quality | Ready ms | Avg FPS | P10 FPS | >50ms Frames | Long Tasks | Draw Calls | Triangles | 3D Assets | Asset Failures | Transfer |')

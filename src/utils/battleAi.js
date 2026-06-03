@@ -182,7 +182,12 @@ const normalizeTrainerStyle = (trainerStyle = null) => {
 const getAiRoleProfile = ({ battleKind = 'wild', trainerRole = 'normal', trainerStyle = null } = {}) => {
   if (battleKind !== 'trainer') return AI_ROLE_PROFILES.wild
   const normalizedRole = normalizeTrainerRole(trainerRole)
-  const roleProfile = AI_ROLE_PROFILES[normalizedRole] || AI_ROLE_PROFILES.normal
+  const profileRole = normalizedRole === 'minigame'
+    ? 'boss'
+    : normalizedRole === 'reward'
+      ? 'normal'
+      : normalizedRole
+  const roleProfile = AI_ROLE_PROFILES[profileRole] || AI_ROLE_PROFILES.normal
   const normalizedStyle = normalizeTrainerStyle(trainerStyle)
   if (normalizedRole !== 'lieutenant' || !normalizedStyle) return roleProfile
   return {
@@ -203,6 +208,7 @@ const hasStatusImmunity = (mon, status) => {
 const getCurrentHp = (mon) => Math.max(0, Number(mon?.currentHp ?? mon?.hp ?? mon?.maxHp ?? 0) || 0)
 const getMaxHp = (mon) => Math.max(1, Number(mon?.maxHp ?? mon?.hp ?? 1) || 1)
 const getCurrentMp = (mon) => Math.max(0, Number(mon?.currentMp ?? mon?.mp ?? mon?.maxMp ?? 0) || 0)
+const getMaxMp = (mon) => Math.max(1, Number(mon?.maxMp ?? mon?.mp ?? 1) || 1)
 
 const getHpRatio = (mon) => {
   const maxHp = getMaxHp(mon)
@@ -766,7 +772,8 @@ const POTION_TIERS = ['potion', 'super_potion', 'hyper_potion']
   .filter((key) => POTIONS[key])
   .map((key) => ({
     key,
-    healAmount: Math.max(0, Number(POTIONS[key]?.healAmount) || 0)
+    healAmount: Math.max(0, Number(POTIONS[key]?.healAmount) || 0),
+    mpRestoreAmount: Math.max(0, Number(POTIONS[key]?.mpRestoreAmount) || 0)
   }))
 
 const getRecentEnemyItemCount = (battleLogs = [], lookback = 10) => (
@@ -780,6 +787,31 @@ const pickPotionForDeficit = (hpDeficit) => {
   const sufficient = POTION_TIERS.find((tier) => tier.healAmount >= hpDeficit)
   return (sufficient || POTION_TIERS[POTION_TIERS.length - 1])?.key || null
 }
+
+const pickPotionForRecoveryNeed = ({ hpDeficit = 0, mpDeficit = 0, preferMp = false } = {}) => {
+  if (preferMp && mpDeficit > 0) {
+    const sufficientMp = POTION_TIERS.find((tier) => tier.mpRestoreAmount >= mpDeficit)
+    const anyMp = POTION_TIERS.find((tier) => tier.mpRestoreAmount > 0)
+    return (sufficientMp || anyMp || POTION_TIERS[POTION_TIERS.length - 1])?.key || null
+  }
+  if (hpDeficit > 0) return pickPotionForDeficit(hpDeficit)
+  return POTION_TIERS.find((tier) => tier.mpRestoreAmount > 0)?.key || POTION_TIERS[0]?.key || null
+}
+
+const hasPotionCurableBattleStatus = (mon = {}) => {
+  const primaryStatus = typeof mon?.status === 'string' ? mon.status.trim() : ''
+  const volatileStatuses = mon?.volatileStatuses && typeof mon.volatileStatuses === 'object'
+    ? mon.volatileStatuses
+    : null
+  return Boolean(primaryStatus || volatileStatuses?.confusion || volatileStatuses?.flinch)
+}
+
+const hasAffordableBattleMove = (mon, targetMon) => (
+  (Array.isArray(mon?.moves) ? mon.moves : []).some((moveKey) => {
+    const move = MOVES[moveKey]
+    return move && isMoveAffordable(mon, move) && hasUserStatusRequirement(move, mon) && hasTargetStatusRequirement(move, targetMon)
+  })
+)
 
 /**
  * 训练师 AI 是否使用回复道具（伤药）。仅 boss/精英类角色拥有有限预算。
@@ -804,42 +836,66 @@ export function evaluateTrainerItemDecision({
   const threshold = Number(roleBalance.potionHpThreshold) || 0
   if (threshold <= 0) return decline('role_no_potion')
 
-  const hpRatio = getHpRatio(activeEnemyMon)
-  if (hpRatio <= 0 || hpRatio > threshold) return decline('healthy')
-
   const maxHp = getMaxHp(activeEnemyMon)
   const currentHp = getCurrentHp(activeEnemyMon)
+  const hpRatio = currentHp / maxHp
+  const maxMp = getMaxMp(activeEnemyMon)
+  const currentMp = getCurrentMp(activeEnemyMon)
   const hpDeficit = Math.max(0, maxHp - currentHp)
-  // 缺口太小不值得耗费一次珍贵的道具配额。
-  if (hpDeficit < maxHp * 0.32) return decline('deficit_too_small')
+  const mpDeficit = Math.max(0, maxMp - currentMp)
+  const mpRatio = currentMp / maxMp
+  const hasCurableStatus = hasPotionCurableBattleStatus(activeEnemyMon)
+  const canActWithMove = hasAffordableBattleMove(activeEnemyMon, targetMon)
+  const canRecoverMp = POTION_TIERS.some((tier) => tier.mpRestoreAmount > 0)
+  const needsHpRecovery = hpRatio > 0 && hpRatio <= threshold && hpDeficit >= maxHp * 0.32
+  const needsMpRecovery = canRecoverMp && mpDeficit > 0 && (!canActWithMove || mpRatio <= 0.18)
+  const needsStatusCure = hasCurableStatus && hpRatio <= Math.max(0.62, threshold + 0.12)
+  if (!needsHpRecovery && !needsMpRecovery && !needsStatusCure) return decline(hpRatio > threshold ? 'healthy' : 'deficit_too_small')
 
-  // 若对手本回合就能打死当前宝可梦，治疗只是把药喂给对手，改为不治疗（让上层走换人/进攻）。
-  const incomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
-  const lethalThisTurn = incomingOutcome.damage >= currentHp
-  const targetSlower = (Number(activeEnemyMon?.spd) || 0) >= (Number(targetMon?.spd) || 0)
-  // 对手更慢时，先治疗仍能在挨打前回血；对手更快且能秒杀则放弃治疗。
-  if (lethalThisTurn && !targetSlower) return decline('would_be_wasted')
-
-  const itemKey = pickPotionForDeficit(hpDeficit)
+  const itemKey = pickPotionForRecoveryNeed({
+    hpDeficit,
+    mpDeficit,
+    preferMp: !needsHpRecovery && needsMpRecovery
+  })
   if (!itemKey) return decline('no_potion_item')
 
+  const incomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
+  const lethalThisTurn = incomingOutcome.damage >= currentHp
+  const potion = POTIONS[itemKey] || {}
+  const healedHp = Math.min(maxHp, currentHp + (Number(potion.healAmount) || 0))
+  // 训练家道具在本项目中先于本回合招式结算；只有“补完仍会被同一击打倒”才放弃，避免之前按速度误判导致永远不用药。
+  if (needsHpRecovery && incomingOutcome.damage >= healedHp && !needsMpRecovery && !needsStatusCure) {
+    return decline('would_still_be_ko')
+  }
+
   // 越濒危越倾向用药；最近刚用过则降低频率，避免连续刷药的机械感。
-  const urgency = Math.max(0, threshold - hpRatio) / Math.max(0.01, threshold)
+  const hpUrgency = Math.max(0, threshold - hpRatio) / Math.max(0.01, threshold)
+  const mpUrgency = needsMpRecovery ? (canActWithMove ? Math.max(0, 0.18 - mpRatio) / 0.18 : 1) : 0
   const recentItemUse = getRecentEnemyItemCount(battleLogs)
   const aiSkill = Number(roleBalance.aiSkill) || 0.5
-  let probability = 0.32 + urgency * 0.5 + Math.max(0, aiSkill - 0.7) * 0.6
-  if (lethalThisTurn && targetSlower) probability = Math.min(0.95, probability + 0.3)
+  let probability = 0.22 + hpUrgency * 0.5 + mpUrgency * 0.34 + Math.max(0, aiSkill - 0.7) * 0.6
+  if (needsStatusCure) probability += 0.14
+  if (lethalThisTurn && incomingOutcome.damage < healedHp) probability += 0.28
+  if (!needsHpRecovery && needsMpRecovery) probability = Math.max(probability, canActWithMove ? 0.42 : 0.76)
   probability -= recentItemUse * 0.4
   probability = Math.max(0, Math.min(0.92, probability))
 
   const shouldUseItem = random() < probability
+  const reason = needsMpRecovery && !needsHpRecovery
+    ? 'recover_mp'
+    : needsStatusCure && !needsHpRecovery
+      ? 'cure_status'
+      : lethalThisTurn
+        ? 'emergency_heal'
+        : 'sustain_heal'
   return {
     shouldUseItem,
     itemKey: shouldUseItem ? itemKey : null,
     suggestedItemKey: itemKey,
-    reason: shouldUseItem ? (lethalThisTurn ? 'emergency_heal' : 'sustain_heal') : 'held_item',
+    reason: shouldUseItem ? reason : 'held_item',
     probability,
-    hpRatio
+    hpRatio,
+    mpRatio
   }
 }
 

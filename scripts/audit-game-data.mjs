@@ -19,7 +19,8 @@ const sample = (items, limit = 12) => items.slice(0, limit)
 
 const resolveAssetPath = (rootDir, assetPath) => {
   if (!assetPath || typeof assetPath !== 'string') return null
-  const relative = assetPath.startsWith('/') ? assetPath.slice(1) : assetPath
+  const cleanAssetPath = assetPath.split('?')[0]
+  const relative = cleanAssetPath.startsWith('/') ? cleanAssetPath.slice(1) : cleanAssetPath
   return path.join(rootDir, 'public', relative)
 }
 
@@ -32,6 +33,7 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
       POTIONS,
       EXP_POTIONS,
       EVOLUTION_ITEMS,
+      STAT_BOOST_ITEMS,
       getBalancedMovesForLevel,
       getMoveKeysAvailableForMonsterLevel,
     },
@@ -51,6 +53,7 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     ...Object.keys(POTIONS),
     ...Object.keys(EXP_POTIONS),
     ...Object.keys(EVOLUTION_ITEMS),
+    ...Object.keys(STAT_BOOST_ITEMS),
   ])
   const duplicateMonsterIds = []
   const missingMonsterFields = []
@@ -548,12 +551,16 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     ['pokeball', POKEBALLS, 'catchRateMultiplier'],
     ['potion', POTIONS, 'healAmount'],
     ['expPotion', EXP_POTIONS, 'expAmount'],
+    ['statBoost', STAT_BOOST_ITEMS, 'boostAmount'],
     ['evolutionItem', EVOLUTION_ITEMS, 'price'],
   ]
 
   for (const [itemType, items, requiredValueKey] of itemGroups) {
     for (const [itemKey, item] of Object.entries(items)) {
-      if (!item.name || !isPositiveNumber(item.price) || !isPositiveNumber(item[requiredValueKey])) {
+      const hasValidPrice = item.notForSale === true
+        ? Number.isFinite(Number(item.price)) && Number(item.price) >= 0
+        : isPositiveNumber(item.price)
+      if (!item.name || !hasValidPrice || !isPositiveNumber(item[requiredValueKey])) {
         invalidItems.push({
           itemType,
           itemKey,
@@ -606,6 +613,7 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
       pokeballCount: Object.keys(POKEBALLS).length,
       potionCount: Object.keys(POTIONS).length,
       expPotionCount: Object.keys(EXP_POTIONS).length,
+      statBoostItemCount: Object.keys(STAT_BOOST_ITEMS).length,
       evolutionItemCount: Object.keys(EVOLUTION_ITEMS).length,
       duplicateMonsterIdCount: duplicateMonsterIds.length,
       missingMonsterFieldCount: missingMonsterFields.length,

@@ -1,6 +1,51 @@
 export const OFFICIAL_STAT_KEYS = ['maxHp', 'atk', 'def', 'spAtk', 'spDef', 'spd']
 
+export const STAT_BOOST_FIELD_ALIASES = {
+  hp: 'maxHp',
+  maxHp: 'maxHp',
+  attack: 'atk',
+  atk: 'atk',
+  defense: 'def',
+  def: 'def',
+  spAttack: 'spAtk',
+  spAtk: 'spAtk',
+  specialAttack: 'spAtk',
+  spDefense: 'spDef',
+  spDef: 'spDef',
+  specialDefense: 'spDef',
+  speed: 'spd',
+  spd: 'spd',
+}
+
 const safeBaseStat = (value) => Number(value) || 0
+
+export const resolveBaseStatBoostKey = (stat) => (
+  STAT_BOOST_FIELD_ALIASES[stat] || null
+)
+
+export const normalizeBaseStatBoosts = (boosts = {}) => {
+  if (!boosts || typeof boosts !== 'object') return {}
+  return Object.entries(boosts).reduce((acc, [stat, value]) => {
+    const key = resolveBaseStatBoostKey(stat)
+    const amount = Math.max(0, Math.trunc(Number(value) || 0))
+    if (!key || amount <= 0) return acc
+    acc[key] = (acc[key] || 0) + amount
+    return acc
+  }, {})
+}
+
+export const applyBaseStatBoosts = (baseStats = {}, boosts = {}) => {
+  const normalizedBoosts = normalizeBaseStatBoosts(boosts)
+  return {
+    ...baseStats,
+    ...OFFICIAL_STAT_KEYS.reduce((acc, statKey) => {
+      const current = safeBaseStat(baseStats?.[statKey])
+      const boost = Math.max(0, Number(normalizedBoosts[statKey]) || 0)
+      acc[statKey] = current + boost
+      return acc
+    }, {}),
+  }
+}
 
 export const calculateOfficialHpStat = (baseHp, level, { iv = 0, ev = 0 } = {}) => {
   const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))

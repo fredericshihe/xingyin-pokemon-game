@@ -1,0 +1,102 @@
+{
+  "startedAt": "2026-06-01T23:17:37.862Z",
+  "args": {
+    "baseUrl": "http://127.0.0.1:3002",
+    "durationMs": 2000,
+    "warmupMs": 800,
+    "mapSet": "all",
+    "maps": [
+      "GodotMapV2"
+    ],
+    "devices": [
+      "iphone_se"
+    ],
+    "cpuThrottle": false,
+    "outDir": "/Users/shihe/Documents/宝可梦养成/reports/mobile-map-performance"
+  },
+  "maps": [
+    "GodotMapV2"
+  ],
+  "devices": [
+    {
+      "id": "iphone_se",
+      "label": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 4
+    }
+  ],
+  "results": [
+    {
+      "mapId": "GodotMapV2",
+      "mapName": "星音草径",
+      "deviceId": "iphone_se",
+      "deviceLabel": "iPhone SE 375x667 DPR2 CPUx4",
+      "width": 375,
+      "height": 667,
+      "dpr": 2,
+      "cpuThrottle": 1,
+      "readyMs": 2604.5,
+      "wallMs": 5443,
+      "browserErrors": [],
+      "networkFailures": [],
+      "assetFailures": [],
+      "sampleCount": 87,
+      "averageFrameMs": 22.79885057471265,
+      "avgFps": 43.861860347869914,
+      "p10Fps": 30.030030030029867,
+      "p5Fps": 29.325513196481406,
+      "p1Fps": 28.089887640449152,
+      "p90FrameMs": 33.30000000000018,
+      "p95FrameMs": 34.099999999999454,
+      "p99FrameMs": 35.600000000000364,
+      "worstFrameMs": 35.899999999999636,
+      "framesOver33ms": 7,
+      "framesOver50ms": 0,
+      "longTaskCount": 0,
+      "longTaskTotalMs": 0,
+      "longTaskMaxMs": 0,
+      "readyAtMs": 3409.8000000715256,
+      "resourceCount": 145,
+      "assetResourceCount": 61,
+      "transferSize": 9755367,
+      "assetTransferSize": 1292318,
+      "navigation": {
+        "domContentLoaded": 2338.8000000715256,
+        "load": 2600.899999976158,
+        "transferSize": 2955
+      },
+      "heap": {
+        "usedJSHeapSize": 40212292,
+        "totalJSHeapSize": 50084576,
+        "jsHeapSizeLimit": 4294967296
+      },
+      "perfProbe": {
+        "mapName": "GodotMapV2",
+        "mapVisualQuality": "lite",
+        "isMobile": true,
+        "renderMode": "active",
+        "idleFrameMs": 42,
+        "canvasWidth": 562,
+        "canvasHeight": 50331648,
+        "cssWidth": 562,
+        "cssHeight": 33554432,
+        "devicePixelRatio": 2,
+        "pixelRatio": 1.5,
+        "drawCalls": 107,
+        "triangles": 109898,
+        "points": 0,
+        "lines": 0,
+        "geometries": 75,
+        "textures": 13,
+        "sceneChildren": 4,
+        "rootChildren": 130,
+        "visibleChunks": 2,
+        "totalChunks": 6,
+        "avgFps": "43.5"
+      },
+      "status": "WARN"
+    }
+  ]
+}

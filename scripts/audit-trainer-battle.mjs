@@ -4,6 +4,8 @@ import { withViteAuditServer } from './load-vite-module.mjs'
 const FACINGS = new Set(['up', 'down', 'left', 'right'])
 const ROLE_MIN_TEAM_SIZE = {
   normal: 2,
+  reward: 2,
+  minigame: 6,
   lieutenant: 3,
   boss: 5,
   challenge: 3
@@ -21,7 +23,8 @@ await withViteAuditServer(async ({ loadModule }) => {
   const {
     getTrainerDifficultyBounds,
     isDailyVariantBattleEvent,
-    resolveTrainerBattleTeamConfig
+    resolveTrainerBattleTeamConfig,
+    TERMINAL_BOSS_EXCLUSIVE_POKEMON_IDS
   } = await loadModule('/src/utils/trainerBattleScaling.js')
   const { MONSTERS } = await loadModule('/src/utils/gameData.js')
 
@@ -50,9 +53,11 @@ await withViteAuditServer(async ({ loadModule }) => {
   let challengeEventCount = 0
   let normalTrainerCount = 0
   let lieutenantCount = 0
+  let minigameCount = 0
   const dailyVariantSignatures = new Set()
   const trainerNameOwners = new Map()
   const speciesNameById = new Map(MONSTERS.map((monster) => [monster.id, monster.name]))
+  const terminalExclusiveIds = new Set(TERMINAL_BOSS_EXCLUSIVE_POKEMON_IDS || [])
   const lieutenantGroupsByMap = new Map()
 
   const getSpeciesName = (pokemonId) => speciesNameById.get(pokemonId) || `#${pokemonId}`
@@ -78,10 +83,12 @@ await withViteAuditServer(async ({ loadModule }) => {
     const hasNpcDecoration = (map.decorativeObjects || []).some((object) => object.sourceId === npcSourceId)
     const isNormalTrainer = event.type === 'trainer' && role === 'normal'
     const isLieutenant = event.type === 'trainer' && role === 'lieutenant'
+    const isMinigameTrainer = event.type === 'trainer' && role === 'minigame'
     const isDailyScalingTrainer = isNormalTrainer
-    const isDailyVariantBattle = isDailyVariantBattleEvent(event.type, role)
+    const isDailyVariantBattle = isDailyVariantBattleEvent(event.type, role) || isMinigameTrainer
     if (isNormalTrainer) normalTrainerCount += 1
     if (isLieutenant) lieutenantCount += 1
+    if (isMinigameTrainer) minigameCount += 1
     if (isLieutenant) {
       const currentGroup = lieutenantGroupsByMap.get(map.id) || []
       currentGroup.push(event)
@@ -96,6 +103,12 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
     if (levels.some((level) => level < 1 || level > 100)) {
       addError(`${map.id}/${event.id} 存在非法等级: ${levels.join('/')}`)
+    }
+    if (event.type !== 'boss') {
+      const staticTerminalMembers = team.filter((member) => terminalExclusiveIds.has(Number(member.pokemonId ?? member.id)))
+      if (staticTerminalMembers.length > 0) {
+        addError(`${map.id}/${event.id} 非 Boss 队伍不能提前带出终局 Boss 专属宝可梦: ${staticTerminalMembers.map((member) => getSpeciesName(Number(member.pokemonId ?? member.id))).join('、')}`)
+      }
     }
     if ((isNormalTrainer || isLieutenant) && collectDuplicateFamilyKeys(team).length > 0) {
       addError(`${map.id}/${event.id} 基础队伍存在同进化家族重复`)
@@ -174,17 +187,17 @@ await withViteAuditServer(async ({ loadModule }) => {
       challengeEventCount += 1
       const completedText = event.properties?.completedText || event.properties?.dailyDefeatedText
       const dailyDefeatedText = event.properties?.dailyDefeatedText
-      if (typeof completedText !== 'string' || !completedText.includes('明天')) {
-        addError(`${map.id}/${event.id} 试炼完成文案必须明确次日刷新`)
+      if (typeof completedText !== 'string' || !completedText.includes('可继续挑战')) {
+        addError(`${map.id}/${event.id} 试炼完成文案必须明确可继续挑战`)
       }
-      if (typeof completedText !== 'string' || !completedText.includes('按批次')) {
-        addError(`${map.id}/${event.id} 缺少试炼分批解锁文案`)
+      if (typeof dailyDefeatedText !== 'string' || !dailyDefeatedText.includes('可继续挑战')) {
+        addError(`${map.id}/${event.id} 试炼当天完成文案必须明确可继续挑战`)
       }
-      if (typeof completedText !== 'string' || !completedText.includes('首通奖励不会重复')) {
-        addError(`${map.id}/${event.id} 缺少试炼首通奖励不重复文案`)
-      }
-      if (typeof dailyDefeatedText !== 'string' || !dailyDefeatedText.includes('明天')) {
-        addError(`${map.id}/${event.id} 试炼当天完成文案必须明确次日刷新`)
+      if (Array.isArray(event.properties?.challengeRarePool) && event.properties.challengeRarePool.length > 0) {
+        const unlockText = event.properties?.challengeRareUnlockText
+        if (typeof unlockText !== 'string' || unlockText.trim().length === 0) {
+          addError(`${map.id}/${event.id} 缺少隐藏生态解锁提示`)
+        }
       }
     }
     if (isDailyVariantBattle) {
@@ -204,6 +217,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       )
       const signaturesForEvent = new Set()
       const daySignaturesByVictoryCount = new Map()
+      let hasPostUnlockChallengeRotation = false
       let maxVariantTeamSize = 0
 
       for (const victoryCount of [0, 1, 2, 3, 4, 8, 16, 80]) {
@@ -222,6 +236,7 @@ await withViteAuditServer(async ({ loadModule }) => {
             dailyVariantLevelJitter: event.properties?.dailyVariantLevelJitter,
             bossTeamConfig: bossTeam,
             challengeRarePool: event.properties?.challengeRarePool,
+            challengeBattleGroups: event.properties?.challengeBattleGroups,
             enableDailyVariant: true
           })
           const roleBalance = getTrainerRoleBalance(role)
@@ -248,8 +263,25 @@ await withViteAuditServer(async ({ loadModule }) => {
               addError(`${map.id}/${event.id} 试炼第 ${victoryCount + 1} 批应为 ${expectedTrialSize} 连战，当前 ${variantTeam.length}`)
             }
           }
+          if (event.type === 'challenge' && victoryCount >= 4 && variantTeam.length !== 6) {
+            addError(`${map.id}/${event.id} 全部解锁后的重复试炼必须保持 6 连战，当前 ${variantTeam.length}`)
+          }
           if (variantLevels.some((level) => level < bounds.minLevel || level > bounds.maxLevel)) {
             addError(`${map.id}/${event.id} 每日等级越界: ${variantLevels.join('/')}，允许 Lv.${bounds.minLevel}-${bounds.maxLevel}`)
+          }
+          if (event.type !== 'boss') {
+            const terminalMembers = variantTeam.filter((member) => terminalExclusiveIds.has(Number(member.pokemonId ?? member.id)))
+            if (terminalMembers.length > 0) {
+              addError(`${map.id}/${event.id} 动态队伍不能提前抽到终局 Boss 专属宝可梦: ${terminalMembers.map((member) => getSpeciesName(Number(member.pokemonId ?? member.id))).join('、')} (${teamSignature})`)
+            }
+          }
+          if (isMinigameTrainer) {
+            if (variantTeam.length !== 6) {
+              addError(`${map.id}/${event.id} 循环小游戏必须固定 6 只宝可梦，当前 ${variantTeam.length}`)
+            }
+            if (victoryCount >= 80 && variantLevels.some((level) => level !== 80)) {
+              addError(`${map.id}/${event.id} 循环小游戏最高胜场应稳定到 Lv.80，当前 ${variantLevels.join('/')}`)
+            }
           }
           if (event.type === 'challenge' && bossCap > 0 && variantLevels.some((level) => level > bossCap)) {
             addError(`${map.id}/${event.id} 试炼等级超过本地图 Boss 上限 Lv.${bossCap}: ${variantLevels.join('/')}`)
@@ -262,6 +294,12 @@ await withViteAuditServer(async ({ loadModule }) => {
             addError(`${map.id}/${event.id} 晚期普通训练师的每日阵容不应弱于基础模板: base=${levels.join('/')} variant=${variantLevels.join('/')}`)
           }
         }
+        if (event.type === 'challenge' && victoryCount <= 3 && daySignatures.size !== 1) {
+          addError(`${map.id}/${event.id} 固定试炼第 ${victoryCount + 1} 组不应随每日刷新变化`)
+        }
+        if (event.type === 'challenge' && victoryCount >= 4 && daySignatures.size > 1) {
+          hasPostUnlockChallengeRotation = true
+        }
         daySignaturesByVictoryCount.set(victoryCount, daySignatures)
       }
 
@@ -269,11 +307,22 @@ await withViteAuditServer(async ({ loadModule }) => {
         addError(`${map.id}/${event.id} 每日变体缺少队伍或等级变化`)
       }
       const hasDayToDayVariation = [...daySignaturesByVictoryCount.values()].some((signatures) => signatures.size > 1)
-      if (!hasDayToDayVariation) {
+      if (!hasDayToDayVariation && event.type !== 'challenge') {
         addError(`${map.id}/${event.id} 每日刷新后阵容或等级没有发生变化`)
+      }
+      if (isMinigameTrainer) {
+        const hasVictoryVariation = new Set(
+          [...daySignaturesByVictoryCount.values()].map((signatures) => [...signatures].sort().join('||'))
+        ).size > 1
+        if (!hasVictoryVariation) {
+          addError(`${map.id}/${event.id} 循环小游戏胜场提升后阵容或等级没有发生变化`)
+        }
       }
       if (event.type === 'challenge' && maxVariantTeamSize !== 6) {
         addError(`${map.id}/${event.id} 试炼重复挑战必须能成长到 6 连战，当前抽样最大 ${maxVariantTeamSize}`)
+      }
+      if (event.type === 'challenge' && !hasPostUnlockChallengeRotation) {
+        addError(`${map.id}/${event.id} 隐藏生态全部解锁后的重复试炼缺少随机轮换`)
       }
     }
   }
@@ -314,9 +363,23 @@ await withViteAuditServer(async ({ loadModule }) => {
   }
 
   const normal = getTrainerRoleBalance('normal')
+  const reward = getTrainerRoleBalance('reward')
+  const minigame = getTrainerRoleBalance('minigame')
   const lieutenant = getTrainerRoleBalance('lieutenant')
   const challenge = getTrainerRoleBalance('challenge')
   const boss = getTrainerRoleBalance('boss')
+  if (reward.aiSkill !== normal.aiSkill || reward.switchChance !== normal.switchChance || reward.potionBudget !== normal.potionBudget) {
+    addError('奖励挑战 NPC 应明确使用普通训练家级 AI 配置')
+  }
+  if (minigame.minTeamSize !== 6 || minigame.maxTeamSize !== 6 || minigame.potionBudget !== 3) {
+    addError('循环小游戏必须固定 6 只宝可梦，并拥有 3 次伤药预算')
+  }
+  if (minigame.aiSkill !== boss.aiSkill || minigame.switchChance !== boss.switchChance || minigame.switchScoreGap !== boss.switchScoreGap) {
+    addError('循环小游戏应使用 Boss 级 AI 换人与出招强度')
+  }
+  if (!(boss.goldMultiplier < minigame.goldMultiplier && boss.goldCapMultiplier < minigame.goldCapMultiplier)) {
+    addError('循环小游戏金币奖励上限必须高于 Boss，才能支撑长期重复挑战')
+  }
   if (!(normal.rewardMultiplier < lieutenant.rewardMultiplier && lieutenant.rewardMultiplier < boss.rewardMultiplier)) {
     addError('训练家奖励倍率必须满足 normal < lieutenant < boss')
   }
@@ -341,6 +404,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   console.log(`- checked events: ${trainerEvents.length}`)
   console.log(`- daily scaling trainers: ${dailyScalingTrainerCount}`)
   console.log(`- one-time lieutenants: ${lieutenantCount}`)
+  console.log(`- repeatable minigame trainers: ${minigameCount}`)
   console.log(`- daily variant battles: ${dailyVariantBattleCount}`)
   console.log(`- challenge events: ${challengeEventCount}`)
   console.log(`- sampled daily variants: ${dailyVariantSignatures.size}`)

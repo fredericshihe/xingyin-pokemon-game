@@ -3,7 +3,7 @@ import {
   getP1ImageAssetUrls,
   getP2ImageAssetUrls
 } from './gameAssetBootstrap'
-import { getGameAudioPreloadUrls } from './gameBgmCatalog'
+import { getGameAudioPreloadEntries } from './gameBgmCatalog'
 import { preloadGameAudioAssets } from './gameAudioPreload'
 import { preloadImageAssetsUntilComplete, clearDecodedImageCache } from './localAssetPreloader'
 import {
@@ -231,11 +231,12 @@ export async function buildFullEntryPreloadPlan({ mapName, playerTeam = [] } = {
   const p0Urls = toUniqueUrls(getP0ImageAssetUrls())
   const p2Urls = toUniqueUrls(getP2ImageAssetUrls())
   const p1Urls = toUniqueUrls(getP1ImageAssetUrls({ mapName, playerTeam }))
-  const audioUrls = toUniqueUrls(getGameAudioPreloadUrls({
+  const audioEntries = getGameAudioPreloadEntries({
     mapName,
     includeAllMaps: true,
     includeBattleTracks: true
-  }))
+  })
+  const audioUrls = toUniqueUrls(audioEntries.map((entry) => entry.primary))
 
   let modelKeys = []
   let mapCount = 0
@@ -253,6 +254,7 @@ export async function buildFullEntryPreloadPlan({ mapName, playerTeam = [] } = {
     p2Urls,
     p1Urls,
     audioUrls,
+    audioEntries,
     modelKeys,
     mapName,
     mapCount,
@@ -371,7 +373,23 @@ function warmModelPhaseInBackground(modelModule, keys, modelLoadOptions, shouldC
 
 const AUDIO_PHASE_BUDGET_MS = 90000
 
-async function loadAudioPhaseUntilComplete(urls, tracker, shouldContinue, networkOptions) {
+const resolveAudioPreloadConcurrency = (networkOptions = {}) => {
+  const baseConcurrency = Math.trunc(Number(networkOptions.concurrency)) || 1
+  return Math.max(1, Math.min(3, Math.ceil(baseConcurrency / 2)))
+}
+
+async function loadAudioPhaseUntilComplete(audioEntriesOrUrls, tracker, shouldContinue, networkOptions) {
+  const entries = (Array.isArray(audioEntriesOrUrls) ? audioEntriesOrUrls : [])
+    .map((entry) => (
+      typeof entry === 'string'
+        ? { primary: entry, alternateUrls: [] }
+        : {
+          primary: entry?.primary,
+          alternateUrls: Array.isArray(entry?.alternateUrls) ? entry.alternateUrls : []
+        }
+    ))
+    .filter((entry) => entry.primary)
+  const urls = toUniqueUrls(entries.map((entry) => entry.primary))
   if (!urls.length) {
     tracker.buckets.audio = 0
     tracker.totals.audio = 0
@@ -382,9 +400,10 @@ async function loadAudioPhaseUntilComplete(urls, tracker, shouldContinue, networ
   tracker.report(PRELOAD_PHASES.audio, `0/${urls.length}`)
 
   const preloadTask = preloadGameAudioAssets({
-    urls,
+    entries,
+    concurrency: resolveAudioPreloadConcurrency(networkOptions),
     retries: 2,
-    perUrlTimeoutMs: Math.min(35000, Math.max(20000, networkOptions.timeoutMs)),
+    perUrlTimeoutMs: Math.min(50000, Math.max(30000, networkOptions.timeoutMs)),
     shouldContinue,
     onRetryRound: createRetryReporter(tracker, 'audio', PRELOAD_PHASES.audio),
     onItemComplete: ({ loaded, total }) => {

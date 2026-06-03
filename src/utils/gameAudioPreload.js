@@ -12,17 +12,26 @@ const delay = (ms) => new Promise((resolve) => {
 })
 
 export async function preloadGameAudioAssets({
+  entries = null,
   urls = null,
   mapName,
   includeAllMaps = false,
   includeBattleTracks = true,
+  concurrency = 2,
   retries = 3,
   perUrlTimeoutMs = DEFAULT_PER_URL_TIMEOUT_MS,
   onItemComplete,
   onRetryRound,
   shouldContinue = () => true
 } = {}) {
-  const resolvedEntries = urls
+  const resolvedEntries = Array.isArray(entries) && entries.length > 0
+    ? entries
+      .map((entry) => ({
+        primary: entry?.primary,
+        alternateUrls: Array.isArray(entry?.alternateUrls) ? entry.alternateUrls.filter(Boolean) : []
+      }))
+      .filter((entry) => entry.primary)
+    : urls
     ? urls.map((url) => ({ primary: url, alternateUrls: [] }))
     : getGameAudioPreloadEntries({ mapName, includeAllMaps, includeBattleTracks })
 
@@ -45,26 +54,37 @@ export async function preloadGameAudioAssets({
     }
 
     const pending = resolvedEntries.filter((entry) => failed.has(entry.primary))
-    for (const entry of pending) {
-      if (!shouldContinue()) break
+    let cursor = 0
+    const workerCount = Math.max(
+      1,
+      Math.min(Math.trunc(Number(concurrency)) || 1, pending.length || 1)
+    )
 
-      const buffer = await gameBgm.preloadUrl(entry.primary, {
-        alternateUrls: entry.alternateUrls,
-        timeoutMs: perUrlTimeoutMs
-      })
+    await Promise.all(Array.from({ length: workerCount }, async () => {
+      while (cursor < pending.length) {
+        if (!shouldContinue()) break
 
-      if (buffer) {
-        failed.delete(entry.primary)
-        onItemComplete?.({
-          loaded: resolvedEntries.length - failed.size,
-          total: resolvedEntries.length,
-          url: entry.primary,
-          ok: true
+        const index = cursor
+        cursor += 1
+        const entry = pending[index]
+        const buffer = await gameBgm.preloadUrl(entry.primary, {
+          alternateUrls: entry.alternateUrls,
+          timeoutMs: perUrlTimeoutMs
         })
-      }
 
-      await delay(80)
-    }
+        if (buffer) {
+          failed.delete(entry.primary)
+          onItemComplete?.({
+            loaded: resolvedEntries.length - failed.size,
+            total: resolvedEntries.length,
+            url: entry.primary,
+            ok: true
+          })
+        }
+
+        await delay(80)
+      }
+    }))
 
     retryRound += 1
   }

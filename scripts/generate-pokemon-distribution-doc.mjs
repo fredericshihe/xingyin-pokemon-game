@@ -142,8 +142,8 @@ await withViteAuditServer(async ({ loadModule }) => {
   lines.push('- 战斗结束后会读取当前遇敌表的 `safeStepsAfterBattle` 作为冷却步数；未配置时默认 `5` 步。冷却中踩草不会触发战斗。')
   lines.push('- 野区宝可梦后的百分比：已经触发野生战斗后，该宝可梦在基础遇敌表中的权重占比。')
   lines.push('- 击败区域 Boss 后，专属稀有宝可梦通常以 `18%` 覆写率尝试替换一次已经触发的基础遭遇。')
-  lines.push('- 每次完成区域试炼会解锁一批隐藏生态；普通区域隐藏生态覆写率通常为 `30%`，星雾高地为 `36%`。')
-  lines.push('- 稀有覆写顺序是 `Boss 专属稀有 -> 试炼隐藏生态 -> 区域进度增强 -> 原基础遭遇`。Boss 和试炼都解锁后，普通区域试炼生态最终触发后占比约为 `82% x 30% = 24.6%`。')
+  lines.push('- 每次完成区域试炼会解锁一批试炼稀有；普通区域试炼稀有覆写率通常为 `30%`，星雾高地为 `36%`。')
+  lines.push('- 稀有覆写顺序是 `Boss 专属稀有 -> 试炼稀有 -> 区域进度增强 -> 原基础遭遇`。Boss 和试炼都解锁后，普通区域试炼稀有最终触发后占比约为 `82% x 30% = 24.6%`。')
   lines.push('- 区域进度增强：击败 `1` 名部下后，`12%` 尝试覆写为 Boss 队伍前 2 位成员；击败 `3` 名部下后，`18%` 尝试覆写为 Boss 队伍前 4 位成员。')
   lines.push('- 区域试炼固定四组：第 1 组 `3` 连战、第 2 组 `4` 连战、第 3 组 `5` 连战、第 4 组 `6` 连战。四批全部解锁后，后续重复挑战保持 `6` 连战并随机轮换守护者。')
 
@@ -214,14 +214,14 @@ await withViteAuditServer(async ({ loadModule }) => {
         if (event.type === 'challenge') {
           const pool = normalizeChallengeRarePool(props.challengeRarePool)
           const groups = Array.isArray(props.challengeBattleGroups) ? props.challengeBattleGroups : []
-          lines.push(`- ${props.name || event.id}：${props.beforeBattleText || '固定四组守护者，完成后分批解锁隐藏生态。'}`)
+          lines.push(`- ${props.name || event.id}：${props.beforeBattleText || '固定四组守护者，完成后分批解锁试炼稀有。'}`)
           groups.forEach((team, index) => {
             const unlockBatch = getChallengeRareUnlockBatch(pool, index)
             const unlockNames = unlockBatch.map((entry) => pokemonName(toId(entry), monsterById)).join('、') || '无新增'
             lines.push(`- 固定试炼第 ${index + 1} 组 ${getChallengeBattleGroupSize(index)} 连战：${formatTeam(team, monsterById)}。打败后解锁：${unlockNames}。`)
           })
           if (pool.length > 0) {
-            lines.push(`- 隐藏生态覆写率：\`${pct(props.challengeRareChance ?? 0.3)}\`；全部解锁后重复挑战保持 6 连战并随机轮换。`)
+            lines.push(`- 试炼稀有覆写率：\`${pct(props.challengeRareChance ?? 0.3)}\`；全部解锁后重复挑战保持 6 连战并随机轮换。`)
           }
           return
         }
@@ -257,7 +257,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   lines.push('- 地图等级逐区抬升：新手山谷 `Lv.2-8`，区域链从 `Lv.5-12` 提升到 `Lv.52-60`。')
   lines.push('- 普通训练师表现本地基础生态；部下训练师预告 Boss 和试炼生态；Boss 队伍加入一个专属稀有压轴。')
   lines.push('- 额外隐藏遭遇区都使用独立生态表，并通过更高触发率或更短冷却制造更密集的探索回报。')
-  lines.push('- 试炼稀有池按四组固定试炼拆成四批解锁；开战前预览、胜利结算和后续野区隐藏生态都读取同一批次数据。')
+  lines.push('- 试炼稀有池按四组固定试炼拆成四批解锁；开战前预览、胜利结算和后续野区试炼稀有都读取同一批次数据。')
   lines.push('- 图鉴获取途径由实际野区、Boss、试炼、进度增强和进化链生成，避免静态说明和游戏数据不一致。')
 
   fs.writeFileSync(path.join(ROOT_DIR, OUTPUT_FILE), `${lines.join('\n')}\n`, 'utf8')

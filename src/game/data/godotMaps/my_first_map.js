@@ -224,7 +224,7 @@ const STARTER_SIGNS = [
     'sign_valley_exit',
     35,
     12,
-    '东出口：击败3位训练家，平均Lv.6前往星音草径。'
+    '东出口：队伍平均等级达到 Lv.6 后前往星音草径。'
   )
 ]
 
@@ -244,8 +244,8 @@ const STARTER_TRAINERS = [
     name: '密林守卫',
     title: '密林入口守卫',
     team: [
-      { pokemonId: 16, level: 4 },
-      { pokemonId: 39, level: 4 }
+      { pokemonId: 16, level: 3 },
+      { pokemonId: 39, level: 3 }
     ],
     beforeBattleText: '密林守卫：先过我这关，再进密林。',
     defeatedText: '密林守卫：可以，密林通道交给你了。',
@@ -256,8 +256,8 @@ const STARTER_TRAINERS = [
     name: '花丘学员',
     title: '花丘捕捉练习',
     team: [
-      { pokemonId: 13, level: 4 },
-      { pokemonId: 4, level: 4 }
+      { pokemonId: 13, level: 2 },
+      { pokemonId: 4, level: 3 }
     ],
     beforeBattleText: '花丘学员：来练练属性判断吧。',
     defeatedText: '花丘学员：这片花丘，你已经应付得很好了。',
@@ -357,11 +357,7 @@ const STARTER_DEFINITION = {
       '前往星音草径',
       {
         requiredAverageLevel: 6,
-        requiredTrainerIds: [
-          'valley_trainer_camp_path',
-          'valley_trainer_flower_hill',
-          'valley_trainer_lake_path'
-        ]
+        lockedText: '队伍平均等级达到 Lv.6 后，才能前往星音草径。'
       }
     ),
     heal('heal_valley_spring', 24, 29, '营地尽头泉水'),

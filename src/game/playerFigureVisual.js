@@ -349,12 +349,13 @@ export function getLowPolyPlayerFigureDataUrl({
   }
 
   let renderer = null
+  let canvas = null
   let scene = null
   let player = null
   let shadow = null
 
   try {
-    const canvas = document.createElement('canvas')
+    canvas = document.createElement('canvas')
     renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
@@ -429,7 +430,12 @@ export function getLowPolyPlayerFigureDataUrl({
     shadow?.geometry?.dispose?.()
     shadow?.material?.dispose?.()
     renderer?.renderLists?.dispose?.()
-    renderer?.forceContextLoss?.()
+    const gl = renderer?.getContext?.()
+    const contextAlreadyLost = typeof gl?.isContextLost === 'function' ? gl.isContextLost() : false
+    if (!contextAlreadyLost) {
+      renderer?.forceContextLoss?.()
+    }
     renderer?.dispose?.()
+    canvas?.remove?.()
   }
 }

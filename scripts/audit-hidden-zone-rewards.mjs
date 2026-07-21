@@ -3,9 +3,21 @@ import { withViteAuditServer } from './load-vite-module.mjs'
 
 const MIN_HIDDEN_TREASURE_VALUE = 500
 const MIN_HIDDEN_EXCLUSIVE_SHARE = 0.6
-const MIN_HIDDEN_EXCLUSIVE_POWER_TOTAL = 500
-const HIDDEN_BOSS_LEVEL_BONUS_MIN = 5
-const HIDDEN_BOSS_LEVEL_BONUS_MAX = 10
+const HIDDEN_EXCLUSIVE_SHARE_BOUNDS_BY_ZONE = {
+  peak_starwatch_path: { min: 0.10, max: 0.15 }
+}
+const HIDDEN_GATE_COST_BY_ZONE = {
+  meadow_hidden_grove: 100,
+  lake_hidden_path: 200,
+  farm_windmill_top: 300,
+  shore_wreck_inner: 400,
+  grave_deep_forest: 500,
+  hex_sealed_chamber: 600,
+  peak_starwatch_path: 700
+}
+// Hidden-exclusive Pokemon now use official base stats. Some official final forms
+// such as Breloom and Sharpedo have 460 total, so the audit floor follows that.
+const MIN_HIDDEN_EXCLUSIVE_POWER_TOTAL = 460
 
 const HIDDEN_EXCLUSIVE_POKEMON_BY_ZONE = {
   meadow_hidden_grove: [189, 190, 191],
@@ -109,9 +121,6 @@ await withViteAuditServer(async ({ loadModule }) => {
   })
 
   for (const [mapId, map] of Object.entries(maps)) {
-    const mapMaxLevel = Math.trunc(Number(map?.levelRange?.[1]))
-    const hiddenBossMin = Number.isSafeInteger(mapMaxLevel) ? mapMaxLevel + HIDDEN_BOSS_LEVEL_BONUS_MIN : null
-    const hiddenBossMax = Number.isSafeInteger(mapMaxLevel) ? mapMaxLevel + HIDDEN_BOSS_LEVEL_BONUS_MAX : null
     ;(map.encounterZones || []).forEach((zone) => {
       const table = ENCOUNTER_TABLES[zone.encounterTableId]
       const entries = Array.isArray(table?.pokemon) ? table.pokemon : []
@@ -139,6 +148,29 @@ await withViteAuditServer(async ({ loadModule }) => {
 
       const expectedExclusiveIds = HIDDEN_EXCLUSIVE_POKEMON_BY_ZONE[zone.id] || []
       const entryIds = entries.map((entry) => Math.trunc(Number(entry.id))).filter(Number.isInteger)
+      const gateEvent = (map.runtimeEvents || []).find((event) => event?.properties?.hiddenZoneId === zone.id)
+      const expectedGateCost = HIDDEN_GATE_COST_BY_ZONE[zone.id]
+      if (!gateEvent) {
+        errors.push(`${mapId}/${zone.id} missing hidden gate event`)
+      } else if (Number(gateEvent.properties?.goldCost) !== expectedGateCost) {
+        errors.push(`${mapId}/${zone.id} hidden gate should cost ${expectedGateCost}, got ${gateEvent.properties?.goldCost}`)
+      }
+      if (zone.id === 'peak_starwatch_path' && gateEvent?.properties?.requiresMapBossDefeated !== true) {
+        errors.push(`${mapId}/${zone.id} must require the current-region boss before unlock`)
+      }
+
+      const explicitExclusiveIds = Array.isArray(zone.exclusivePokemonIds)
+        ? zone.exclusivePokemonIds.map((pokemonId) => Math.trunc(Number(pokemonId))).filter(Number.isInteger)
+        : []
+      if (
+        explicitExclusiveIds.length > 0 &&
+        (
+          explicitExclusiveIds.length !== expectedExclusiveIds.length ||
+          expectedExclusiveIds.some((pokemonId) => !explicitExclusiveIds.includes(pokemonId))
+        )
+      ) {
+        errors.push(`${mapId}/${zone.id} explicit hidden-exclusive ids must be ${expectedExclusiveIds.join(', ')}, got ${explicitExclusiveIds.join(', ')}`)
+      }
       const overlappingChallengeIds = Array.from(new Set(
         entryIds.filter((pokemonId) => globalChallengeRareIds.has(pokemonId))
       ))
@@ -167,8 +199,10 @@ await withViteAuditServer(async ({ loadModule }) => {
         errors.push(`${mapId}/${zone.id} includes hidden-exclusive Pokemon assigned to other zones: ${unexpectedExclusiveIds.join(', ')}`)
       }
 
-      if (!Number.isSafeInteger(hiddenBossMin) || !Number.isSafeInteger(hiddenBossMax)) {
-        errors.push(`${mapId}/${zone.id} missing map levelRange for hidden Boss-level audit`)
+      const hiddenMinLevel = Math.trunc(Number(zone?.levelRange?.[0]))
+      const hiddenMaxLevel = Math.trunc(Number(zone?.levelRange?.[1]))
+      if (!Number.isSafeInteger(hiddenMinLevel) || !Number.isSafeInteger(hiddenMaxLevel) || hiddenMaxLevel < hiddenMinLevel) {
+        errors.push(`${mapId}/${zone.id} missing hidden-zone levelRange for hidden encounter audit`)
       } else {
         entries.forEach((entry) => {
           const pokemonId = Math.trunc(Number(entry.id))
@@ -179,11 +213,11 @@ await withViteAuditServer(async ({ loadModule }) => {
           if (
             !Number.isSafeInteger(minLevel) ||
             !Number.isSafeInteger(maxLevel) ||
-            minLevel < hiddenBossMin ||
-            maxLevel > hiddenBossMax ||
+            minLevel < hiddenMinLevel ||
+            maxLevel > hiddenMaxLevel ||
             maxLevel < minLevel
           ) {
-            errors.push(`${mapId}/${zone.id} ${monster?.name || pokemonId}#${pokemonId} level ${entry.minLevel}-${entry.maxLevel} must stay in Boss-level range ${hiddenBossMin}-${hiddenBossMax}`)
+            errors.push(`${mapId}/${zone.id} ${monster?.name || pokemonId}#${pokemonId} level ${entry.minLevel}-${entry.maxLevel} must stay in hidden-zone range ${hiddenMinLevel}-${hiddenMaxLevel}`)
           }
           if (minLevel < bounds.min || maxLevel > bounds.max) {
             errors.push(`${mapId}/${zone.id} ${monster?.name || pokemonId}#${pokemonId} level ${minLevel}-${maxLevel} does not match evolution-stage bounds ${bounds.min}-${bounds.max}`)
@@ -213,11 +247,15 @@ await withViteAuditServer(async ({ loadModule }) => {
       const ordinaryMaxWeight = ordinaryEntries.reduce((max, entry) => Math.max(max, Number(entry.weight) || 0), 0)
       const exclusiveMinWeight = exclusiveEntries.reduce((min, entry) => Math.min(min, Number(entry.weight) || 0), Number.POSITIVE_INFINITY)
       const exclusiveShare = totalWeight > 0 ? exclusiveWeight / totalWeight : 0
-
-      if (exclusiveShare < MIN_HIDDEN_EXCLUSIVE_SHARE) {
-        errors.push(`${mapId}/${zone.id} hidden-exclusive total share ${(exclusiveShare * 100).toFixed(1)}% is below ${(MIN_HIDDEN_EXCLUSIVE_SHARE * 100).toFixed(0)}%`)
+      const shareBounds = HIDDEN_EXCLUSIVE_SHARE_BOUNDS_BY_ZONE[zone.id] || {
+        min: MIN_HIDDEN_EXCLUSIVE_SHARE,
+        max: 1
       }
-      if (!Number.isFinite(exclusiveMinWeight) || exclusiveMinWeight <= ordinaryMaxWeight) {
+
+      if (exclusiveShare < shareBounds.min || exclusiveShare > shareBounds.max) {
+        errors.push(`${mapId}/${zone.id} hidden-exclusive total share ${(exclusiveShare * 100).toFixed(1)}% must stay within ${(shareBounds.min * 100).toFixed(0)}%-${(shareBounds.max * 100).toFixed(0)}%`)
+      }
+      if (explicitExclusiveIds.length === 0 && (!Number.isFinite(exclusiveMinWeight) || exclusiveMinWeight <= ordinaryMaxWeight)) {
         errors.push(`${mapId}/${zone.id} every hidden-exclusive Pokemon must have weight greater than ordinary max weight ${ordinaryMaxWeight}, got min ${exclusiveMinWeight}`)
       }
 

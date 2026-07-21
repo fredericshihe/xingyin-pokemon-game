@@ -1,10 +1,12 @@
-import { TYPE_NAMES_CN, getEffectiveness } from './constants'
+import { TYPES, TYPE_NAMES_CN, getEffectiveness } from './constants'
 
 /** 同级对战（等级差 ≤3）时，单次伤害不超过目标最大 HP 的比例，避免离谱秒杀 */
 export const SAME_LEVEL_DAMAGE_CAP_RATIO = 0.65
 export const SAME_LEVEL_DAMAGE_CAP_MAX_DIFF = 3
 /** 非免疫命中时，至少造成目标最大 HP 的一定比例，避免极低攻击永久刮痧 */
 export const MIN_DAMAGE_HP_RATIO = 0.05
+export const UNDERLEVEL_MIN_DAMAGE_HP_RATIO = 0.02
+export const SEVERE_UNDERLEVEL_MIN_DAMAGE_HP_RATIO = 0.01
 /** 会心一击：官方标准 1/16 几率，伤害 ×1.5 */
 export const CRITICAL_HIT_CHANCE = 1 / 16
 export const CRITICAL_HIT_MULTIPLIER = 1.5
@@ -16,6 +18,15 @@ const clampStage = (stage) => Math.max(-6, Math.min(6, stage || 0))
 export const getStageMultiplier = (stage) => {
   const safeStage = clampStage(stage)
   return safeStage >= 0 ? (2 + safeStage) / 2 : 2 / (2 - safeStage)
+}
+
+const getMinimumDamageHpRatio = (attacker, defender, fallbackLevel = 1) => {
+  const attackerLevel = Math.max(1, Number(attacker?.level || fallbackLevel) || 1)
+  const defenderLevel = Math.max(1, Number(defender?.level || fallbackLevel) || 1)
+  const levelGap = defenderLevel - attackerLevel
+  if (levelGap >= 15) return SEVERE_UNDERLEVEL_MIN_DAMAGE_HP_RATIO
+  if (levelGap >= 6) return UNDERLEVEL_MIN_DAMAGE_HP_RATIO
+  return MIN_DAMAGE_HP_RATIO
 }
 
 export const resolveBattleStat = (mon, stat, { burnHalvesPhysicalAtk = true } = {}) => {
@@ -92,6 +103,40 @@ export const getTypeEffectivenessRank = (effectiveness = 1) => {
   return 'neutral'
 }
 
+export const getBattleTypeWeaknesses = (defender) => {
+  const defenderTypes = getBattlePokemonTypes(defender)
+  if (defenderTypes.length === 0) {
+    return {
+      hasKnownTypes: false,
+      defenderTypes,
+      weaknesses: []
+    }
+  }
+
+  const weaknesses = Object.values(TYPES)
+    .map((moveType, index) => {
+      const breakdown = getTypeEffectivenessBreakdown(moveType, defender)
+      return {
+        type: moveType,
+        typeName: TYPE_NAMES_CN[moveType] || moveType,
+        effectiveness: breakdown.effectiveness,
+        rank: getTypeEffectivenessRank(breakdown.effectiveness),
+        index
+      }
+    })
+    .filter((row) => row.effectiveness > 1)
+    .sort((left, right) => (
+      right.effectiveness - left.effectiveness ||
+      left.index - right.index
+    ))
+
+  return {
+    hasKnownTypes: true,
+    defenderTypes,
+    weaknesses
+  }
+}
+
 export const getMoveEffectivenessMeta = (move, defender, attacker = null) => {
   const effectivenessResult = getBattleMoveEffectivenessResult(move, defender, attacker)
 
@@ -125,7 +170,7 @@ export const getMoveEffectivenessMeta = (move, defender, attacker = null) => {
       description: `${effectivenessResult.moveTypeName}属性对当前对手没有效果。`
     },
     verySuper: {
-      label: '极佳',
+      label: '强克',
       className: 'battle-move-effectiveness--very-super',
       description: `${effectivenessResult.moveTypeName}属性非常克制当前对手。`
     },
@@ -135,7 +180,7 @@ export const getMoveEffectivenessMeta = (move, defender, attacker = null) => {
       description: `${effectivenessResult.moveTypeName}属性克制当前对手。`
     },
     veryResisted: {
-      label: '很弱',
+      label: '很不利',
       className: 'battle-move-effectiveness--very-resisted',
       description: `当前对手很抵抗${effectivenessResult.moveTypeName}属性。`
     },
@@ -239,8 +284,11 @@ export function calculateBattleDamage(attacker, defender, move, options = {}) {
   const ABSOLUTE_MIN_DAMAGE = 1
   if (rawDamage < ABSOLUTE_MIN_DAMAGE) rawDamage = ABSOLUTE_MIN_DAMAGE
 
-  // 实际最小伤害（基于HP百分比）
-  const minPracticalDamage = Math.max(ABSOLUTE_MIN_DAMAGE, Math.floor((defender?.maxHp || 1) * MIN_DAMAGE_HP_RATIO))
+  // 实际最小伤害（基于HP百分比）；越级过多时降低下限，避免低等级靠固定 5% 强行磨穿。
+  const minPracticalDamage = Math.max(
+    ABSOLUTE_MIN_DAMAGE,
+    Math.floor((defender?.maxHp || 1) * getMinimumDamageHpRatio(attacker, defender, level))
+  )
   if (rawDamage < minPracticalDamage) rawDamage = minPracticalDamage
 
   let capped = false

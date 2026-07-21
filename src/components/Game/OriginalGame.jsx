@@ -1,19 +1,22 @@
 import React, { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Component, startTransition } from "react"
 import { createPortal } from "react-dom"
 import { TYPES, TYPE_NAMES_CN } from "../../utils/constants"
-import { MOVES, MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, STAT_BOOST_ITEMS, getBalancedMovesForLevel, normalizeMovesForPokemonLevel } from "../../utils/gameData"
+import { MOVES, MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, STAT_BOOST_ITEMS, getBalancedMovesForLevel, getEvolutionCarryoverRepairedMovesForPokemonLevel, getEvolutionPreservedMovesForPokemonLevel, getMoveKeysAvailableForMonsterLevel, getWildMovesForPokemonLevel, normalizeMoveLoadoutMode, normalizeMovesForPokemonLevel } from "../../utils/gameData"
 import { getMovesLearnedAtLevel, getEvolutionLevelForBranch } from "../../utils/pokemonGrowth"
 import { MAP_CONFIG, getMapConfig, getRandomWildPokemon, getRandomWildLevel } from "../../data/maps/mapConfig"
 import GameCanvas from "../../game/GameCanvas"
 import { applyMapEventsToGrid, getMapEventAt, getMapEvents, getMapStartPosition, getMapSignMessage } from "../../game/data/mapEvents"
 import { getMapEventTile } from "../../game/data/mapEventTypes"
 import { getEncounterTable } from "../../game/data/encounterTables"
+import { ELITE_FOUR_CEREMONY_MAP_IDS, createChampionTowerFloorCeremony, createEliteFourCeremony, isEliteFourBossEvent } from "../../game/data/eliteFourCeremony"
 import { REGION_MAP_TILE, getHiddenEncounterGatePassageTiles, isInsideDecorationFootprint } from "../../game/data/godotMaps/godot_region_maps.js"
 import { FAST_TRAVEL_COST, getFastTravelStation, getFastTravelStationMeta } from "../../game/data/fastTravel"
 import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo, hasAdventureMap, hasAdventureMapGridVisualRoadMismatch, loadAdventureMapGrid } from "../../game/data/overworldMaps"
 import { PLAYER_VISUAL_VERSION, getPlayerFigureDataUrl } from "../../game/world/TextureFactory.js"
 import { findLegacySpawn, isWalkable as isLegacyGridWalkable } from "../../game/world/LegacyGridAdapter"
-import { supabase } from "../../supabaseClient"
+import { sendSupabaseRpcKeepalive, supabase } from "../../supabaseClient"
+import { TEACHER_UPDATE_EVENTS, getStudentTeacherUpdateChannelName } from "../../utils/teacherRewardUpdates"
+import { hasPurchasedMasterBallInRegion, isMasterBallShopItem, recordMasterBallPurchaseInRegion } from "../../utils/shopPurchaseLimits"
 import {
   ENCOUNTER_SAFE_STEPS,
   DEFAULT_MAX_ENERGY,
@@ -26,12 +29,12 @@ import {
   getBattleEnergyCost,
   getDefeatGoldPenalty,
   getPlayerAverageLevel,
-  isMapLockedForLevel,
   getTrainerRoleBalance,
   normalizeTrainerRole
 } from "../../utils/gameBalance"
 import {
   calculateBattleDamage,
+  getBattleTypeWeaknesses,
   getMoveEffectivenessMeta,
   getTypeEffectivenessMessage,
   getStageMultiplier,
@@ -58,10 +61,13 @@ import {
   swapPartyAndStorage,
   replacePartyMember,
   releaseMonster,
-  sanitizeRoster
+  getPartySpeciesClauseViolation,
+  sanitizeRoster,
+  updateRosterMonster
 } from "../../utils/pokemonRoster"
 import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts, OFFICIAL_STAT_KEYS } from "../../utils/pokemonStats"
 import { isLevelValidForSpecies, pickLevelForSpecies } from "../../utils/wildEncounterRules"
+import { getHiddenEncounterExclusiveMeta } from "../../utils/hiddenEncounterExclusive"
 import {
   getTrainerDifficultyBounds,
   getTrainerBattlePressureLevel,
@@ -82,16 +88,25 @@ import {
   simulateMonsterExpGain
 } from "../../utils/pokemonProgress"
 import {
+  ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS,
+  buildEcologySurveyRewardPlan,
+  getEcologySurveyFlagKey,
+  isEcologySurveyMap
+} from "../../utils/ecologySurveyBalance"
+import {
   clearPotionCurableStatus,
   consumeInventoryItem,
   getInventoryItemQuantity,
+  getPokeballEffectText,
   hasPotionCurableStatus,
   getPotionEffectParts,
   getPotionEffectText,
   getPotionRecoveryProfile,
+  getInventoryItemSellPrice,
   getStatBoostEffectText,
   isActiveInventoryItemType,
   isLegacyInventoryItemType,
+  isSellableInventoryItem,
   mergeInventoryEntries,
   resolveInventoryItemDetails,
   resolveInventoryItemType,
@@ -107,6 +122,7 @@ import {
 } from "../../utils/levelUpCelebrations"
 import { applyImageFallback } from "../../utils/localAssetPreloader"
 import { markAppReady } from "../../utils/clientUpdate"
+import { recordGameplayEvent } from "../../utils/gameplayLogs"
 import { isEntryPreloadComplete, runGameEntryPreload, resetEntryPreloadSession, clearEntryPreloadMarks, bindEntryPreloadShouldContinue } from "../../utils/gameEntryPreload"
 import { scheduleIdleAssetWarmup } from "../../utils/gameAssetBootstrap"
 import { clearClientCaches } from "../../utils/recoverStaleClient"
@@ -117,7 +133,40 @@ import { gameAudio, getBgmSettings, getSfxSettings, normalizeAudioSettings, read
 import { gameBgm } from "../../utils/gameBgm"
 import { getMapAmbientTrackLoadUrls } from "../../utils/gameBgmCatalog"
 import { CollectionCard, CollectionGrid, TypeBadge } from "./gameUiPrimitives"
+import EliteFourCeremonyOverlay from "./EliteFourCeremonyOverlay"
 import { assetUrl } from "../../utils/assetUrl"
+import {
+  ADVENTURE_CHAPTERS,
+  CHAMPION_TOWER_VERSION,
+  CHAMPION_TOWER_WEEKLY_REWARD,
+  CHAMPION_TOWER_MAP_ID,
+  LONG_TERM_PROGRESSION_FLAGS,
+  MAP_COMPLETION_CATALOG_VERSION,
+  MAP_COMPLETION_THRESHOLDS,
+  getChampionTowerFloor,
+  getChampionTowerWeeklyFloor,
+  getEliteUnlockTasksForMap,
+  getEliteUnlockTaskForTarget,
+  getMapCompletionRewardDefinition
+} from "../../game/data/longTermProgression"
+import {
+  completeEliteUnlockObjective,
+  completeEliteUnlockTask,
+  getEliteUnlockTaskProgress,
+  getEliteUnlockTargetGate,
+  getCurrentIsoWeekKey,
+  getTowerNextFloor,
+  getTowerWeeklyRewardClaimId,
+  hasClaimedCompletionReward,
+  hasClaimedTowerWeeklyReward,
+  isChampionTowerUnlocked,
+  mergeLongTermWorldProgress,
+  migrateLegacyLongTermProgress,
+  normalizeLongTermWorldProgress,
+  normalizeTowerSeason,
+  recordChampionTowerFloorVictory,
+  registerPokemonSpecies
+} from "../../utils/longTermProgression"
 
 // --- Data Definitions ---
 
@@ -156,10 +205,13 @@ const getMonsterCaptureBallName = (monster) => (
 );
 
 const DeferredDexScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.DexScreen })));
+const DeferredAdventureProgressScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.AdventureProgressScreen })));
 const DeferredShopScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.ShopScreen })));
+const DeferredItemSellScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.ItemSellScreen })));
 const DeferredTeamScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.TeamScreen })));
 const DeferredBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.BagScreen })));
 const DeferredUnifiedBagScreen = lazy(() => import("./DeferredGamePanels").then((module) => ({ default: module.UnifiedBagScreen })));
+const DeferredEliteUnlockMinigameOverlay = lazy(() => import("./EliteUnlockMinigameOverlay"));
 
 const DeferredPanelFallback = ({ title = '正在打开界面' }) => (
   <div className="game-page">
@@ -357,6 +409,7 @@ const normalizeMonsterAssetSource = (monster) => {
   if ((normalized.currentMp === undefined || normalized.currentMp === null || normalized.currentMp === '') && normalized.mp != null) {
     normalized.currentMp = normalized.mp;
   }
+  normalized.moveLoadoutMode = normalizeMoveLoadoutMode(normalized.moveLoadoutMode);
   normalized.capturedBallKey = getMonsterCaptureBallKey(normalized);
   const baseMonster = resolveBaseMonsterForAsset(normalized);
   if (baseMonster) {
@@ -390,8 +443,12 @@ const normalizeMonsterAssetSource = (monster) => {
       normalized.currentHp = preserveNormalizedMeter(normalized.currentHp, previousMaxHp, recalculatedStats.maxHp);
       normalized.currentMp = preserveNormalizedMeter(normalized.currentMp, previousMaxMp, recalculatedStats.maxMp);
     }
-    normalized.moves = getRuntimeMovesPreservingKnown(baseMonster || normalized, normalized.moves || [], level, {
+    const normalizedMoves = getRuntimeMovesPreservingKnown(baseMonster || normalized, normalized.moves || [], level, {
+      loadoutMode: normalized.moveLoadoutMode,
       preferBalancedWhenInvalid: true,
+    });
+    normalized.moves = getEvolutionCarryoverRepairedMovesForPokemonLevel(baseMonster || normalized, normalizedMoves, level, {
+      loadoutMode: normalized.moveLoadoutMode,
     });
     normalized.expToNextLevel = level >= 100 ? Infinity : getExpToNextLevelOfficial(level, baseMonster || normalized);
   }
@@ -402,13 +459,18 @@ const normalizeMonsterAssetList = (monsters) => (
   Array.isArray(monsters) ? monsters.map(normalizeMonsterAssetSource) : []
 );
 
+const MOVE_CUSTOMIZATION_COST = 10;
 const HEAL_ANIMATION_DURATION_MS = 950;
 const EXP_ANIMATION_DURATION_MS = 1150;
+const WILD_VICTORY_MP_RECOVERY_RATIO = 0.35;
+const WILD_VICTORY_MP_RECOVERY_MIN = 10;
+const WILD_VICTORY_MP_RECOVERY_MAX = 32;
 const BATTLE_SWITCH_RECALL_MS = 760;
 const BATTLE_SWITCH_SEND_MS = 980;
 const BATTLE_SENDOUT_OVERLAY_MS = 980;
 const VICTORY_SETTLEMENT_READY_MS = 1850;
 const BATTLE_TURN_RECOVERY_MS = 4500;
+const BATTLE_SWITCH_LIVE_GUARD_MS = BATTLE_TURN_RECOVERY_MS + BATTLE_SWITCH_RECALL_MS + BATTLE_SWITCH_SEND_MS + 6000;
 const BATTLE_SPRITE_IMAGE_BASE_UNIT = 96;
 const BATTLE_SPRITE_CONTAINER_BASE_UNIT = 112;
 const LAUNCH_SPRITE_IMAGE_BASE_UNIT = 64;
@@ -420,7 +482,11 @@ const buildEvolutionEventKey = (monId, targetId) => `${String(monId)}::${Number(
 const buildEvolutionChoiceEventKey = (monId, targetOptions = []) => `${String(monId)}::${[...targetOptions].map((targetId) => Number(targetId)).sort((a, b) => a - b).join(',')}`;
 const buildLearnMoveEventKey = (monId, moveKey) => `${String(monId)}::${String(moveKey)}`;
 const CLOUD_SYNC_CONFLICT_MESSAGE = '云端已有新进度，请重新读取。';
+const getPartySpeciesClauseMessage = (violation) => (
+  `${violation?.speciesName || '同种宝可梦'} 在出战队伍中重复。每种宝可梦最多出战 1 只，请先腾出仓库空间并调整队伍。`
+);
 const CLOUD_REQUEST_RETRY_DELAYS_MS = [220, 520, 920];
+const PLAYTIME_RPC_TIMEOUT_MS = 8000;
 const isCloudSyncConflict = (message) => typeof message === 'string' && message.includes('旧版本存档');
 const isMissingCloudRpcError = (error, rpcName) => {
   const message = getCloudRequestErrorMessage(error);
@@ -436,14 +502,32 @@ const isTransientCloudRequestError = (error) => {
   return /load failed|failed to fetch|networkerror|network request failed|fetch failed|timeout|timed out|aborted|aborterror|cancelled/i.test(message);
 };
 const CLOUD_REQUEST_TIMEOUT_MS = 45000;
-const runCloudRequestWithTimeout = (requestFn, timeoutMs = CLOUD_REQUEST_TIMEOUT_MS) => (
-  Promise.race([
-    requestFn(),
-    new Promise((_, reject) => {
-      window.setTimeout(() => reject(new Error('云端请求超时，请检查网络后重试。')), timeoutMs);
-    })
-  ])
-);
+const runCloudRequestWithTimeout = async (requestFn, timeoutMs = CLOUD_REQUEST_TIMEOUT_MS) => {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  let timeoutId = null;
+  let request = requestFn();
+
+  // Supabase returns a PostgREST builder that supports abortSignal(). Abort the
+  // underlying request on timeout so a late server commit cannot advance the
+  // revision after the client has already reported a failure.
+  if (controller && typeof request?.abortSignal === 'function') {
+    request = request.abortSignal(controller.signal);
+  }
+
+  try {
+    return await Promise.race([
+      request,
+      new Promise((_, reject) => {
+        timeoutId = globalThis.setTimeout(() => {
+          controller?.abort();
+          reject(new Error('云端请求超时，请检查网络后重试。'));
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timeoutId !== null) globalThis.clearTimeout(timeoutId);
+  }
+};
 const runCloudRequestWithRetry = async (requestFn, retryDelaysMs = CLOUD_REQUEST_RETRY_DELAYS_MS) => {
   let lastTransientError = null;
   for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
@@ -464,6 +548,29 @@ const runCloudRequestWithRetry = async (requestFn, retryDelaysMs = CLOUD_REQUEST
     }
   }
   throw lastTransientError || new Error('云端请求失败，稍后重试。');
+};
+const runStudentPlaytimeRpc = async (rpcName, args) => {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutId = globalThis.setTimeout(() => controller?.abort(), PLAYTIME_RPC_TIMEOUT_MS);
+
+  try {
+    let request = supabase.rpc(rpcName, args);
+    if (controller && typeof request?.abortSignal === 'function') {
+      request = request.abortSignal(controller.signal);
+    }
+    const result = controller
+      ? await request
+      : await runCloudRequestWithTimeout(() => request, PLAYTIME_RPC_TIMEOUT_MS);
+    if (result?.error) throw result.error;
+    return result?.data;
+  } catch (error) {
+    if (controller?.signal.aborted) {
+      throw new Error('游玩时长校验超时，请检查网络后重试。');
+    }
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 };
 const getMonsterMaxHp = (mon) => Math.max(0, Number(mon?.maxHp ?? mon?.stats?.hp ?? 0) || 0);
 const getMonsterMaxMp = (mon) => {
@@ -505,9 +612,11 @@ const normalizeRuntimeKnownMoveKeys = (moves = []) => {
     .slice(0, 4);
 };
 const getRuntimeMovesPreservingKnown = (baseMonster, moves = [], level = 1, options = {}) => {
+  const { loadoutMode, ...normalizeOptions } = options;
   return normalizeMovesForPokemonLevel(baseMonster, moves, level, {
     backfill: false,
-    ...options,
+    loadoutMode: normalizeMoveLoadoutMode(loadoutMode),
+    ...normalizeOptions,
   });
 };
 const hasZeroCostMove = (moves = []) => (
@@ -525,8 +634,8 @@ const getNoMpBattleHint = (mon) => (
 const getNoMpOverlayTitle = (mon) => (
   `${mon?.name || '宝可梦'} 暂时放不出技能`
 );
-const getNoMpOverlayBody = () => (
-  '补一点 MP，或换一只上场。'
+const getNoMpOverlayBody = (hardLocked = false) => (
+  hardLocked ? '已经没有可用伤药或可上场替补。' : '补一点 MP，或换一只上场。'
 );
 const getMoveMpShortageHint = (mon, move) => (
   `${move?.name || '这个技能'} 需要 MP ${getMoveMpCost(move)}，${mon?.name || '宝可梦'} 当前 MP 不足。可以选择其他技能、打开背包使用伤药恢复 MP，或更换宝可梦继续对战。`
@@ -534,8 +643,10 @@ const getMoveMpShortageHint = (mon, move) => (
 const getNoMpBattleDeadlockHint = () => (
   '当前队伍已经没有可继续战斗的技能、替补或恢复手段，本场战斗会判定失败。'
 );
+const NO_MP_DEADLOCK_RESOLUTION_VERSION = 'no-mp-defeat-v2';
 const canRestoreBattleMpWithInventory = (playerInventory = [], mon) => {
   if (!mon) return false;
+  if (normalizeRuntimeKnownMoveKeys(mon?.moves).length === 0) return false;
   const maxMp = getMonsterMaxMp(mon);
   const currentMp = getMonsterCurrentMp(mon, maxMp);
   if (currentMp >= maxMp) return false;
@@ -548,10 +659,7 @@ const canRestoreBattleMpWithInventory = (playerInventory = [], mon) => {
 const hasBattleRecoveryPath = ({
   playerTeam = [],
   playerInventory = [],
-  canRun = false,
 } = {}) => {
-  if (canRun) return true;
-
   return (Array.isArray(playerTeam) ? playerTeam : []).some((mon) => (
     getMonsterCurrentHp(mon) > 0 &&
     (
@@ -666,10 +774,22 @@ const handlePokemonImageError = (event) => {
 };
 
 const handleItemImageError = (event) => {
+  const image = event?.currentTarget || event?.target;
+  const currentSrc = image?.src || '';
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc));
+    return;
+  }
   applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER);
 };
 
 const handlePokeballImageError = (event) => {
+  const image = event?.currentTarget || event?.target;
+  const currentSrc = image?.src || '';
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc));
+    return;
+  }
   applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER);
 };
 
@@ -872,6 +992,29 @@ const withBattleRuntimeDefaults = (mon) => {
   };
 };
 
+const recoverMonsterMpAfterWildVictory = (mon) => {
+  const runtimeMon = withBattleRuntimeDefaults(mon);
+  if (!runtimeMon) return mon;
+  const maxHp = getMonsterMaxHp(runtimeMon);
+  const currentHp = getMonsterCurrentHp(runtimeMon, maxHp);
+  const maxMp = getMonsterMaxMp(runtimeMon);
+  const currentMp = getMonsterCurrentMp(runtimeMon, maxMp);
+  if (currentHp <= 0 || maxMp <= 0 || currentMp >= maxMp) return runtimeMon;
+
+  const recoveryAmount = Math.max(
+    WILD_VICTORY_MP_RECOVERY_MIN,
+    Math.min(WILD_VICTORY_MP_RECOVERY_MAX, Math.round(maxMp * WILD_VICTORY_MP_RECOVERY_RATIO))
+  );
+  return {
+    ...runtimeMon,
+    currentMp: Math.min(maxMp, currentMp + recoveryAmount)
+  };
+};
+
+const recoverTeamMpAfterWildVictory = (team = []) => (
+  Array.isArray(team) ? team.map(recoverMonsterMpAfterWildVictory) : team
+);
+
 const clampStatStage = (value) => Math.max(-6, Math.min(6, value));
 
 const updateBattleMonBySide = ({ side, monId, updater, setPlayerTeam, setEnemyTeam }) => {
@@ -991,20 +1134,65 @@ const getStatusBadgeMeta = (status) => {
   };
 };
 
+const getBattleStatusRemainingTurns = (status, rawTurns) => {
+  const turns = Math.trunc(Number(rawTurns));
+  if (status === 'sleep') {
+    if (!Number.isFinite(turns) || turns <= 0) return 1;
+    return Math.min(3, Math.max(1, turns - 1));
+  }
+  if (status === 'confusion') {
+    if (!Number.isFinite(turns) || turns <= 0) return 1;
+    return Math.min(4, Math.max(1, turns - 1));
+  }
+  if (status === 'flinch') return 1;
+  return null;
+};
+
+const buildBattleStatusNote = ({ meta, key, status, turns }) => {
+  const remainingTurns = getBattleStatusRemainingTurns(status, turns);
+  return {
+    ...meta,
+    key,
+    remainingTurns,
+    displayLabel: `${meta.fullLabel}${remainingTurns ? remainingTurns : ''}`
+  };
+};
+
 const getBattleStatusNotes = (mon) => {
   if (!mon) return [];
   const notes = [];
   if (mon.status) {
     const statusMeta = getStatusBadgeMeta(mon.status);
-    if (statusMeta) notes.push(statusMeta);
+    if (statusMeta) {
+      notes.push(buildBattleStatusNote({
+        meta: statusMeta,
+        key: `primary-${mon.status}`,
+        status: mon.status,
+        turns: mon.statusTurns
+      }));
+    }
   }
   if (mon.volatileStatuses?.confusion) {
     const confusionMeta = getStatusBadgeMeta('confusion');
-    if (confusionMeta) notes.push(confusionMeta);
+    if (confusionMeta) {
+      notes.push(buildBattleStatusNote({
+        meta: confusionMeta,
+        key: 'volatile-confusion',
+        status: 'confusion',
+        turns: mon.volatileStatuses.confusion
+      }));
+    }
   }
   if (mon.volatileStatuses?.flinch) {
     const flinchMeta = getStatusBadgeMeta('flinch');
-    if (flinchMeta) notes.push(flinchMeta);
+    if (flinchMeta) {
+      notes.push(buildBattleStatusNote({
+        meta: flinchMeta,
+        key: 'volatile-flinch',
+        status: 'flinch',
+        turns: 1
+      }));
+    }
   }
   return notes;
 };
@@ -1072,7 +1260,8 @@ const getMoveEffectLabels = (move) => {
   if (move.requiresUserStatus) labels.push(`需自身${STATUS_LABELS[move.requiresUserStatus] || '状态'}`);
   if (move.usableWhileAsleep) labels.push('睡眠中可用');
   if (move.thawsUser) labels.push('可破冰');
-  if (move.priority) labels.push(`先制 +${move.priority}`);
+  if (Number(move.priority) > 0) labels.push('优先出手');
+  if (Number(move.priority) < 0) labels.push('出手较慢');
   if (move.charge) labels.push('蓄力');
   return labels.slice(0, 3);
 };
@@ -1110,11 +1299,16 @@ const getMovePrimaryEffectDisplay = (move) => {
       return { label: '效果', value: `${compactStats(positives)}升/${compactStats(negatives)}降` };
     }
     const entries = positives.length > 0 ? positives : negatives;
-    return { label: '效果', value: `${compactStats(entries)}${positives.length > 0 ? '提升' : '降低'}` };
+    return { label: '效果', value: `${compactStats(entries)}${positives.length > 0 ? '升' : '降'}` };
   }
 
   const labels = getMoveEffectLabels(move);
   return { label: '效果', value: labels[0] || '辅助' };
+};
+
+const getMoveEffectSummaryText = (move) => {
+  const labels = [...new Set(getMoveEffectLabels(move))].filter(Boolean);
+  return labels.join(' · ');
 };
 
 const getUserStatusRequirementFailureMessage = (move, attackerName = '宝可梦') => {
@@ -1499,43 +1693,130 @@ const getBattleMovePressure = (attacker, defender) => {
   };
 };
 
-const getBattleHudHint = (ownPressure, opposingPressure, perspective = 'player') => {
-  const ownHasSuper = ownPressure.bestEffectiveness > 1;
-  const opposingHasSuper = opposingPressure.bestEffectiveness > 1;
-  const ownHasStrongSuper = ownPressure.bestEffectiveness >= 4;
-  const isPlayerPerspective = perspective === 'player';
+const BATTLE_HUD_WEAKNESS_TYPE_LIMIT = 4;
 
-  if (ownHasSuper && opposingHasSuper) {
-    return { text: '双方都有克制招式', className: 'text-orange-200' };
-  }
-  if (ownHasStrongSuper) {
-    return { text: isPlayerPerspective ? '强力克制' : '威胁很高', className: 'text-emerald-200' };
-  }
-  if (ownHasSuper) {
-    return { text: isPlayerPerspective ? '你有克制招式' : '有克制招式', className: 'text-emerald-200' };
-  }
-  if (opposingHasSuper) {
-    return { text: isPlayerPerspective ? '注意对手克制' : '弱点可突破', className: 'text-rose-200' };
-  }
-  if (!ownPressure.hasKnownTypes || !opposingPressure.hasKnownTypes) {
+const formatBattleWeaknessTypeList = (weaknesses = [], limit = BATTLE_HUD_WEAKNESS_TYPE_LIMIT) => {
+  const shown = weaknesses.slice(0, limit).map((row) => row.typeName).filter(Boolean);
+  if (shown.length === 0) return '';
+  const hiddenCount = Math.max(0, weaknesses.length - shown.length);
+  return hiddenCount > 0 ? `${shown.join('/')} +${hiddenCount}` : shown.join('/');
+};
+
+const getBattleWeaknessHudHint = (mon, perspective = 'enemy') => {
+  const meta = getBattleTypeWeaknesses(mon);
+  const isPlayerPerspective = perspective === 'player';
+  if (!meta.hasKnownTypes) {
     return { text: '属性待确认', className: 'text-sky-100/75' };
   }
-  if (!ownPressure.hasDamagingMove) {
-    return { text: '缺少伤害招式', className: 'text-amber-200' };
+
+  if (meta.weaknesses.length === 0) {
+    return {
+      text: isPlayerPerspective ? '我方无明显弱点' : '无明显弱点',
+      className: 'text-white/70'
+    };
   }
-  if (ownPressure.allImmune) {
-    return { text: '当前攻击无效', className: 'text-slate-200' };
-  }
-  if (ownPressure.allResisted) {
-    return { text: '招式不占优', className: 'text-amber-200' };
-  }
-  return { text: '属性均衡', className: 'text-white/70' };
+
+  const weaknessText = formatBattleWeaknessTypeList(meta.weaknesses);
+  const hasSevereWeakness = meta.weaknesses.some((row) => row.effectiveness >= 4);
+  return {
+    text: isPlayerPerspective ? `我方怕：${weaknessText}` : `弱点：${weaknessText}`,
+    className: isPlayerPerspective
+      ? 'text-rose-200'
+      : hasSevereWeakness
+        ? 'text-yellow-200'
+        : 'text-emerald-200'
+  };
 };
 
 const getBattleLevelUpMessage = (name) => `${name} 升级了！`;
 const INSUFFICIENT_BATTLE_ENERGY_LOG = '能量不足，至少需要 1 点能量才能开始战斗。';
 const INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION = '能量不足，无法开始战斗。';
+const ENERGY_DEPLETED_MAP_LOG = '能量已经用完，暂时无法继续在地图上行动。';
+const ENERGY_DEPLETED_MAP_NOTIFICATION = '能量已用完，请等待恢复或联系老师补充。';
+const DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES = 30;
+const PLAYTIME_SYNC_INTERVAL_SECONDS = 5;
+const PLAYTIME_EXPIRED_LOG = '今天的游玩时间已经用完，冒险会暂时暂停。';
+const PLAYTIME_EXPIRED_NOTIFICATION = '今日游玩时间已用完，请明天再继续或联系老师调整。';
+const PLAYTIME_SAVE_REJECTED_MESSAGE = '今日游玩时间已用完。';
+const PLAYTIME_SESSION_INVALID_MESSAGE = '无法确认当前游玩会话，请重新校验时长。';
+const PLAYTIME_STATUS_UNAVAILABLE_MESSAGE = '无法确认今日剩余游玩时间，游戏已暂停。请检查网络后重试。';
+const CHINA_TIME_OFFSET_MS = 8 * 60 * 60 * 1000;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const BATTLE_DIALOGUE_MAX_CHARS = 52;
+
+const isPlaytimeLimitError = (message) => (
+  typeof message === 'string' && message.includes('游玩时间') && message.includes('用完')
+);
+const isPlaytimeSessionError = (message) => (
+  typeof message === 'string' && message.includes('游玩会话')
+);
+
+const getChinaPlayDate = (timestamp = Date.now()) => (
+  new Date(timestamp + CHINA_TIME_OFFSET_MS).toISOString().slice(0, 10)
+);
+
+const getMillisecondsUntilNextChinaDay = (timestamp = Date.now()) => {
+  const shiftedTimestamp = timestamp + CHINA_TIME_OFFSET_MS;
+  const nextDayStart = (Math.floor(shiftedTimestamp / DAY_IN_MS) + 1) * DAY_IN_MS;
+  return Math.max(1000, nextDayStart - shiftedTimestamp + 1000);
+};
+
+const formatPlaytimeClock = (seconds) => {
+  const totalSeconds = Math.max(0, Math.trunc(Number(seconds)) || 0);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  const two = (value) => String(value).padStart(2, '0');
+  if (hours > 0) return `${hours}:${two(minutes)}:${two(secs)}`;
+  return `${two(minutes)}:${two(secs)}`;
+};
+
+const formatPlaytimeLimitText = (minutes) => {
+  const value = Math.max(0, Math.trunc(Number(minutes)) || 0);
+  if (value >= 60 && value % 60 === 0) return `${value / 60} 小时`;
+  return `${value} 分钟`;
+};
+
+const normalizePlaytimeStatusRow = (row = {}, fallback = {}) => {
+  const rawLimitMinutes = row.limit_minutes ?? row.limitMinutes;
+  const rawPlayedSeconds = row.played_seconds ?? row.playedSeconds;
+  const rawRemainingSeconds = row.remaining_seconds ?? row.remainingSeconds;
+  const limitMinutes = Number.isFinite(Number(rawLimitMinutes))
+    ? Math.max(0, Math.trunc(Number(rawLimitMinutes)))
+    : (Number.isFinite(Number(fallback.limitMinutes))
+      ? Math.max(0, Math.trunc(Number(fallback.limitMinutes)))
+      : DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES);
+  const playedSeconds = Number.isFinite(Number(rawPlayedSeconds))
+    ? Math.max(0, Math.trunc(Number(rawPlayedSeconds)))
+    : (Number.isFinite(Number(fallback.playedSeconds))
+      ? Math.max(0, Math.trunc(Number(fallback.playedSeconds)))
+      : 0);
+  const remainingSeconds = Number.isFinite(Number(rawRemainingSeconds))
+    ? Math.max(0, Math.trunc(Number(rawRemainingSeconds)))
+    : Math.max(0, (limitMinutes * 60) - playedSeconds);
+  return {
+    limitMinutes,
+    playedSeconds,
+    remainingSeconds,
+    playDate: row.play_date || row.playDate || fallback.playDate || null
+  };
+};
+
+const normalizeServerPlaytimeStatusRow = (row) => {
+  const rawLimitMinutes = row?.limit_minutes ?? row?.limitMinutes;
+  const rawPlayedSeconds = row?.played_seconds ?? row?.playedSeconds;
+  const rawRemainingSeconds = row?.remaining_seconds ?? row?.remainingSeconds;
+  const rawPlayDate = row?.play_date ?? row?.playDate;
+  if (
+    !Number.isFinite(Number(rawLimitMinutes)) ||
+    !Number.isFinite(Number(rawPlayedSeconds)) ||
+    !Number.isFinite(Number(rawRemainingSeconds)) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(String(rawPlayDate || ''))
+  ) {
+    throw new Error('后端返回了无效的游玩时长状态。');
+  }
+  return normalizePlaytimeStatusRow(row);
+};
 
 const shortenBattleDialogueText = (text, maxChars = BATTLE_DIALOGUE_MAX_CHARS) => {
   const cleanText = String(text || '').trim();
@@ -1550,7 +1831,7 @@ const formatBattleDialogueLog = (message) => {
   const actionText = rawText
     .replace(/^(.+?)作为普通训练家挡住了你的去路：.*$/, '$1发起对战！')
     .replace(/^(.+?)作为部下训练家守着试炼印记：.*$/, '$1守着试炼印记！')
-    .replace(/^试炼标记发出光芒：隐藏生态守护者将连续出战（(.+?)）。.*$/, '试炼连战开始！$1')
+    .replace(/^试炼标记发出光芒：试炼稀有守护者将连续出战（(.+?)）。.*$/, '试炼连战开始！$1')
     .replace(/^(.+?)：三枚试炼印记已经发光。.*$/, '$1首领挑战！')
     .replace(/！本回合不消耗 MP。/g, '！')
     .replace(/！MP\s*-\d+（[^）]*）/g, '！')
@@ -1619,11 +1900,17 @@ const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, initial
     ...baseMonster,
     ...calculatedStats,
     ...(Object.keys(normalizedBoosts).length > 0 ? { statBoosts: normalizedBoosts } : {}),
-    moves: getBalancedMovesForLevel(baseMonster, level),
+    moveLoadoutMode: normalizeMoveLoadoutMode(options?.moveLoadoutMode || options?.loadoutMode),
+    moves: options?.moveLoadoutMode === 'wild' || options?.loadoutMode === 'wild'
+      ? getWildMovesForPokemonLevel(baseMonster, level)
+      : getBalancedMovesForLevel(baseMonster, level),
     level,
     id,
     baseId: baseMonster.id, // Keep track of the original monster template ID
     capturedBallKey: normalizeCaptureBallKey(options?.capturedBallKey || options?.captureBallKey || options?.ballKey),
+    ...(Number.isInteger(Math.trunc(Number(options?.rewardLevel)))
+      ? { rewardLevel: Math.max(1, Math.min(100, Math.trunc(Number(options.rewardLevel)) || level)) }
+      : {}),
     currentHp: initialCurrentHp ?? calculatedStats.maxHp,
     currentMp: initialCurrentMp ?? calculatedStats.maxMp,
     currentExp: initialCurrentExp ?? 0,
@@ -1697,6 +1984,12 @@ const formatHiddenEncounterGateUnlockDescription = ({
   const rareCount = getHiddenEncounterGateExclusiveRareCount(props);
   return `调查${interactionObjectName}后，通往${hiddenZoneName}的秘路会永久开放。里面有 ${rareCount} 只专属强力稀有宝可梦，名字要进入后亲自发现。`;
 };
+
+const getHiddenEncounterGateBossLockedReason = (props = {}) => (
+  typeof props?.bossLockedReason === 'string' && props.bossLockedReason.trim().length > 0
+    ? props.bossLockedReason.trim()
+    : '先击败当前区域首领，才能开启这条隐藏通路。'
+);
 
 const isConfiguredBattleEventType = (type) => (
   type === 'trainer' || type === 'boss' || type === 'challenge'
@@ -1940,6 +2233,32 @@ const setTrainerVictoryCount = (world, eventId, count, mapName = null) => {
   };
 };
 
+const getMapWildDefeatCount = (world, mapName) => {
+  if (typeof mapName !== 'string' || mapName.length === 0) return 0;
+  const counts = normalizePositiveIntegerMap(world?.wildDefeatCounts);
+  return Math.max(0, counts[mapName] || 0);
+};
+
+const incrementMapWildDefeatCount = (world, mapName) => {
+  if (typeof mapName !== 'string' || mapName.length === 0) return normalizeWorldState(world);
+  const normalized = normalizeWorldState(world);
+  const currentCount = getMapWildDefeatCount(normalized, mapName);
+  return {
+    ...normalized,
+    wildDefeatCounts: {
+      ...normalized.wildDefeatCounts,
+      [mapName]: Math.min(999, currentCount + 1)
+    }
+  };
+};
+
+const hasCompletedEcologySurvey = (world, mapName) => (
+  isEcologySurveyMap(mapName) && (
+    getWorldFlagValue(world, getEcologySurveyFlagKey(mapName)) ||
+    getMapWildDefeatCount(world, mapName) >= ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS
+  )
+);
+
 const getChallengeRarePool = (event) => {
   const props = getMapEventProperties(event);
   return Array.isArray(props.challengeRarePool) ? props.challengeRarePool : [];
@@ -2016,25 +2335,36 @@ const getChallengeRareUnlockContext = ({
   };
 };
 
-const getChallengeRunRewardItems = ({ mapName, teamSize = 3 } = {}) => {
+const getChallengeRunRewardItems = ({ mapName, teamSize = 3, repeatClear = false } = {}) => {
   const mapConfig = getMapConfig(mapName);
   const regionOrder = Math.max(1, Math.trunc(Number(mapConfig?.regionOrder)) || 1);
   const length = Math.max(3, Math.min(6, Math.trunc(Number(teamSize)) || 3));
   const isLate = regionOrder >= 6;
   const isMid = regionOrder >= 3;
-  const ballKey = isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic';
+  const isRepeatClear = Boolean(repeatClear);
+  const ballKey = isRepeatClear
+    ? (isLate ? 'pokeball_great' : 'pokeball_basic')
+    : (isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic');
   const potionKey = isLate ? 'hyper_potion' : isMid ? 'super_potion' : 'potion';
+  const expPotionKey = isRepeatClear
+    ? (regionOrder >= 8 ? 'exp_potion_medium' : 'exp_potion_small')
+    : regionOrder >= 8
+      ? 'exp_potion_large'
+      : regionOrder >= 6
+        ? 'exp_potion_medium'
+        : 'exp_potion_small';
   return [
-    ...(length >= 4 ? [{
+    {
+      itemType: 'expPotion',
+      itemKey: expPotionKey,
+      quantity: isRepeatClear ? 1 : regionOrder >= 8 ? 2 : 1
+    },
+    ...((!isRepeatClear || length >= 5) ? [{
       itemType: 'pokeball',
       itemKey: ballKey,
-      quantity: length >= 6 ? 2 : 1
-    }] : [{
-      itemType: 'pokeball',
-      itemKey: ballKey,
-      quantity: 1
-    }]),
-    ...(length >= 5 ? [{
+      quantity: !isRepeatClear && length >= 6 ? 2 : 1
+    }] : []),
+    ...(!isRepeatClear && length >= 5 ? [{
       itemType: 'potion',
       itemKey: potionKey,
       quantity: 1
@@ -2151,12 +2481,18 @@ const buildConfiguredOpponentTeam = (teamConfig, eventId = 'map_event') => {
     .map((entry, index) => {
       const pokemonId = Math.trunc(Number(entry?.pokemonId ?? entry?.id));
       const level = Math.max(1, Math.min(100, Math.trunc(Number(entry?.level)) || 1));
+      const rewardLevel = Math.max(1, Math.min(100, Math.trunc(Number(entry?.rewardLevel ?? level)) || level));
       const baseMonster = MONSTERS.find((monster) => monster.id === pokemonId);
       if (!baseMonster) return null;
       return createMonsterInstance(
         baseMonster,
         level,
-        `${eventId}_${Date.now()}_${index}`
+        `${eventId}_${Date.now()}_${index}`,
+        undefined,
+        undefined,
+        undefined,
+        null,
+        { rewardLevel }
       );
     })
     .filter(Boolean);
@@ -2251,6 +2587,54 @@ const applyBattleRewardGrowth = ({
   };
 };
 
+const applyBattleRewardGrowthByPokemon = ({
+  playerTeam,
+  pendingGrowthEvents,
+  expByPokemon,
+  getBaseMonsterDefinition
+}) => {
+  const baseTeam = Array.isArray(playerTeam) ? playerTeam : [];
+  const basePendingGrowthEvents = Array.isArray(pendingGrowthEvents) ? pendingGrowthEvents : [];
+  const entries = (Array.isArray(expByPokemon) ? expByPokemon : [])
+    .map((entry) => ({
+      monId: entry?.monId,
+      exp: Math.max(0, Math.trunc(Number(entry?.exp)) || 0)
+    }))
+    .filter((entry) => entry.monId && entry.exp > 0);
+
+  if (entries.length === 0) {
+    return {
+      playerTeam: baseTeam,
+      pendingGrowthEvents: basePendingGrowthEvents,
+      totalExp: 0,
+      levelUps: []
+    };
+  }
+
+  let nextTeam = baseTeam;
+  const newEvents = [];
+  const levelUps = [];
+
+  entries.forEach(({ monId, exp }) => {
+    const mon = nextTeam.find((candidate) => candidate.id === monId);
+    if (!mon) return;
+
+    const result = simulateMonsterExpGain(mon, exp, getBaseMonsterDefinition, [...basePendingGrowthEvents, ...newEvents]);
+    nextTeam = nextTeam.map((candidate) => (
+      candidate.id === monId ? result.updatedMon : candidate
+    ));
+    newEvents.push(...result.events);
+    levelUps.push(...result.levelUps);
+  });
+
+  return {
+    playerTeam: nextTeam,
+    pendingGrowthEvents: [...basePendingGrowthEvents, ...newEvents],
+    totalExp: entries.reduce((sum, entry) => sum + entry.exp, 0),
+    levelUps
+  };
+};
+
 const normalizeDefeatedRewardMons = (defeatedMons) => {
   const source = Array.isArray(defeatedMons) ? defeatedMons : [defeatedMons];
   const seenIds = new Set();
@@ -2301,8 +2685,9 @@ const calculateConfiguredBattleRewardPreview = ({
     .map((entry) => {
       const pokemonId = Math.trunc(Number(entry?.pokemonId ?? entry?.id));
       const level = Math.max(1, Math.min(100, Math.trunc(Number(entry?.level)) || 1));
+      const rewardLevel = Math.max(1, Math.min(100, Math.trunc(Number(entry?.rewardLevel ?? level)) || level));
       const baseMonster = MONSTERS.find((monster) => Number(monster?.id) === pokemonId);
-      return baseMonster ? { ...baseMonster, level } : null;
+      return baseMonster ? { ...baseMonster, level, rewardLevel } : null;
     })
     .filter(Boolean);
   const baseRewards = calculateBattleRewardTotals({
@@ -2994,9 +3379,10 @@ const buildBattleVictoryDisplaySnapshot = ({ enemyName, isTrainer, rewardSummary
     rewards,
     levelUps: rewards.levelUps || [],
     unlocks: rewards.unlocks || [],
+    ecologySurvey: rewards.ecologySurvey || null,
     primaryRewardItems,
     itemRewardItems,
-    rewardDetailCount: primaryRewardItems.length + itemRewardItems.length + (rewards.unlocks?.length || 0) + (rewards.levelUps?.length || 0)
+    rewardDetailCount: primaryRewardItems.length + itemRewardItems.length + (rewards.unlocks?.length || 0) + (rewards.levelUps?.length || 0) + (rewards.ecologySurvey ? 1 : 0)
   };
 };
 
@@ -3114,6 +3500,11 @@ const BattleHudCard = ({ mon, stats, hint, align = 'left', playerGold = null, sh
   const expMax = Number.isFinite(mon.expToNextLevel) ? mon.expToNextLevel : 1;
   const layoutClass = className || (align === 'right' ? 'battle-hud-enemy' : 'battle-hud-player');
   const statusNotes = getBattleStatusNotes(mon);
+  const visibleStatusNotes = statusNotes.slice(0, 2);
+  const hiddenStatusCount = Math.max(0, statusNotes.length - visibleStatusNotes.length);
+  const statusSummaryLabel = statusNotes
+    .map((note) => `${note.fullLabel}：${note.hint}`)
+    .join('；');
   const hintMeta = hint || { text: '', className: '' };
   // 低血量外框反馈：阈值与 BattleMeter 的 HP 染色保持一致（≤20% 危急 / ≤50% 警戒）。
   const hpPercent = stats.maxHp > 0 ? stats.currentHp / stats.maxHp * 100 : 100;
@@ -3149,15 +3540,21 @@ const BattleHudCard = ({ mon, stats, hint, align = 'left', playerGold = null, sh
       </div>
 
       {statusNotes.length > 0 && (
-        <div className="battle-status-note" aria-label={`${mon.name}的异常状态`}>
-          <span className="battle-status-note__label">异常</span>
-          {statusNotes.slice(0, 2).map((note) => (
-            <span key={note.fullLabel} className="battle-status-note__item">
-              <span className={`battle-status-badge battle-status-badge--tiny ${note.className}`}>{note.label}</span>
-              <strong>{note.fullLabel}</strong>
-              <em>{note.hint}</em>
+        <div
+          className="battle-status-note"
+          aria-label={`${mon.name}的异常状态：${statusSummaryLabel}`}
+          title={statusSummaryLabel}
+        >
+          {visibleStatusNotes.map((note) => (
+            <span key={note.key || note.fullLabel} className="battle-status-note__item" title={`${note.fullLabel}：${note.hint}`}>
+              <span className={`battle-status-badge battle-status-badge--hud ${note.className}`}>
+                {note.displayLabel || note.fullLabel}
+              </span>
             </span>
           ))}
+          {hiddenStatusCount > 0 && (
+            <span className="battle-status-note__more" title={statusSummaryLabel}>+{hiddenStatusCount}</span>
+          )}
         </div>
       )}
 
@@ -3984,6 +4381,7 @@ const PERSISTENT_MAP_EVENT_TYPES = new Set([
   'warp',
   'fast_travel',
   'heal',
+  'merchant',
   'sign',
   'info',
   'trainer',
@@ -4464,9 +4862,9 @@ const UnifiedBagScreen = ({
               ? '训练家对战中不能捕捉'
               : battleGrowthLocked
               ? '仅战斗外使用'
-              : item.type === 'ball'
-              ? '用于捕捉宝可梦'
-              : item.type === 'expPotion'
+	              : item.type === 'ball'
+	              ? getPokeballEffectText(item)
+	              : item.type === 'expPotion'
               ? `经验 +${item.expAmount}`
               : item.type === 'statBoost'
               ? getStatBoostEffectText(item)
@@ -4853,9 +5251,6 @@ const BattleIntroOverlay = ({ enemyMon, enemyTeam = [], battleKind = 'wild', bat
                 {encounterRarity.chanceText ? (
                   <strong>{encounterRarity.chanceText}</strong>
                 ) : null}
-                {encounterRarity.stepChanceText ? (
-                  <em>{encounterRarity.stepChanceText}</em>
-                ) : null}
               </div>
             ) : null}
           </>
@@ -4925,6 +5320,7 @@ const BattleVictoryOverlay = ({ enemyName, isTrainer, rewardSummary, onContinue 
     isTrainer: displayIsTrainer,
     levelUps,
     unlocks,
+    ecologySurvey,
     primaryRewardItems,
     itemRewardItems,
     rewardDetailCount
@@ -5000,6 +5396,30 @@ const BattleVictoryOverlay = ({ enemyName, isTrainer, rewardSummary, onContinue 
                 </div>
               ))}
             </div>
+
+            {ecologySurvey && (
+              <div
+                className={`battle-victory-ecology${ecologySurvey.completed ? ' battle-victory-ecology--complete' : ''}`}
+                style={{ animationDelay: '1160ms', '--ecology-progress': `${Math.round((ecologySurvey.defeatedWildCount / ecologySurvey.requiredWildDefeats) * 100)}%` }}
+                aria-label={`${ecologySurvey.mapDisplayName}生态调查 ${ecologySurvey.defeatedWildCount}/${ecologySurvey.requiredWildDefeats}`}
+              >
+                <span className="battle-victory-ecology__icon" aria-hidden="true">
+                  <i className={`fa-solid ${ecologySurvey.completed ? 'fa-award' : 'fa-seedling'}`}></i>
+                </span>
+                <span className="battle-victory-ecology__body">
+                  <strong>{ecologySurvey.completed ? '生态调查完成' : `生态调查 ${ecologySurvey.defeatedWildCount}/${ecologySurvey.requiredWildDefeats}`}</strong>
+                  <span>
+                    {ecologySurvey.completed
+                      ? `队伍前 3 只主力获得成长训练${ecologySurvey.exp > 0 ? `，共 +${ecologySurvey.exp} 经验` : ''}`
+                      : `还差 ${ecologySurvey.remainingWildDefeats} 次，完成后前 3 只主力获得成长训练`}
+                  </span>
+                </span>
+                <span className="battle-victory-ecology__count">
+                  {ecologySurvey.defeatedWildCount}/{ecologySurvey.requiredWildDefeats}
+                </span>
+                <span className="battle-victory-ecology__bar" aria-hidden="true"><span /></span>
+              </div>
+            )}
 
             {itemRewardItems.length > 0 && (
               <div className="battle-victory-item-rewards" aria-label="道具奖励">
@@ -5182,7 +5602,9 @@ const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = fals
     ? isEnemyEscape ? '对手逃走了！' : '瞬间移动成功！'
     : '成功逃跑！';
   const subtitle = isTeleportEscape
-    ? '瞬间移动让战斗结束了'
+    ? (isEnemyEscape
+      ? '对手脱离了战斗'
+      : (refundEligible ? '未进入战斗，已返还能量' : '已进入战斗，能量不会返还'))
     : refundEligible ? '未进入战斗，已返还能量' : '已进入战斗，能量不会返还';
 
   return (
@@ -5249,6 +5671,7 @@ const BattleScene = ({
   const battleVisualTimerRef = useRef([]);
   const battleEffectCleanupTimerRef = useRef(null);
   const battleFeedbackTimerRef = useRef(null);
+  const battleCommandLockRef = useRef(false);
   const battlePlayerMon = useMemo(() => withBattleRuntimeDefaults(playerMon), [playerMon]);
   const battleEnemyMon = useMemo(() => withBattleRuntimeDefaults(enemyMon), [enemyMon]);
   const activeSwitchRequest = useMemo(() => normalizePendingBattleSwitch(pendingBattleSwitch), [pendingBattleSwitch]);
@@ -5443,8 +5866,13 @@ const BattleScene = ({
 
     setPlayerSwitchOverride((prev) => settleSwitchOverride(prev, battlePlayerMon, 'player'));
     setEnemySwitchOverride((prev) => settleSwitchOverride(prev, battleEnemyMon, 'enemy'));
-    setPlayerAnim((prev) => (prev === 'battle-switch-hidden' ? '' : prev));
-    setEnemyAnim((prev) => (prev === 'battle-switch-hidden' ? '' : prev));
+    const clearSettledSwitchAnimation = (animationClass) => (
+      animationClass === 'battle-switch-hidden' || animationClass.includes('battle-switch-motion')
+        ? ''
+        : animationClass
+    );
+    setPlayerAnim(clearSettledSwitchAnimation);
+    setEnemyAnim(clearSettledSwitchAnimation);
   }, [activeSwitchRequest?.nextActivePlayerId, battleEnemyMon, battlePlayerMon, switchVisualEvent]);
 
   useEffect(() => {
@@ -5463,25 +5891,13 @@ const BattleScene = ({
     };
   }, [attackEffect]);
 
-  // Reset busy state when it's player's turn
+  // Reset local command locks only when battle input is genuinely available again.
   useEffect(() => {
-    if (turn === 'player') setIsBusy(false);
-  }, [turn]);
-
-  const movePressure = useMemo(() => {
-    if (!battlePlayerMon || !battleEnemyMon) {
-      const neutralPressure = getBattleMovePressure(null, null);
-      return { player: neutralPressure, enemy: neutralPressure };
+    if (battlePhase === 'active' && !openingIntro && !openingSendOut && turn === 'player' && !isThrowingPokeball) {
+      battleCommandLockRef.current = false;
+      setIsBusy(false);
     }
-
-    return {
-      player: getBattleMovePressure(battlePlayerMon, battleEnemyMon),
-      enemy: getBattleMovePressure(battleEnemyMon, battlePlayerMon)
-    };
-  }, [battleEnemyMon, battlePlayerMon]);
-
-  const playerHint = getBattleHudHint(movePressure.player, movePressure.enemy, 'player');
-  const enemyHint = getBattleHudHint(movePressure.enemy, movePressure.player, 'enemy');
+  }, [battlePhase, isThrowingPokeball, openingIntro, openingSendOut, turn]);
 
   // Close bag when throwing pokeball animation starts
   useEffect(() => {
@@ -5524,6 +5940,8 @@ const BattleScene = ({
   const enemyEntryMode = getBattleEntryMode(displayEnemyMon);
   const playerSendOutBallSprite = getMonsterCaptureBallSprite(displayPlayerMon);
   const enemySendOutBallSprite = getMonsterCaptureBallSprite(displayEnemyMon);
+  const playerHint = getBattleWeaknessHudHint(displayPlayerMon, 'player');
+  const enemyHint = getBattleWeaknessHudHint(displayEnemyMon, 'enemy');
   const enemySpriteClass = openingIntro
     ? 'battle-opening-hidden'
     : isEnemyOpeningSendOut
@@ -5564,7 +5982,6 @@ const BattleScene = ({
   const playerHasBattleRecoveryPath = hasBattleRecoveryPath({
     playerTeam,
     playerInventory,
-    canRun: resolvedEscapeRule.canRun,
   });
   const playerOutOfMpLocked = Boolean(
     battlePlayerMon &&
@@ -5598,13 +6015,15 @@ const BattleScene = ({
       setShowControls('main');
       return;
     }
-    if (isBattleInputLocked || turn !== 'player' || isBusy || isThrowingPokeball) return;
+    if (battleCommandLockRef.current || isBattleInputLocked || turn !== 'player' || isBusy || isThrowingPokeball) return;
+    battleCommandLockRef.current = true;
     gameAudio.playUiConfirm();
     setIsBusy(true);
     try {
       await onMove(moveKey);
     } finally {
       if (isBattleSceneMountedRef.current) {
+        battleCommandLockRef.current = false;
         setIsBusy(false);
       }
     }
@@ -5637,16 +6056,18 @@ const BattleScene = ({
       setShowControls('main');
       return;
     }
-    if (isBattleInputLocked || !!playerChargingMoveKey || turn !== 'player' || isBusy || isThrowingPokeball) return;
+    if (battleCommandLockRef.current || isBattleInputLocked || !!playerChargingMoveKey || turn !== 'player' || isBusy || isThrowingPokeball) return;
     if (!resolvedEscapeRule.canRun) {
       return;
     }
+    battleCommandLockRef.current = true;
     gameAudio.playUiSelect();
     setIsBusy(true);
     try {
       await onRun?.();
     } finally {
       if (isBattleSceneMountedRef.current) {
+        battleCommandLockRef.current = false;
         setIsBusy(false);
       }
     }
@@ -5731,6 +6152,7 @@ const BattleScene = ({
           team={playerTeam && playerTeam.length > 0 ? playerTeam : [battlePlayerMon].filter(Boolean)}
           isBattle={true}
           canUseBattleBalls={canUsePokeballs}
+          activeEnemyMon={battleEnemyMon}
           addLog={addLog}
         />
       </Suspense>
@@ -5976,10 +6398,16 @@ const BattleScene = ({
                   const hasEnoughMp = isChargingReleaseMove || playerStats.currentMp >= moveCost;
                   const isMoveDisabledByCharge = !!playerChargingMoveKey && !isChargingReleaseMove;
                   const effectivenessMeta = getMoveEffectivenessMeta(move, battleEnemyMon, battlePlayerMon);
-                  const shouldShowEffectiveness = Boolean(effectivenessMeta.label);
+                  const shouldShowEffectiveness = Boolean(effectivenessMeta.label) && move.category !== 'status';
                   const movePowerDisplay = getMovePrimaryEffectDisplay(move);
                   const moveCategoryLabel = MOVE_CATEGORY_LABELS[move.category] || '招式';
                   const moveEffectLabels = getMoveEffectLabels(move);
+                  const moveEffectSummary = getMoveEffectSummaryText(move);
+                  const moveSummaryIsDuplicate = moveEffectSummary === movePowerDisplay.value;
+                  const shouldShowEffectSummary = Boolean(moveEffectSummary) && !moveSummaryIsDuplicate && (
+                    moveEffectLabels.length > 1 ||
+                    moveEffectSummary.length > 6
+                  );
                   const moveTitle = [
                     effectivenessMeta.description,
                     `${movePowerDisplay.label} ${movePowerDisplay.value}`,
@@ -5993,7 +6421,7 @@ const BattleScene = ({
                       onClick={() => handleMovePress(moveKey)}
                       disabled={activePlayerActionDisabled || !hasEnoughMp || isMoveDisabledByCharge}
                       className={`battle-move-button battle-move-button--${move.category || 'unknown'}`}
-                      title={moveTitle}
+                      aria-label={moveTitle}
                     >
                       <div className="battle-move-button__top">
                         <span className="battle-move-button__name">{isChargingReleaseMove ? `释放${move.name}` : move.name}</span>
@@ -6006,16 +6434,21 @@ const BattleScene = ({
                           <TypeBadge type={move.type} small />
                         </div>
                       </div>
-                      <div className="battle-move-button__details">
+                      <div className={`battle-move-button__details ${shouldShowEffectSummary ? 'battle-move-button__details--with-summary' : ''}`}>
                         <span className="battle-move-button__detail battle-move-button__detail--power">
-                          <small>{movePowerDisplay.label}</small><b>{movePowerDisplay.value}</b>
+                          <b>{movePowerDisplay.label === '威力' ? `威力 ${movePowerDisplay.value}` : movePowerDisplay.value}</b>
                         </span>
                         <span className={`battle-move-button__category battle-move-button__category--${move.category || 'unknown'}`}>
-                          {moveCategoryLabel}
+                          <b>{moveCategoryLabel}</b>
                         </span>
                         <span className={hasEnoughMp ? 'battle-move-button__mp' : 'battle-move-button__mp battle-move-button__mp--low'}>
-                          {isChargingReleaseMove ? '蓄力完成' : <><small>MP</small><b>{moveCost}</b></>}
+                          {isChargingReleaseMove ? '蓄力完成' : <b>MP {moveCost}</b>}
                         </span>
+                        {shouldShowEffectSummary && (
+                          <span className="battle-move-button__effect-summary">
+                            <b>{moveEffectSummary}</b>
+                          </span>
+                        )}
                       </div>
                     </button>
                   );
@@ -6043,11 +6476,11 @@ const BattleScene = ({
                       </span>
                       {playerNoMpHardLock && (
                         <span className="battle-no-mp-overlay__meter battle-no-mp-overlay__meter--warn">
-                          没有替补就会战败
+                          没有伤药或替补
                         </span>
                       )}
                     </div>
-                    <p className="battle-no-mp-overlay__body">{getNoMpOverlayBody()}</p>
+                    <p className="battle-no-mp-overlay__body">{getNoMpOverlayBody(playerNoMpHardLock)}</p>
                     <div className="battle-no-mp-overlay__actions">
                       <button
                         type="button"
@@ -6137,21 +6570,21 @@ const MonsterAcquisitionDecisionModal = ({
       aria-modal="true"
       aria-labelledby="monster-acquisition-title"
     >
-      <div className="game-card flex max-h-[calc(100%_-_1.5rem)] w-full max-w-md flex-col overflow-hidden animate-bounce-in">
-        <div className="flex items-start justify-between gap-3 border-b border-black/10 p-4">
+      <div className="game-card monster-acquisition-card flex max-h-[calc(100%_-_1.5rem)] w-full max-w-md flex-col overflow-hidden animate-bounce-in">
+        <div className="monster-acquisition-card__header flex items-start justify-between gap-3 border-b border-black/10 p-4">
           <div>
             <h3 id="monster-acquisition-title" className="text-xl font-black text-slate-900">队伍已满，选择安置方式</h3>
             <p className="mt-1 text-xs font-bold text-slate-500">
               {sourceLabel}: {monster.name} Lv.{monster.level}
             </p>
           </div>
-          <div className="h-16 w-16 shrink-0 rounded-full bg-black/10 p-2">
+          <div className="monster-acquisition-card__portrait h-16 w-16 shrink-0 rounded-full bg-black/10 p-2">
             <img src={monster.sprite} onError={handlePokemonImageError} alt={monster.name} className="h-full w-full object-contain" style={{ imageRendering: 'auto' }} />
           </div>
         </div>
 
         {mode === 'choice' ? (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="monster-acquisition-card__body min-h-0 flex-1 overflow-y-auto p-4">
             <div className="mb-4 rounded-lg bg-black/5 p-3 text-sm font-bold text-slate-700">
               出战队伍最多 {MAX_PARTY_SIZE} 只。你可以把它放入仓库、替换队伍中的一只，或者放弃它。
             </div>
@@ -6186,7 +6619,7 @@ const MonsterAcquisitionDecisionModal = ({
             </div>
           </div>
         ) : mode === 'releaseConfirm' ? (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="monster-acquisition-card__body min-h-0 flex-1 overflow-y-auto p-4">
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-center">
               <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-rose-500 text-white shadow-lg">
                 <i className={`fa-solid ${isBusy ? 'fa-rotate fa-spin' : 'fa-person-walking-arrow-right'}`}></i>
@@ -6208,14 +6641,14 @@ const MonsterAcquisitionDecisionModal = ({
             </div>
           </div>
         ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <div className="monster-acquisition-card__body monster-acquisition-card__body--replace min-h-0 flex-1 overflow-y-auto p-4">
             <button type="button" onClick={() => setMode('choice')} disabled={isBusy} className="game-soft-button mb-3 min-h-9 text-sm">
               <i className="fa-solid fa-arrow-left"></i>
               返回安置选项
             </button>
-            <CollectionGrid>
+            <CollectionGrid className="monster-acquisition-card__replace-grid">
               {party.map((partyMon) => (
-                <CollectionCard key={partyMon.id} onClick={() => handleReplaceChoice(partyMon.id)}>
+                <CollectionCard key={partyMon.id} className="monster-acquisition-card__replace-option" onClick={() => handleReplaceChoice(partyMon.id)}>
                   <div className="game-collection-card__sprite-wrap">
                     <img src={partyMon.sprite} onError={handlePokemonImageError} alt={partyMon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
                   </div>
@@ -6271,7 +6704,9 @@ const DEFAULT_INVENTORY = [
 const CLOUD_SAVE_DEBOUNCE_MS = 650;
 const CLOUD_SAVE_MAX_WAIT_MS = 3000;
 const CLOUD_SAVE_SYNC_META_KEY = '_sync';
-const WORLD_MAP_CONTENT_VERSION = 45;
+const WORLD_MAP_CONTENT_VERSION = (
+  LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 || LONG_TERM_PROGRESSION_FLAGS.championTowerV1
+) ? 46 : 45;
 const DEFAULT_WORLD_MAP_NAME = 'GodotMap';
 
 const FAST_TRAVEL_SYMBOL_ICONS = {
@@ -6283,7 +6718,8 @@ const FAST_TRAVEL_SYMBOL_ICONS = {
   moon: 'fa-moon',
   hex: 'fa-dice-d6',
   camp: 'fa-campground',
-  flag: 'fa-flag'
+  flag: 'fa-flag',
+  crown: 'fa-crown'
 };
 
 const BATTLE_SCENE_CLASSES = new Set([
@@ -6303,6 +6739,7 @@ const BATTLE_SCENE_CLASSES = new Set([
   'battle-scene-hex-ruins',
   'battle-scene-survival-ridge',
   'battle-scene-star-peak',
+  'battle-scene-champion-tower',
   'battle-scene-training-ground',
 ]);
 
@@ -6368,6 +6805,11 @@ const BATTLE_SCENE_BY_MAP_NAME = {
   GodotMapV2_HexRuins: 'battle-scene-hex-ruins',
   GodotMapV2_SurvivalRidge: 'battle-scene-survival-ridge',
   GodotMapV2_BossHighland: 'battle-scene-star-peak',
+  GodotMapV2_FrostDojo: 'battle-scene-lake',
+  GodotMapV2_TideDojo: 'battle-scene-wetland',
+  GodotMapV2_IronDojo: 'battle-scene-survival-ridge',
+  GodotMapV2_DragonDojo: 'battle-scene-star-peak',
+  GodotMapV2_ChampionTower: 'battle-scene-champion-tower',
 };
 
 const BATTLE_SCENE_BY_TERRAIN = {
@@ -6389,6 +6831,7 @@ const BATTLE_SCENE_BY_TERRAIN = {
   ruins: 'battle-scene-hex-ruins',
   hex: 'battle-scene-hex-ruins',
   ridge: 'battle-scene-survival-ridge',
+  champion: 'battle-scene-champion-tower',
   camp: 'battle-scene-survival-ridge',
   peak: 'battle-scene-star-peak',
   highland: 'battle-scene-star-peak',
@@ -6413,6 +6856,166 @@ const toBattleEnvironmentText = (value) =>
 const toBattleEnvironmentNumber = (value) => {
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
+};
+
+const SPECIAL_BATTLE_RULE_STAT_KEYS = new Set(['atk', 'def', 'spAtk', 'spDef', 'spd', 'accuracy', 'evasion']);
+const SPECIAL_BATTLE_RULE_TYPES = new Set(Object.values(TYPES));
+
+const clampSpecialBattleStatStage = (value) => {
+  const normalized = Math.trunc(Number(value));
+  return Math.max(-6, Math.min(6, Number.isFinite(normalized) ? normalized : 0));
+};
+
+const normalizeSpecialBattleRuleStageMap = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  const entries = Object.entries(value)
+    .map(([stat, stages]) => {
+      if (!SPECIAL_BATTLE_RULE_STAT_KEYS.has(stat)) return null;
+      const normalizedStages = clampSpecialBattleStatStage(stages);
+      if (normalizedStages === 0) return null;
+      return [stat, normalizedStages];
+    })
+    .filter(Boolean);
+  return entries.length > 0 ? Object.fromEntries(entries) : null;
+};
+
+const normalizeSpecialBattleRulePositiveNumber = (value, fallback = null) => {
+  const numberValue = Number(value);
+  if (Number.isFinite(numberValue) && numberValue > 0) return numberValue;
+  return fallback;
+};
+
+const normalizeSpecialBattleRulePositiveInteger = (value, fallback = null) => {
+  const numberValue = Math.trunc(Number(value));
+  if (Number.isFinite(numberValue) && numberValue > 0) return numberValue;
+  return fallback;
+};
+
+const normalizeSpecialBattleRuleRatio = (value, fallback = null) => {
+  const numberValue = Number(value);
+  if (Number.isFinite(numberValue) && numberValue > 0) return Math.min(1, numberValue);
+  return fallback;
+};
+
+const normalizeSpecialBattleRuleMoveTypes = (moveTypes) => {
+  const normalized = (Array.isArray(moveTypes) ? moveTypes : [])
+    .map((type) => (typeof type === 'string' ? type.trim() : ''))
+    .filter((type) => SPECIAL_BATTLE_RULE_TYPES.has(type));
+  return [...new Set(normalized)];
+};
+
+const normalizeSpecialBattleRule = (rule) => {
+  if (!rule || typeof rule !== 'object') return null;
+  const id = toBattleEnvironmentText(rule.id);
+  if (!id) return null;
+
+  const normalized = {
+    id,
+    name: toBattleEnvironmentText(rule.name),
+    description: toBattleEnvironmentText(rule.description)
+  };
+
+  const openingEnemyStatStages = normalizeSpecialBattleRuleStageMap(rule.openingEnemyStatStages);
+  if (openingEnemyStatStages) normalized.openingEnemyStatStages = openingEnemyStatStages;
+
+  const openingPlayerStatStages = normalizeSpecialBattleRuleStageMap(rule.openingPlayerStatStages);
+  if (openingPlayerStatStages) normalized.openingPlayerStatStages = openingPlayerStatStages;
+
+  const physicalReductionTurns = normalizeSpecialBattleRulePositiveInteger(rule.enemyPhysicalDamageTakenMultiplierTurns);
+  const damageTakenMultiplier = normalizeSpecialBattleRulePositiveNumber(rule.enemyDamageTakenMultiplier);
+  if (physicalReductionTurns && damageTakenMultiplier) {
+    normalized.enemyPhysicalDamageTakenMultiplierTurns = physicalReductionTurns;
+    normalized.enemyDamageTakenMultiplier = damageTakenMultiplier;
+  }
+
+  const intervalHeal = rule.enemyTurnIntervalHeal && typeof rule.enemyTurnIntervalHeal === 'object'
+    ? {
+      interval: normalizeSpecialBattleRulePositiveInteger(rule.enemyTurnIntervalHeal.interval),
+      ratio: normalizeSpecialBattleRuleRatio(rule.enemyTurnIntervalHeal.ratio)
+    }
+    : null;
+  if (intervalHeal?.interval && intervalHeal?.ratio) normalized.enemyTurnIntervalHeal = intervalHeal;
+
+  const switchBoost = rule.playerSwitchEnemyDamageMultiplier && typeof rule.playerSwitchEnemyDamageMultiplier === 'object'
+    ? {
+      multiplier: normalizeSpecialBattleRulePositiveNumber(rule.playerSwitchEnemyDamageMultiplier.multiplier),
+      turns: normalizeSpecialBattleRulePositiveInteger(rule.playerSwitchEnemyDamageMultiplier.turns, 1)
+    }
+    : null;
+  if (switchBoost?.multiplier && switchBoost?.turns) normalized.playerSwitchEnemyDamageMultiplier = switchBoost;
+
+  const criticalBoost = rule.enemyDamageBoostOnCriticalTaken && typeof rule.enemyDamageBoostOnCriticalTaken === 'object'
+    ? {
+      multiplier: normalizeSpecialBattleRulePositiveNumber(rule.enemyDamageBoostOnCriticalTaken.multiplier),
+      turns: normalizeSpecialBattleRulePositiveInteger(rule.enemyDamageBoostOnCriticalTaken.turns, 1)
+    }
+    : null;
+  if (criticalBoost?.multiplier && criticalBoost?.turns) normalized.enemyDamageBoostOnCriticalTaken = criticalBoost;
+
+  const typeHitStage = rule.enemyMoveTypeHitPlayerStatStage && typeof rule.enemyMoveTypeHitPlayerStatStage === 'object'
+    ? {
+      moveTypes: normalizeSpecialBattleRuleMoveTypes(rule.enemyMoveTypeHitPlayerStatStage.moveTypes),
+      stat: SPECIAL_BATTLE_RULE_STAT_KEYS.has(rule.enemyMoveTypeHitPlayerStatStage.stat) ? rule.enemyMoveTypeHitPlayerStatStage.stat : null,
+      stages: clampSpecialBattleStatStage(rule.enemyMoveTypeHitPlayerStatStage.stages),
+      maxTriggers: normalizeSpecialBattleRulePositiveInteger(rule.enemyMoveTypeHitPlayerStatStage.maxTriggers, 1)
+    }
+    : null;
+  if (typeHitStage?.moveTypes?.length > 0 && typeHitStage.stat && typeHitStage.stages !== 0 && typeHitStage.maxTriggers) {
+    normalized.enemyMoveTypeHitPlayerStatStage = typeHitStage;
+  }
+
+  const faintHeal = rule.enemyHealOnPlayerFaint && typeof rule.enemyHealOnPlayerFaint === 'object'
+    ? { ratio: normalizeSpecialBattleRuleRatio(rule.enemyHealOnPlayerFaint.ratio) }
+    : null;
+  if (faintHeal?.ratio) normalized.enemyHealOnPlayerFaint = faintHeal;
+
+  const faintSpeedBoost = rule.enemySpeedBoostOnPlayerFaint && typeof rule.enemySpeedBoostOnPlayerFaint === 'object'
+    ? { stages: clampSpecialBattleStatStage(rule.enemySpeedBoostOnPlayerFaint.stages) }
+    : null;
+  if (faintSpeedBoost?.stages) normalized.enemySpeedBoostOnPlayerFaint = faintSpeedBoost;
+
+  const afterTurnBoost = rule.enemyDamageMultiplierAfterTurn && typeof rule.enemyDamageMultiplierAfterTurn === 'object'
+    ? {
+      turn: normalizeSpecialBattleRulePositiveInteger(rule.enemyDamageMultiplierAfterTurn.turn),
+      multiplier: normalizeSpecialBattleRulePositiveNumber(rule.enemyDamageMultiplierAfterTurn.multiplier)
+    }
+    : null;
+  if (afterTurnBoost?.turn && afterTurnBoost?.multiplier) normalized.enemyDamageMultiplierAfterTurn = afterTurnBoost;
+
+  const lowHpBoost = rule.enemyDamageMultiplierAgainstLowHp && typeof rule.enemyDamageMultiplierAgainstLowHp === 'object'
+    ? {
+      hpRatio: normalizeSpecialBattleRuleRatio(rule.enemyDamageMultiplierAgainstLowHp.hpRatio),
+      multiplier: normalizeSpecialBattleRulePositiveNumber(rule.enemyDamageMultiplierAgainstLowHp.multiplier),
+      moveTypes: normalizeSpecialBattleRuleMoveTypes(rule.enemyDamageMultiplierAgainstLowHp.moveTypes)
+    }
+    : null;
+  if (lowHpBoost?.hpRatio && lowHpBoost?.multiplier) normalized.enemyDamageMultiplierAgainstLowHp = lowHpBoost;
+
+  return normalized;
+};
+
+const normalizeSpecialBattleRuleState = (state) => {
+  const source = state && typeof state === 'object' ? state : {};
+  return {
+    openingApplied: Boolean(source.openingApplied),
+    enemyTurnCount: Math.max(0, Math.trunc(Number(source.enemyTurnCount)) || 0),
+    moveTypeHitTriggerCount: Math.max(0, Math.trunc(Number(source.moveTypeHitTriggerCount)) || 0)
+  };
+};
+
+const getActiveSpecialBattleRule = (environment) => normalizeSpecialBattleRule(environment?.specialBattleRule);
+
+const withSpecialBattleRuleState = (environment, statePatch = {}) => {
+  const rule = getActiveSpecialBattleRule(environment);
+  if (!environment || !rule) return environment || null;
+  return {
+    ...environment,
+    specialBattleRule: rule,
+    specialBattleRuleState: normalizeSpecialBattleRuleState({
+      ...normalizeSpecialBattleRuleState(environment.specialBattleRuleState),
+      ...(statePatch && typeof statePatch === 'object' ? statePatch : {})
+    })
+  };
 };
 
 const normalizeBattleEnvironmentPosition = (position) => {
@@ -6603,6 +7206,13 @@ const formatEncounterPercent = (value) => {
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
 };
 
+const resolveEncounterDisplayChance = (primaryChance, fallbackChance = 0) => {
+  const primary = Number(primaryChance);
+  if (Number.isFinite(primary) && primary > 0) return primary;
+  const fallback = Number(fallbackChance);
+  return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+};
+
 const normalizeEncounterRarityMeta = (meta) => {
   if (!meta || typeof meta !== 'object') return null;
   const tier = ENCOUNTER_RARITY_TIERS.has(meta.tier) ? meta.tier : 'common';
@@ -6644,11 +7254,20 @@ const normalizeBattleEnvironment = (environment) => {
   const challengeRareUnlockStage = Math.trunc(Number(environment.challengeRareUnlockStage));
   const challengeRareUnlockedCount = Math.trunc(Number(environment.challengeRareUnlockedCount));
   const challengeRareTotalCount = Math.trunc(Number(environment.challengeRareTotalCount));
+  const championTowerFloor = Math.trunc(Number(environment.championTowerFloor));
+  const championTowerStoryClimb = environment.championTowerStoryClimb === true;
+  const championTowerSeasonKey = toBattleEnvironmentText(environment.championTowerSeasonKey);
   const battleEventCompletion = normalizeBattleEventCompletion(environment.battleEventCompletion, {
     mapName: mapName || DEFAULT_WORLD_MAP_NAME,
     eventType,
     eventId
   });
+  const specialBattleRule = battleKind === 'trainer'
+    ? normalizeSpecialBattleRule(environment.specialBattleRule)
+    : null;
+  const specialBattleRuleState = specialBattleRule
+    ? normalizeSpecialBattleRuleState(environment.specialBattleRuleState)
+    : null;
   const eventPosition = normalizeBattleEnvironmentPosition(
     environment.eventPosition || { x: environment.eventX, y: environment.eventY, direction: environment.eventDirection }
   );
@@ -6693,7 +7312,14 @@ const normalizeBattleEnvironment = (environment) => {
     challengeRareUnlockStage: Number.isSafeInteger(challengeRareUnlockStage) && challengeRareUnlockStage > 0 ? challengeRareUnlockStage : null,
     challengeRareUnlockedCount: Number.isSafeInteger(challengeRareUnlockedCount) && challengeRareUnlockedCount >= 0 ? challengeRareUnlockedCount : null,
     challengeRareTotalCount: Number.isSafeInteger(challengeRareTotalCount) && challengeRareTotalCount >= 0 ? challengeRareTotalCount : null,
+    championTowerFloor: Number.isSafeInteger(championTowerFloor) && championTowerFloor >= 1 && championTowerFloor <= 10
+      ? championTowerFloor
+      : null,
+    championTowerStoryClimb,
+    championTowerSeasonKey: championTowerSeasonKey || null,
     battleEventCompletion,
+    specialBattleRule,
+    specialBattleRuleState,
     eventPosition,
     triggerPosition,
   };
@@ -6719,7 +7345,12 @@ const createBattleEnvironment = ({
   challengeRareUnlockStage,
   challengeRareUnlockedCount,
   challengeRareTotalCount,
+  championTowerFloor,
+  championTowerStoryClimb,
+  championTowerSeasonKey,
   battleEventCompletion,
+  specialBattleRule,
+  specialBattleRuleState,
   eventPosition,
   triggerPosition,
 } = {}) => normalizeBattleEnvironment({
@@ -6742,7 +7373,12 @@ const createBattleEnvironment = ({
   challengeRareUnlockStage,
   challengeRareUnlockedCount,
   challengeRareTotalCount,
+  championTowerFloor,
+  championTowerStoryClimb,
+  championTowerSeasonKey,
   battleEventCompletion,
+  specialBattleRule,
+  specialBattleRuleState,
   eventPosition,
   triggerPosition,
 });
@@ -6836,6 +7472,7 @@ const getCurrentDailyRefreshTimestamp = () => new Date().toISOString();
 
 const normalizeWorldState = (world, fallback = {}) => {
   const source = world && typeof world === 'object' ? world : {};
+  const longTermProgress = normalizeLongTermWorldProgress(source);
   const currentMapName = typeof fallback.currentMapName === 'string' && fallback.currentMapName.length > 0
     ? fallback.currentMapName
     : (typeof source.currentMapName === 'string' && source.currentMapName.length > 0 ? source.currentMapName : DEFAULT_WORLD_MAP_NAME);
@@ -6867,9 +7504,17 @@ const normalizeWorldState = (world, fallback = {}) => {
     defeatedBossIds: uniqueStringList(source.defeatedBossIds),
     completedChallengeIds: uniqueStringList(source.completedChallengeIds),
     trainerVictoryCounts: normalizePositiveIntegerMap(source.trainerVictoryCounts),
+    wildDefeatCounts: normalizePositiveIntegerMap(source.wildDefeatCounts),
     usedHealPointIds: uniqueStringList(source.usedHealPointIds),
     flags: source.flags && typeof source.flags === 'object' ? source.flags : {},
-    mapProgress: source.mapProgress && typeof source.mapProgress === 'object' ? source.mapProgress : {}
+    mapProgress: source.mapProgress && typeof source.mapProgress === 'object' ? source.mapProgress : {},
+    longTermProgressVersion: longTermProgress.longTermProgressVersion,
+    dexProgress: longTermProgress.dexProgress,
+    completedUnlockTaskIds: longTermProgress.completedUnlockTaskIds,
+    completedUnlockTaskStepIds: longTermProgress.completedUnlockTaskStepIds,
+    completionRewardClaimIds: longTermProgress.completionRewardClaimIds,
+    unlockTaskMigrationVersion: longTermProgress.unlockTaskMigrationVersion,
+    championTower: longTermProgress.championTower
   };
 };
 
@@ -6951,8 +7596,14 @@ const getHiddenEncounterGateFlagKey = (mapName, gateEvent) => {
   return `${mapName}:hidden_gate:${zoneId || 'unknown'}`;
 };
 
+const isHiddenEncounterGateBossRequirementMet = (world, mapName, gateEvent) => (
+  getMapEventProperties(gateEvent).requiresMapBossDefeated !== true ||
+  hasCompletedBossEvent(world, mapName)
+);
+
 const isHiddenEncounterGateUnlocked = (world, mapName, gateEvent) => (
-  getWorldFlagValue(world, getHiddenEncounterGateFlagKey(mapName, gateEvent))
+  getWorldFlagValue(world, getHiddenEncounterGateFlagKey(mapName, gateEvent)) &&
+  isHiddenEncounterGateBossRequirementMet(world, mapName, gateEvent)
 );
 
 const doesTargetTouchHiddenZonePerimeter = (mapInfo, hiddenZoneId, targetX, targetY) => {
@@ -6995,9 +7646,11 @@ const getHiddenEncounterGateBlockedNotice = (world, mapName, targetX, targetY) =
     const goldCost = Math.max(1, Math.trunc(Number(props.goldCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
     return {
       key: `${mapName}:${event.id || hiddenZoneName}:${x},${y}`,
-      message: typeof props.lockedReason === 'string' && props.lockedReason.length > 0
-        ? props.lockedReason
-        : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props })
+      message: !isHiddenEncounterGateBossRequirementMet(world, mapName, event)
+        ? getHiddenEncounterGateBossLockedReason(props)
+        : typeof props.lockedReason === 'string' && props.lockedReason.length > 0
+          ? props.lockedReason
+          : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props })
     };
   }
 
@@ -7045,6 +7698,7 @@ const mergeMonotonicWorldProgress = (targetWorld, sourceWorld, fallback = {}) =>
     playerPos: target.playerPos
   });
   const sameDailyRefresh = target.dailyRefreshKey === source.dailyRefreshKey;
+  const longTermProgress = mergeLongTermWorldProgress(target, source);
 
   return {
     ...target,
@@ -7059,6 +7713,7 @@ const mergeMonotonicWorldProgress = (targetWorld, sourceWorld, fallback = {}) =>
     defeatedBossIds: mergeUniqueStringLists(target.defeatedBossIds, source.defeatedBossIds),
     completedChallengeIds: mergeUniqueStringLists(target.completedChallengeIds, source.completedChallengeIds),
     trainerVictoryCounts: mergePositiveIntegerMaps(source.trainerVictoryCounts, target.trainerVictoryCounts),
+    wildDefeatCounts: mergePositiveIntegerMaps(source.wildDefeatCounts, target.wildDefeatCounts),
     collectedEventIds: mergeUniqueStringLists(target.collectedEventIds, source.collectedEventIds),
     dailyTrainerBattleIds: sameDailyRefresh
       ? mergeUniqueStringLists(target.dailyTrainerBattleIds, source.dailyTrainerBattleIds)
@@ -7071,7 +7726,8 @@ const mergeMonotonicWorldProgress = (targetWorld, sourceWorld, fallback = {}) =>
     mapProgress: {
       ...(source.mapProgress && typeof source.mapProgress === 'object' ? source.mapProgress : {}),
       ...(target.mapProgress && typeof target.mapProgress === 'object' ? target.mapProgress : {})
-    }
+    },
+    ...longTermProgress
   };
 };
 
@@ -7283,33 +7939,108 @@ const formatCollectedItemNotification = ({ customText, itemDetails, quantity }) 
 
 const getMapProgressSummary = (mapName, world) => {
   const events = getMapEvents(mapName);
-  const trainerEvents = events.filter((event) => event.type === 'trainer');
+  const trainerEvents = events.filter((event) => {
+    if (event.type !== 'trainer') return false;
+    const props = getMapEventProperties(event);
+    const role = resolveConfiguredBattleRole(event.type, props);
+    return !isRepeatableTrainerEvent(event.type, role) && !isDailyScalingTrainerEvent(event.type, role);
+  });
   const lieutenantEvents = trainerEvents.filter((event) => getMapEventProperties(event).role === 'lieutenant');
   const itemEvents = events.filter((event) => event.type === 'item' || event.type === 'pickup');
   const bossEvent = getMapBossEvent(mapName);
   const challengeEvent = getMapChallengeEvent(mapName);
   const challengeRarePool = getChallengeRarePool(challengeEvent);
   const challengeUnlockedRarePool = getChallengeUnlockedRarePool(challengeEvent, world, mapName);
+  const challengeStageTotal = challengeEvent ? Math.max(1, getChallengeRareUnlockStageCount(challengeEvent)) : 0;
+  const challengeStageCompleted = challengeEvent
+    ? Math.min(challengeStageTotal, Math.max(
+      hasMapScopedWorldEventId(world, 'completedChallengeIds', mapName, challengeEvent.id) ? 1 : 0,
+      getChallengeRareUnlockStage(world, challengeEvent, mapName)
+    ))
+    : 0;
   const defeatedLieutenantIds = lieutenantEvents
     .map((event) => event.id)
     .filter((id) => hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, id));
+  const ecologySurveyEnabled = isEcologySurveyMap(mapName);
+  const hiddenGateEvents = getHiddenEncounterGateEvents(mapName);
+  const completedHiddenGateCount = hiddenGateEvents.filter((event) => isHiddenEncounterGateUnlocked(world, mapName, event)).length;
+  const unlockTasks = LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 ? getEliteUnlockTasksForMap(mapName) : [];
+  const completedUnlockTaskCount = unlockTasks.filter((task) => getEliteUnlockTaskProgress(world, task)?.completed).length;
+  const towerFloorTotal = mapName === CHAMPION_TOWER_MAP_ID ? 10 : 0;
+  const towerFloorCompleted = towerFloorTotal > 0
+    ? Math.min(towerFloorTotal, Math.max(0, Math.trunc(Number(world?.championTower?.highestStoryFloor)) || 0))
+    : 0;
+  const towerSeason = towerFloorTotal > 0 ? normalizeTowerSeason(world?.championTower) : null;
+  const towerSeasonKey = towerSeason?.weekly?.seasonKey || null;
+  const defeatedTrainerCount = trainerEvents.filter((event) => hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, event.id)).length;
+  const collectedItemCount = itemEvents.filter((event) => hasCollectedMapEvent(world, mapName, event.id)).length;
+  const bossCompleted = Boolean(bossEvent && hasCompletedBossEvent(world, mapName, bossEvent.id));
+  const ecologyCompleted = ecologySurveyEnabled && hasCompletedEcologySurvey(world, mapName);
+  const categories = towerFloorTotal > 0
+    ? [{ id: 'tower', label: '冠军塔层数', icon: 'fa-trophy', completed: towerFloorCompleted, total: towerFloorTotal }]
+    : [
+      { id: 'trainers', label: '训练家挑战', icon: 'fa-user-shield', completed: defeatedTrainerCount, total: trainerEvents.length },
+      { id: 'boss', label: '区域首领', icon: 'fa-crown', completed: bossCompleted ? 1 : 0, total: bossEvent ? 1 : 0 },
+      { id: 'challenge', label: '区域试炼', icon: 'fa-star', completed: challengeStageCompleted, total: challengeStageTotal },
+      { id: 'items', label: '探索补给', icon: 'fa-box-open', completed: collectedItemCount, total: itemEvents.length },
+      { id: 'ecology', label: '生态调查', icon: 'fa-seedling', completed: ecologyCompleted ? 1 : 0, total: ecologySurveyEnabled ? 1 : 0 },
+      { id: 'hidden', label: '隐藏区域', icon: 'fa-key', completed: completedHiddenGateCount, total: hiddenGateEvents.length },
+      { id: 'tasks', label: '解锁任务', icon: 'fa-gem', completed: completedUnlockTaskCount, total: unlockTasks.length }
+    ].filter((category) => category.total > 0);
+  const totalObjectives = categories.reduce((sum, category) => sum + category.total, 0);
+  const completedObjectives = categories.reduce((sum, category) => sum + Math.min(category.total, category.completed), 0);
+  const completionPercent = totalObjectives > 0
+    ? Math.max(0, Math.min(100, Math.floor((completedObjectives / totalObjectives) * 100)))
+    : 0;
+  const rewards = LONG_TERM_PROGRESSION_FLAGS.completionRewardsV1
+    ? MAP_COMPLETION_THRESHOLDS.map((threshold) => {
+      const definition = getMapCompletionRewardDefinition(mapName, threshold);
+      return {
+        ...definition,
+        eligible: completionPercent >= threshold,
+        claimed: hasClaimedCompletionReward(world, mapName, threshold)
+      };
+    }).filter((entry) => entry.id)
+    : [];
 
   return {
-    defeatedTrainers: trainerEvents.filter((event) => hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, event.id)).length,
+    defeatedTrainers: defeatedTrainerCount,
     totalTrainers: trainerEvents.length,
     defeatedLieutenants: defeatedLieutenantIds.length,
     totalLieutenants: lieutenantEvents.length,
-    bossDefeated: hasCompletedBossEvent(world, mapName, bossEvent?.id),
-    challengeCompleted: Boolean(challengeEvent && hasMapScopedWorldEventId(world, 'completedChallengeIds', mapName, challengeEvent.id)),
+    bossDefeated: bossCompleted,
+    challengeCompleted: challengeStageCompleted >= challengeStageTotal && challengeStageTotal > 0,
     challengeRareUnlocked: challengeUnlockedRarePool.length,
     challengeRareTotal: challengeRarePool.length,
-    collectedItems: itemEvents.filter((event) => hasCollectedMapEvent(world, mapName, event.id)).length,
+    collectedItems: collectedItemCount,
     totalItems: itemEvents.length,
+    ecologySurveyDefeats: ecologySurveyEnabled
+      ? Math.min(ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS, getMapWildDefeatCount(world, mapName))
+      : 0,
+    ecologySurveyRequiredDefeats: ecologySurveyEnabled ? ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS : 0,
+    ecologySurveyCompleted: ecologyCompleted,
     encounterTier: getMapEncounterProgressTier(mapName, world),
     rareUnlocked: Boolean(
-      hasCompletedBossEvent(world, mapName, bossEvent?.id) ||
+      bossCompleted ||
       challengeUnlockedRarePool.length > 0
-    )
+    ),
+    categories,
+    totalObjectives,
+    completedObjectives,
+    completionPercent,
+    rewards,
+    tower: towerSeason ? {
+      highestStoryFloor: towerSeason.highestStoryFloor,
+      championTrophyEarned: towerSeason.championTrophyEarned,
+      firstClearedAt: towerSeason.firstClearedAt,
+      totalWeeklyClears: towerSeason.totalWeeklyClears,
+      bestWinStreak: towerSeason.bestWinStreak,
+      seasonKey: towerSeasonKey,
+      weeklyHighestFloor: towerSeason.weekly.highestFloor,
+      weeklyRewardEligible: towerSeason.highestStoryFloor >= 10 && towerSeason.weekly.highestFloor >= 10,
+      weeklyRewardClaimed: hasClaimedTowerWeeklyReward(world, towerSeasonKey || getCurrentIsoWeekKey()),
+      weeklyRewardItems: CHAMPION_TOWER_WEEKLY_REWARD.map((item) => ({ ...item }))
+    } : null
   };
 };
 
@@ -7335,10 +8066,24 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
       };
     }
 
+    const requiredIds = Array.isArray(props.requiredTrainerIds)
+      ? props.requiredTrainerIds.filter((id) => typeof id === 'string' && id.length > 0)
+      : [];
+    const defeatedCount = countMapScopedWorldEventIds(world, 'defeatedTrainerIds', mapName, requiredIds);
+    const remaining = Math.max(0, requiredIds.length - defeatedCount);
+    const isCleared = hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, event.id);
+    const taskGate = LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1
+      ? getEliteUnlockTargetGate(world, mapName, event.id)
+      : null;
+    const taskLocked = Boolean(taskGate && !taskGate.completed);
     return {
-      status: hasMapScopedWorldEventId(world, 'defeatedTrainerIds', mapName, event.id) ? 'cleared' : 'available',
+      status: isCleared ? 'cleared' : remaining > 0 || taskLocked ? 'locked' : 'available',
       eventType: event.type,
-      role
+      role,
+      remainingRequired: remaining,
+      requiredCount: requiredIds.length,
+      unlockTask: taskGate?.task || null,
+      unlockTaskProgress: taskGate || null
     };
   }
 
@@ -7348,16 +8093,22 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
       : [];
     const defeatedCount = countMapScopedWorldEventIds(world, 'defeatedTrainerIds', mapName, requiredIds);
     const remaining = Math.max(0, requiredIds.length - defeatedCount);
+    const taskGate = LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1
+      ? getEliteUnlockTargetGate(world, mapName, event.id)
+      : null;
+    const taskLocked = Boolean(taskGate && !taskGate.completed);
     return {
       status: hasCompletedBossEvent(world, mapName, event.id)
         ? 'completed'
-        : remaining > 0
+        : remaining > 0 || taskLocked
           ? 'locked'
           : 'available',
       eventType: event.type,
       role,
       remainingRequired: remaining,
-      requiredCount: requiredIds.length
+      requiredCount: requiredIds.length,
+      unlockTask: taskGate?.task || null,
+      unlockTaskProgress: taskGate || null
     };
   }
 
@@ -7373,12 +8124,37 @@ const getConfiguredBattleEventVisualState = (mapName, world, event) => {
   return null;
 };
 
+const getEliteObjectiveEventVisualState = (mapName, world, event) => {
+  if (event?.type !== 'objective') return null;
+  const props = getMapEventProperties(event);
+  const taskProgress = getEliteUnlockTaskProgress(world, props.taskId);
+  if (!taskProgress) return { status: 'locked', eventType: 'objective' };
+  const stepCompleted = taskProgress.completedSteps.some((step) => step.id === props.stepId);
+  const sequenceLocked = Boolean(
+    props.stepSequence && taskProgress.nextStep && taskProgress.nextStep.id !== props.stepId
+  );
+  return {
+    status: stepCompleted || taskProgress.completed
+      ? 'completed'
+      : !taskProgress.available || sequenceLocked
+        ? 'locked'
+        : 'available',
+    eventType: 'objective',
+    task: taskProgress.task,
+    taskProgress,
+    stepId: props.stepId,
+    stepName: props.stepName
+  };
+};
+
 const buildMapEventVisualState = (mapName, world, completedBattleEventVisualOverrides = null) => {
   const events = getMapEvents(mapName);
   const visualState = {};
 
   events.forEach((event) => {
-    const eventVisualState = getConfiguredBattleEventVisualState(mapName, world, event);
+    const eventVisualState = event.type === 'objective'
+      ? getEliteObjectiveEventVisualState(mapName, world, event)
+      : getConfiguredBattleEventVisualState(mapName, world, event);
     if (!eventVisualState) return;
     const override = getCompletedBattleEventVisualOverride(completedBattleEventVisualOverrides, {
       world,
@@ -7422,6 +8198,14 @@ const getConfiguredBattleEventInfoMessage = ({
   }
 
   if (status === 'locked') {
+    const taskProgress = resolvedVisualState?.unlockTaskProgress;
+    if (taskProgress?.task) {
+      if (!taskProgress.available) {
+        return `${eventName}尚未开放。先完成前一名守关者与对应机关。`;
+      }
+      const nextStepName = taskProgress.nextStep?.name || '当前机关';
+      return `${eventName}尚未开放。解锁任务「${taskProgress.task.title}」${taskProgress.completedStepCount}/${taskProgress.totalStepCount}，下一步：${nextStepName}。`;
+    }
     return typeof props.lockedText === 'string' && props.lockedText.length > 0
       ? props.lockedText
       : `${eventName}尚未开放。`;
@@ -7723,11 +8507,11 @@ const buildChallengeRareUnlockMessage = ({
   const props = getMapEventProperties(event);
   const mapLabel = getMapConfig(mapName).displayName;
   const speciesNames = getRareSpeciesNames(rarePool);
-  if (speciesNames.length === 0) return `${mapLabel}隐藏生态有新的气息出现。`;
+  if (speciesNames.length === 0) return `${mapLabel}试炼稀有已开启。`;
   const stageText = Number.isFinite(Number(unlockStage)) && Number(unlockStage) > 0
     ? `第 ${Math.trunc(Number(unlockStage))} 批`
     : '新一批';
-  return `${mapLabel}隐藏生态${stageText}解锁：${speciesNames.join('、')}现在会在草丛中出现（${formatRareChanceText(props.challengeRareChance)}）。`;
+  return `${mapLabel}试炼稀有${stageText}解锁：${speciesNames.join('、')}现在会在草丛中出现（${formatRareChanceText(props.challengeRareChance)}）。`;
 };
 
 const buildBattleRareUnlockSummaries = ({
@@ -7753,7 +8537,7 @@ const buildBattleRareUnlockSummaries = ({
     );
     return [{
       kind: 'challengeRare',
-      title: Number.isFinite(stage) && stage > 0 ? `隐藏生态第 ${stage} 批开启` : '隐藏生态开启',
+      title: Number.isFinite(stage) && stage > 0 ? `试炼稀有第 ${stage} 批开启` : '试炼稀有开启',
       subtitle: `${mapLabel}草丛新增 ${speciesPreview.length} 种`,
       description: totalRareCount > speciesNames.length
         ? `累计解锁 ${safeUnlockedCount}/${totalRareCount} 种`
@@ -7824,8 +8608,8 @@ const formatMapLockHint = ({ reason = '', nextStep = '' }) => {
 
 const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam }) => {
   const props = getMapEventProperties(warpEvent);
-  const requiredAverageLevel = Number(props.requiredAverageLevel);
   const requiredTrainerIds = normalizeRequiredEventIds(props.requiredTrainerIds);
+  const requiredAverageLevel = Math.max(0, Math.trunc(Number(props.requiredAverageLevel) || 0));
   const targetMapName = warpEvent?.target?.mapName;
   const targetMapConfig = targetMapName ? getMapConfig(targetMapName) : null;
   const destinationLabel = (
@@ -7833,15 +8617,14 @@ const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam })
     String(props.label || '').replace(/^前往/u, '').trim() ||
     '下一张地图'
   );
+  const playerAverageLevel = getPlayerAverageLevel(playerTeam, 1);
   const missingTrainerCount = Math.max(
     0,
     requiredTrainerIds.length - countMapScopedWorldEventIds(world, 'defeatedTrainerIds', currentMapName, requiredTrainerIds)
   );
-  const levelLocked = Number.isFinite(requiredAverageLevel) &&
-    requiredAverageLevel > 0 &&
-    getPlayerAverageLevel(playerTeam, 5) < requiredAverageLevel;
+  const levelLocked = requiredAverageLevel > 0 && playerAverageLevel < requiredAverageLevel;
 
-  if (missingTrainerCount <= 0 && !levelLocked) {
+  if (!levelLocked && missingTrainerCount <= 0) {
     return { locked: false, reason: '' };
   }
 
@@ -7850,34 +8633,22 @@ const getWarpEventLockState = ({ currentMapName, warpEvent, world, playerTeam })
     return { locked: true, reason: explicitText };
   }
 
-  const targetLevel = Number.isFinite(requiredAverageLevel) ? Math.trunc(requiredAverageLevel) : 0;
-  if (missingTrainerCount > 0 && levelLocked) {
-    const trainerLeadText = missingTrainerCount >= requiredTrainerIds.length
-      ? `先击败 ${requiredTrainerIds.length} 位训练家`
-      : `还需击败 ${missingTrainerCount} 位训练家`;
-    return {
-      locked: true,
-      reason: `${trainerLeadText}，再把队伍平均等级提升到 Lv.${targetLevel}，才能前往${destinationLabel}。`
-    };
-  }
-
-  if (missingTrainerCount > 0) {
-    const trainerLeadText = missingTrainerCount >= requiredTrainerIds.length
-      ? `先击败 ${requiredTrainerIds.length} 位训练家`
-      : `还需击败 ${missingTrainerCount} 位训练家`;
-    return {
-      locked: true,
-      reason: `${trainerLeadText}，才能前往${destinationLabel}。`
-    };
-  }
-
+  const requirementParts = [];
   if (levelLocked) {
-    return {
-      locked: true,
-      reason: `队伍平均等级达到 Lv.${targetLevel} 后，才能前往${destinationLabel}。`
-    };
+    requirementParts.push(`队伍平均等级达到 Lv.${requiredAverageLevel}`);
   }
-  return { locked: false, reason: '' };
+  if (missingTrainerCount > 0) {
+    requirementParts.push(
+      missingTrainerCount >= requiredTrainerIds.length
+        ? `先击败 ${requiredTrainerIds.length} 位训练家`
+        : `还需击败 ${missingTrainerCount} 位训练家`
+    );
+  }
+
+  return {
+    locked: true,
+    reason: `${requirementParts.join('，且')}，才能前往${destinationLabel}。`
+  };
 };
 
 const getAdventureRouteIndex = (mapName) => {
@@ -8009,36 +8780,16 @@ const getFastTravelMapLockState = ({ targetMapName, currentMapName, world, playe
   if (!targetMapName || !hasAdventureMap(targetMapName)) {
     return { locked: true, reason: '道路未开放。' };
   }
-  const mapConfig = getMapConfig(targetMapName);
   if (targetMapName === currentMapName) {
     return { locked: false, current: true, reason: '当前所在区域' };
   }
 
-  const playerAvgLevel = getPlayerAverageLevel(playerTeam);
   const routeGate = getFastTravelRouteGate({ targetMapName, world, playerTeam });
-  const levelLocked = isMapLockedForLevel(mapConfig, playerAvgLevel);
-
-  if (routeGate.locked && levelLocked) {
-    return {
-      locked: true,
-      reason: formatMapLockHint({
-        reason: routeGate.reason || `路线 / 平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}`
-      })
-    };
-  }
   if (routeGate.locked) {
     return {
       locked: true,
       reason: formatMapLockHint({
         reason: routeGate.reason || '路线未通'
-      })
-    };
-  }
-  if (levelLocked) {
-    return {
-      locked: true,
-      reason: formatMapLockHint({
-        reason: `平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))}`
       })
     };
   }
@@ -8093,9 +8844,11 @@ const buildEncounterZoneLocks = (mapName, world, playerTeam = []) => {
     const goldCost = Math.max(1, Math.trunc(Number(props.goldCost ?? HIDDEN_ENCOUNTER_GATE_DEFAULT_COST)) || HIDDEN_ENCOUNTER_GATE_DEFAULT_COST);
     locks[zoneId] = {
       blocked: true,
-      reason: typeof props.lockedReason === 'string' && props.lockedReason.length > 0
-        ? props.lockedReason
-        : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props, requireEntry: true })
+      reason: !isHiddenEncounterGateBossRequirementMet(world, mapName, event)
+        ? getHiddenEncounterGateBossLockedReason(props)
+        : typeof props.lockedReason === 'string' && props.lockedReason.length > 0
+          ? props.lockedReason
+          : formatHiddenEncounterGateLockedReason({ hiddenZoneName, goldCost, props, requireEntry: true })
     };
   });
 
@@ -8179,18 +8932,41 @@ const pickProgressEncounterCandidate = ({ candidates, minLevel, maxLevel, rare =
   if (legalCandidates.length === 0) return null;
 
   const totalWeight = legalCandidates.reduce((sum, entry) => sum + entry.weight, 0);
+  const getSelectionShare = (pokemonId) => {
+    if (totalWeight <= 0) return 0;
+    const speciesWeight = legalCandidates.reduce((sum, candidate) => (
+      candidate.pokemonId === pokemonId ? sum + candidate.weight : sum
+    ), 0);
+    return speciesWeight / totalWeight;
+  };
   let roll = Math.random() * totalWeight;
   for (const entry of legalCandidates) {
     roll -= entry.weight;
     if (roll <= 0) {
       const level = pickLevelForSpecies(entry.pokemonId, entry.minLevel, entry.maxLevel);
-      if (level !== null) return { pokemonId: entry.pokemonId, level, rare, progressTier };
+      if (level !== null) {
+        return {
+          pokemonId: entry.pokemonId,
+          level,
+          rare,
+          progressTier,
+          selectionShare: getSelectionShare(entry.pokemonId)
+        };
+      }
     }
   }
 
   const fallback = legalCandidates[0];
   const level = pickLevelForSpecies(fallback.pokemonId, fallback.minLevel, fallback.maxLevel);
-  return level !== null ? { pokemonId: fallback.pokemonId, level, rare, progressTier } : null;
+  return level !== null
+    ? {
+        pokemonId: fallback.pokemonId,
+        level,
+        rare,
+        progressTier,
+        selectionShare: getSelectionShare(fallback.pokemonId)
+      }
+    : null;
 };
 
 const getProgressBumpedEncounter = ({ basePokemonId, baseLevel, progressTier, mapMin, mapMax }) => {
@@ -8203,7 +8979,8 @@ const getProgressBumpedEncounter = ({ basePokemonId, baseLevel, progressTier, ma
   const targetLevel = Math.min(mapMax, Math.max(mapMin, level + bonus));
   for (let candidateLevel = targetLevel; candidateLevel >= level; candidateLevel -= 1) {
     if (isLevelValidForSpecies(pokemonId, candidateLevel)) {
-      return { pokemonId, level: candidateLevel, rare: false, progressTier, strengthened: candidateLevel > level };
+      if (candidateLevel <= level) return null;
+      return { pokemonId, level: candidateLevel, rare: false, progressTier, strengthened: true };
     }
   }
   return null;
@@ -8241,7 +9018,7 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
           ...bossRareEncounter,
           bossRare: true,
           unlockSource: 'boss',
-          sourceChance: bossRareChance
+          sourceChance: bossRareChance * Math.max(0, Number(bossRareEncounter.selectionShare) || 0)
         };
       }
     }
@@ -8265,7 +9042,7 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
           ...challengeRareEncounter,
           challengeRare: true,
           unlockSource: 'challenge',
-          sourceChance: challengeRareChance
+          sourceChance: challengeRareChance * Math.max(0, Number(challengeRareEncounter.selectionShare) || 0)
         };
       }
     }
@@ -8285,7 +9062,12 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
       rare: false,
       progressTier
     });
-    if (progressEncounter) return { ...progressEncounter, sourceChance: 0.18 };
+    if (progressEncounter) {
+      return {
+        ...progressEncounter,
+        sourceChance: 0.18 * Math.max(0, Number(progressEncounter.selectionShare) || 0)
+      };
+    }
   }
 
   if (progressTier >= 1 && Math.random() < 0.12) {
@@ -8302,7 +9084,12 @@ const pickProgressRareEncounter = ({ mapName, world, basePokemonId, baseLevel })
       rare: false,
       progressTier
     });
-    if (progressEncounter) return { ...progressEncounter, sourceChance: 0.12 };
+    if (progressEncounter) {
+      return {
+        ...progressEncounter,
+        sourceChance: 0.12 * Math.max(0, Number(progressEncounter.selectionShare) || 0)
+      };
+    }
   }
 
   return getProgressBumpedEncounter({ basePokemonId, baseLevel, progressTier, mapMin, mapMax });
@@ -8342,7 +9129,7 @@ const getEncounterShareMeta = ({ encounterTableId, pokemonId }) => {
 
 const getEncounterTierFromShare = (share) => {
   if (share <= 0.04) return 'ultra';
-  if (share <= 0.09) return 'rare';
+  if (share <= 0.1) return 'rare';
   if (share <= 0.18) return 'uncommon';
   return 'common';
 };
@@ -8351,7 +9138,7 @@ const ENCOUNTER_RARITY_PRESENTATION = {
   common: { label: '常见', headline: '熟悉的身影' },
   uncommon: { label: '少见', headline: '不错的发现' },
   rare: { label: '稀有出现', headline: '稀有气息!' },
-  ultra: { label: '极稀有现身', headline: '天选相遇!' },
+  ultra: { label: '稀有出现', headline: '稀有气息!' },
   mythic: { label: '首领稀有', headline: '首领生态现身!' },
   boosted: { label: '增强生态', headline: '更强的气息!' }
 };
@@ -8362,69 +9149,79 @@ const buildWildEncounterRarityMeta = ({
   encounterRate,
   rareEncounter
 } = {}) => {
+  const shareMeta = getEncounterShareMeta({ encounterTableId, pokemonId });
+  const share = Number(shareMeta?.share);
+
+  if (rareEncounter?.hiddenExclusive) {
+    const chance = formatEncounterPercent(resolveEncounterDisplayChance(rareEncounter.sourceChance, share));
+    return normalizeEncounterRarityMeta({
+      tier: rareEncounter.rarityTier || 'mythic',
+      label: rareEncounter.rarityLabel || '秘境专属',
+      headline: rareEncounter.rarityHeadline || '专属强者现身!',
+      chanceText: chance,
+      sourceText: rareEncounter.zoneName ? `${rareEncounter.zoneName}专属宝可梦` : '隐藏区专属宝可梦',
+      isExciting: true
+    });
+  }
+
   if (rareEncounter?.bossRare) {
-    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    const chance = formatEncounterPercent(resolveEncounterDisplayChance(rareEncounter.sourceChance, share));
     return normalizeEncounterRarityMeta({
       tier: 'mythic',
       label: '首领稀有',
       headline: '首领生态现身!',
-      chanceText: chance ? `首领生态约 ${chance}` : '首领解锁生态',
+      chanceText: chance,
       sourceText: '击败首领后才会出现',
       isExciting: true
     });
   }
 
   if (rareEncounter?.challengeRare) {
-    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    const chance = formatEncounterPercent(resolveEncounterDisplayChance(rareEncounter.sourceChance, share));
     return normalizeEncounterRarityMeta({
       tier: 'ultra',
-      label: '隐藏稀有',
-      headline: '隐藏生态现身!',
-      chanceText: chance ? `隐藏生态约 ${chance}` : '试炼解锁生态',
-      sourceText: '试炼奖励池宝可梦',
+      label: '试炼稀有',
+      headline: '试炼稀有出现!',
+      chanceText: chance,
+      sourceText: '试炼解锁宝可梦',
       isExciting: true
     });
   }
 
   if (rareEncounter?.rare) {
-    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    const chance = formatEncounterPercent(resolveEncounterDisplayChance(rareEncounter.sourceChance, share));
     return normalizeEncounterRarityMeta({
       tier: 'rare',
-      label: '稀有生态',
+      label: '稀有出现',
       headline: '稀有气息!',
-      chanceText: chance ? `稀有生态约 ${chance}` : '稀有生态出现',
-      sourceText: '特殊生态池宝可梦',
+      chanceText: chance,
+      sourceText: '低概率野生宝可梦',
       isExciting: true
     });
   }
 
   if (rareEncounter?.strengthened || rareEncounter?.progressTier >= 1) {
-    const chance = formatEncounterPercent(rareEncounter.sourceChance);
+    const chance = formatEncounterPercent(resolveEncounterDisplayChance(rareEncounter.sourceChance, share));
     return normalizeEncounterRarityMeta({
       tier: 'boosted',
       label: '增强生态',
       headline: '更强的气息!',
-      chanceText: chance ? `增强生态约 ${chance}` : '试炼后增强生态',
+      chanceText: chance,
       sourceText: '地图进度提升后出现',
       isExciting: false
     });
   }
 
-  const shareMeta = getEncounterShareMeta({ encounterTableId, pokemonId });
-  const share = Number(shareMeta?.share);
   if (!Number.isFinite(share) || share <= 0) return null;
 
   const tier = getEncounterTierFromShare(share);
   const presentation = ENCOUNTER_RARITY_PRESENTATION[tier] || ENCOUNTER_RARITY_PRESENTATION.common;
-  const grassRate = Number(encounterRate);
-  const stepChance = Number.isFinite(grassRate) && grassRate > 0 ? grassRate * share : 0;
 
   return normalizeEncounterRarityMeta({
     tier,
     label: presentation.label,
     headline: presentation.headline,
-    chanceText: `草丛池约 ${formatEncounterPercent(share)}`,
-    stepChanceText: stepChance > 0 ? `每步约 ${formatEncounterPercent(stepChance)}` : '',
+    chanceText: formatEncounterPercent(share),
     sourceText: encounterTableId ? `生态表 ${encounterTableId}` : '',
     isExciting: tier === 'rare' || tier === 'ultra'
   });
@@ -8447,11 +9244,12 @@ const getCloudSaveRevision = (gameData) => {
   return Number.isSafeInteger(revision) && revision > 0 ? revision : 0;
 };
 
-const withCloudSaveMeta = (snapshot, revision, sessionId) => ({
+const withCloudSaveMeta = (snapshot, revision, sessionId, playtimeSessionId = null) => ({
   ...snapshot,
   [CLOUD_SAVE_SYNC_META_KEY]: {
     revision,
     sessionId,
+    ...(playtimeSessionId ? { playtimeSessionId } : {}),
     clientSavedAt: new Date().toISOString()
   }
 });
@@ -8681,9 +9479,9 @@ const evolveMonsterInstance = (monster, targetBase) => {
   const currentMaxMp = getMonsterMaxMp(monster);
   const hpRatio = currentMaxHp > 0 ? getMonsterCurrentHp(monster, currentMaxHp) / currentMaxHp : 1;
   const mpRatio = currentMaxMp > 0 ? getMonsterCurrentMp(monster, currentMaxMp) / currentMaxMp : 1;
-  const preservedMoves = normalizeMovesForPokemonLevel(targetBase, monster.moves, monster.level, {
-    backfill: false,
-    preferBalancedWhenInvalid: true,
+  const moveLoadoutMode = normalizeMoveLoadoutMode(monster.moveLoadoutMode);
+  const preservedMoves = getEvolutionPreservedMovesForPokemonLevel(targetBase, monster.moves, monster.level, {
+    loadoutMode: moveLoadoutMode,
   });
   const evolved = createMonsterInstance(
     targetBase,
@@ -8699,6 +9497,7 @@ const evolveMonsterInstance = (monster, targetBase) => {
     ...evolved,
     baseId: targetBase.id,
     capturedBallKey: getMonsterCaptureBallKey(monster),
+    moveLoadoutMode,
     currentHp: Math.max(1, Math.round(evolved.maxHp * hpRatio)),
     currentMp: Math.max(0, Math.round(evolved.maxMp * mpRatio)),
     moves: preservedMoves.length > 0 ? preservedMoves : getBalancedMovesForLevel(targetBase, monster.level),
@@ -8722,10 +9521,294 @@ const hasBattleHp = (monster) => {
 
 const isBattleMonFainted = (monster) => !hasBattleHp(monster);
 
+const resolveBattleActionFaintFlags = (result = {}, fallbackActor = null, fallbackTarget = null) => {
+  const actorMon = result?.attacker || fallbackActor;
+  const targetMon = result?.defender || fallbackTarget;
+  return {
+    actorMon,
+    targetMon,
+    actorFainted: Boolean(result?.actorFainted || (actorMon && isBattleMonFainted(actorMon))),
+    targetFainted: Boolean(result?.targetFainted || (targetMon && isBattleMonFainted(targetMon)))
+  };
+};
+
 const getAliveBattleBench = (playerTeam = [], activePlayerId = null) => (
   (Array.isArray(playerTeam) ? playerTeam : [])
     .filter((mon) => mon?.id !== activePlayerId && hasBattleHp(mon))
 );
+
+const getSpecialBattleRuleDisplayName = (rule) => rule?.name || '特殊规则';
+
+const formatSpecialBattleStatStageSummary = (stages = {}) => (
+  Object.entries(stages)
+    .filter(([stat, stage]) => SPECIAL_BATTLE_RULE_STAT_KEYS.has(stat) && Number(stage) !== 0)
+    .map(([stat, stage]) => `${STAT_LABELS[stat] || stat}${Number(stage) > 0 ? '提高' : '降低'} ${Math.abs(Number(stage))} 级`)
+    .join('、')
+);
+
+const applySpecialBattleStatStagesToMon = (mon, stages = {}) => {
+  if (!mon || !stages || typeof stages !== 'object') return mon;
+  return Object.entries(stages).reduce((nextMon, [stat, stage]) => {
+    if (!SPECIAL_BATTLE_RULE_STAT_KEYS.has(stat) || Number(stage) === 0) return nextMon;
+    return applyStatChangeToMon(nextMon, { stat, stages: Number(stage) });
+  }, withBattleRuntimeDefaults(mon));
+};
+
+const specialBattleRuleMoveTypeMatches = (moveType, moveTypes = []) => {
+  if (!moveType) return false;
+  const normalizedMoveTypes = normalizeSpecialBattleRuleMoveTypes(moveTypes);
+  return normalizedMoveTypes.length === 0 || normalizedMoveTypes.includes(moveType);
+};
+
+const applySpecialBattleOpeningToSnapshot = (baseSnapshot) => {
+  const environment = normalizeBattleEnvironment(
+    baseSnapshot?.battleEnvironment ||
+    baseSnapshot?.battlePhaseData?.battleEnvironment
+  );
+  const rule = getActiveSpecialBattleRule(environment);
+  if (!rule) return baseSnapshot;
+
+  const state = normalizeSpecialBattleRuleState(environment.specialBattleRuleState);
+  if (state.openingApplied) return baseSnapshot;
+
+  const activePlayerId = baseSnapshot.activePlayerId;
+  const playerTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
+  const enemyTeam = Array.isArray(baseSnapshot.enemyTeam) ? baseSnapshot.enemyTeam : [];
+  const logs = [];
+  let nextPlayerTeam = playerTeam;
+  let nextEnemyTeam = enemyTeam;
+
+  if (rule.openingPlayerStatStages && activePlayerId) {
+    nextPlayerTeam = playerTeam.map((mon) => (
+      mon?.id === activePlayerId && hasBattleHp(mon)
+        ? applySpecialBattleStatStagesToMon(mon, rule.openingPlayerStatStages)
+        : mon
+    ));
+    const summary = formatSpecialBattleStatStageSummary(rule.openingPlayerStatStages);
+    if (summary) logs.push(`${getSpecialBattleRuleDisplayName(rule)}发动：玩家首发${summary}。`);
+  }
+
+  if (rule.openingEnemyStatStages) {
+    nextEnemyTeam = enemyTeam.map((mon) => (
+      hasBattleHp(mon)
+        ? applySpecialBattleStatStagesToMon(mon, rule.openingEnemyStatStages)
+        : mon
+    ));
+    const summary = formatSpecialBattleStatStageSummary(rule.openingEnemyStatStages);
+    if (summary) logs.push(`${getSpecialBattleRuleDisplayName(rule)}发动：敌方队伍${summary}。`);
+  }
+
+  const nextEnvironment = withSpecialBattleRuleState(environment, { ...state, openingApplied: true });
+  const nextPhaseData = baseSnapshot.battlePhaseData?.battleEnvironment
+    ? {
+      ...baseSnapshot.battlePhaseData,
+      battleEnvironment: nextEnvironment,
+      battleEventCompletion: baseSnapshot.battleEventCompletion || baseSnapshot.battlePhaseData.battleEventCompletion || nextEnvironment?.battleEventCompletion
+    }
+    : baseSnapshot.battlePhaseData;
+
+  return {
+    ...baseSnapshot,
+    playerTeam: nextPlayerTeam,
+    enemyTeam: nextEnemyTeam,
+    battleEnvironment: nextEnvironment,
+    battlePhaseData: nextPhaseData,
+    logs: logs.length > 0 ? appendSnapshotLogs(baseSnapshot, logs) : baseSnapshot.logs
+  };
+};
+
+const applySpecialBattlePlayerSwitchPressure = ({ enemyTeam = [], activeEnemyId = null, environment = null } = {}) => {
+  const rule = getActiveSpecialBattleRule(environment);
+  const switchBoost = rule?.playerSwitchEnemyDamageMultiplier;
+  if (!switchBoost?.multiplier || !switchBoost?.turns || !activeEnemyId) {
+    return { enemyTeam, applied: false, rule };
+  }
+
+  let applied = false;
+  const nextEnemyTeam = (Array.isArray(enemyTeam) ? enemyTeam : []).map((mon) => {
+    if (mon?.id !== activeEnemyId || !hasBattleHp(mon)) return mon;
+    applied = true;
+    const runtimeMon = withBattleRuntimeDefaults(mon);
+    return {
+      ...runtimeMon,
+      volatileStatuses: {
+        ...(runtimeMon.volatileStatuses || {}),
+        eliteSwitchDamageTurns: Math.max(
+          Number(runtimeMon.volatileStatuses?.eliteSwitchDamageTurns) || 0,
+          switchBoost.turns
+        )
+      }
+    };
+  });
+
+  return { enemyTeam: nextEnemyTeam, applied, rule };
+};
+
+const getSpecialBattleDamageMultiplier = ({
+  rule,
+  state,
+  attacker,
+  defender,
+  move,
+  attackerSide,
+  defenderSide
+} = {}) => {
+  if (!rule || !move) return 1;
+  let multiplier = 1;
+
+  if (attackerSide === 'player' && defenderSide === 'enemy') {
+    if (
+      move.category === 'physical' &&
+      rule.enemyPhysicalDamageTakenMultiplierTurns &&
+      rule.enemyDamageTakenMultiplier
+    ) {
+      const enemyTurnCount = normalizeSpecialBattleRuleState(state).enemyTurnCount;
+      if (enemyTurnCount < rule.enemyPhysicalDamageTakenMultiplierTurns) {
+        multiplier *= rule.enemyDamageTakenMultiplier;
+      }
+    }
+    return multiplier;
+  }
+
+  if (attackerSide !== 'enemy' || defenderSide !== 'player') return multiplier;
+
+  const volatileStatuses = attacker?.volatileStatuses || {};
+  if (Number(volatileStatuses.eliteSwitchDamageTurns) > 0 && rule.playerSwitchEnemyDamageMultiplier?.multiplier) {
+    multiplier *= rule.playerSwitchEnemyDamageMultiplier.multiplier;
+  }
+  if (Number(volatileStatuses.eliteCriticalDamageBoostTurns) > 0 && rule.enemyDamageBoostOnCriticalTaken?.multiplier) {
+    multiplier *= rule.enemyDamageBoostOnCriticalTaken.multiplier;
+  }
+
+  const enemyTurnCount = normalizeSpecialBattleRuleState(state).enemyTurnCount;
+  const afterTurnBoost = rule.enemyDamageMultiplierAfterTurn;
+  if (afterTurnBoost?.turn && afterTurnBoost?.multiplier && enemyTurnCount >= afterTurnBoost.turn) {
+    multiplier *= afterTurnBoost.multiplier;
+  }
+
+  const lowHpBoost = rule.enemyDamageMultiplierAgainstLowHp;
+  const defenderMaxHp = getMonsterMaxHp(defender);
+  const defenderHpRatio = defenderMaxHp > 0 ? getMonsterCurrentHp(defender, defenderMaxHp) / defenderMaxHp : 1;
+  if (
+    lowHpBoost?.hpRatio &&
+    lowHpBoost?.multiplier &&
+    defenderHpRatio <= lowHpBoost.hpRatio &&
+    specialBattleRuleMoveTypeMatches(move.type, lowHpBoost.moveTypes)
+  ) {
+    multiplier *= lowHpBoost.multiplier;
+  }
+
+  return multiplier;
+};
+
+const consumeSpecialBattleEnemyDamageBoosts = (mon, damage) => {
+  const runtimeMon = withBattleRuntimeDefaults(mon);
+  if (!runtimeMon || damage <= 0) return runtimeMon;
+  const volatileStatuses = { ...(runtimeMon.volatileStatuses || {}) };
+  for (const key of ['eliteSwitchDamageTurns', 'eliteCriticalDamageBoostTurns']) {
+    const turns = Math.max(0, Math.trunc(Number(volatileStatuses[key])) || 0);
+    if (turns <= 1) {
+      delete volatileStatuses[key];
+    } else {
+      volatileStatuses[key] = turns - 1;
+    }
+  }
+  return { ...runtimeMon, volatileStatuses };
+};
+
+const resolveSpecialBattleEnemyTurnAfterAction = ({ enemyMon = null, environment = null } = {}) => {
+  const rule = getActiveSpecialBattleRule(environment);
+  if (!rule || !enemyMon) {
+    return { enemyMon, battleEnvironment: environment, logs: [], healed: false };
+  }
+
+  const state = normalizeSpecialBattleRuleState(environment.specialBattleRuleState);
+  const nextEnemyTurnCount = state.enemyTurnCount + 1;
+  let nextEnemyMon = withBattleRuntimeDefaults(enemyMon);
+  const logs = [];
+  let healed = false;
+
+  const intervalHeal = rule.enemyTurnIntervalHeal;
+  if (
+    intervalHeal?.interval &&
+    intervalHeal?.ratio &&
+    nextEnemyTurnCount > 0 &&
+    nextEnemyTurnCount % intervalHeal.interval === 0 &&
+    hasBattleHp(nextEnemyMon)
+  ) {
+    const maxHp = getMonsterMaxHp(nextEnemyMon);
+    const currentHp = getMonsterCurrentHp(nextEnemyMon, maxHp);
+    const healAmount = Math.max(1, Math.floor(maxHp * intervalHeal.ratio));
+    const nextHp = Math.min(maxHp, currentHp + healAmount);
+    if (nextHp > currentHp) {
+      nextEnemyMon = { ...nextEnemyMon, currentHp: nextHp };
+      healed = true;
+      logs.push(`${getSpecialBattleRuleDisplayName(rule)}发动，敌方 ${nextEnemyMon.name} 回复了体力。`);
+    }
+  }
+
+  return {
+    enemyMon: nextEnemyMon,
+    battleEnvironment: withSpecialBattleRuleState(environment, {
+      ...state,
+      enemyTurnCount: nextEnemyTurnCount
+    }),
+    logs,
+    healed
+  };
+};
+
+const applySpecialBattlePlayerFaintBenefitToSnapshot = (baseSnapshot) => {
+  const environment = normalizeBattleEnvironment(
+    baseSnapshot?.battleEnvironment ||
+    baseSnapshot?.battlePhaseData?.battleEnvironment
+  );
+  const rule = getActiveSpecialBattleRule(environment);
+  if (!rule?.enemyHealOnPlayerFaint && !rule?.enemySpeedBoostOnPlayerFaint) {
+    return baseSnapshot;
+  }
+
+  const activeEnemyId = baseSnapshot.activeEnemyId;
+  if (!activeEnemyId) return baseSnapshot;
+
+  const logs = [];
+  let applied = false;
+  const nextEnemyTeam = (Array.isArray(baseSnapshot.enemyTeam) ? baseSnapshot.enemyTeam : []).map((mon) => {
+    if (mon?.id !== activeEnemyId || !hasBattleHp(mon)) return mon;
+
+    let nextMon = withBattleRuntimeDefaults(mon);
+    const maxHp = getMonsterMaxHp(nextMon);
+    const currentHp = getMonsterCurrentHp(nextMon, maxHp);
+
+    if (rule.enemyHealOnPlayerFaint?.ratio) {
+      const healAmount = Math.max(1, Math.floor(maxHp * rule.enemyHealOnPlayerFaint.ratio));
+      const nextHp = Math.min(maxHp, currentHp + healAmount);
+      if (nextHp > currentHp) {
+        nextMon = { ...nextMon, currentHp: nextHp };
+        logs.push(`${getSpecialBattleRuleDisplayName(rule)}发动，敌方 ${nextMon.name} 回复了体力。`);
+        applied = true;
+      }
+    }
+
+    if (rule.enemySpeedBoostOnPlayerFaint?.stages) {
+      nextMon = applyStatChangeToMon(nextMon, {
+        stat: 'spd',
+        stages: rule.enemySpeedBoostOnPlayerFaint.stages
+      });
+      logs.push(`${getSpecialBattleRuleDisplayName(rule)}发动，敌方 ${nextMon.name} 的速度提高了。`);
+      applied = true;
+    }
+
+    return nextMon;
+  });
+
+  if (!applied) return baseSnapshot;
+  return {
+    ...baseSnapshot,
+    enemyTeam: nextEnemyTeam,
+    logs: appendSnapshotLogs(baseSnapshot, logs)
+  };
+};
 
 const resolveDefaultActivePlayerId = (playerTeam = [], fallbackId = null) => {
   const team = Array.isArray(playerTeam) ? playerTeam : [];
@@ -8963,7 +10046,7 @@ const normalizePendingMonsterAcquisition = (pending) => {
 
 const normalizeBattleRewardSummary = (summary) => {
   if (!summary || typeof summary !== 'object') {
-    return { exp: 0, gold: 0, participantCount: 0, expPerPokemon: 0, levelUps: [], items: [], unlocks: [] };
+    return { exp: 0, gold: 0, participantCount: 0, expPerPokemon: 0, levelUps: [], items: [], unlocks: [], ecologySurvey: null };
   }
 
   const toSafeAmount = (value) => {
@@ -9015,7 +10098,7 @@ const normalizeBattleRewardSummary = (summary) => {
         );
         return {
           kind: typeof unlock?.kind === 'string' && unlock.kind.length > 0 ? unlock.kind : 'rare',
-          title: typeof unlock?.title === 'string' && unlock.title.length > 0 ? unlock.title : '稀有生态解锁',
+          title: typeof unlock?.title === 'string' && unlock.title.length > 0 ? unlock.title : '稀有出现已解锁',
           subtitle: typeof unlock?.subtitle === 'string' ? unlock.subtitle : '',
           description: typeof unlock?.description === 'string' ? unlock.description : '',
           chanceText: typeof unlock?.chanceText === 'string' ? unlock.chanceText : '',
@@ -9028,6 +10111,31 @@ const normalizeBattleRewardSummary = (summary) => {
       .slice(0, 2)
     : [];
 
+  const rawEcologySurvey = summary.ecologySurvey && typeof summary.ecologySurvey === 'object'
+    ? summary.ecologySurvey
+    : null;
+  const ecologySurveyRequired = toSafeAmount(rawEcologySurvey?.requiredWildDefeats);
+  const ecologySurveyDefeated = ecologySurveyRequired > 0
+    ? Math.min(ecologySurveyRequired, toSafeAmount(rawEcologySurvey?.defeatedWildCount))
+    : 0;
+  const ecologySurvey = rawEcologySurvey && ecologySurveyRequired > 0
+    ? {
+      mapName: typeof rawEcologySurvey.mapName === 'string' ? rawEcologySurvey.mapName : '',
+      mapDisplayName: typeof rawEcologySurvey.mapDisplayName === 'string' && rawEcologySurvey.mapDisplayName.length > 0
+        ? rawEcologySurvey.mapDisplayName
+        : '当前区域',
+      defeatedWildCount: ecologySurveyDefeated,
+      requiredWildDefeats: ecologySurveyRequired,
+      remainingWildDefeats: Math.max(0, ecologySurveyRequired - ecologySurveyDefeated),
+      completed: Boolean(rawEcologySurvey.completed) || ecologySurveyDefeated >= ecologySurveyRequired,
+      rewardGranted: Boolean(rawEcologySurvey.rewardGranted),
+      targetLevel: toSafeAmount(rawEcologySurvey.targetLevel),
+      exp: toSafeAmount(rawEcologySurvey.exp),
+      participantCount: toSafeAmount(rawEcologySurvey.participantCount),
+      expPerPokemon: toSafeAmount(rawEcologySurvey.expPerPokemon)
+    }
+    : null;
+
   return {
     exp: toSafeAmount(summary.exp),
     gold: toSafeAmount(summary.gold),
@@ -9035,7 +10143,8 @@ const normalizeBattleRewardSummary = (summary) => {
     expPerPokemon: toSafeAmount(summary.expPerPokemon),
     levelUps,
     items,
-    unlocks
+    unlocks,
+    ecologySurvey
   };
 };
 
@@ -9215,6 +10324,178 @@ const normalizeAppliedTeacherRewardIds = (value) => (
     : []
 );
 
+const TEACHER_REWARD_CEREMONY_MAX_QUEUE = 8;
+const TEACHER_REWARD_CEREMONY_MAX_ITEMS = 12;
+const STUDENT_RESOURCE_REFRESH_INTERVAL_MS = 15_000;
+
+const normalizeTeacherRewardCeremonyReward = (reward) => {
+  if (!reward || typeof reward !== 'object') return null;
+  const type = ['gold', 'energy', 'item', 'pokemon'].includes(reward.type) ? reward.type : null;
+  if (!type) return null;
+  const quantity = Math.max(1, Math.trunc(Number(reward.quantity ?? 1)) || 1);
+  const label = typeof reward.label === 'string' && reward.label.trim().length > 0
+    ? reward.label.trim()
+    : type === 'gold'
+      ? '金币'
+      : type === 'energy'
+        ? '能量'
+        : type === 'pokemon'
+          ? '宝可梦'
+          : '奖励道具';
+  const id = typeof reward.id === 'string' && reward.id.length > 0
+    ? reward.id
+    : `${type}:${reward.itemType || ''}:${reward.itemKey || ''}:${reward.pokemonId || ''}:${label}:${quantity}`;
+
+  return {
+    id,
+    type,
+    label,
+    quantity,
+    detail: typeof reward.detail === 'string' ? reward.detail.trim() : '',
+    itemType: typeof reward.itemType === 'string' ? reward.itemType : '',
+    itemKey: typeof reward.itemKey === 'string' ? reward.itemKey : '',
+    pokemonId: Number.isFinite(Number(reward.pokemonId)) ? Number(reward.pokemonId) : null,
+    level: Number.isFinite(Number(reward.level)) ? Math.max(1, Math.min(100, Math.trunc(Number(reward.level)))) : null,
+    sprite: typeof reward.sprite === 'string' ? reward.sprite : '',
+    iconFa: typeof reward.iconFa === 'string' && reward.iconFa.length > 0
+      ? reward.iconFa
+      : type === 'gold'
+        ? 'fa-coins'
+        : type === 'energy'
+          ? 'fa-bolt'
+          : type === 'pokemon'
+            ? 'fa-star'
+            : 'fa-gift'
+  };
+};
+
+const normalizeTeacherRewardCeremonyQueue = (value) => (
+  Array.isArray(value)
+    ? value
+      .map((ceremony) => {
+        if (!ceremony || typeof ceremony !== 'object') return null;
+        const rewards = Array.isArray(ceremony.rewards)
+          ? ceremony.rewards
+            .map(normalizeTeacherRewardCeremonyReward)
+            .filter(Boolean)
+            .slice(0, TEACHER_REWARD_CEREMONY_MAX_ITEMS)
+          : [];
+        if (rewards.length === 0) return null;
+        const id = typeof ceremony.id === 'string' && ceremony.id.length > 0
+          ? ceremony.id
+          : rewards.map((reward) => reward.id).join('|');
+        return {
+          id,
+          source: typeof ceremony.source === 'string' && ceremony.source.length > 0 ? ceremony.source : 'teacher',
+          title: typeof ceremony.title === 'string' && ceremony.title.trim().length > 0
+            ? ceremony.title.trim()
+            : '老师送来奖励',
+          subtitle: typeof ceremony.subtitle === 'string' ? ceremony.subtitle.trim() : '',
+          reason: typeof ceremony.reason === 'string' ? ceremony.reason.trim() : '',
+          createdAt: typeof ceremony.createdAt === 'string' ? ceremony.createdAt : new Date().toISOString(),
+          rewards
+        };
+      })
+      .filter(Boolean)
+      .slice(0, TEACHER_REWARD_CEREMONY_MAX_QUEUE)
+    : []
+);
+
+const appendTeacherRewardCeremonies = (queue, ceremonies = []) => {
+  const normalizedQueue = normalizeTeacherRewardCeremonyQueue(queue);
+  const additions = normalizeTeacherRewardCeremonyQueue(Array.isArray(ceremonies) ? ceremonies : [ceremonies]);
+  if (additions.length === 0) return normalizedQueue;
+  const existingIds = new Set(normalizedQueue.map((ceremony) => ceremony.id));
+  const nextQueue = [...normalizedQueue];
+  additions.forEach((ceremony) => {
+    if (existingIds.has(ceremony.id)) return;
+    existingIds.add(ceremony.id);
+    nextQueue.push(ceremony);
+  });
+  return nextQueue.slice(0, TEACHER_REWARD_CEREMONY_MAX_QUEUE);
+};
+
+const removeTeacherRewardCeremonyById = (queue, ceremonyId) => (
+  normalizeTeacherRewardCeremonyQueue(queue)
+    .filter((ceremony) => ceremony.id !== ceremonyId)
+);
+
+const buildTeacherRewardCeremony = ({ id, rewards = [], reason = '', createdAt = null } = {}) => {
+  const normalizedRewards = rewards
+    .map(normalizeTeacherRewardCeremonyReward)
+    .filter(Boolean);
+  if (normalizedRewards.length === 0) return null;
+  return {
+    id: id || `teacher-reward-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    source: 'teacher',
+    title: '老师送来奖励',
+    subtitle: normalizedRewards.length > 1 ? `${normalizedRewards.length} 份奖励已放进宝箱` : '一份奖励已放进宝箱',
+    reason,
+    createdAt: createdAt || new Date().toISOString(),
+    rewards: normalizedRewards
+  };
+};
+
+const buildTeacherItemRewardCeremonyItem = ({ rewardId, itemType, itemKey, quantity }) => {
+  const normalizedItemType = resolveInventoryItemType({ itemType, itemKey });
+  const item = normalizedItemType ? resolveInventoryItemDetails(normalizedItemType, itemKey) : null;
+  if (!normalizedItemType || !item) return null;
+  return normalizeTeacherRewardCeremonyReward({
+    id: rewardId || `item:${normalizedItemType}:${itemKey}`,
+    type: 'item',
+    itemType: normalizedItemType,
+    itemKey,
+    label: item.name || '奖励道具',
+    quantity,
+    sprite: item.sprite || '',
+    iconFa: 'fa-gift'
+  });
+};
+
+const buildTeacherPokemonRewardCeremonyItem = ({ rewardId, monster }) => {
+  if (!monster) return null;
+  const normalizedMonster = normalizeMonsterAssetSource(monster);
+  return normalizeTeacherRewardCeremonyReward({
+    id: rewardId || `pokemon:${monster.id}`,
+    type: 'pokemon',
+    pokemonId: normalizedMonster.baseId || normalizedMonster.dexId || normalizedMonster.speciesId || normalizedMonster.id,
+    label: normalizedMonster.name || '宝可梦',
+    level: normalizedMonster.level,
+    quantity: 1,
+    detail: normalizedMonster.level ? `Lv.${normalizedMonster.level}` : '',
+    sprite: normalizedMonster.sprite || ''
+  });
+};
+
+const buildTeacherResourceRewardCeremony = ({ goldDelta = 0, maxEnergyDelta = 0 } = {}) => {
+  const rewards = [];
+  const goldAmount = Math.trunc(Number(goldDelta)) || 0;
+  const maxEnergyAmount = Math.trunc(Number(maxEnergyDelta)) || 0;
+  if (goldAmount > 0) {
+    rewards.push({
+      id: `gold:${Date.now()}:${goldAmount}`,
+      type: 'gold',
+      label: '金币',
+      quantity: goldAmount,
+      iconFa: 'fa-coins'
+    });
+  }
+  if (maxEnergyAmount > 0) {
+    rewards.push({
+      id: `max-energy:${Date.now()}:${maxEnergyAmount}`,
+      type: 'energy',
+      label: '能量上限',
+      quantity: maxEnergyAmount,
+      iconFa: 'fa-battery-full'
+    });
+  }
+  return buildTeacherRewardCeremony({
+    id: `teacher-resource-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    rewards,
+    reason: '老师发放'
+  });
+};
+
 const normalizeLegacyTeacherRewardRecovery = (value) => {
   if (!value || typeof value !== 'object') return null;
 
@@ -9275,7 +10556,7 @@ const clearLegacyTeacherRewardRecoveryFromStorage = (userId) => {
 };
 
 const createDefaultCloudGameData = (gold = DEFAULT_STARTING_GOLD) => ({
-  schemaVersion: 4,
+  schemaVersion: 5,
   mapContentVersion: WORLD_MAP_CONTENT_VERSION,
   showLaunchScreen: true,
   view: 'map',
@@ -9300,6 +10581,7 @@ const createDefaultCloudGameData = (gold = DEFAULT_STARTING_GOLD) => ({
   battleEnergyRefundEligible: false,
   pendingTeacherRewardClaim: null,
   appliedTeacherRewardIds: [],
+  pendingTeacherRewardCeremonies: [],
   legacyTeacherRewardRecovery: null,
   pendingMonsterAcquisition: null,
   pendingBattleSwitch: null,
@@ -9358,6 +10640,7 @@ const normalizeCloudGameData = (gameData, backendGold) => {
   const defaults = createDefaultCloudGameData(backendGold);
   const rawPlayerTeam = normalizeMonsterAssetList(gameData.playerTeam);
   const rawStorageBox = normalizeMonsterAssetList(gameData.storageBox);
+  const rawPartySpeciesViolation = getPartySpeciesClauseViolation(rawPlayerTeam);
   const roster = sanitizeRoster(rawPlayerTeam, rawStorageBox, gameData.activePlayerId);
   const progressRoster = normalizeRosterExpProgress({
     playerTeam: roster.playerTeam,
@@ -9433,6 +10716,7 @@ const normalizeCloudGameData = (gameData, backendGold) => {
     battleEnergyRefundEligible: isBattleFlow && Boolean(gameData.battleEnergyRefundEligible),
     pendingTeacherRewardClaim: normalizePendingTeacherRewardClaim(gameData.pendingTeacherRewardClaim),
     appliedTeacherRewardIds: normalizeAppliedTeacherRewardIds(gameData.appliedTeacherRewardIds),
+    pendingTeacherRewardCeremonies: normalizeTeacherRewardCeremonyQueue(gameData.pendingTeacherRewardCeremonies),
     legacyTeacherRewardRecovery: normalizeLegacyTeacherRewardRecovery(gameData.legacyTeacherRewardRecovery),
     pendingMonsterAcquisition: normalizePendingMonsterAcquisition(gameData.pendingMonsterAcquisition),
     pendingBattleSwitch,
@@ -9454,6 +10738,16 @@ const normalizeCloudGameData = (gameData, backendGold) => {
     ),
     showLaunchScreen: Boolean(gameData.showLaunchScreen) || playerTeam.length === 0
   };
+  normalized.transientPartySpeciesMovedCount = rawPartySpeciesViolation
+    ? roster.movedToStorageIds.length
+    : 0;
+
+  normalized.world = migrateLegacyLongTermProgress(normalized.world, {
+    playerTeam: normalized.playerTeam,
+    storageBox: normalized.storageBox,
+    pendingMonsterAcquisition: normalized.pendingMonsterAcquisition,
+    currentMapName: normalized.world?.currentMapName || normalized.currentMapName
+  });
 
   normalized.currentMapName = normalized.world.currentMapName;
   normalized.playerPos = normalized.world.playerPos;
@@ -9628,7 +10922,7 @@ const createCloudSnapshot = (gameData) => {
     : resolveDefaultActivePlayerId(snapshotPlayerTeam, activePlayerId);
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     mapContentVersion: WORLD_MAP_CONTENT_VERSION,
     showLaunchScreen: Boolean(gameData.showLaunchScreen) || snapshotPlayerTeam.length === 0,
     view,
@@ -9653,6 +10947,7 @@ const createCloudSnapshot = (gameData) => {
     battleEnergyRefundEligible: isBattleFlow && Boolean(gameData.battleEnergyRefundEligible),
     pendingTeacherRewardClaim: normalizePendingTeacherRewardClaim(gameData.pendingTeacherRewardClaim),
     appliedTeacherRewardIds: normalizeAppliedTeacherRewardIds(gameData.appliedTeacherRewardIds),
+    pendingTeacherRewardCeremonies: normalizeTeacherRewardCeremonyQueue(gameData.pendingTeacherRewardCeremonies),
     legacyTeacherRewardRecovery: normalizeLegacyTeacherRewardRecovery(gameData.legacyTeacherRewardRecovery),
     pendingMonsterAcquisition: normalizePendingMonsterAcquisition(gameData.pendingMonsterAcquisition),
     pendingBattleSwitch: serializedPendingBattleSwitch,
@@ -9667,9 +10962,14 @@ const createCloudSnapshot = (gameData) => {
     useRealMaps: true,
     currentMapName: gameData.currentMapName || DEFAULT_WORLD_MAP_NAME,
     encounterCooldownSteps: Math.max(0, Math.trunc(Number(gameData.encounterCooldownSteps ?? 0))),
-    world: normalizeWorldState(gameData.world, {
+    world: migrateLegacyLongTermProgress(normalizeWorldState(gameData.world, {
       currentMapName: gameData.currentMapName || gameData.world?.currentMapName || DEFAULT_WORLD_MAP_NAME,
       playerPos: gameData.playerPos || gameData.world?.playerPos || getDefaultWorldPosition()
+    }), {
+      playerTeam: snapshotPlayerTeam,
+      storageBox: snapshotStorageBox,
+      pendingMonsterAcquisition: gameData.pendingMonsterAcquisition,
+      currentMapName: gameData.currentMapName || gameData.world?.currentMapName || DEFAULT_WORLD_MAP_NAME
     })
   };
 };
@@ -9798,6 +11098,117 @@ const CloudSyncBlocker = ({ isOnline, syncError, saveStatus, onRetry, requiresRe
   );
 };
 
+const EnergyDepletedOverlay = ({ energy = 0, maxEnergy = DEFAULT_MAX_ENERGY }) => {
+  const energyValue = Math.max(0, Math.trunc(Number(energy)) || 0);
+  const maxEnergyValue = Math.max(0, Math.trunc(Number(maxEnergy)) || DEFAULT_MAX_ENERGY);
+
+  return (
+    <div
+      className="map-energy-lock-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="map-energy-lock-title"
+    >
+      <div className="map-energy-lock-card">
+        <span className="map-energy-lock-card__icon" aria-hidden="true">
+          <i className="fa-solid fa-bolt"></i>
+        </span>
+        <div className="map-energy-lock-card__body">
+          <h2 id="map-energy-lock-title">今天的冒险能量用完了</h2>
+          <p>先休息一下吧。能量会在每日自动恢复，或由老师在后台补充；恢复后地图会自动解锁。</p>
+          <div className="map-energy-lock-card__meter" aria-label={`当前能量 ${energyValue} / ${maxEnergyValue}`}>
+            <span>当前能量</span>
+            <strong>{energyValue}/{maxEnergyValue}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PlaytimeCountdownBadge = ({ remainingSeconds = 0, limitMinutes = DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES, expired = false, view = 'map' }) => {
+  const remainingValue = Math.max(0, Math.trunc(Number(remainingSeconds)) || 0);
+  const lowTime = remainingValue > 0 && remainingValue <= 60;
+  const className = [
+    'map-playtime-countdown',
+    view === 'map' ? 'map-playtime-countdown--map' : 'map-playtime-countdown--panel',
+    lowTime ? 'map-playtime-countdown--low' : '',
+    expired ? 'map-playtime-countdown--expired' : ''
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div
+      className={className}
+      role="timer"
+      aria-label={`今日剩余游玩时间 ${formatPlaytimeClock(remainingValue)}，每日上限 ${formatPlaytimeLimitText(limitMinutes)}`}
+    >
+      <span className="map-playtime-countdown__icon" aria-hidden="true">
+        <i className="fa-solid fa-hourglass-half"></i>
+      </span>
+      <span className="map-playtime-countdown__body">
+        <span>今日剩余</span>
+        <strong>{formatPlaytimeClock(remainingValue)}</strong>
+      </span>
+    </div>
+  );
+};
+
+const PlaytimeExpiredOverlay = ({
+  remainingSeconds = 0,
+  limitMinutes = DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES,
+  onLogout,
+}) => {
+  const remainingValue = Math.max(0, Math.trunc(Number(remainingSeconds)) || 0);
+  const [logoutBusy, setLogoutBusy] = useState(false);
+
+  const handleLogout = useCallback(async () => {
+    if (logoutBusy || typeof onLogout !== 'function') return;
+    setLogoutBusy(true);
+    try {
+      await onLogout();
+    } catch (error) {
+      console.error('Error logging out from playtime lock:', error);
+      setLogoutBusy(false);
+    }
+  }, [logoutBusy, onLogout]);
+
+  return (
+    <div
+      className="map-energy-lock-overlay map-energy-lock-overlay--playtime"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="map-playtime-lock-title"
+    >
+      <div className="map-energy-lock-card map-energy-lock-card--playtime">
+        <span className="map-energy-lock-card__icon" aria-hidden="true">
+          <i className="fa-solid fa-hourglass-end"></i>
+        </span>
+        <div className="map-energy-lock-card__body">
+          <h2 id="map-playtime-lock-title">今天的游玩时间用完了</h2>
+          <p>先休息一下吧。每日时长会在明天自动恢复；老师也可以在后台为你调整今日可玩时间。</p>
+          <div className="map-energy-lock-card__meter" aria-label={`今日剩余 ${formatPlaytimeClock(remainingValue)}，每日上限 ${formatPlaytimeLimitText(limitMinutes)}`}>
+            <span>今日剩余</span>
+            <strong>{formatPlaytimeClock(remainingValue)}</strong>
+          </div>
+          {typeof onLogout === 'function' && (
+            <div className="map-energy-lock-card__actions">
+              <button
+                type="button"
+                className="game-soft-button map-energy-lock-card__logout"
+                onClick={handleLogout}
+                disabled={logoutBusy}
+              >
+                <i className={`fa-solid ${logoutBusy ? 'fa-spinner fa-spin' : 'fa-right-from-bracket'}`} aria-hidden="true"></i>
+                {logoutBusy ? '正在退出' : '退出登录'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ResetProgressConfirmModal = ({ open, busy = false, onCancel, onConfirm }) => {
   if (!open) return null;
 
@@ -9888,15 +11299,49 @@ const buildNpcDialogueInfoChips = ({
   statusChips = []
 } = {}) => {
   const chips = [];
-  chips.push(`${Math.max(1, Math.trunc(Number(teamSize)) || 1)} 只`);
+  const seen = new Set();
+  const pushChip = (value) => {
+    const label = typeof value === 'string' ? value.trim() : '';
+    if (!label || seen.has(label)) return;
+    seen.add(label);
+    chips.push(label);
+  };
+
+  pushChip(`${Math.max(1, Math.trunc(Number(teamSize)) || 1)} 只`);
   if (typeof levelRangeText === 'string' && levelRangeText.trim().length > 0) {
-    chips.push(levelRangeText.trim());
+    pushChip(levelRangeText.trim());
   }
-  chips.push(`消耗 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 能量`);
+  pushChip(`消耗 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 能量`);
   (Array.isArray(statusChips) ? statusChips : []).forEach((chip) => {
-    const label = typeof chip === 'string' ? chip.trim() : '';
-    if (label.length > 0) chips.push(label);
+    pushChip(chip);
   });
+  return chips;
+};
+
+const buildConfiguredNpcBattleStatusChips = ({
+  eventRole = 'normal',
+  properties = {},
+  defaultStatusChips = []
+} = {}) => {
+  const normalizedRole = normalizeTrainerRole(eventRole);
+  const chips = [];
+  const seen = new Set();
+  const pushChip = (value) => {
+    const label = typeof value === 'string' ? value.trim() : '';
+    if (!label || seen.has(label)) return;
+    seen.add(label);
+    chips.push(label);
+  };
+
+  const recommendedLevel = Math.trunc(Number(properties?.recommendedLevel));
+  if (Number.isInteger(recommendedLevel) && recommendedLevel > 0) {
+    pushChip(`推荐 Lv.${recommendedLevel}`);
+  }
+
+  (Array.isArray(defaultStatusChips) ? defaultStatusChips : []).forEach((chip) => {
+    pushChip(chip);
+  });
+
   return chips;
 };
 
@@ -9949,6 +11394,48 @@ const getNpcDialogueRuleCards = (eventRole = 'normal') => {
   ];
 };
 
+const getNpcDialogueActionText = ({
+  roleMeta,
+  normalizedRole = 'normal',
+  sequenceOrder = 0
+} = {}) => {
+  if (normalizedRole === 'lieutenant' && sequenceOrder > 0) return `挑战第${sequenceOrder}部下`;
+  return roleMeta?.actionText || '开始对战';
+};
+
+const getNpcDialogueObjectiveText = ({
+  normalizedRole = 'normal',
+  sequenceOrder = 0,
+  sequenceTotal = 0,
+  fixedRewardName = ''
+} = {}) => {
+  if (normalizedRole === 'lieutenant') {
+    const order = Math.max(1, Math.trunc(Number(sequenceOrder)) || 1);
+    const total = Math.max(order, Math.trunc(Number(sequenceTotal)) || 3);
+    if (order >= total) return '打赢他，拿最后一枚印记，去挑战首领。';
+    return `打赢他，拿第 ${order} 枚印记，继续挑战下一位部下。`;
+  }
+  if (normalizedRole === 'boss') return '打赢首领，完成本区域总考。';
+  if (normalizedRole === 'reward') {
+    return fixedRewardName ? `胜利后领取${fixedRewardName}。` : '胜利后领取首胜奖励。';
+  }
+  if (normalizedRole === 'minigame') return '连胜越多，对手越强，金币也更多。';
+  return '赢下这场对战，获得经验和金币。';
+};
+
+const buildLieutenantProgressSteps = (sequenceOrder = 0, sequenceTotal = 0) => {
+  const order = Math.max(1, Math.trunc(Number(sequenceOrder)) || 1);
+  const total = Math.max(order, Math.trunc(Number(sequenceTotal)) || 3);
+  return [
+    ...Array.from({ length: total }, (_, index) => ({
+      key: `lieutenant-${index + 1}`,
+      label: `${index + 1}`,
+      state: index + 1 < order ? 'done' : index + 1 === order ? 'current' : 'next'
+    })),
+    { key: 'boss', label: '首领', state: order >= total ? 'boss-ready' : 'boss' }
+  ];
+};
+
 const getRewardQuantityText = (reward) => {
   if (!reward || !Number.isFinite(Number(reward.quantity))) return '';
   const quantity = Math.max(0, Math.trunc(Number(reward.quantity)) || 0);
@@ -9981,14 +11468,16 @@ const ChallengeBattleConfirmModal = ({
   unlockProgress = null,
   battlePreviewTeam = [],
   alreadyCompleted = false,
+  challengeKind = 'regional',
   onCancel,
   onConfirm
 }) => {
   if (!open) return null;
+  const isChampionTower = challengeKind === 'champion_tower';
 
   const unlockSpecies = getChallengeUnlockSpeciesPreview(unlockSpeciesPool);
   const battlePreviewSpecies = getChallengeBattleSpeciesPreview(battlePreviewTeam);
-  const showingBattlePreview = alreadyCompleted && unlockSpecies.length === 0 && battlePreviewSpecies.length > 0;
+  const showingBattlePreview = (isChampionTower || alreadyCompleted) && unlockSpecies.length === 0 && battlePreviewSpecies.length > 0;
   const displayedSpecies = showingBattlePreview ? battlePreviewSpecies : unlockSpecies;
   const unlockCount = unlockSpecies.length;
   const displayedSpeciesCount = showingBattlePreview ? battlePreviewSpecies.length : unlockCount;
@@ -10015,32 +11504,34 @@ const ChallengeBattleConfirmModal = ({
     : unlockCount;
   const nextBatchIndex = Math.max(1, Math.trunc(Number(unlockProgress?.nextBatchIndex)) || 1);
   const progressText = totalUnlockCount > 0 ? `累计 ${nextUnlockedCount}/${totalUnlockCount} 种` : '';
-  const introText = alreadyCompleted
+  const introText = isChampionTower
+    ? `${eventTitle}已锁定。升降台会在云端确认进度后启动，失败不会降低已点亮层数。`
+    : alreadyCompleted
     ? unlockCount > 0
-      ? `${eventTitle}可继续挑战。通关后开启第 ${nextBatchIndex} 批隐藏生态。`
+      ? `${eventTitle}可继续挑战。通关后开启第 ${nextBatchIndex} 批试炼稀有。`
       : `${eventTitle}可继续挑战。本次会随机轮换守护者。`
     : unlockCount > 0
-      ? `${eventTitle}会立刻开始。通关后开启第 ${nextBatchIndex} 批隐藏生态。`
+      ? `${eventTitle}会立刻开始。通关后开启第 ${nextBatchIndex} 批试炼稀有。`
       : `${eventTitle}会立刻开始。确认后直接进入连战。`;
   const unlockLeadText = alreadyCompleted
     ? unlockCount > 0
       ? `通关后新增 ${unlockCount} 种野生宝可梦。${progressText}`
       : (showingBattlePreview
-      ? '隐藏生态已全部开启，本次守护者会随机轮换。'
-      : (unlockDescription || '本区域隐藏生态已全部开启。'))
+      ? '试炼稀有已全部开启，本次守护者会随机轮换。'
+      : (unlockDescription || '本区域试炼稀有已全部开启。'))
     : unlockCount > 0
       ? `完成后会解锁 ${unlockCount} 种野生宝可梦。${progressText}`
       : unlockDescription;
 
   return (
     <div className="reset-confirm-overlay challenge-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="challenge-confirm-title">
-      <div className="challenge-confirm-card">
+      <div className={`challenge-confirm-card${isChampionTower ? ' challenge-confirm-card--tower' : ''}`}>
         <div className="challenge-confirm-card__header">
           <div className="challenge-confirm-card__icon" aria-hidden="true">
-            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-landmark'}`}></i>
+            <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : isChampionTower ? 'fa-crown' : 'fa-landmark'}`}></i>
           </div>
           <div className="challenge-confirm-card__headings">
-            <p className="challenge-confirm-card__eyebrow">试炼确认</p>
+            <p className="challenge-confirm-card__eyebrow">{isChampionTower ? '冠军塔层挑战' : '试炼确认'}</p>
             <h2 id="challenge-confirm-title">{eventName}</h2>
           </div>
         </div>
@@ -10048,7 +11539,7 @@ const ChallengeBattleConfirmModal = ({
         <p className="challenge-confirm-card__lead">{introText}</p>
 
         <div className="challenge-confirm-card__chips" aria-label="挑战信息">
-          <span className="challenge-confirm-card__chip">{teamSize} 连战</span>
+          <span className="challenge-confirm-card__chip">{isChampionTower ? `守塔阵容 · ${teamSize} 只` : `${teamSize} 连战`}</span>
           {levelRangeText ? (
             <span className="challenge-confirm-card__chip">{levelRangeText}</span>
           ) : null}
@@ -10088,7 +11579,7 @@ const ChallengeBattleConfirmModal = ({
         {(displayedSpeciesCount > 0 || unlockDescription) ? (
           <section className="challenge-confirm-card__panel challenge-confirm-card__panel--unlock">
             <div className="challenge-confirm-card__panel-head">
-              <span className="challenge-confirm-card__panel-label">{showingBattlePreview ? '本次试炼守护者' : unlockCount > 0 ? `本次解锁 · 第 ${nextBatchIndex} 批` : '隐藏生态已全部开启'}</span>
+              <span className="challenge-confirm-card__panel-label">{isChampionTower ? `${eventTitle} · 对手阵容` : showingBattlePreview ? '本次试炼守护者' : unlockCount > 0 ? `本次解锁 · 第 ${nextBatchIndex} 批` : '试炼稀有已全部开启'}</span>
               {displayedSpeciesCount > 0 ? (
                 <span className="challenge-confirm-card__panel-count">{showingBattlePreview ? `${displayedSpeciesCount} 只` : `${displayedSpeciesCount} 种`}</span>
               ) : null}
@@ -10126,7 +11617,7 @@ const ChallengeBattleConfirmModal = ({
           </button>
           <button type="button" className="game-primary-button challenge-confirm-card__button challenge-confirm-card__button--confirm" onClick={onConfirm} disabled={busy}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`} aria-hidden="true"></i>
-            {busy ? '进入中' : '开始挑战'}
+            {busy ? '升降台启动中' : isChampionTower ? '启动升降台' : '开始挑战'}
           </button>
         </div>
       </div>
@@ -10143,6 +11634,7 @@ const NpcBattleDialogueConfirmModal = ({
   eventTitle = '',
   dialogueText = '',
   ruleDescription = '',
+  battleHintText = '',
   energyCost = 1,
   teamSize = 1,
   levelRangeText = '',
@@ -10150,6 +11642,9 @@ const NpcBattleDialogueConfirmModal = ({
   rewardItems = [],
   statusChips = [],
   eventRole = 'normal',
+  sequenceOrder = 0,
+  sequenceTotal = 0,
+  battleStyleLabel = '',
   anchorDirection = 'up',
   onCancel,
   onConfirm
@@ -10171,14 +11666,55 @@ const NpcBattleDialogueConfirmModal = ({
     rewardItems
   });
   const ruleCards = getNpcDialogueRuleCards(normalizedRole);
+  const fixedReward = rewardPreviewItems.find((reward) => (
+    reward && !['exp', 'gold'].includes(reward.itemType)
+  ));
+  const safeSequenceOrder = normalizedRole === 'lieutenant'
+    ? Math.max(1, Math.trunc(Number(sequenceOrder)) || 1)
+    : 0;
+  const safeSequenceTotal = normalizedRole === 'lieutenant'
+    ? Math.max(safeSequenceOrder, Math.trunc(Number(sequenceTotal)) || 3)
+    : 0;
+  const showLieutenantStage = normalizedRole === 'lieutenant' && safeSequenceOrder > 0;
+  const lieutenantProgressSteps = showLieutenantStage
+    ? buildLieutenantProgressSteps(safeSequenceOrder, safeSequenceTotal)
+    : [];
   const titleText = eventTitle || getTrainerRoleBalance(eventRole).label || '训练家对战';
+  const styleText = typeof battleStyleLabel === 'string' && battleStyleLabel.trim().length > 0
+    ? battleStyleLabel.trim()
+    : titleText.replace(/^第\d+部下\s*·\s*/u, '').trim();
+  const displayEyebrow = showLieutenantStage ? '首领挑战路线' : roleMeta.eyebrow;
+  const displayTitle = showLieutenantStage ? `第 ${safeSequenceOrder} / ${safeSequenceTotal} 部下` : eventName;
+  const displaySubtitle = showLieutenantStage
+    ? `${eventName}${styleText ? ` · ${styleText}` : ''}`
+    : titleText;
   const leadText = normalizeNpcDialogueLine(
     dialogueText,
     `${eventName}：要来一场对战吗？`
   );
+  const objectiveText = getNpcDialogueObjectiveText({
+    normalizedRole,
+    sequenceOrder: safeSequenceOrder,
+    sequenceTotal: safeSequenceTotal,
+    fixedRewardName: fixedReward?.itemName || ''
+  });
   const ruleText = ruleCards.length === 0
     ? normalizeNpcDialogueLine(ruleDescription, '')
     : '';
+  const rawHintText = normalizeNpcDialogueLine(battleHintText, '');
+  const normalizeTacticComparisonText = (value) => String(value || '')
+    .replace(/[\s，。；：、,.!?！？;:]+/gu, '')
+    .toLocaleLowerCase();
+  const hintText = (
+    ruleText &&
+    normalizeTacticComparisonText(ruleText) === normalizeTacticComparisonText(rawHintText)
+  ) ? '' : rawHintText;
+  const shouldShowTactics = Boolean(ruleText || hintText);
+  const confirmActionText = getNpcDialogueActionText({
+    roleMeta,
+    normalizedRole,
+    sequenceOrder: safeSequenceOrder
+  });
 
   return (
     <div
@@ -10193,20 +11729,46 @@ const NpcBattleDialogueConfirmModal = ({
             <i className={`fa-solid ${roleMeta.icon}`}></i>
           </div>
           <div className="npc-battle-dialogue__heading">
-            <p>{roleMeta.eyebrow}</p>
-            <h2 id="npc-battle-dialogue-title">{eventName}</h2>
-            <span>{titleText}</span>
+            <p>{displayEyebrow}</p>
+            <h2 id="npc-battle-dialogue-title">{displayTitle}</h2>
+            <span>{displaySubtitle}</span>
           </div>
         </div>
+
+        {showLieutenantStage ? (
+          <div className="npc-battle-dialogue__route" aria-label="部下挑战进度">
+            {lieutenantProgressSteps.map((step) => (
+              <span key={step.key} className={`npc-battle-dialogue__route-step npc-battle-dialogue__route-step--${step.state}`}>
+                {step.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <p className="npc-battle-dialogue__objective">
+          <i className="fa-solid fa-location-arrow" aria-hidden="true"></i>
+          <span>{objectiveText}</span>
+        </p>
 
         <p className="npc-battle-dialogue__text">
           {leadText}
         </p>
 
-        {ruleText ? (
-          <p className="npc-battle-dialogue__rule">
-            {ruleText}
-          </p>
+        {shouldShowTactics ? (
+          <div className="npc-battle-dialogue__tactics" aria-label="战斗提示">
+            {ruleText ? (
+              <span className="npc-battle-dialogue__tactic">
+                <strong>特点</strong>
+                <span>{ruleText}</span>
+              </span>
+            ) : null}
+            {hintText ? (
+              <span className="npc-battle-dialogue__tactic npc-battle-dialogue__tactic--hint">
+                <strong>建议</strong>
+                <span>{hintText}</span>
+              </span>
+            ) : null}
+          </div>
         ) : null}
 
         {ruleCards.length > 0 ? (
@@ -10267,7 +11829,7 @@ const NpcBattleDialogueConfirmModal = ({
           </button>
           <button type="button" className="game-primary-button" onClick={onConfirm} disabled={busy}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : 'fa-bolt'}`} aria-hidden="true"></i>
-            {busy ? '进入中' : roleMeta.actionText}
+            {busy ? '进入中' : confirmActionText}
           </button>
         </div>
       </div>
@@ -10647,7 +12209,7 @@ const FastTravelTransitOverlay = ({ transit }) => {
 
   return (
     <div
-      className={`fast-travel-cinematic fast-travel-cinematic--${phase} fast-travel-cinematic--${transit.terrain || 'meadow'}`}
+      className={`fast-travel-cinematic fast-travel-cinematic--${phase} fast-travel-cinematic--${transit.terrain || 'meadow'}${transit.concealMap ? ' fast-travel-cinematic--conceal-map' : ''}`}
       aria-live="polite"
       aria-label={`${ariaPrefix}：${fromLabel} 前往 ${toLabel}`}
     >
@@ -10683,6 +12245,8 @@ const AdventureTopBar = ({
   playerGold,
   playerEnergy,
   maxEnergy,
+  mapProgressSummary = null,
+  onOpenProgress = null,
   saveProps,
   onLogout,
   onResetGame,
@@ -10711,6 +12275,22 @@ const AdventureTopBar = ({
   const bgmVolumePercent = Math.round(bgmSettings.volume * 100);
   const sfxButtonTitle = sfxEnabled ? `音效已开 ${sfxVolumePercent}%` : '音效已关闭';
   const bgmButtonTitle = bgmEnabled ? `音乐已开 ${bgmVolumePercent}%` : '音乐已关闭';
+  const ecologySurveyRequired = Math.max(0, Math.trunc(Number(mapProgressSummary?.ecologySurveyRequiredDefeats)) || 0);
+  const ecologySurveyDefeats = ecologySurveyRequired > 0
+    ? Math.min(ecologySurveyRequired, Math.max(0, Math.trunc(Number(mapProgressSummary?.ecologySurveyDefeats)) || 0))
+    : 0;
+  const ecologySurveyCompleted = Boolean(mapProgressSummary?.ecologySurveyCompleted) || (ecologySurveyRequired > 0 && ecologySurveyDefeats >= ecologySurveyRequired);
+  const ecologySurveyRemaining = Math.max(0, ecologySurveyRequired - ecologySurveyDefeats);
+  const ecologySurveyPercent = ecologySurveyRequired > 0
+    ? Math.round((ecologySurveyDefeats / ecologySurveyRequired) * 100)
+    : 0;
+  const hasEcologySurveyProgress = ecologySurveyRequired > 0;
+  const ecologySurveyLabel = ecologySurveyCompleted
+    ? '生态调查完成'
+    : `生态调查 ${ecologySurveyDefeats}/${ecologySurveyRequired}`;
+  const ecologySurveyHint = ecologySurveyCompleted
+    ? '成长已领取'
+    : `还差 ${ecologySurveyRemaining}`;
 
   useEffect(() => {
     if (!settingsOpen) return undefined;
@@ -10746,13 +12326,19 @@ const AdventureTopBar = ({
         void gameAudio.unlock();
         setSettingsOpen((current) => !current);
       }
+
+      if ((event.key === 'p' || event.key === 'P') && onOpenProgress) {
+        event.preventDefault();
+        setSettingsOpen(false);
+        onOpenProgress();
+      }
     };
 
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [onOpenProgress]);
 
   const settingsOverlay = settingsOpen ? (
     <div
@@ -10877,7 +12463,7 @@ const AdventureTopBar = ({
     <div className="game-topbar game-topbar--unified">
       <div
         className="map-player-hud map-hud-frosted"
-        aria-label={`${displayName}，等级 ${level}，金币 ${formattedGold}，体力 ${energyValue} / ${maxEnergyValue}`}
+        aria-label={`${displayName}，等级 ${level}，金币 ${formattedGold}，体力 ${energyValue} / ${maxEnergyValue}${hasEcologySurveyProgress ? `，${ecologySurveyLabel}` : ''}`}
       >
         <div className="map-player-hud__avatar">
           <img src={avatarSrc} onError={handlePokemonImageError} alt="" />
@@ -10905,9 +12491,36 @@ const AdventureTopBar = ({
               </span>
             </span>
           </div>
+          {hasEcologySurveyProgress && (
+            <div
+              className={`map-player-hud__quest${ecologySurveyCompleted ? ' map-player-hud__quest--complete' : ''}`}
+              title={ecologySurveyCompleted ? '本地图生态调查已完成，队伍前 3 只主力已获得成长训练。' : `击败本地图野怪累计 ${ecologySurveyRequired} 次后，队伍前 3 只主力获得成长训练。`}
+              aria-label={ecologySurveyCompleted ? '生态调查完成，成长已领取' : `生态调查 ${ecologySurveyDefeats} / ${ecologySurveyRequired}，还差 ${ecologySurveyRemaining} 次`}
+              style={{ '--quest-progress': `${ecologySurveyPercent}%` }}
+            >
+              <span className="map-player-hud__quest-icon" aria-hidden="true">
+                <i className={`fa-solid ${ecologySurveyCompleted ? 'fa-check' : 'fa-seedling'}`}></i>
+              </span>
+              <span className="map-player-hud__quest-label">{ecologySurveyLabel}</span>
+              <span className="map-player-hud__quest-hint">{ecologySurveyHint}</span>
+              <span className="map-player-hud__quest-bar" aria-hidden="true"><span /></span>
+            </div>
+          )}
         </div>
       </div>
       <div className="map-action-rail map-hud-actions-rail">
+        {onOpenProgress && (
+          <button
+            type="button"
+            onClick={onOpenProgress}
+            className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted map-progress-entry-button"
+            title="冒险完成度 (快捷键: P)"
+            aria-label="打开冒险完成度"
+          >
+            <i className="fa-solid fa-map-location-dot"></i>
+            <span className="map-progress-entry-button__value">{mapProgressSummary?.completionPercent || 0}%</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -10959,6 +12572,17 @@ const NOTIFICATION_MAX_DURATION_MS = {
   info: 6200
 };
 const MAX_VISIBLE_NOTIFICATIONS = 1;
+const MAX_QUEUED_NOTIFICATIONS = 4;
+const NOTIFICATION_TYPE_PRIORITY = {
+  error: 60,
+  warning: 50,
+  item: 44,
+  gold: 44,
+  success: 32,
+  info: 20
+};
+const CLOUD_STATUS_NOTIFICATION_PATTERN = /(云端|同步|保存|读取|进度已保存)/;
+const REWARD_NOTIFICATION_PATTERN = /(获得|领取|宝箱|补给|入仓|加入队伍|已采集|已打开)/;
 const NOTIFICATION_EXACT_MESSAGE_REPLACEMENTS = new Map([
   ['检测到云端已有更新，为避免旧进度覆盖新进度，必须重新读取云端进度。', '云端已有新进度，请重新读取。'],
   ['云端已有新进度，请先重新读取。', '云端已有新进度，请重新读取。'],
@@ -11051,21 +12675,177 @@ const createNotificationItem = ({ message, type, sequence }) => {
   };
 };
 
-const takeLatestNotificationItem = (queue) => {
+const getNotificationPriority = (notification) => {
+  if (!notification) return 0;
+  const safeType = normalizeNotificationType(notification.type);
+  let priority = NOTIFICATION_TYPE_PRIORITY[safeType] ?? NOTIFICATION_TYPE_PRIORITY.info;
+  const message = notification.message || '';
+  if ((safeType === 'info' || safeType === 'success') && CLOUD_STATUS_NOTIFICATION_PATTERN.test(message)) {
+    priority -= 14;
+  }
+  if ((safeType === 'item' || safeType === 'gold') && REWARD_NOTIFICATION_PATTERN.test(message)) {
+    priority += 8;
+  }
+  return priority;
+};
+
+const compareNotificationDisplayPriority = (a, b) => {
+  const priorityDelta = getNotificationPriority(a) - getNotificationPriority(b);
+  if (priorityDelta !== 0) return priorityDelta;
+  return (a?.createdAt || 0) - (b?.createdAt || 0);
+};
+
+const shouldReplaceVisibleNotification = (visible, incoming) => {
+  if (!visible) return true;
+  const priorityDelta = getNotificationPriority(incoming) - getNotificationPriority(visible);
+  if (priorityDelta > 0) return true;
+  if (priorityDelta < 0) return false;
+  return Date.now() - (visible.createdAt || 0) > 1800;
+};
+
+const takeNextNotificationItem = (queue) => {
   const pending = Array.isArray(queue) ? queue.filter(Boolean) : [];
   if (pending.length === 0) return { item: null, discarded: [] };
 
-  let latestIndex = 0;
+  let selectedIndex = 0;
   for (let index = 1; index < pending.length; index += 1) {
-    if (pending[index].createdAt >= pending[latestIndex].createdAt) {
-      latestIndex = index;
+    if (compareNotificationDisplayPriority(pending[index], pending[selectedIndex]) >= 0) {
+      selectedIndex = index;
     }
   }
 
   return {
-    item: pending[latestIndex],
-    discarded: pending.filter((_, index) => index !== latestIndex)
+    item: pending[selectedIndex],
+    discarded: pending.filter((_, index) => index !== selectedIndex)
   };
+};
+
+const TeacherRewardCeremonyIcon = ({ reward }) => {
+  if (reward?.sprite) {
+    return (
+      <img
+        src={reward.sprite}
+        alt=""
+        loading="eager"
+        decoding="async"
+        onError={reward.type === 'pokemon' ? handlePokemonImageError : handleItemImageError}
+      />
+    );
+  }
+  return <i className={`fa-solid ${reward?.iconFa || 'fa-gift'}`} aria-hidden="true"></i>;
+};
+
+const TeacherRewardChestCeremony = ({ ceremony, onComplete }) => {
+  const [opened, setOpened] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const revealTimerRef = useRef(null);
+  const rewards = useMemo(() => normalizeTeacherRewardCeremonyQueue([ceremony])[0]?.rewards || [], [ceremony]);
+  const rewardCount = rewards.length;
+
+  useEffect(() => {
+    setOpened(false);
+    setRevealed(false);
+    if (revealTimerRef.current) {
+      window.clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
+    return () => {
+      if (revealTimerRef.current) {
+        window.clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
+    };
+  }, [ceremony?.id]);
+
+  const handleOpen = useCallback(() => {
+    if (opened) return;
+    void gameAudio.unlock();
+    gameAudio.playMapTouch({ kind: 'chest' });
+    setOpened(true);
+    revealTimerRef.current = window.setTimeout(() => {
+      revealTimerRef.current = null;
+      setRevealed(true);
+      gameAudio.playItemUse({ category: 'shop' });
+    }, 720);
+  }, [opened]);
+
+  const handleCollect = useCallback(() => {
+    if (!revealed || !ceremony?.id) return;
+    onComplete?.(ceremony.id);
+  }, [ceremony?.id, onComplete, revealed]);
+
+  if (!ceremony || rewardCount === 0) return null;
+
+  return (
+    <div className="teacher-reward-ceremony" role="dialog" aria-modal="true" aria-labelledby="teacher-reward-title">
+      <div className={`teacher-reward-ceremony__stage${opened ? ' teacher-reward-ceremony__stage--opened' : ''}${revealed ? ' teacher-reward-ceremony__stage--revealed' : ''}`}>
+        <div className="teacher-reward-ceremony__aura" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div className="teacher-reward-ceremony__header">
+          <span className="teacher-reward-ceremony__teacher-mark">
+            <i className="fa-solid fa-chalkboard-user" aria-hidden="true"></i>
+          </span>
+          <div>
+            <h2 id="teacher-reward-title">{ceremony.title || '老师送来奖励'}</h2>
+            <p>{ceremony.reason ? `“${ceremony.reason}”` : ceremony.subtitle || '打开看看这次收到了什么。'}</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="teacher-reward-chest"
+          onClick={handleOpen}
+          disabled={opened}
+          aria-label={opened ? '奖励宝箱已开启' : '开启奖励宝箱'}
+        >
+          <span className="teacher-reward-chest__spark teacher-reward-chest__spark--one"></span>
+          <span className="teacher-reward-chest__spark teacher-reward-chest__spark--two"></span>
+          <span className="teacher-reward-chest__spark teacher-reward-chest__spark--three"></span>
+          <span className="teacher-reward-chest__lid"></span>
+          <span className="teacher-reward-chest__body"></span>
+          <span className="teacher-reward-chest__lock">
+            <i className={`fa-solid ${opened ? 'fa-unlock' : 'fa-lock'}`} aria-hidden="true"></i>
+          </span>
+        </button>
+
+        <div className="teacher-reward-ceremony__rewards" aria-live="polite">
+          {rewards.map((reward, index) => {
+            const quantityText = reward.type === 'pokemon'
+              ? (reward.detail || (reward.level ? `Lv.${reward.level}` : ''))
+              : `+${reward.quantity.toLocaleString('zh-CN')}`;
+            return (
+              <article
+                key={`${reward.id}-${index}`}
+                className={`teacher-reward-ceremony__reward teacher-reward-ceremony__reward--${reward.type}`}
+                style={{ '--reward-delay': `${index * 95}ms` }}
+              >
+                <span className="teacher-reward-ceremony__reward-icon">
+                  <TeacherRewardCeremonyIcon reward={reward} />
+                  {quantityText ? <b>{quantityText}</b> : null}
+                </span>
+                <span className="teacher-reward-ceremony__reward-name">{reward.label}</span>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="teacher-reward-ceremony__actions">
+          {!revealed ? (
+            <button type="button" className="game-primary-button" onClick={handleOpen} disabled={opened}>
+              {opened ? '开启中' : '开启宝箱'}
+            </button>
+          ) : (
+            <button type="button" className="game-primary-button" onClick={handleCollect}>
+              收下奖励
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default function OriginalGame({ user, onLogout }) {
@@ -11090,7 +12870,7 @@ export default function OriginalGame({ user, onLogout }) {
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState(null);
   const [hasLoadedCloudSave, setHasLoadedCloudSave] = useState(false);
-  const [entryAssetsReady, setEntryAssetsReady] = useState(false);
+  const [entryAssetsReady, setEntryAssetsReady] = useState(() => isEntryPreloadComplete());
   const [entryPreloadError, setEntryPreloadError] = useState(null);
   const [entryPreloadProgress, setEntryPreloadProgress] = useState(null);
   const [entryPreloadStalled, setEntryPreloadStalled] = useState(false);
@@ -11114,6 +12894,9 @@ export default function OriginalGame({ user, onLogout }) {
   const cloudSaveRevisionRef = useRef(0);
   const latestCloudSnapshotRef = useRef(null);
   const cloudSaveInFlightRef = useRef(false);
+  // Every cloud mutation captures this generation before it queues. A forced
+  // reload or a conflict invalidates older queued writes before they reach RPC.
+  const cloudMutationGenerationRef = useRef(0);
   const cloudLoadInFlightRef = useRef(null);
   const atomicCloudLoadUnavailableRef = useRef(false);
   const queuedCloudSaveRef = useRef(null);
@@ -11132,9 +12915,26 @@ export default function OriginalGame({ user, onLogout }) {
   const loadedCloudUserIdRef = useRef(null);
   const playerDefeatRecoveryInFlightRef = useRef(false);
   const activeBattleEnergyCostRef = useRef(0);
+  const energyDepletedNoticeShownRef = useRef(false);
+  const playtimeExpiredNoticeShownRef = useRef(false);
+  const playtimeStatusRef = useRef(null);
+  const playtimeHeartbeatInFlightRef = useRef(null);
+  const playtimeStatusInFlightRef = useRef(false);
+  const playtimeSessionStartedRef = useRef(false);
+  const playtimeSessionIdRef = useRef(null);
+  const playtimeLastSessionIdRef = useRef(null);
+  const playtimeLifecycleEpochRef = useRef(0);
+  const playtimeLifecycleQueueRef = useRef(Promise.resolve());
+  const playtimePageVisibleRef = useRef(
+    typeof document === 'undefined' || document.visibilityState === 'visible'
+  );
+  const playtimeLocalTickAtRef = useRef(Date.now());
+  const playtimeExpiredRef = useRef(false);
   const shopPurchaseInFlightRef = useRef(false);
+  const itemSellInFlightRef = useRef(false);
   const battleEventConfirmInFlightRef = useRef(false);
   const battleEventStartInFlightRef = useRef(new Set());
+  const eliteObjectiveInFlightRef = useRef(new Set());
   const completedBattleEventLockRef = useRef(new Set());
   const completedBattleEventVisualOverridesRef = useRef({});
   const battleNoMpResolutionKeyRef = useRef(null);
@@ -11159,17 +12959,26 @@ export default function OriginalGame({ user, onLogout }) {
   const [enemyTeam, setEnemyTeam] = useState([]);
   const [activePlayerId, setActivePlayerId] = useState(null);
   const [activeEnemyId, setActiveEnemyId] = useState(null);
+  const viewRef = useRef('map');
+  const activeEnemyIdRef = useRef(null);
+  viewRef.current = view;
+  activeEnemyIdRef.current = activeEnemyId;
   const [gameOver, setGameOver] = useState(false);
   const [battleKind, setBattleKind] = useState('wild');
   const [playerGold, setPlayerGold] = useState(() => user?.gold ?? DEFAULT_STARTING_GOLD);
   const [playerEnergy, setPlayerEnergy] = useState(() => user?.energy ?? DEFAULT_STARTING_ENERGY);
   const [maxEnergy, setMaxEnergy] = useState(() => user?.max_energy ?? DEFAULT_MAX_ENERGY);
+  const [playtimeStatus, setPlaytimeStatus] = useState(null);
+  const [playtimeLoading, setPlaytimeLoading] = useState(false);
+  const [playtimeError, setPlaytimeError] = useState(null);
   const latestPlayerResourcesRef = useRef({
     gold: playerGold,
     energy: playerEnergy,
     maxEnergy,
   });
   const [playerInventory, setPlayerInventory] = useState(() => sanitizePlayerInventory(getDefaultInventory()));
+  const [completionRewardClaimBusyId, setCompletionRewardClaimBusyId] = useState('');
+  const completionRewardClaimInFlightRef = useRef(false);
   const [nextPlayerMonsterId, setNextPlayerMonsterId] = useState(100);
   const [nextEnemyMonsterId, setNextEnemyMonsterId] = useState(200);
   const [isThrowingPokeball, setIsThrowingPokeball] = useState(false);
@@ -11223,10 +13032,11 @@ export default function OriginalGame({ user, onLogout }) {
     const forceRetry = entryPreloadForceRetryRef.current;
     entryPreloadForceRetryRef.current = false;
 
-    if (!forceRetry && entryPreloadCompletedForUserRef.current === userId) {
+    if (!forceRetry && (entryPreloadCompletedForUserRef.current === userId || isEntryPreloadComplete())) {
       setEntryAssetsReady(true);
       setEntryPreloadError(null);
       setEntryPreloadStalled(false);
+      setEntryPreloadProgress(null);
       return;
     }
 
@@ -11262,8 +13072,7 @@ export default function OriginalGame({ user, onLogout }) {
       skipIfComplete: !forceRetry,
       onStall: () => {
         if (cancelled || entryPreloadRunIdRef.current !== runId) return;
-        if (entryPreloadStallRecoveringRef.current) return;
-        void recoverEntryPreloadFromStall();
+        setEntryPreloadStalled(true);
       },
       onProgress: (progress) => {
         if (cancelled || entryPreloadRunIdRef.current !== runId) return;
@@ -11400,11 +13209,14 @@ export default function OriginalGame({ user, onLogout }) {
   const [battleModalScreenOpen, setBattleModalScreenOpen] = useState(false);
   const [pendingTeacherRewardClaim, setPendingTeacherRewardClaim] = useState(null);
   const [appliedTeacherRewardIds, setAppliedTeacherRewardIds] = useState([]);
+  const [pendingTeacherRewardCeremonies, setPendingTeacherRewardCeremonies] = useState([]);
   const [legacyTeacherRewardRecovery, setLegacyTeacherRewardRecovery] = useState(null);
   const [pendingMonsterAcquisition, setPendingMonsterAcquisition] = useState(null);
   const [pendingBattleEventConfirm, setPendingBattleEventConfirm] = useState(null);
   const [pendingNpcBattleConfirm, setPendingNpcBattleConfirm] = useState(null);
   const [battleEventConfirmBusy, setBattleEventConfirmBusy] = useState(false);
+  const [activeEliteMinigame, setActiveEliteMinigame] = useState(null);
+  const [eliteMinigameCommitBusy, setEliteMinigameCommitBusy] = useState(false);
   const [pendingHiddenEncounterUnlock, setPendingHiddenEncounterUnlock] = useState(null);
   const [hiddenEncounterUnlockBusy, setHiddenEncounterUnlockBusy] = useState(false);
   const hiddenEncounterBlockedNoticeRef = useRef({ key: '', shownAt: 0 });
@@ -11414,11 +13226,37 @@ export default function OriginalGame({ user, onLogout }) {
   const springRestoreAnimationTimerRef = useRef(0);
   const [pendingFastTravel, setPendingFastTravel] = useState(null);
   const [fastTravelBusy, setFastTravelBusy] = useState(false);
-  const [fastTravelTransitTarget, setFastTravelTransitTarget] = useState(null);
-  const [mapWarpBusy, setMapWarpBusy] = useState(false);
-  const [mapWarpTransitTarget, setMapWarpTransitTarget] = useState(null);
-  const mapWarpBusyRef = useRef(false);
-  const [pendingBattleSwitch, setPendingBattleSwitch] = useState(null);
+	  const [fastTravelTransitTarget, setFastTravelTransitTarget] = useState(null);
+	  const [mapWarpBusy, setMapWarpBusy] = useState(false);
+	  const [mapWarpTransitTarget, setMapWarpTransitTarget] = useState(null);
+	  const [eliteFourCeremony, setEliteFourCeremony] = useState(null);
+	  useEffect(() => {
+	    setActiveEliteMinigame((current) => current && current.mapId !== currentMapName ? null : current);
+	    setEliteMinigameCommitBusy(false);
+	  }, [currentMapName, user?.id]);
+	  const mapWarpBusyRef = useRef(false);
+	  const startEliteFourCeremony = useCallback((mapName, phase = 'entry') => {
+	    const ceremony = createEliteFourCeremony(mapName, phase);
+	    if (!ceremony) return false;
+	    setEliteFourCeremony(ceremony);
+	    if (phase === 'victory') {
+	      gameAudio.playVictory({ trainer: true });
+	    } else {
+	      gameAudio.playEncounter({ boss: true });
+	    }
+	    return true;
+	  }, []);
+	  const startChampionTowerFloorCeremony = useCallback((floor, storyClimb = false) => {
+	    const ceremony = createChampionTowerFloorCeremony(floor, { storyClimb });
+	    if (!ceremony) return false;
+	    setEliteFourCeremony(ceremony);
+	    gameAudio.playVictory({ trainer: true });
+	    return true;
+	  }, []);
+	  const handleEliteFourCeremonyComplete = useCallback((ceremonyId) => {
+	    setEliteFourCeremony((current) => current?.id === ceremonyId ? null : current);
+	  }, []);
+	  const [pendingBattleSwitch, setPendingBattleSwitch] = useState(null);
   // 战斗过场阶段: 'active' | 'intro' | 'victory' | 'defeat' | 'escape'
   const [battlePhase, setBattlePhase] = useState('active');
   const [battlePhaseData, setBattlePhaseData] = useState(null);
@@ -11430,10 +13268,34 @@ export default function OriginalGame({ user, onLogout }) {
   });
   const [audioSettings, setAudioSettings] = useState(() => readStoredAudioSettings());
   const [moveVisualEvent, setMoveVisualEvent] = useState(null);
-  const [switchVisualEvent, setSwitchVisualEvent] = useState(null);
-  const battleTurnInFlightRef = useRef(false);
-  const enemyTurnInFlightRef = useRef(false);
+		  const [switchVisualEvent, setSwitchVisualEvent] = useState(null);
+			  const battleTurnInFlightRef = useRef(false);
+			  const enemyTurnInFlightRef = useRef(false);
+			  const resolveEnemyTurnRef = useRef(null);
+			  const localBattleSwitchInFlightRef = useRef(null);
+	  const getLiveBattleSwitchInFlight = useCallback((candidateSwitch = null) => {
+    const liveSwitch = localBattleSwitchInFlightRef.current;
+    if (liveSwitch?.source !== 'live' || !liveSwitch.key) return null;
+
+    const startedAtMs = Number(liveSwitch.startedAtMs) || 0;
+    if (startedAtMs > 0 && Date.now() - startedAtMs > BATTLE_SWITCH_LIVE_GUARD_MS) {
+      localBattleSwitchInFlightRef.current = null;
+      return null;
+    }
+
+    const candidateKey = getPendingBattleSwitchKey(candidateSwitch);
+    if (candidateKey && candidateKey !== liveSwitch.key) return null;
+    return liveSwitch;
+  }, []);
+  const [encounterStartBusy, setEncounterStartBusy] = useState(false);
+  const encounterStartInFlightRef = useRef(false);
   const notificationSuppressedForBattle = view === 'battle' || Boolean(activeEnemyId);
+
+  useEffect(() => {
+    if (view === 'map' || !encounterStartInFlightRef.current) return;
+    encounterStartInFlightRef.current = false;
+    setEncounterStartBusy(false);
+  }, [view]);
 
   const resolveCommittedBattleContext = useCallback((snapshot = null) => {
     const persistedContext = battleCompletionContextRef.current || {};
@@ -11523,8 +13385,10 @@ export default function OriginalGame({ user, onLogout }) {
     hiddenEncounterUnlockBusy ||
     Boolean(fastTravelTransitTarget) ||
     fastTravelBusy ||
-    Boolean(mapWarpTransitTarget) ||
-    mapWarpBusy ||
+	    Boolean(mapWarpTransitTarget) ||
+	    mapWarpBusy ||
+	    Boolean(eliteFourCeremony) ||
+	    pendingTeacherRewardCeremonies.length > 0 ||
     Boolean(pendingMonsterAcquisition) ||
     Boolean(pendingBattleSwitch) ||
     Boolean(levelUpCelebration) ||
@@ -11533,13 +13397,55 @@ export default function OriginalGame({ user, onLogout }) {
     gameOver
   );
   const notificationDisplayMode = view === 'battle' ? 'battle' : 'default';
-  const isGrowthModalSuppressed = showLaunchScreen || launchTransitionActive || battleModalScreenOpen || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || Boolean(pendingFastTravel) || Boolean(fastTravelTransitTarget) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || view !== 'map';
+	  const isGrowthModalSuppressed = showLaunchScreen || launchTransitionActive || battleModalScreenOpen || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || Boolean(pendingFastTravel) || Boolean(fastTravelTransitTarget) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || Boolean(eliteFourCeremony) || view !== 'map';
   const hasPendingLevelUpCelebrations = levelUpCelebrationQueue.length > 0;
   const isGrowthEventModalBlocked = (
     isGrowthModalSuppressed ||
     growthModalDelayActive ||
     Boolean(levelUpCelebration) ||
     hasPendingLevelUpCelebrations
+  );
+  const activeTeacherRewardCeremony = pendingTeacherRewardCeremonies[0] || null;
+  const pendingMonsterAcquisitionIsTeacherReward = pendingMonsterAcquisition?.source === 'teacher_reward';
+  const teacherRewardCeremonyBlocked = (
+    !activeTeacherRewardCeremony ||
+    showLaunchScreen ||
+    launchTransitionActive ||
+    cloudBlocked ||
+    cloudLoading ||
+    Boolean(cloudError) ||
+    requiresCloudReload ||
+    view === 'battle' ||
+    Boolean(activeEnemyId) ||
+    battleModalScreenOpen ||
+    Boolean(pendingBattleEventConfirm) ||
+    Boolean(pendingNpcBattleConfirm) ||
+    battleEventConfirmBusy ||
+    Boolean(pendingHiddenEncounterUnlock) ||
+    hiddenEncounterUnlockBusy ||
+    Boolean(pendingSpringRestoreConfirm) ||
+    springRestoreBusy ||
+    Boolean(pendingFastTravel) ||
+    Boolean(fastTravelTransitTarget) ||
+    fastTravelBusy ||
+	    Boolean(mapWarpTransitTarget) ||
+	    mapWarpBusy ||
+	    Boolean(eliteFourCeremony) ||
+    Boolean(pendingBattleSwitch) ||
+    Boolean(captureSequenceData) ||
+    isThrowingPokeball ||
+    Boolean(levelUpCelebration) ||
+    hasPendingLevelUpCelebrations ||
+    pendingGrowthEvents.length > 0 ||
+    (Boolean(pendingMonsterAcquisition) && !pendingMonsterAcquisitionIsTeacherReward) ||
+    gameOver
+  );
+  const shouldShowTeacherRewardCeremony = Boolean(activeTeacherRewardCeremony) && !teacherRewardCeremonyBlocked;
+	  const shouldShowMonsterAcquisitionDecision = Boolean(pendingMonsterAcquisition) && !(
+	    view === 'battle' ||
+	    Boolean(activeEnemyId) ||
+	    Boolean(eliteFourCeremony) ||
+	    (pendingMonsterAcquisitionIsTeacherReward && Boolean(activeTeacherRewardCeremony))
   );
 
   useEffect(() => {
@@ -11585,6 +13491,23 @@ export default function OriginalGame({ user, onLogout }) {
   }, [user?.energy, user?.max_energy]);
 
   useEffect(() => {
+    setPlaytimeStatus(null);
+    setPlaytimeLoading(false);
+    setPlaytimeError(null);
+    playtimeStatusRef.current = null;
+    playtimeHeartbeatInFlightRef.current = null;
+    playtimeStatusInFlightRef.current = false;
+    playtimeSessionStartedRef.current = false;
+    playtimeSessionIdRef.current = null;
+    playtimeLastSessionIdRef.current = null;
+    playtimeLifecycleEpochRef.current += 1;
+    playtimePageVisibleRef.current = typeof document === 'undefined' || document.visibilityState === 'visible';
+    playtimeLocalTickAtRef.current = Date.now();
+    playtimeExpiredNoticeShownRef.current = false;
+    playtimeExpiredRef.current = true;
+  }, [user?.id]);
+
+  useEffect(() => {
     gameAudio.prime();
     gameAudio.applySettings(audioSettings);
     gameBgm.applySettings(audioSettings);
@@ -11593,6 +13516,23 @@ export default function OriginalGame({ user, onLogout }) {
 
   const resolvedAudioPrefs = useMemo(() => normalizeAudioSettings(audioSettings), [audioSettings]);
   const bgmPrefs = useMemo(() => getBgmSettings(resolvedAudioPrefs), [resolvedAudioPrefs]);
+  const battleBgmParams = useMemo(() => {
+    if (!isActiveBattleContextView(view, activeEnemyId) || (!battleEnvironment && !activeEnemyId)) return null;
+    return {
+      battleKind: battleEnvironment?.battleKind || battleKind,
+      eventRole: battleEnvironment?.eventRole || null,
+      eventType: battleEnvironment?.eventType || null,
+      championTowerFloor: battleEnvironment?.championTowerFloor || null
+    };
+  }, [
+    activeEnemyId,
+    battleEnvironment?.battleKind,
+    battleEnvironment?.eventRole,
+    battleEnvironment?.eventType,
+    battleEnvironment?.championTowerFloor,
+    battleKind,
+    view
+  ]);
 
   useEffect(() => {
     // 停止所有BGM，防止叠加
@@ -11602,12 +13542,8 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     // 战斗期间：同时检查view和battleEnvironment，确保只在战斗场景播放战斗BGM
-    if (view === 'battle' && battleEnvironment) {
-      void gameBgm.playBattleBgm({
-        battleKind: battleEnvironment.battleKind,
-        eventRole: battleEnvironment.eventRole,
-        eventType: battleEnvironment.eventType
-      });
+    if (battleBgmParams) {
+      void gameBgm.playBattleBgm(battleBgmParams);
       return undefined;
     }
 
@@ -11623,7 +13559,7 @@ export default function OriginalGame({ user, onLogout }) {
   }, [
     bgmPrefs.enabled,
     bgmPrefs.volume,
-    battleEnvironment,
+    battleBgmParams,
     currentMapName,
     showLaunchScreen,
     view
@@ -11719,6 +13655,7 @@ export default function OriginalGame({ user, onLogout }) {
 
   const handleNavigateView = useCallback((nextView) => {
     if (typeof nextView !== 'string' || !nextView) return;
+    if (nextView === 'adventureProgress' && !LONG_TERM_PROGRESSION_FLAGS.mapProgressV1) return;
     primeGameAudio();
     if (nextView === 'map') {
       gameAudio.playUiBack();
@@ -11773,14 +13710,23 @@ export default function OriginalGame({ user, onLogout }) {
     setNotifications([]);
   }, [clearNotificationRuntimeItem]);
 
-  const replaceQueuedNotificationRuntime = useCallback((item) => {
-    notificationQueueRef.current.forEach((notification) => {
-      notificationActiveRef.current.delete(notification.dedupeKey);
+  const enqueueNotificationRuntime = useCallback((item) => {
+    if (!item) return;
+    const queue = notificationQueueRef.current.filter((notification) => {
+      const keep = notification?.dedupeKey !== item.dedupeKey;
+      if (!keep) notificationActiveRef.current.delete(notification.dedupeKey);
+      return keep;
     });
-    notificationQueueRef.current = item ? [item] : [];
-    if (item) {
-      notificationActiveRef.current.add(item.dedupeKey);
-    }
+    const nextQueue = [...queue, item]
+      .sort((a, b) => compareNotificationDisplayPriority(b, a))
+      .slice(0, MAX_QUEUED_NOTIFICATIONS);
+    nextQueue.forEach((notification) => notificationActiveRef.current.add(notification.dedupeKey));
+    queue.forEach((notification) => {
+      if (!nextQueue.some((candidate) => candidate.dedupeKey === notification.dedupeKey)) {
+        notificationActiveRef.current.delete(notification.dedupeKey);
+      }
+    });
+    notificationQueueRef.current = nextQueue;
   }, []);
 
   const resetNotificationRuntime = useCallback(({ bumpQueueVersion = true } = {}) => {
@@ -11803,26 +13749,32 @@ export default function OriginalGame({ user, onLogout }) {
       sequence: notificationSequenceRef.current += 1
     });
     if (!item) return false;
+    if (notificationActiveRef.current.has(item.dedupeKey)) return false;
 
     const visibleNotifications = notificationVisibleRef.current;
     if (!notificationDisplayBlockedRef.current) {
-      visibleNotifications.forEach(clearNotificationRuntimeItem);
-      replaceQueuedNotificationRuntime(null);
-      notificationActiveRef.current.add(item.dedupeKey);
-      notificationVisibleRef.current = [item];
-      setNotifications([item]);
+      const currentVisible = visibleNotifications[0] || null;
+      if (!currentVisible || shouldReplaceVisibleNotification(currentVisible, item)) {
+        visibleNotifications.forEach(clearNotificationRuntimeItem);
+        notificationActiveRef.current.add(item.dedupeKey);
+        notificationVisibleRef.current = [item];
+        setNotifications([item]);
+      } else {
+        enqueueNotificationRuntime(item);
+        bumpNotificationQueueVersion();
+      }
       return true;
     }
 
     clearVisibleNotificationRuntime();
-    replaceQueuedNotificationRuntime(item);
+    enqueueNotificationRuntime(item);
     bumpNotificationQueueVersion();
     return true;
   }, [
     bumpNotificationQueueVersion,
     clearNotificationRuntimeItem,
     clearVisibleNotificationRuntime,
-    replaceQueuedNotificationRuntime
+    enqueueNotificationRuntime
   ]);
 
   useEffect(() => {
@@ -11889,7 +13841,7 @@ export default function OriginalGame({ user, onLogout }) {
         return;
       }
 
-      const { item, discarded } = takeLatestNotificationItem(notificationQueueRef.current);
+      const { item, discarded } = takeNextNotificationItem(notificationQueueRef.current);
       discarded.forEach((notification) => {
         notificationActiveRef.current.delete(notification.dedupeKey);
       });
@@ -11987,6 +13939,32 @@ export default function OriginalGame({ user, onLogout }) {
       if (el) el.scrollTop = el.scrollHeight;
     }, 50);
   }, []);
+
+  const recordGameLog = useCallback((eventType, payload = {}) => {
+    const studentId = userRef.current?.id || user?.id;
+    if (!studentId || !eventType) return;
+
+    const resolvedMapName = payload.mapName || currentMapNameRef.current || currentMapName;
+    let resolvedMapDisplayName = payload.mapDisplayName || '';
+    if (!resolvedMapDisplayName && resolvedMapName) {
+      try {
+        resolvedMapDisplayName = getMapConfig(resolvedMapName).displayName || resolvedMapName;
+      } catch {
+        resolvedMapDisplayName = resolvedMapName;
+      }
+    }
+
+    void recordGameplayEvent({
+      studentId,
+      eventType,
+      title: payload.title,
+      summary: payload.summary,
+      mapName: resolvedMapName,
+      mapDisplayName: resolvedMapDisplayName,
+      position: payload.position || playerPosRef.current || null,
+      details: payload.details || {}
+    });
+  }, [currentMapName, user?.id]);
 
   const waitForBattleMoveVisual = useCallback(async (moveKey, attackerSide, phase = 'hit', {
     targetSide = null,
@@ -12312,6 +14290,7 @@ export default function OriginalGame({ user, onLogout }) {
       : progressRoster.levelUps;
     const pendingTeacherRewardClaim = normalizePendingTeacherRewardClaim(gameData.pendingTeacherRewardClaim);
     const appliedTeacherRewardIds = normalizeAppliedTeacherRewardIds(gameData.appliedTeacherRewardIds);
+    const pendingTeacherRewardCeremonies = normalizeTeacherRewardCeremonyQueue(gameData.pendingTeacherRewardCeremonies);
     const legacyTeacherRewardRecovery = normalizeLegacyTeacherRewardRecovery(gameData.legacyTeacherRewardRecovery);
     const pendingMonsterAcquisition = normalizePendingMonsterAcquisition(gameData.pendingMonsterAcquisition);
     const pendingBattleSwitch = normalizePendingBattleSwitch(gameData.pendingBattleSwitch);
@@ -12363,9 +14342,35 @@ export default function OriginalGame({ user, onLogout }) {
     const backendEnergy = typeof resources.energy === 'number' ? resources.energy : u?.energy;
     const backendMaxEnergy = typeof resources.max_energy === 'number' ? resources.max_energy : u?.max_energy;
 
-    const cloudLogs = Array.isArray(gameData.logs) ? gameData.logs : ['在地图上探索吧！'];
-    setView(view);
-    setTurn(battleTurn);
+	    const cloudLogs = Array.isArray(gameData.logs) ? gameData.logs : ['在地图上探索吧！'];
+	    const liveSwitch = getLiveBattleSwitchInFlight(pendingBattleSwitch);
+	    const livePendingSwitch = normalizePendingBattleSwitch(liveSwitch?.pendingSwitch);
+	    const liveSwitchKey = liveSwitch?.key || getPendingBattleSwitchKey(livePendingSwitch);
+	    const incomingSwitchKey = getPendingBattleSwitchKey(pendingBattleSwitch);
+	    const liveSwitchAlreadyCompleted = Boolean(
+	      liveSwitch?.source === 'live' &&
+	      livePendingSwitch?.nextActivePlayerId &&
+	      String(livePendingSwitch.nextActivePlayerId) === String(resolvedActivePlayerId) &&
+	      !pendingBattleSwitch
+	    );
+	    const shouldKeepLiveSwitchInBattleView = Boolean(
+	      liveSwitch?.source === 'live' &&
+	      liveSwitchKey &&
+	      !liveSwitchAlreadyCompleted &&
+	      gameData.activeEnemyId &&
+	      view === 'team' &&
+	      (!incomingSwitchKey || incomingSwitchKey === liveSwitchKey)
+	    );
+    const appliedPendingBattleSwitch = shouldKeepLiveSwitchInBattleView
+      ? (pendingBattleSwitch || livePendingSwitch)
+      : pendingBattleSwitch;
+    const appliedView = shouldKeepLiveSwitchInBattleView ? 'battle' : view;
+    const appliedTurn = shouldKeepLiveSwitchInBattleView ? 'resolving' : battleTurn;
+    const appliedBattlePhase = shouldKeepLiveSwitchInBattleView ? 'active' : battlePhase;
+    const appliedBattlePhaseData = shouldKeepLiveSwitchInBattleView ? null : resolvedBattlePhaseData;
+
+    setView(appliedView);
+    setTurn(appliedTurn);
     logsRef.current = cloudLogs;
     setLogs(cloudLogs);
     setShowLaunchScreen(Boolean(gameData.showLaunchScreen));
@@ -12373,9 +14378,10 @@ export default function OriginalGame({ user, onLogout }) {
     setPendingGrowthEvents(pendingGrowthEvents);
     setPendingTeacherRewardClaim(pendingTeacherRewardClaim);
     setAppliedTeacherRewardIds(appliedTeacherRewardIds);
+    setPendingTeacherRewardCeremonies(pendingTeacherRewardCeremonies);
     setLegacyTeacherRewardRecovery(legacyTeacherRewardRecovery);
     setPendingMonsterAcquisition(pendingMonsterAcquisition);
-    setPendingBattleSwitch(pendingBattleSwitch);
+    setPendingBattleSwitch(appliedPendingBattleSwitch);
     setPlayerTeam(playerTeam);
     setStorageBox(storageBox);
     setEnemyTeam(enemyTeam);
@@ -12383,8 +14389,8 @@ export default function OriginalGame({ user, onLogout }) {
     setActiveEnemyId(gameData.activeEnemyId || null);
     setGameOver(Boolean(gameData.gameOver));
     setBattleKind(gameData.battleKind || 'wild');
-    setBattlePhase(battlePhase);
-    setBattlePhaseData(resolvedBattlePhaseData);
+    setBattlePhase(appliedBattlePhase);
+    setBattlePhaseData(appliedBattlePhaseData);
     setBattleEnvironment(battleEnvironment);
     setIsThrowingPokeball(isThrowingPokeball);
     setCaptureSequenceData(captureSequenceData);
@@ -12456,8 +14462,15 @@ export default function OriginalGame({ user, onLogout }) {
     encounterCooldownStepsRef.current = resolvedEncounterCooldown;
     setEncounterCooldownSteps(resolvedEncounterCooldown);
     scheduleLevelUpCelebrationsForTeam(transientGrowthLevelUps, playerTeam);
+    const movedDuplicateSpeciesCount = Math.max(0, Math.trunc(Number(gameData.transientPartySpeciesMovedCount)) || 0);
+    if (movedDuplicateSpeciesCount > 0) {
+      addNotification(
+        `${movedDuplicateSpeciesCount} 只重复物种宝可梦已完整移入仓库，同物种最多出战 1 只。`,
+        'info'
+      );
+    }
     // user 通过 userRef.current 读取，无需列入 deps，避免 callback 反复重建触发回闪
-  }, [scheduleLevelUpCelebrationsForTeam]);
+  }, [addNotification, scheduleLevelUpCelebrationsForTeam]);
 
   const currentGameData = useMemo(() => createCloudSnapshot({
     showLaunchScreen,
@@ -12468,6 +14481,7 @@ export default function OriginalGame({ user, onLogout }) {
     pendingGrowthEvents,
     pendingTeacherRewardClaim,
     appliedTeacherRewardIds,
+    pendingTeacherRewardCeremonies,
     legacyTeacherRewardRecovery,
     pendingMonsterAcquisition,
     pendingBattleSwitch,
@@ -12508,6 +14522,7 @@ export default function OriginalGame({ user, onLogout }) {
     pendingGrowthEvents,
     pendingTeacherRewardClaim,
     appliedTeacherRewardIds,
+    pendingTeacherRewardCeremonies,
     legacyTeacherRewardRecovery,
     pendingMonsterAcquisition,
     pendingBattleSwitch,
@@ -12576,10 +14591,11 @@ export default function OriginalGame({ user, onLogout }) {
   }, [activeBattleEnergyCost, activeEnemyId, view]);
 
   useEffect(() => {
-    if (view !== 'battle' && battleEnvironment) {
+    const battleContextActive = view === 'battle' || Boolean(activeEnemyId);
+    if (!battleContextActive && battleEnvironment) {
       setBattleEnvironment(null);
     }
-  }, [battleEnvironment, view]);
+  }, [activeEnemyId, battleEnvironment, view]);
 
   // 通过 ref 持有最新 applyCloudGameData，避免它的引用变化把 loadGameFromCloud 一起带得重建。
   const applyCloudGameDataRef = useRef(applyCloudGameData);
@@ -12591,7 +14607,16 @@ export default function OriginalGame({ user, onLogout }) {
   const loadGameFromCloud = useCallback(async ({ force = false } = {}) => {
     if (cloudLoadInFlightRef.current) return cloudLoadInFlightRef.current;
 
-    const loadPromise = (async () => {
+    if (force) {
+      // A forced reload supersedes every autosave that was queued from the
+      // stale local snapshot. The shared cloud lock makes the read wait for
+      // the currently active mutation before it hydrates local state.
+      cloudMutationGenerationRef.current += 1;
+      queuedCloudSaveRef.current = null;
+    }
+    const loadGeneration = cloudMutationGenerationRef.current;
+
+    const performLoad = async () => {
       const u = userRef.current;
       const targetUserId = u?.id || null;
       const isSameLoadedUser = Boolean(targetUserId && loadedCloudUserIdRef.current === targetUserId);
@@ -12686,6 +14711,7 @@ export default function OriginalGame({ user, onLogout }) {
         const normalized = normalizeCloudGameData(cloudGameData, backendGold);
         if (!normalized) throw new Error('云端存档格式无效。');
         const mapContentMigrated = shouldPersistMapContentMigration(cloudGameData);
+        const partySpeciesMigrated = Number(normalized.transientPartySpeciesMovedCount) > 0;
 
         resetLocalBattleEventCompletionState();
         applyCloudGameDataRef.current(normalized, resources);
@@ -12699,14 +14725,15 @@ export default function OriginalGame({ user, onLogout }) {
         const repairedBattleTurn = shouldRepairBattleTurnOnLoad(rawCloudGameData);
         latestCloudSnapshotRef.current = createCloudSnapshot(normalized);
         lastSavedSnapshotRef.current = saveRow?.game_data
-          ? (hadExpOverflow || repairedBattleTurn || mapContentMigrated || playerPositionDraftApplied ? rawCloudSnapshot : normalizedSnapshot)
+          ? (hadExpOverflow || repairedBattleTurn || mapContentMigrated || partySpeciesMigrated || playerPositionDraftApplied ? rawCloudSnapshot : normalizedSnapshot)
           : '';
-        if (repairedBattleTurn || mapContentMigrated || playerPositionDraftApplied) {
+        if (repairedBattleTurn || mapContentMigrated || partySpeciesMigrated || playerPositionDraftApplied) {
           criticalCloudSaveRequestedRef.current = true;
         }
         setLastSavedAt(saveRow?.last_saved ?? null);
         setHasLoadedCloudSave(true);
         setRequiresCloudReload(false);
+        requiresCloudReloadRef.current = false;
         setSyncError(null);
         setSaveStatus(saveRow?.game_data ? 'saved' : 'idle');
         hasCompletedInitialLoadRef.current = true;
@@ -12720,7 +14747,14 @@ export default function OriginalGame({ user, onLogout }) {
       } finally {
         if (showOverlay) setCloudLoading(false);
       }
-    })();
+    };
+
+    const loadPromise = force
+      ? saveCloudGameWithLock(async () => {
+          if (loadGeneration !== cloudMutationGenerationRef.current) return false;
+          return performLoad();
+        })
+      : performLoad();
 
     cloudLoadInFlightRef.current = loadPromise;
     try {
@@ -12733,11 +14767,58 @@ export default function OriginalGame({ user, onLogout }) {
     // 仅在登录用户切换（id 变）时重建。user.gold/energy 等通过 userRef 读，不再列依赖。
   }, [resetLocalBattleEventCompletionState, user?.id]);
 
+  const markPlaytimeExpiredFromServer = useCallback(() => {
+    setPlaytimeError(null);
+    setPlaytimeLoading(false);
+    setPlaytimeStatus((previousStatus) => {
+      const currentStatus = normalizePlaytimeStatusRow(
+        previousStatus || {},
+        playtimeStatusRef.current || {}
+      );
+      const nextStatus = {
+        ...currentStatus,
+        playedSeconds: Math.max(currentStatus.playedSeconds, currentStatus.limitMinutes * 60),
+        remainingSeconds: 0,
+        playDate: currentStatus.playDate || getChinaPlayDate()
+      };
+      playtimeStatusRef.current = nextStatus;
+      return nextStatus;
+    });
+    playtimeSessionStartedRef.current = false;
+    playtimeExpiredRef.current = true;
+  }, []);
+
+  const markPlaytimeSessionUnavailable = useCallback((error, { notify = false } = {}) => {
+    console.error('Error verifying student playtime:', error);
+    playtimeStatusRef.current = null;
+    playtimeSessionStartedRef.current = false;
+    playtimeExpiredRef.current = true;
+    setPlaytimeStatus(null);
+    setPlaytimeError(PLAYTIME_STATUS_UNAVAILABLE_MESSAGE);
+    if (notify) addNotification(PLAYTIME_STATUS_UNAVAILABLE_MESSAGE, 'warning');
+    return null;
+  }, [addNotification]);
+
+  const markCloudSaveConflict = useCallback(() => {
+    // Update the ref synchronously. React state effects run later, and a
+    // visibility/autosave callback can otherwise enter during that window.
+    cloudMutationGenerationRef.current += 1;
+    requiresCloudReloadRef.current = true;
+    queuedCloudSaveRef.current = null;
+    setRequiresCloudReload(true);
+    setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
+    setSaveStatus('error');
+  }, []);
+
   const saveGameToCloud = useCallback(async ({ manual = false, force = false } = {}) => {
     if (!user?.id) {
       const message = '未登录，无法保存到云端。';
       setSyncError(message);
       if (manual) addNotification(message, 'error');
+      return false;
+    }
+
+    if (playtimeExpiredRef.current && playtimePageVisibleRef.current) {
       return false;
     }
 
@@ -12758,6 +14839,7 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     if (!force && !hasLoadedCloudSave) return false;
+    if (encounterStartInFlightRef.current && !manual) return false;
 
     if (manual) {
       pendingManualSaveNoticeRef.current = true;
@@ -12775,79 +14857,121 @@ export default function OriginalGame({ user, onLogout }) {
 
     const readLatestSnapshot = () => applyLatestPlayerPosToSnapshot(latestCloudSnapshotRef.current || currentGameData);
     const request = { manual, force };
+    const mutationGeneration = cloudMutationGenerationRef.current;
     cloudSaveInFlightRef.current = true;
 
     try {
-      let nextRequest = request;
+      return await saveCloudGameWithLock(async () => {
+        if (
+          mutationGeneration !== cloudMutationGenerationRef.current ||
+          requiresCloudReloadRef.current
+        ) {
+          return false;
+        }
 
-      while (true) {
-        const snapshot = readLatestSnapshot();
-        const snapshotString = JSON.stringify(snapshot);
+        let nextRequest = request;
 
-        if (nextRequest.force || snapshotString !== lastSavedSnapshotRef.current) {
-          const revision = cloudSaveRevisionRef.current + 1;
-          const payload = withCloudSaveMeta(snapshot, revision, cloudSaveSessionIdRef.current);
-          const { data, error } = await saveCloudGameWithLock(async () => {
-            return await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
+        while (true) {
+          if (
+            mutationGeneration !== cloudMutationGenerationRef.current ||
+            requiresCloudReloadRef.current
+          ) {
+            return false;
+          }
+
+          const snapshot = readLatestSnapshot();
+          const snapshotString = JSON.stringify(snapshot);
+
+          if (nextRequest.force || snapshotString !== lastSavedSnapshotRef.current) {
+            // This is deliberately inside the shared lock. Computing R+1
+            // before queueing lets two recovery effects send the same revision.
+            const revision = cloudSaveRevisionRef.current + 1;
+            const payload = withCloudSaveMeta(
+              snapshot,
+              revision,
+              cloudSaveSessionIdRef.current,
+              playtimeSessionIdRef.current || playtimeLastSessionIdRef.current
+            );
+            const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
               p_user_id: user.id,
               p_game_data: payload
             }));
-          });
 
-          if (error) throw error;
+            if (error) throw error;
 
-          const saveRow = Array.isArray(data) ? data[0] : data;
-          const accepted = saveRow?.accepted !== false;
-          const returnedRevision =
-            Number(saveRow?.save_revision) ||
-            getCloudSaveRevision(saveRow?.game_data) ||
-            revision;
+            const saveRow = Array.isArray(data) ? data[0] : data;
+            const accepted = saveRow?.accepted !== false;
+            const returnedRevision =
+              Number(saveRow?.save_revision) ||
+              getCloudSaveRevision(saveRow?.game_data) ||
+              revision;
 
-          if (!accepted) {
-            throw new Error(CLOUD_SYNC_CONFLICT_MESSAGE);
+            if (!accepted) {
+              throw new Error(saveRow?.error_message || CLOUD_SYNC_CONFLICT_MESSAGE);
+            }
+
+            cloudSaveRevisionRef.current = Math.max(cloudSaveRevisionRef.current, returnedRevision, revision);
+            lastSavedSnapshotRef.current = snapshotString;
+            setLastSavedAt(saveRow?.last_saved ?? new Date().toISOString());
+            requiresCloudReloadRef.current = false;
+            setRequiresCloudReload(false);
+            setSyncError(null);
+            setSaveStatus(prev => prev === 'error' ? 'idle' : prev);
+          } else {
+            setSyncError(null);
           }
 
-          cloudSaveRevisionRef.current = Math.max(cloudSaveRevisionRef.current, returnedRevision, revision);
-          lastSavedSnapshotRef.current = snapshotString;
-          setLastSavedAt(saveRow?.last_saved ?? new Date().toISOString());
-          setRequiresCloudReload(false);
-          setSyncError(null);
-          setSaveStatus(prev => prev === 'error' ? 'idle' : prev);
-        } else {
-          setSyncError(null);
+          const queued = queuedCloudSaveRef.current;
+          queuedCloudSaveRef.current = null;
+          if (queued) {
+            nextRequest = queued;
+            continue;
+          }
+
+          const latestSnapshotString = JSON.stringify(readLatestSnapshot());
+          if (latestSnapshotString !== lastSavedSnapshotRef.current) {
+            nextRequest = { manual: false, force: false };
+            continue;
+          }
+
+          break;
         }
 
-        const queued = queuedCloudSaveRef.current;
-        queuedCloudSaveRef.current = null;
-        if (queued) {
-          nextRequest = queued;
-          continue;
+        if (pendingManualSaveNoticeRef.current) {
+          pendingManualSaveNoticeRef.current = false;
+          setSaveStatus('saved');
+          addNotification('进度已保存。', 'info');
+          gameAudio.playUiConfirm();
         }
 
-        const latestSnapshotString = JSON.stringify(readLatestSnapshot());
-        if (latestSnapshotString !== lastSavedSnapshotRef.current) {
-          nextRequest = { manual: false, force: false };
-          continue;
-        }
-
-        break;
-      }
-
-      if (pendingManualSaveNoticeRef.current) {
-        pendingManualSaveNoticeRef.current = false;
-        setSaveStatus('saved');
-        addNotification('进度已保存。', 'info');
-        gameAudio.playUiConfirm();
-      }
-
-      return true;
+        return true;
+      });
     } catch (error) {
       console.error('Error saving cloud game save:', error);
       const message = error.message || '云端同步失败，稍后重试。';
+      if (isPlaytimeLimitError(message)) {
+        markPlaytimeExpiredFromServer();
+        setSyncError(null);
+        setSaveStatus('idle');
+        queuedCloudSaveRef.current = null;
+        if (manual || pendingManualSaveNoticeRef.current) {
+          pendingManualSaveNoticeRef.current = false;
+          addNotification(PLAYTIME_EXPIRED_NOTIFICATION, 'warning');
+          gameAudio.playError();
+        }
+        return false;
+      }
+      if (isPlaytimeSessionError(message)) {
+        markPlaytimeSessionUnavailable(new Error(message), { notify: manual });
+        setSyncError(null);
+        setSaveStatus('idle');
+        queuedCloudSaveRef.current = null;
+        pendingManualSaveNoticeRef.current = false;
+        return false;
+      }
       const isConflict = message === CLOUD_SYNC_CONFLICT_MESSAGE || isCloudSyncConflict(message);
       if (isConflict) {
-        setRequiresCloudReload(true);
-        setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
+        markCloudSaveConflict();
       } else {
         setSyncError(`云端同步失败: ${message}`);
       }
@@ -12862,7 +14986,7 @@ export default function OriginalGame({ user, onLogout }) {
     } finally {
       cloudSaveInFlightRef.current = false;
     }
-  }, [addNotification, applyLatestPlayerPosToSnapshot, currentGameData, hasLoadedCloudSave, user?.id]);
+  }, [addNotification, applyLatestPlayerPosToSnapshot, currentGameData, hasLoadedCloudSave, markCloudSaveConflict, markPlaytimeExpiredFromServer, markPlaytimeSessionUnavailable, user?.id]);
 
   const waitForCloudSaveIdle = useCallback(async (timeoutMs = 4000) => {
     const startedAt = Date.now();
@@ -12965,16 +15089,24 @@ export default function OriginalGame({ user, onLogout }) {
       return { success: false, atomicUnavailable: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
     }
 
-    try {
-      await waitForCloudSaveIdle();
-    } catch (error) {
-      return { success: false, atomicUnavailable: false, message: error.message || '云端忙碌，稍后重试。' };
-    }
-
-    cloudSaveInFlightRef.current = true;
+    const mutationGeneration = cloudMutationGenerationRef.current;
 
     try {
-      const latestBaseSnapshot = mergeMonotonicSnapshotProgress(
+      return await saveCloudGameWithLock(async () => {
+        if (
+          mutationGeneration !== cloudMutationGenerationRef.current ||
+          requiresCloudReloadRef.current
+        ) {
+          return {
+            success: false,
+            atomicUnavailable: false,
+            message: CLOUD_SYNC_CONFLICT_MESSAGE,
+            requiresReload: true
+          };
+        }
+
+        // Allocate the revision only after this mutation owns the shared queue.
+        const latestBaseSnapshot = mergeMonotonicSnapshotProgress(
         readCloudSnapshotFromString(lastSavedSnapshotRef.current),
         latestCloudSnapshotRef.current || currentGameData
       );
@@ -12993,7 +15125,12 @@ export default function OriginalGame({ user, onLogout }) {
       }
       const normalizedSnapshot = createCloudSnapshot(resolvedSnapshot);
       const revision = cloudSaveRevisionRef.current + 1;
-      const payload = withCloudSaveMeta(normalizedSnapshot, revision, cloudSaveSessionIdRef.current);
+      const payload = withCloudSaveMeta(
+        normalizedSnapshot,
+        revision,
+        cloudSaveSessionIdRef.current,
+        playtimeSessionIdRef.current || playtimeLastSessionIdRef.current
+      );
 
       const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_state_with_resources', {
         p_user_id: user.id,
@@ -13019,10 +15156,26 @@ export default function OriginalGame({ user, onLogout }) {
       const saveRow = Array.isArray(data) ? data[0] : data;
       if (saveRow?.accepted === false) {
         const message = saveRow?.error_message || '后端拒绝了本次资源同步。';
+        if (isPlaytimeLimitError(message)) {
+          markPlaytimeExpiredFromServer();
+          return {
+            success: false,
+            atomicUnavailable: false,
+            message: PLAYTIME_SAVE_REJECTED_MESSAGE,
+            playtimeExpired: true
+          };
+        }
+        if (isPlaytimeSessionError(message)) {
+          markPlaytimeSessionUnavailable(new Error(message));
+          return {
+            success: false,
+            atomicUnavailable: false,
+            message: PLAYTIME_SESSION_INVALID_MESSAGE,
+            playtimeUnavailable: true
+          };
+        }
         if (isCloudSyncConflict(message)) {
-          setRequiresCloudReload(true);
-          setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
-          setSaveStatus('error');
+          markCloudSaveConflict();
           return {
             success: false,
             atomicUnavailable: false,
@@ -13037,16 +15190,33 @@ export default function OriginalGame({ user, onLogout }) {
         };
       }
 
-      applyCommittedCloudState(saveRow);
-      return { success: true, atomicUnavailable: false, saveRow };
+        applyCommittedCloudState(saveRow);
+        return { success: true, atomicUnavailable: false, saveRow };
+      });
     } catch (error) {
       console.error('Error committing atomic cloud snapshot:', error);
       const message = getCloudRequestErrorMessage(error) || '资源同步失败，稍后重试。';
       const isTransientRequestError = isTransientCloudRequestError(error);
+      if (isPlaytimeLimitError(message)) {
+        markPlaytimeExpiredFromServer();
+        return {
+          success: false,
+          atomicUnavailable: false,
+          message: PLAYTIME_SAVE_REJECTED_MESSAGE,
+          playtimeExpired: true
+        };
+      }
+      if (isPlaytimeSessionError(message)) {
+        markPlaytimeSessionUnavailable(error);
+        return {
+          success: false,
+          atomicUnavailable: false,
+          message: PLAYTIME_SESSION_INVALID_MESSAGE,
+          playtimeUnavailable: true
+        };
+      }
       if (message === CLOUD_SYNC_CONFLICT_MESSAGE || isCloudSyncConflict(message)) {
-        setRequiresCloudReload(true);
-        setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
-        setSaveStatus('error');
+        markCloudSaveConflict();
         return {
           success: false,
           atomicUnavailable: false,
@@ -13066,10 +15236,8 @@ export default function OriginalGame({ user, onLogout }) {
         notificationType: 'warning',
         transient: true
       };
-    } finally {
-      cloudSaveInFlightRef.current = false;
     }
-  }, [applyCommittedCloudState, currentGameData, setIsOnline, supabase, user?.id, waitForCloudSaveIdle]);
+  }, [applyCommittedCloudState, currentGameData, markCloudSaveConflict, markPlaytimeExpiredFromServer, markPlaytimeSessionUnavailable, setIsOnline, supabase, user?.id]);
 
   const commitCloudSnapshot = useCallback(async ({
     snapshot,
@@ -13091,16 +15259,18 @@ export default function OriginalGame({ user, onLogout }) {
       return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
     }
 
-    try {
-      await waitForCloudSaveIdle();
-    } catch (error) {
-      return { success: false, message: error.message || '云端忙碌，稍后重试。' };
-    }
-
-    cloudSaveInFlightRef.current = true;
+    const mutationGeneration = cloudMutationGenerationRef.current;
 
     try {
-      const latestBaseSnapshot = mergeMonotonicSnapshotProgress(
+      return await saveCloudGameWithLock(async () => {
+        if (
+          mutationGeneration !== cloudMutationGenerationRef.current ||
+          requiresCloudReloadRef.current
+        ) {
+          return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
+        }
+
+        const latestBaseSnapshot = mergeMonotonicSnapshotProgress(
         readCloudSnapshotFromString(lastSavedSnapshotRef.current),
         latestCloudSnapshotRef.current || currentGameData
       );
@@ -13118,25 +15288,44 @@ export default function OriginalGame({ user, onLogout }) {
       }
       const normalizedSnapshot = createCloudSnapshot(resolvedSnapshot);
       const revision = cloudSaveRevisionRef.current + 1;
-      const payload = withCloudSaveMeta(normalizedSnapshot, revision, cloudSaveSessionIdRef.current);
+      const payload = withCloudSaveMeta(
+        normalizedSnapshot,
+        revision,
+        cloudSaveSessionIdRef.current,
+        playtimeSessionIdRef.current || playtimeLastSessionIdRef.current
+      );
 
-      const { data, error } = await saveCloudGameWithLock(async () => {
-        return await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
+        const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('save_cloud_game_save', {
           p_user_id: user.id,
           p_game_data: payload
         }));
-      });
 
       if (error) throw error;
 
       const saveRow = Array.isArray(data) ? data[0] : data;
       if (saveRow?.accepted === false) {
-        const message = CLOUD_SYNC_CONFLICT_MESSAGE;
-        if (isCloudSyncConflict('后端拒绝了旧版本存档。')) {
+        const message = saveRow?.error_message || '后端拒绝了本次存档。';
+        if (isPlaytimeLimitError(message)) {
+          markPlaytimeExpiredFromServer();
+          return {
+            success: false,
+            message: PLAYTIME_SAVE_REJECTED_MESSAGE,
+            playtimeExpired: true
+          };
+        }
+        if (isPlaytimeSessionError(message)) {
+          markPlaytimeSessionUnavailable(new Error(message));
+          return {
+            success: false,
+            message: PLAYTIME_SESSION_INVALID_MESSAGE,
+            playtimeUnavailable: true
+          };
+        }
+        if (isCloudSyncConflict(message)) {
           setRequiresCloudReload(true);
           setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
           setSaveStatus('error');
-          return { success: false, message, requiresReload: true };
+          return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
         }
         return { success: false, message };
       }
@@ -13162,10 +15351,27 @@ export default function OriginalGame({ user, onLogout }) {
       } else {
         applyAcceptedSnapshotLocally();
       }
-      return { success: true, saveRow };
+        return { success: true, saveRow };
+      });
     } catch (error) {
       console.error('Error committing cloud snapshot:', error);
       const message = error.message || '云端同步失败，稍后重试。';
+      if (isPlaytimeLimitError(message)) {
+        markPlaytimeExpiredFromServer();
+        return {
+          success: false,
+          message: PLAYTIME_SAVE_REJECTED_MESSAGE,
+          playtimeExpired: true
+        };
+      }
+      if (isPlaytimeSessionError(message)) {
+        markPlaytimeSessionUnavailable(error);
+        return {
+          success: false,
+          message: PLAYTIME_SESSION_INVALID_MESSAGE,
+          playtimeUnavailable: true
+        };
+      }
       if (message === CLOUD_SYNC_CONFLICT_MESSAGE || isCloudSyncConflict(message)) {
         setRequiresCloudReload(true);
         setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
@@ -13179,7 +15385,167 @@ export default function OriginalGame({ user, onLogout }) {
     } finally {
       cloudSaveInFlightRef.current = false;
     }
-  }, [applyCommittedCloudState, applyLocalCommittedCloudSnapshot, currentGameData, markSnapshotCommitted, setIsOnline, supabase, user?.id, waitForCloudSaveIdle]);
+  }, [applyCommittedCloudState, applyLocalCommittedCloudSnapshot, currentGameData, markPlaytimeExpiredFromServer, markPlaytimeSessionUnavailable, markSnapshotCommitted, setIsOnline, supabase, user?.id, waitForCloudSaveIdle]);
+
+  const claimLongTermProgressionReward = useCallback(async ({
+    rewardKind,
+    mapName = null,
+    threshold = null
+  } = {}) => {
+    if (!user?.id) {
+      return { success: false, message: '未登录，无法领取云端奖励。' };
+    }
+
+    const online = typeof navigator === 'undefined' ? true : navigator.onLine;
+    setIsOnline(online);
+    if (!online) {
+      return { success: false, message: '网络已断开，无法领取云端奖励。' };
+    }
+    if (requiresCloudReloadRef.current) {
+      setSyncError(CLOUD_SYNC_CONFLICT_MESSAGE);
+      setSaveStatus('error');
+      return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
+    }
+
+    const mutationGeneration = cloudMutationGenerationRef.current;
+
+    try {
+      return await saveCloudGameWithLock(async () => {
+        if (
+          mutationGeneration !== cloudMutationGenerationRef.current ||
+          requiresCloudReloadRef.current
+        ) {
+          return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
+        }
+
+        const latestBaseSnapshot = mergeMonotonicSnapshotProgress(
+          readCloudSnapshotFromString(lastSavedSnapshotRef.current),
+          latestCloudSnapshotRef.current || currentGameData
+        );
+        const baseWorld = normalizeWorldState(latestBaseSnapshot?.world);
+        let resolvedMapName = null;
+        let resolvedThreshold = null;
+        let resolvedSeasonKey = null;
+        let observedCompletionPercent = null;
+        let catalogVersion = MAP_COMPLETION_CATALOG_VERSION;
+
+        if (rewardKind === 'map_completion') {
+          const definition = getMapCompletionRewardDefinition(mapName, threshold);
+          if (!definition) {
+            return { success: false, message: '奖励目录不存在，请刷新后重试。' };
+          }
+          const liveSummary = getMapProgressSummary(definition.mapId, baseWorld);
+          if (liveSummary.completionPercent < definition.threshold) {
+            return { success: false, message: '地图完成度尚未达到领取条件。', notificationType: 'warning' };
+          }
+          if (hasClaimedCompletionReward(baseWorld, definition.mapId, definition.threshold)) {
+            return { success: false, message: '这份阶段奖励已经领取过了。', notificationType: 'info', alreadyClaimed: true };
+          }
+          resolvedMapName = definition.mapId;
+          resolvedThreshold = definition.threshold;
+          observedCompletionPercent = liveSummary.completionPercent;
+        } else if (rewardKind === 'tower_weekly') {
+          const tower = normalizeTowerSeason(baseWorld.championTower);
+          resolvedSeasonKey = tower.weekly.seasonKey || getCurrentIsoWeekKey();
+          catalogVersion = CHAMPION_TOWER_VERSION;
+          if (tower.highestStoryFloor < 10 || tower.weekly.highestFloor < 10) {
+            return { success: false, message: '本周尚未完成冠军塔第 10 层。', notificationType: 'warning' };
+          }
+          if (hasClaimedTowerWeeklyReward(baseWorld, resolvedSeasonKey)) {
+            return { success: false, message: '本周冠军补给已经领取过了。', notificationType: 'info', alreadyClaimed: true };
+          }
+        } else {
+          return { success: false, message: '未知的长期进度奖励。' };
+        }
+
+        const expectedRevision = Math.max(0, Math.trunc(Number(cloudSaveRevisionRef.current)) || 0);
+        if (expectedRevision <= 0) {
+          return { success: false, message: '云端存档版本尚未就绪，请重新读取。', requiresReload: true };
+        }
+        const playtimeSessionId = playtimeSessionIdRef.current || playtimeLastSessionIdRef.current || `legacy:${user.id}`;
+        const { data, error } = await runCloudRequestWithRetry(() => supabase.rpc('claim_long_term_progression_reward', {
+          p_user_id: user.id,
+          p_reward_kind: rewardKind,
+          p_map_id: resolvedMapName,
+          p_threshold: resolvedThreshold,
+          p_season_key: resolvedSeasonKey,
+          p_catalog_version: catalogVersion,
+          p_expected_revision: expectedRevision,
+          p_playtime_session_id: playtimeSessionId,
+          p_observed_completion_percent: observedCompletionPercent
+        }));
+
+        if (error) {
+          if (isMissingCloudRpcError(error, 'claim_long_term_progression_reward')) {
+            return {
+              success: false,
+              message: '后端尚未部署长期进度奖励 RPC，请先同步 Supabase 数据库。',
+              rpcUnavailable: true
+            };
+          }
+          throw error;
+        }
+
+        const saveRow = Array.isArray(data) ? data[0] : data;
+        if (saveRow?.accepted === false) {
+          const message = saveRow?.error_message || '后端拒绝了本次奖励领取。';
+          if (isPlaytimeLimitError(message)) {
+            markPlaytimeExpiredFromServer();
+            return { success: false, message: PLAYTIME_SAVE_REJECTED_MESSAGE, playtimeExpired: true };
+          }
+          if (isPlaytimeSessionError(message)) {
+            markPlaytimeSessionUnavailable(new Error(message));
+            return { success: false, message: PLAYTIME_SESSION_INVALID_MESSAGE, playtimeUnavailable: true };
+          }
+          if (isCloudSyncConflict(message)) {
+            markCloudSaveConflict();
+            return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
+          }
+          return { success: false, message };
+        }
+
+        applyCommittedCloudState(saveRow);
+        if (saveRow?.already_claimed === true) {
+          return {
+            success: false,
+            alreadyClaimed: true,
+            message: rewardKind === 'tower_weekly'
+              ? '本周冠军补给已经在另一处领取，云端记录已同步。'
+              : '这份阶段奖励已经在另一处领取，云端记录已同步。',
+            notificationType: 'info',
+            saveRow
+          };
+        }
+        return { success: true, saveRow, rewardItems: saveRow?.reward_items || [] };
+      });
+    } catch (error) {
+      console.error('Error claiming long-term progression reward:', error);
+      const message = getCloudRequestErrorMessage(error) || '奖励领取失败，稍后重试。';
+      if (isPlaytimeLimitError(message)) {
+        markPlaytimeExpiredFromServer();
+        return { success: false, message: PLAYTIME_SAVE_REJECTED_MESSAGE, playtimeExpired: true };
+      }
+      if (isPlaytimeSessionError(message)) {
+        markPlaytimeSessionUnavailable(error);
+        return { success: false, message: PLAYTIME_SESSION_INVALID_MESSAGE, playtimeUnavailable: true };
+      }
+      if (message === CLOUD_SYNC_CONFLICT_MESSAGE || isCloudSyncConflict(message)) {
+        markCloudSaveConflict();
+        return { success: false, message: CLOUD_SYNC_CONFLICT_MESSAGE, requiresReload: true };
+      }
+      if (isTransientCloudRequestError(error)) {
+        return {
+          success: false,
+          message: '领取结果暂未确认，请稍后重试；系统不会重复发放。',
+          notificationType: 'warning',
+          transient: true
+        };
+      }
+      setSyncError(`云端奖励领取失败: ${message}`);
+      setSaveStatus('error');
+      return { success: false, message };
+    }
+  }, [applyCommittedCloudState, currentGameData, markCloudSaveConflict, markPlaytimeExpiredFromServer, markPlaytimeSessionUnavailable, setIsOnline, supabase, user?.id]);
 
   useEffect(() => {
     loadGameFromCloud();
@@ -13188,7 +15554,6 @@ export default function OriginalGame({ user, onLogout }) {
   // ref 持有最新的 saveGameToCloud，避免引用变化重置 debounce timer
   const saveGameToCloudRef = useRef(saveGameToCloud);
   useEffect(() => { saveGameToCloudRef.current = saveGameToCloud; }, [saveGameToCloud]);
-  const localBattleSwitchInFlightRef = useRef(null);
   const isResolvingBattleTurn = turn === 'resolving' && Boolean(activeEnemyId) && isActiveBattleContextView(view, activeEnemyId);
   const flushPlayerPosToReact = useCallback(() => {
     playerPosReactSyncRef.current = null;
@@ -13220,13 +15585,17 @@ export default function OriginalGame({ user, onLogout }) {
     if (mapMovementSaveTimerRef.current) {
       clearTimeout(mapMovementSaveTimerRef.current);
     }
+    if (encounterStartInFlightRef.current) {
+      mapMovementSaveTimerRef.current = null;
+      return;
+    }
     if (!hasLoadedCloudSave || cloudBlockedRef.current || requiresCloudReloadRef.current) {
       mapMovementSaveTimerRef.current = null;
       return;
     }
     mapMovementSaveTimerRef.current = setTimeout(() => {
       mapMovementSaveTimerRef.current = null;
-      if (!cloudBlockedRef.current && !requiresCloudReloadRef.current) {
+      if (!encounterStartInFlightRef.current && !cloudBlockedRef.current && !requiresCloudReloadRef.current) {
         saveGameToCloudRef.current({ force: true });
       }
     }, 900);
@@ -13245,6 +15614,7 @@ export default function OriginalGame({ user, onLogout }) {
   useEffect(() => {
     if (!hasLoadedCloudSave || cloudLoading || cloudError || requiresCloudReload) return undefined;
     if (isResolvingBattleTurn) return undefined;
+    if (encounterStartBusy || encounterStartInFlightRef.current) return undefined;
     if (showLaunchScreen && playerTeam.length === 0) return undefined;
 
     const timer = setTimeout(() => {
@@ -13253,35 +15623,37 @@ export default function OriginalGame({ user, onLogout }) {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentGameData, cloudError, cloudLoading, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload, showLaunchScreen]);
+  }, [currentGameData, cloudError, cloudLoading, encounterStartBusy, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload, showLaunchScreen]);
 
   useEffect(() => {
     if (!criticalCloudSaveRequestedRef.current) return;
     if (!hasLoadedCloudSave || cloudLoading || cloudError || requiresCloudReload) return;
     if (isResolvingBattleTurn) return;
+    if (encounterStartBusy || encounterStartInFlightRef.current) return;
     if (showLaunchScreen && playerTeam.length === 0) return;
 
     criticalCloudSaveRequestedRef.current = false;
     saveGameToCloudRef.current({ force: true });
-  }, [currentGameData, cloudError, cloudLoading, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload, showLaunchScreen, playerTeam.length]);
+  }, [currentGameData, cloudError, cloudLoading, encounterStartBusy, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload, showLaunchScreen, playerTeam.length]);
 
   useEffect(() => {
     if (!hasLoadedCloudSave || cloudLoading || cloudError || requiresCloudReload) return undefined;
     if (isResolvingBattleTurn) return undefined;
+    if (encounterStartBusy || encounterStartInFlightRef.current) return undefined;
 
     const interval = window.setInterval(() => {
       saveGameToCloudRef.current();
     }, CLOUD_SAVE_MAX_WAIT_MS);
 
     return () => window.clearInterval(interval);
-  }, [cloudError, cloudLoading, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload]);
+  }, [cloudError, cloudLoading, encounterStartBusy, hasLoadedCloudSave, isResolvingBattleTurn, requiresCloudReload]);
 
   useEffect(() => {
     if (!hasLoadedCloudSave || cloudLoading || cloudError || requiresCloudReload) return undefined;
     if (isResolvingBattleTurn) return undefined;
 
     const handlePageHide = () => {
-      if (!requiresCloudReloadRef.current) {
+      if (!requiresCloudReloadRef.current && !encounterStartInFlightRef.current) {
         saveGameToCloudRef.current({ force: true });
       }
     };
@@ -13324,8 +15696,11 @@ export default function OriginalGame({ user, onLogout }) {
       ? Number(baseSnapshot.nextPlayerMonsterId)
       : 100;
     let nextPendingAcquisition = normalizePendingMonsterAcquisition(baseSnapshot?.pendingMonsterAcquisition);
+    let nextTeacherRewardCeremonies = normalizeTeacherRewardCeremonyQueue(baseSnapshot?.pendingTeacherRewardCeremonies);
     const logMessages = [];
     const notifications = [];
+    const ceremonyRewards = [];
+    const ceremonyReasons = new Set();
 
     for (let index = 0; index < rewards.length; index += 1) {
       const reward = rewards[index];
@@ -13378,7 +15753,16 @@ export default function OriginalGame({ user, onLogout }) {
 
         nextInventory = mergeInventoryEntries(nextInventory, normalizedItemType, reward.item_key, quantity);
         logMessages.push(`领取老师奖励: ${item.name} x${quantity}`);
-        notifications.push({ message: `获得${item.name} x${quantity}。`, type: 'item' });
+        const ceremonyReward = buildTeacherItemRewardCeremonyItem({
+          rewardId,
+          itemType: normalizedItemType,
+          itemKey: reward.item_key,
+          quantity
+        });
+        if (ceremonyReward) ceremonyRewards.push(ceremonyReward);
+        if (typeof reward.reason === 'string' && reward.reason.trim()) {
+          ceremonyReasons.add(reward.reason.trim());
+        }
         if (rewardId) appliedRewardIds.add(rewardId);
         continue;
       }
@@ -13415,6 +15799,11 @@ export default function OriginalGame({ user, onLogout }) {
               createdAt: new Date().toISOString()
             };
             logMessages.push(`领取老师奖励: ${newMonster.name} Lv.${newMonster.level}，请在弹窗中选择安置方式。`);
+            const ceremonyReward = buildTeacherPokemonRewardCeremonyItem({ rewardId, monster: newMonster });
+            if (ceremonyReward) ceremonyRewards.push(ceremonyReward);
+            if (typeof reward.reason === 'string' && reward.reason.trim()) {
+              ceremonyReasons.add(reward.reason.trim());
+            }
             if (rewardId) appliedRewardIds.add(rewardId);
             continue;
           }
@@ -13436,7 +15825,11 @@ export default function OriginalGame({ user, onLogout }) {
           nextStorageBox = storageResult.storageBox;
           nextActivePlayerId = storageResult.activePlayerId;
           logMessages.push(`领取老师奖励: ${newMonster.name} Lv.${newMonster.level}，已送入仓库`);
-          notifications.push({ message: `${newMonster.name} 已入仓。`, type: 'item' });
+          const ceremonyReward = buildTeacherPokemonRewardCeremonyItem({ rewardId, monster: newMonster });
+          if (ceremonyReward) ceremonyRewards.push(ceremonyReward);
+          if (typeof reward.reason === 'string' && reward.reason.trim()) {
+            ceremonyReasons.add(reward.reason.trim());
+          }
           if (rewardId) appliedRewardIds.add(rewardId);
           continue;
         }
@@ -13444,8 +15837,16 @@ export default function OriginalGame({ user, onLogout }) {
         nextTeam = result.playerTeam;
         nextStorageBox = result.storageBox;
         nextActivePlayerId = result.activePlayerId;
-        logMessages.push(`领取老师奖励: ${newMonster.name} Lv.${newMonster.level}`);
-        notifications.push({ message: `获得${newMonster.name} Lv.${newMonster.level}。`, type: 'item' });
+        logMessages.push(
+          result.outcome === 'storage'
+            ? `领取老师奖励: ${newMonster.name} Lv.${newMonster.level}，同物种已在队伍中，已送入仓库`
+            : `领取老师奖励: ${newMonster.name} Lv.${newMonster.level}`
+        );
+        const ceremonyReward = buildTeacherPokemonRewardCeremonyItem({ rewardId, monster: newMonster });
+        if (ceremonyReward) ceremonyRewards.push(ceremonyReward);
+        if (typeof reward.reason === 'string' && reward.reason.trim()) {
+          ceremonyReasons.add(reward.reason.trim());
+        }
         if (rewardId) appliedRewardIds.add(rewardId);
         continue;
       }
@@ -13465,6 +15866,15 @@ export default function OriginalGame({ user, onLogout }) {
         createdAt: pendingClaimCreatedAt
       }
       : normalizePendingTeacherRewardClaim(baseSnapshot?.pendingTeacherRewardClaim);
+    const ceremony = buildTeacherRewardCeremony({
+      id: claimToken ? `teacher-claim-${claimToken}` : `teacher-recovery-${pendingClaimCreatedAt}`,
+      rewards: ceremonyRewards,
+      reason: Array.from(ceremonyReasons).slice(0, 2).join(' / '),
+      createdAt: pendingClaimCreatedAt
+    });
+    if (ceremony) {
+      nextTeacherRewardCeremonies = appendTeacherRewardCeremonies(nextTeacherRewardCeremonies, [ceremony]);
+    }
 
     return {
       success: true,
@@ -13486,6 +15896,7 @@ export default function OriginalGame({ user, onLogout }) {
         pendingMonsterAcquisition: nextPendingAcquisition,
         pendingTeacherRewardClaim: pendingClaim,
         appliedTeacherRewardIds: Array.from(appliedRewardIds),
+        pendingTeacherRewardCeremonies: nextTeacherRewardCeremonies,
         legacyTeacherRewardRecovery: null
       }
     };
@@ -13560,7 +15971,8 @@ export default function OriginalGame({ user, onLogout }) {
       !hasLoadedCloudSave ||
       cloudLoading ||
       cloudError ||
-      requiresCloudReload
+      requiresCloudReload ||
+      playtimeExpiredRef.current
     ) return;
     if (rewardClaimBeginInFlightRef.current) return;
 
@@ -13653,6 +16065,11 @@ export default function OriginalGame({ user, onLogout }) {
     user?.id
   ]);
 
+  const beginTeacherRewardClaimRef = useRef(beginTeacherRewardClaim);
+  useEffect(() => {
+    beginTeacherRewardClaimRef.current = beginTeacherRewardClaim;
+  }, [beginTeacherRewardClaim]);
+
   const confirmTeacherRewardClaim = useCallback(async (claimToken) => {
     if (!user?.id || !claimToken) return false;
 
@@ -13694,7 +16111,6 @@ export default function OriginalGame({ user, onLogout }) {
     });
 
     if (commitResult.success) {
-      gameAudio.playCaptureThrow();
       return true;
     }
 
@@ -13772,6 +16188,34 @@ export default function OriginalGame({ user, onLogout }) {
       });
   }, [pendingTeacherRewardClaim, cloudBlocked, hasLoadedCloudSave, cloudLoading, cloudError, showLaunchScreen, currentGameData, confirmTeacherRewardClaim]);
 
+  const queueTeacherRewardCeremonies = useCallback((ceremonies) => {
+    const additions = normalizeTeacherRewardCeremonyQueue(Array.isArray(ceremonies) ? ceremonies : [ceremonies]);
+    if (additions.length === 0) return false;
+    setPendingTeacherRewardCeremonies((current) => appendTeacherRewardCeremonies(current, additions));
+    criticalCloudSaveRequestedRef.current = true;
+    return true;
+  }, []);
+
+  const handleTeacherRewardCeremonyComplete = useCallback(async (ceremonyId) => {
+    const normalizedId = typeof ceremonyId === 'string' ? ceremonyId : '';
+    if (!normalizedId) return;
+    setPendingTeacherRewardCeremonies((current) => removeTeacherRewardCeremonyById(current, normalizedId));
+    gameAudio.playUiConfirm();
+
+    const commitResult = await commitCloudSnapshot({
+      buildSnapshot: (baseSnapshot) => ({
+        ...baseSnapshot,
+        pendingTeacherRewardCeremonies: removeTeacherRewardCeremonyById(
+          baseSnapshot.pendingTeacherRewardCeremonies,
+          normalizedId
+        )
+      })
+    });
+    if (!commitResult.success && commitResult.message) {
+      addNotification('奖励已收下，记录稍后同步。', commitResult.requiresReload ? 'warning' : 'info');
+    }
+  }, [addNotification, commitCloudSnapshot]);
+
   const refreshGoldBalance = useCallback(async () => {
     if (!user?.id) return playerGold;
 
@@ -13808,11 +16252,453 @@ export default function OriginalGame({ user, onLogout }) {
     const latestGold = typeof row.gold === 'number' ? row.gold : playerGold;
     const latestEnergy = row.energy ?? DEFAULT_STARTING_ENERGY;
     const latestMaxEnergy = row.max_energy ?? DEFAULT_MAX_ENERGY;
+    const previousResources = latestPlayerResourcesRef.current || {};
+    const previousGold = Number.isFinite(Number(previousResources.gold)) ? Number(previousResources.gold) : latestGold;
+    const previousMaxEnergy = Number.isFinite(Number(previousResources.maxEnergy)) ? Number(previousResources.maxEnergy) : latestMaxEnergy;
+    const goldDelta = latestGold - previousGold;
+    const maxEnergyDelta = latestMaxEnergy - previousMaxEnergy;
     setPlayerGold(latestGold);
     setPlayerEnergy(latestEnergy);
     setMaxEnergy(latestMaxEnergy);
+    latestPlayerResourcesRef.current = {
+      gold: latestGold,
+      energy: latestEnergy,
+      maxEnergy: latestMaxEnergy
+    };
+    if (
+      hasLoadedCloudSave &&
+      !cloudLoading &&
+      !cloudError &&
+      !requiresCloudReload &&
+      loadedCloudUserIdRef.current === user.id &&
+      (goldDelta > 0 || maxEnergyDelta > 0)
+    ) {
+      queueTeacherRewardCeremonies(buildTeacherResourceRewardCeremony({
+        goldDelta,
+        maxEnergyDelta
+      }));
+    }
     return { gold: latestGold, energy: latestEnergy, maxEnergy: latestMaxEnergy };
-  }, [addLog, maxEnergy, playerEnergy, playerGold, user?.id]);
+  }, [
+    addLog,
+    cloudError,
+    cloudLoading,
+    hasLoadedCloudSave,
+    maxEnergy,
+    playerEnergy,
+    playerGold,
+    queueTeacherRewardCeremonies,
+    requiresCloudReload,
+    user?.id
+  ]);
+
+  const refreshPlayerResourcesRef = useRef(refreshPlayerResources);
+  useEffect(() => {
+    refreshPlayerResourcesRef.current = refreshPlayerResources;
+  }, [refreshPlayerResources]);
+
+  const applyStudentPlaytimeStatus = useCallback((row) => {
+    const nextStatus = normalizeServerPlaytimeStatusRow(row);
+    playtimeStatusRef.current = nextStatus;
+    playtimeLocalTickAtRef.current = Date.now();
+    playtimeExpiredRef.current = nextStatus.remainingSeconds <= 0;
+    setPlaytimeStatus(nextStatus);
+    setPlaytimeError(null);
+    return nextStatus;
+  }, []);
+
+  const failStudentPlaytimeCheck = useCallback(
+    (error, options = {}) => markPlaytimeSessionUnavailable(error, options),
+    [markPlaytimeSessionUnavailable]
+  );
+
+  const enqueueStudentPlaytimeLifecycleOperation = useCallback((operation) => {
+    const nextOperation = playtimeLifecycleQueueRef.current
+      .catch(() => null)
+      .then(operation);
+    playtimeLifecycleQueueRef.current = nextOperation.catch(() => null);
+    return nextOperation;
+  }, []);
+
+  const loadStudentPlaytimeStatus = useCallback(async ({ silent = false } = {}) => {
+    if (!user?.id) return null;
+    if (playtimeStatusInFlightRef.current) return playtimeStatusRef.current;
+
+    const requestEpoch = playtimeLifecycleEpochRef.current;
+    playtimeStatusInFlightRef.current = true;
+    if (!silent) setPlaytimeLoading(true);
+    try {
+      const data = await runStudentPlaytimeRpc('get_student_playtime_status', {
+        p_student_id: user.id
+      });
+      if (requestEpoch !== playtimeLifecycleEpochRef.current || playtimePageVisibleRef.current) {
+        return playtimeStatusRef.current;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      return applyStudentPlaytimeStatus(row);
+    } catch (error) {
+      if (requestEpoch !== playtimeLifecycleEpochRef.current || playtimePageVisibleRef.current) {
+        return playtimeStatusRef.current;
+      }
+      return failStudentPlaytimeCheck(error, { notify: !silent });
+    } finally {
+      playtimeStatusInFlightRef.current = false;
+      if (!silent && requestEpoch === playtimeLifecycleEpochRef.current) setPlaytimeLoading(false);
+    }
+  }, [applyStudentPlaytimeStatus, failStudentPlaytimeCheck, user?.id]);
+
+  const beginStudentPlaytimeSession = useCallback(({ silent = false, retry = false } = {}) => {
+    if (!user?.id || !playtimePageVisibleRef.current) return Promise.resolve(null);
+
+    const studentId = user.id;
+    const requestEpoch = playtimeLifecycleEpochRef.current + 1;
+    const sessionId = `playtime:${createCloudSaveSessionId()}`;
+    playtimeLifecycleEpochRef.current = requestEpoch;
+    playtimeSessionIdRef.current = sessionId;
+    playtimeLastSessionIdRef.current = sessionId;
+    playtimeSessionStartedRef.current = false;
+    playtimeExpiredRef.current = true;
+    if (retry) setPlaytimeError(null);
+    setPlaytimeLoading(true);
+
+    return enqueueStudentPlaytimeLifecycleOperation(async () => {
+      if (
+        requestEpoch !== playtimeLifecycleEpochRef.current ||
+        sessionId !== playtimeSessionIdRef.current ||
+        !playtimePageVisibleRef.current
+      ) {
+        return null;
+      }
+
+      try {
+        const data = await runStudentPlaytimeRpc('begin_student_playtime_session', {
+          p_student_id: studentId,
+          p_session_id: sessionId
+        });
+        if (
+          requestEpoch !== playtimeLifecycleEpochRef.current ||
+          sessionId !== playtimeSessionIdRef.current ||
+          !playtimePageVisibleRef.current
+        ) {
+          void sendSupabaseRpcKeepalive('end_student_playtime_session', {
+            p_student_id: studentId,
+            p_session_id: sessionId
+          }).catch(() => {});
+          return null;
+        }
+        const row = Array.isArray(data) ? data[0] : data;
+        const nextStatus = applyStudentPlaytimeStatus(row);
+        playtimeSessionStartedRef.current = nextStatus.remainingSeconds > 0;
+        return nextStatus;
+      } catch (error) {
+        if (
+          requestEpoch !== playtimeLifecycleEpochRef.current ||
+          sessionId !== playtimeSessionIdRef.current ||
+          !playtimePageVisibleRef.current
+        ) {
+          return null;
+        }
+        return failStudentPlaytimeCheck(error, { notify: !silent });
+      } finally {
+        if (requestEpoch === playtimeLifecycleEpochRef.current) setPlaytimeLoading(false);
+      }
+    });
+  }, [applyStudentPlaytimeStatus, enqueueStudentPlaytimeLifecycleOperation, failStudentPlaytimeCheck, user?.id]);
+
+  const heartbeatStudentPlaytime = useCallback(async () => {
+    const sessionId = playtimeSessionIdRef.current;
+    const requestEpoch = playtimeLifecycleEpochRef.current;
+    if (
+      !user?.id ||
+      !sessionId ||
+      !playtimePageVisibleRef.current ||
+      !playtimeSessionStartedRef.current ||
+      playtimeHeartbeatInFlightRef.current?.sessionId === sessionId
+    ) {
+      return playtimeStatusRef.current;
+    }
+
+    playtimeHeartbeatInFlightRef.current = { requestEpoch, sessionId };
+    try {
+      const data = await runStudentPlaytimeRpc('heartbeat_student_playtime', {
+        p_student_id: user.id,
+        p_session_id: sessionId
+      });
+      if (
+        requestEpoch !== playtimeLifecycleEpochRef.current ||
+        sessionId !== playtimeSessionIdRef.current ||
+        !playtimePageVisibleRef.current
+      ) {
+        return playtimeStatusRef.current;
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      const nextStatus = applyStudentPlaytimeStatus(row);
+      playtimeSessionStartedRef.current = nextStatus.remainingSeconds > 0;
+      return nextStatus;
+    } catch (error) {
+      if (
+        requestEpoch !== playtimeLifecycleEpochRef.current ||
+        sessionId !== playtimeSessionIdRef.current ||
+        !playtimePageVisibleRef.current
+      ) {
+        return playtimeStatusRef.current;
+      }
+      return failStudentPlaytimeCheck(error);
+    } finally {
+      if (
+        playtimeHeartbeatInFlightRef.current?.requestEpoch === requestEpoch &&
+        playtimeHeartbeatInFlightRef.current?.sessionId === sessionId
+      ) {
+        playtimeHeartbeatInFlightRef.current = null;
+      }
+    }
+  }, [applyStudentPlaytimeStatus, failStudentPlaytimeCheck, user?.id]);
+
+  const endStudentPlaytimeSession = useCallback(({ keepalive = true } = {}) => {
+    const sessionId = playtimeSessionIdRef.current;
+    const studentId = user?.id;
+    playtimeLifecycleEpochRef.current += 1;
+    playtimeSessionIdRef.current = null;
+    playtimeSessionStartedRef.current = false;
+    playtimeExpiredRef.current = true;
+    setPlaytimeLoading(true);
+
+    if (!studentId || !sessionId) return Promise.resolve(playtimeStatusRef.current);
+    if (keepalive) {
+      void sendSupabaseRpcKeepalive('end_student_playtime_session', {
+        p_student_id: studentId,
+        p_session_id: sessionId
+      }).catch(() => {});
+    }
+
+    return enqueueStudentPlaytimeLifecycleOperation(async () => {
+      try {
+        await runStudentPlaytimeRpc('end_student_playtime_session', {
+          p_student_id: studentId,
+          p_session_id: sessionId
+        });
+      } catch (error) {
+        console.error('Error ending student playtime session:', error);
+      }
+      return playtimeStatusRef.current;
+    });
+  }, [enqueueStudentPlaytimeLifecycleOperation, user?.id]);
+
+  const playtimeRemainingSeconds = Math.max(0, Math.trunc(Number(playtimeStatus?.remainingSeconds)) || 0);
+  const playtimeLimitMinutes = Number.isFinite(Number(playtimeStatus?.limitMinutes))
+    ? Math.max(0, Math.trunc(Number(playtimeStatus.limitMinutes)))
+    : DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES;
+  const playtimeReady = Boolean(playtimeStatus) && !playtimeLoading && !playtimeError;
+  const playtimeEnvironmentReady = (
+    hasLoadedCloudSave &&
+    entryAssetsReady &&
+    !cloudLoading &&
+    !cloudError &&
+    !cloudBlocked &&
+    !requiresCloudReload &&
+    Boolean(user?.id)
+  );
+  const fullPlayableScreenReady = (
+    playtimeEnvironmentReady &&
+    playtimeReady &&
+    playtimeSessionStartedRef.current &&
+    playtimePageVisibleRef.current
+  );
+  const playtimeExpired = Boolean(playtimeReady && playtimeRemainingSeconds <= 0);
+  const canAccruePlaytime = Boolean(fullPlayableScreenReady && playtimeRemainingSeconds > 0);
+
+  useEffect(() => {
+    playtimeExpiredRef.current = playtimeExpired || !playtimeReady;
+  }, [playtimeExpired, playtimeReady]);
+
+  useEffect(() => {
+    const pageVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+    playtimePageVisibleRef.current = pageVisible;
+    if (!playtimeEnvironmentReady || !pageVisible) {
+      if (playtimeSessionIdRef.current) void endStudentPlaytimeSession();
+      return;
+    }
+    if (playtimeError) {
+      if (playtimeSessionIdRef.current) void endStudentPlaytimeSession();
+      return;
+    }
+    if (playtimeSessionStartedRef.current || playtimeStatusRef.current?.remainingSeconds <= 0) return;
+    void beginStudentPlaytimeSession({ silent: false });
+  }, [beginStudentPlaytimeSession, endStudentPlaytimeSession, playtimeEnvironmentReady, playtimeError]);
+
+  useEffect(() => {
+    if (!canAccruePlaytime) return undefined;
+
+    const tick = () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - playtimeLocalTickAtRef.current) / 1000);
+      if (elapsedSeconds <= 0) return;
+      playtimeLocalTickAtRef.current += elapsedSeconds * 1000;
+      const currentStatus = normalizePlaytimeStatusRow(playtimeStatusRef.current || {});
+      if (currentStatus.remainingSeconds <= 0) return;
+      const appliedSeconds = Math.min(elapsedSeconds, currentStatus.remainingSeconds);
+      const nextStatus = {
+        ...currentStatus,
+        playedSeconds: currentStatus.playedSeconds + appliedSeconds,
+        remainingSeconds: Math.max(0, currentStatus.remainingSeconds - appliedSeconds)
+      };
+      playtimeStatusRef.current = nextStatus;
+      setPlaytimeStatus(nextStatus);
+      if (nextStatus.remainingSeconds <= 0) {
+        void heartbeatStudentPlaytime();
+      }
+    };
+
+    playtimeLocalTickAtRef.current = Date.now();
+    const timer = window.setInterval(tick, 500);
+    return () => window.clearInterval(timer);
+  }, [canAccruePlaytime, heartbeatStudentPlaytime]);
+
+  useEffect(() => {
+    if (!canAccruePlaytime) return undefined;
+    const timer = window.setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        void heartbeatStudentPlaytime();
+      }
+    }, PLAYTIME_SYNC_INTERVAL_SECONDS * 1000);
+    return () => window.clearInterval(timer);
+  }, [canAccruePlaytime, heartbeatStudentPlaytime]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+
+    const pauseVisibleSession = () => {
+      if (!playtimePageVisibleRef.current && !playtimeSessionIdRef.current) return;
+      playtimePageVisibleRef.current = false;
+      void endStudentPlaytimeSession();
+    };
+
+    const resumeVisibleSession = () => {
+      if (document.visibilityState !== 'visible') return;
+      playtimePageVisibleRef.current = true;
+      playtimeLocalTickAtRef.current = Date.now();
+      if (playtimeEnvironmentReady) {
+        void beginStudentPlaytimeSession({ silent: false, retry: true });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        pauseVisibleSession();
+      } else {
+        resumeVisibleSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', pauseVisibleSession);
+    window.addEventListener('pageshow', resumeVisibleSession);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', pauseVisibleSession);
+      window.removeEventListener('pageshow', resumeVisibleSession);
+      const sessionId = playtimeSessionIdRef.current;
+      playtimeLifecycleEpochRef.current += 1;
+      playtimeSessionIdRef.current = null;
+      playtimeSessionStartedRef.current = false;
+      if (user?.id && sessionId) {
+        void sendSupabaseRpcKeepalive('end_student_playtime_session', {
+          p_student_id: user.id,
+          p_session_id: sessionId
+        }).catch(() => {});
+      }
+    };
+  }, [beginStudentPlaytimeSession, endStudentPlaytimeSession, playtimeEnvironmentReady, user?.id]);
+
+  useEffect(() => {
+    if (!playtimeExpired) {
+      playtimeExpiredNoticeShownRef.current = false;
+      return;
+    }
+    if (playtimeExpiredNoticeShownRef.current) return;
+    playtimeExpiredNoticeShownRef.current = true;
+    void heartbeatStudentPlaytime();
+    addLog(PLAYTIME_EXPIRED_LOG);
+    addNotification(PLAYTIME_EXPIRED_NOTIFICATION, 'warning');
+  }, [addLog, addNotification, heartbeatStudentPlaytime, playtimeExpired]);
+
+  useEffect(() => {
+    if (!user?.id || typeof window === 'undefined') return undefined;
+    let midnightTimer = null;
+
+    const scheduleNextChinaDayRefresh = () => {
+      midnightTimer = window.setTimeout(() => {
+        playtimeStatusRef.current = null;
+        playtimeSessionStartedRef.current = false;
+        playtimeExpiredRef.current = true;
+        setPlaytimeStatus(null);
+        if (
+          typeof document === 'undefined' || document.visibilityState === 'visible'
+        ) {
+          void beginStudentPlaytimeSession({ silent: false, retry: true });
+        } else {
+          void loadStudentPlaytimeStatus({ silent: true });
+        }
+        scheduleNextChinaDayRefresh();
+      }, getMillisecondsUntilNextChinaDay());
+    };
+
+    scheduleNextChinaDayRefresh();
+    return () => {
+      if (midnightTimer) window.clearTimeout(midnightTimer);
+    };
+  }, [beginStudentPlaytimeSession, loadStudentPlaytimeStatus, user?.id]);
+
+  useEffect(() => {
+    if (!hasLoadedCloudSave || cloudLoading || cloudError || showLaunchScreen || !user?.id) return undefined;
+
+    const channel = supabase.channel(getStudentTeacherUpdateChannelName(user.id));
+    let resourceRefreshTimer = null;
+    let rewardClaimTimer = null;
+    let playtimeRefreshTimer = null;
+
+    const scheduleResourceRefresh = () => {
+      if (resourceRefreshTimer) window.clearTimeout(resourceRefreshTimer);
+      resourceRefreshTimer = window.setTimeout(() => {
+        resourceRefreshTimer = null;
+        refreshPlayerResourcesRef.current?.();
+      }, 250);
+    };
+
+    const scheduleRewardClaim = () => {
+      if (rewardClaimTimer) window.clearTimeout(rewardClaimTimer);
+      rewardClaimTimer = window.setTimeout(() => {
+        rewardClaimTimer = null;
+        beginTeacherRewardClaimRef.current?.();
+      }, 250);
+    };
+
+    const schedulePlaytimeRefresh = () => {
+      if (playtimeRefreshTimer) window.clearTimeout(playtimeRefreshTimer);
+      playtimeRefreshTimer = window.setTimeout(() => {
+        playtimeRefreshTimer = null;
+        if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+          void beginStudentPlaytimeSession({ silent: true, retry: true });
+        } else {
+          void loadStudentPlaytimeStatus({ silent: true });
+        }
+      }, 250);
+    };
+
+    channel
+      .on('broadcast', { event: TEACHER_UPDATE_EVENTS.resourcesChanged }, scheduleResourceRefresh)
+      .on('broadcast', { event: TEACHER_UPDATE_EVENTS.rewardsChanged }, scheduleRewardClaim)
+      .on('broadcast', { event: TEACHER_UPDATE_EVENTS.playtimeChanged }, schedulePlaytimeRefresh)
+      .subscribe();
+
+    return () => {
+      if (resourceRefreshTimer) window.clearTimeout(resourceRefreshTimer);
+      if (rewardClaimTimer) window.clearTimeout(rewardClaimTimer);
+      if (playtimeRefreshTimer) window.clearTimeout(playtimeRefreshTimer);
+      void supabase.removeChannel(channel);
+    };
+  }, [beginStudentPlaytimeSession, cloudError, cloudLoading, hasLoadedCloudSave, loadStudentPlaytimeStatus, showLaunchScreen, user?.id]);
 
   useEffect(() => {
     if (!hasLoadedCloudSave || cloudLoading || cloudError || showLaunchScreen || !user?.id) return undefined;
@@ -13820,7 +16706,7 @@ export default function OriginalGame({ user, onLogout }) {
 
     const interval = window.setInterval(() => {
       refreshPlayerResources();
-    }, 45000);
+    }, STUDENT_RESOURCE_REFRESH_INTERVAL_MS);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -13896,6 +16782,7 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
 	    let committedRewardGrowthPreview = rewardGrowthPreview;
+      let committedRewardSummary = rewardSummary;
 	    const atomicResult = await commitCloudSnapshotWithResources({
 	      buildSnapshot: (baseSnapshot) => {
         const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
@@ -13942,17 +16829,107 @@ export default function OriginalGame({ user, onLogout }) {
           totalExp: rewards.exp,
           getBaseMonsterDefinition
         });
-        committedRewardGrowthPreview = rewardGrowth;
+        let committedRewardGrowth = rewardGrowth;
+        let ecologySurveyReward = null;
+        let ecologySurveyProgress = null;
+        const ecologyMapName =
+          hydratedBattleSnapshot.battleEnvironment?.mapName ||
+          battleEnvironment?.mapName ||
+          rewardSnapshot.world?.currentMapName ||
+          currentMapName;
+        if (defeatedBattleKind === 'wild' && isEcologySurveyMap(ecologyMapName)) {
+          const ecologyMapDisplayName = getMapConfig(ecologyMapName)?.displayName || '当前区域';
+          rewardPhaseWorld = incrementMapWildDefeatCount(rewardPhaseWorld, ecologyMapName);
+          const afterWildDefeats = getMapWildDefeatCount(rewardPhaseWorld, ecologyMapName);
+          const ecologySurveyFlagKey = getEcologySurveyFlagKey(ecologyMapName);
+          const hadCompletedEcologySurvey = getWorldFlagValue(rewardPhaseWorld, ecologySurveyFlagKey);
+          const shouldGrantEcologySurveyReward =
+            afterWildDefeats >= ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS &&
+            !hadCompletedEcologySurvey;
+
+          if (shouldGrantEcologySurveyReward) {
+            const ecologySurveyPlan = buildEcologySurveyRewardPlan({
+              mapName: ecologyMapName,
+              playerTeam: committedRewardGrowth.playerTeam,
+              getBaseMonsterDefinition,
+              fallbackTargetLevel: getMapConfig(ecologyMapName)?.recommendedLevel || getPlayerAverageLevel(committedRewardGrowth.playerTeam)
+            });
+            if (ecologySurveyPlan.totalExp > 0) {
+              const ecologyGrowth = applyBattleRewardGrowthByPokemon({
+                playerTeam: committedRewardGrowth.playerTeam,
+                pendingGrowthEvents: committedRewardGrowth.pendingGrowthEvents,
+                expByPokemon: ecologySurveyPlan.expByPokemon,
+                getBaseMonsterDefinition
+              });
+              committedRewardGrowth = {
+                ...ecologyGrowth,
+                splitExp: committedRewardGrowth.splitExp,
+                levelUps: [
+                  ...committedRewardGrowth.levelUps,
+                  ...ecologyGrowth.levelUps
+                ]
+              };
+            }
+            rewardPhaseWorld = setWorldFlagValue(rewardPhaseWorld, ecologySurveyFlagKey, true);
+            ecologySurveyReward = {
+              mapName: ecologyMapName,
+              mapDisplayName: ecologyMapDisplayName,
+              requiredWildDefeats: ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS,
+              defeatedWildCount: afterWildDefeats,
+              targetLevel: ecologySurveyPlan.targetLevel,
+              participantCount: ecologySurveyPlan.participantIds.length,
+              exp: ecologySurveyPlan.totalExp,
+              expPerPokemon: ecologySurveyPlan.participantIds.length > 0
+                ? Math.round(ecologySurveyPlan.totalExp / ecologySurveyPlan.participantIds.length)
+                : 0
+            };
+          }
+          if (!hadCompletedEcologySurvey) {
+            ecologySurveyProgress = {
+              mapName: ecologyMapName,
+              mapDisplayName: ecologyMapDisplayName,
+              requiredWildDefeats: ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS,
+              defeatedWildCount: afterWildDefeats,
+              completed: afterWildDefeats >= ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS,
+              rewardGranted: Boolean(ecologySurveyReward),
+              targetLevel: ecologySurveyReward?.targetLevel || 0,
+              participantCount: ecologySurveyReward?.participantCount || 0,
+              exp: ecologySurveyReward?.exp || 0,
+              expPerPokemon: ecologySurveyReward?.expPerPokemon || 0
+            };
+          }
+          rewardPhaseWorld = withUpdatedMapProgress(rewardPhaseWorld, ecologyMapName);
+        }
+        committedRewardGrowthPreview = committedRewardGrowth;
+        committedRewardSummary = {
+          ...rewardSummary,
+          exp: rewards.exp + (ecologySurveyReward?.exp || 0),
+          participantCount: Math.max(rewardSummary.participantCount, ecologySurveyReward?.participantCount || 0),
+          expPerPokemon: Math.max(rewardSummary.expPerPokemon, ecologySurveyReward?.expPerPokemon || 0),
+          levelUps: committedRewardGrowth.levelUps,
+          ecologySurvey: ecologySurveyProgress
+        };
         const snapshotRewardLogs = [
-          ...rewardGrowth.levelUps.map(({ name }) => getBattleLevelUpMessage(name)),
+          ...committedRewardGrowth.levelUps.map(({ name }) => getBattleLevelUpMessage(name)),
           ...(rewards.exp > 0 && targetParticipantIds.length > 0 ? ['参与战斗的宝可梦获得了经验。'] : []),
+          ...(ecologySurveyProgress
+            ? [
+              ecologySurveyProgress.completed
+                ? (
+                  ecologySurveyProgress.exp > 0
+                    ? `完成${ecologySurveyProgress.mapDisplayName}生态调查，队伍前 3 只宝可梦获得成长训练奖励。`
+                    : `完成${ecologySurveyProgress.mapDisplayName}生态调查。`
+                )
+                : `${ecologySurveyProgress.mapDisplayName}生态调查进度：${Math.min(ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS, ecologySurveyProgress.defeatedWildCount)}/${ECOLOGY_SURVEY_REQUIRED_WILD_DEFEATS}。`
+            ]
+            : []),
           ...(rewards.gold > 0 ? ['获得了战斗奖励。'] : [])
         ];
 	        return {
 	          ...rewardSnapshot,
 	          world: rewardPhaseWorld,
-	          playerTeam: rewardGrowth.playerTeam,
-	          pendingGrowthEvents: rewardGrowth.pendingGrowthEvents,
+	          playerTeam: committedRewardGrowth.playerTeam,
+	          pendingGrowthEvents: committedRewardGrowth.pendingGrowthEvents,
 	          logs: appendSnapshotLogs(rewardSnapshot, snapshotRewardLogs)
 	        };
       },
@@ -13967,10 +16944,7 @@ export default function OriginalGame({ user, onLogout }) {
         committedRewardGrowthPreview.levelUps,
         committedRewardGrowthPreview.playerTeam
       );
-      return {
-        ...rewardSummary,
-        levelUps: committedRewardGrowthPreview.levelUps
-      };
+      return committedRewardSummary;
     }
 
     addLog(atomicResult.message || '战斗奖励结算失败。');
@@ -14362,13 +17336,13 @@ export default function OriginalGame({ user, onLogout }) {
     if (hasBattleRecoveryPath({
       playerTeam,
       playerInventory,
-      canRun: battleEscapeRule.canRun,
     })) {
       battleNoMpResolutionKeyRef.current = null;
       return undefined;
     }
 
     const resolutionKey = [
+      NO_MP_DEADLOCK_RESOLUTION_VERSION,
       activePlayerMon.id,
       activeEnemyMon.id,
       turn,
@@ -14378,27 +17352,20 @@ export default function OriginalGame({ user, onLogout }) {
     if (battleNoMpResolutionKeyRef.current === resolutionKey) return undefined;
     battleNoMpResolutionKeyRef.current = resolutionKey;
 
-    let cancelled = false;
     (async () => {
-      await addBattleLogAndWait(
-        addLog,
-        `${activePlayerMon.name} 已经没有可继续行动的技能，队伍也没有可恢复战斗的手段。`
-      );
-      if (cancelled) return;
+      const deadlockLog = `${activePlayerMon.name} 已经没有可继续行动的技能，队伍也没有可恢复战斗的手段。`;
       addNotification(getNoMpBattleDeadlockHint(), 'warning');
       gameAudio.playError();
-      await handleRecoverFromDefeat();
+      await handleRecoverFromDefeat({
+        extraLogs: [deadlockLog, '挑战失败。']
+      });
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return undefined;
   }, [
     activeEnemyMon,
     activePlayerMon,
-    addLog,
     addNotification,
-    battleEscapeRule.canRun,
     battleKind,
     battlePhase,
     gameOver,
@@ -14445,6 +17412,11 @@ export default function OriginalGame({ user, onLogout }) {
       if (error) throw error;
 
       const resetResult = typeof data === 'string' ? JSON.parse(data) : (data || {});
+      if (resetResult?.success === false) {
+        const message = resetResult?.error || '后端拒绝了本次重置。';
+        if (isPlaytimeLimitError(message)) markPlaytimeExpiredFromServer();
+        throw new Error(message);
+      }
       const resetGold = Number.isFinite(Number(resetResult?.goldAfter ?? resetResult?.gold_after))
         ? Number(resetResult?.goldAfter ?? resetResult?.gold_after)
         : DEFAULT_STARTING_GOLD;
@@ -14488,7 +17460,7 @@ export default function OriginalGame({ user, onLogout }) {
     } finally {
       setIsResettingProgress(false);
     }
-  }, [applyCloudGameData, clearNotifications, isResettingProgress, resetLocalBattleEventCompletionState, user]);
+  }, [applyCloudGameData, clearNotifications, isResettingProgress, markPlaytimeExpiredFromServer, resetLocalBattleEventCompletionState, user]);
 
 
 	  async function finishEnemyDefeat(defeatedMon) {
@@ -14637,7 +17609,12 @@ export default function OriginalGame({ user, onLogout }) {
             battleEventCompletion?.eventId === completedEventId;
           const shouldGrantFirstClearCompletion = !wasAlreadyCompleted || wasPreCompletedByCurrentBattleRewardSave;
           const isRepeatableChallenge = completedEventType === 'challenge';
-          const challengeRareUnlockStageBefore = isRepeatableChallenge
+          const isChampionTowerBattle = Boolean(
+            LONG_TERM_PROGRESSION_FLAGS.championTowerV1 &&
+            completedMapName === CHAMPION_TOWER_MAP_ID &&
+            completedEventProps.towerChallenge
+          );
+          const challengeRareUnlockStageBefore = isRepeatableChallenge && !isChampionTowerBattle
             ? getChallengeRareUnlockStage(nextWorld, completedEvent, completedMapName)
             : 0;
           const completedChallengeTeamSize = isRepeatableChallenge
@@ -14679,7 +17656,40 @@ export default function OriginalGame({ user, onLogout }) {
             }
           }
 
-          if (isDailyVariantBattle && completedEventId) {
+          if (isChampionTowerBattle && completedEventId) {
+            const towerBefore = normalizeTowerSeason(nextWorld.championTower);
+            const expectedFloor = getTowerNextFloor(nextWorld);
+            const completedFloor = Math.trunc(Number(eventMeta?.championTowerFloor));
+            const hasValidFloorSnapshot = Number.isSafeInteger(completedFloor) && completedFloor >= 1 && completedFloor <= 10;
+            const completedSeasonKey = typeof eventMeta?.championTowerSeasonKey === 'string'
+              ? eventMeta.championTowerSeasonKey
+              : '';
+            const isMatchingSeason = towerBefore.highestStoryFloor < 10 || completedSeasonKey === getCurrentIsoWeekKey();
+            const isMatchingLiveFloor = hasValidFloorSnapshot && completedFloor === expectedFloor && isMatchingSeason;
+            if (isMatchingLiveFloor) {
+              const wasStoryClimb = towerBefore.highestStoryFloor < 10;
+              nextWorld = recordChampionTowerFloorVictory(nextWorld, completedFloor, {
+                seasonKey: completedSeasonKey || getCurrentIsoWeekKey()
+              });
+              completionLogs = [
+                ...completionLogs,
+                completedFloor === 10
+                  ? (wasStoryClimb
+                    ? '冠军挑战塔第 10 层完成：冠军之证已写入永久记录，每周登塔模式已开放。'
+                    : '冠军挑战塔第 10 层完成：本周登顶记录已写入。')
+                  : `冠军挑战塔第 ${completedFloor} 层完成：星轨已点亮，下一层守塔者开始待命。`
+              ];
+            } else {
+              completionLogs = [
+                ...completionLogs,
+                '冠军塔楼层记录已由另一份最新存档推进，本次胜利不会覆盖或倒退现有进度。'
+              ];
+            }
+            eventRewardItems = [];
+            shouldRefreshMapProgress = true;
+          }
+
+          if (!isChampionTowerBattle && isDailyVariantBattle && completedEventId) {
             if (isRepeatableChallenge) {
               const eventMetaUnlockStage = Math.trunc(Number(eventMeta?.challengeRareUnlockStage));
               const hasCompleteChallengeUnlockSnapshot = (
@@ -14709,7 +17719,8 @@ export default function OriginalGame({ user, onLogout }) {
               const challengeRareUnlockBatch = challengeRareUnlockContext.unlockBatch;
               const challengeRunRewardItems = getChallengeRunRewardItems({
                 mapName: completedMapName,
-                teamSize: completedChallengeTeamSize
+                teamSize: completedChallengeTeamSize,
+                repeatClear: wasAlreadyCompleted
               });
               const mergedChallengeRewardItems = mergeNormalizedMapRewardItems([
                 ...eventRewardItems,
@@ -14738,7 +17749,7 @@ export default function OriginalGame({ user, onLogout }) {
                   })
                 ];
               } else if (getChallengeRarePool(completedEvent).length > 0) {
-                completionLogs.push(`${victoryDisplayName}隐藏生态已全部解锁，之后会保持 6 连战并随机轮换守护者。`);
+                completionLogs.push(`${victoryDisplayName}试炼稀有已全部解锁，之后会保持 6 连战并随机轮换守护者。`);
               }
               completionLogs.push(getDailyTrainerVictoryText({
                 eventName: victoryDisplayName,
@@ -14846,6 +17857,8 @@ export default function OriginalGame({ user, onLogout }) {
 		            ? (Array.isArray(committedSnapshot.playerTeam) ? committedSnapshot.playerTeam : []).map((mon) => (
 		              sanitizeBattleRuntime({ ...mon, currentHp: getMonsterMaxHp(mon), currentMp: getMonsterMaxMp(mon) })
 	            ))
+                : battleKind === 'wild'
+                  ? recoverTeamMpAfterWildVictory(committedSnapshot.playerTeam)
 		            : committedSnapshot.playerTeam,
 	            logs: completionLogs.length > 0 ? appendSnapshotLogs(committedSnapshot, completionLogs) : committedSnapshot.logs,
 		          battlePhaseData: {
@@ -14859,12 +17872,19 @@ export default function OriginalGame({ user, onLogout }) {
 		          battlePhase: 'victory'
 		        };
         }
-      });
+	      });
 
-      if (commitResult.success) {
-        gameAudio.playVictory({ trainer: battleKind === 'trainer' });
-        completedBattleEventLockKeys.forEach((key) => completedBattleEventLockRef.current.add(key));
-        markCompletedBattleEventLocally(completedBattleEventLocalOverrideMeta || {});
+	      if (commitResult.success) {
+	        setView('battle');
+	        setBattlePhase('victory');
+	        setBattlePhaseData((prev) => (
+	          prev && prev.rewardSummary ? prev : victoryPhaseData
+	        ));
+	        setTurn('player');
+	        setPendingBattleSwitch(null);
+	        gameAudio.playVictory({ trainer: battleKind === 'trainer' });
+	        completedBattleEventLockKeys.forEach((key) => completedBattleEventLockRef.current.add(key));
+	        markCompletedBattleEventLocally(completedBattleEventLocalOverrideMeta || {});
           if (completedBattleEventWorld) {
             const syncedWorld = mergeMonotonicWorldProgress(worldRef.current, completedBattleEventWorld, {
               currentMapName: completedBattleEventMapName || currentMapName,
@@ -14876,6 +17896,19 @@ export default function OriginalGame({ user, onLogout }) {
           }
           completionNotifications.forEach((message, index) => {
             addNotification(message, index === 0 ? 'success' : 'info');
+          });
+          recordGameLog('battle_victory', {
+            title: `战胜${fallbackVictoryEnemyName}`,
+            summary: `${battleKind === 'trainer' ? '训练家' : '野外'}战斗胜利，获得 ${rewardSummary.gold || 0} 金币、${rewardSummary.exp || 0} 经验。`,
+            mapName: completedBattleEventMapName || currentMapName,
+            details: {
+              battleKind,
+              enemyName: fallbackVictoryEnemyName,
+              gold: rewardSummary.gold || 0,
+              exp: rewardSummary.exp || 0,
+              levelUps: rewardSummary.levelUps || [],
+              eventMapName: completedBattleEventMapName || currentMapName
+            }
           });
 	        return;
 	      }
@@ -14890,22 +17923,49 @@ export default function OriginalGame({ user, onLogout }) {
 		  }
 
 	  // 使用函数声明避免 Hook 依赖数组读取 const 回调时触发暂时性死区。
-	  async function handleRecoverFromDefeat() {
+	  async function handleRecoverFromDefeat({ extraLogs = [] } = {}) {
 	    if (!user?.id || !hasLoadedCloudSave) {
 	      addNotification('云端未就绪，暂不能结算失败。', 'error');
 	      return false;
 	    }
 
 	    const commitResult = await commitCloudSnapshot({
-	      buildSnapshot: (baseSnapshot) => ({
-	        ...baseSnapshot,
-	        battlePhase: 'defeat',
-	        battlePhaseData: null,
-	        turn: 'player'
-	      })
+	      buildSnapshot: (baseSnapshot) => {
+          const normalizedExtraLogs = (Array.isArray(extraLogs) ? extraLogs : [extraLogs])
+            .filter((message) => typeof message === 'string' && message.trim().length > 0);
+          return {
+            ...baseSnapshot,
+            view: 'battle',
+            battlePhase: 'defeat',
+            battlePhaseData: null,
+            turn: 'player',
+            isThrowingPokeball: false,
+            captureSequenceData: null,
+            pendingBattleSwitch: null,
+            logs: normalizedExtraLogs.length > 0
+              ? appendSnapshotLogs(baseSnapshot, normalizedExtraLogs)
+              : baseSnapshot.logs
+          };
+        }
 	    });
 
 	    if (commitResult.success) {
+        setView('battle');
+        setBattlePhase('defeat');
+        setBattlePhaseData(null);
+        setTurn('player');
+        setIsThrowingPokeball(false);
+        setCaptureSequenceData(null);
+        setPendingBattleSwitch(null);
+        recordGameLog('battle_defeat', {
+          title: '战斗失败',
+          summary: extraLogs.find((message) => typeof message === 'string' && message.trim()) || '队伍已无法继续战斗。',
+          details: {
+            battleKind,
+            activeEnemyName: activeEnemyMon?.name || '',
+            activeEnemyLevel: activeEnemyMon?.level || null
+          }
+        });
 	      return true;
 	    }
 
@@ -14936,13 +17996,13 @@ export default function OriginalGame({ user, onLogout }) {
 	        addNotification('云端未就绪，暂不能换人。', 'error');
 	        return true;
 	      }
-	      const commitResult = await commitCloudSnapshot({
-	        buildSnapshot: (baseSnapshot) => {
-            const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
-            const committedSnapshot = hydratedBattleSnapshot.snapshot;
-	          const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
-	          const baseActiveId = committedSnapshot.activePlayerId || faintedMon.id;
-	          const baseActiveMon = baseTeam.find((mon) => mon.id === baseActiveId) || baseTeam.find((mon) => mon.id === faintedMon.id);
+		      const commitResult = await commitCloudSnapshot({
+		        buildSnapshot: (baseSnapshot) => {
+	            const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+	            const committedSnapshot = applySpecialBattlePlayerFaintBenefitToSnapshot(hydratedBattleSnapshot.snapshot);
+		          const baseTeam = Array.isArray(committedSnapshot.playerTeam) ? committedSnapshot.playerTeam : [];
+		          const baseActiveId = committedSnapshot.activePlayerId || faintedMon.id;
+		          const baseActiveMon = baseTeam.find((mon) => mon.id === baseActiveId) || baseTeam.find((mon) => mon.id === faintedMon.id);
 	          const hasAvailableBench = getAliveBattleBench(baseTeam, baseActiveMon?.id || baseActiveId).length > 0;
 	          if (hasBattleHp(baseActiveMon) || !hasAvailableBench) {
 	            return committedSnapshot;
@@ -15195,11 +18255,12 @@ export default function OriginalGame({ user, onLogout }) {
         })
       });
       return {
-        attacker: attackerWithLastMove,
-        targetFainted: mimicResult.targetFainted,
-        defender: mimicResult.defender || withBattleRuntimeDefaults(defender)
-      };
-    }
+          attacker: attackerWithLastMove,
+          targetFainted: mimicResult.targetFainted,
+          defender: mimicResult.defender || withBattleRuntimeDefaults(defender),
+          battleEnvironment: mimicResult.battleEnvironment || battleEnvironment
+        };
+      }
 
     if (move.effect === 'teleport') {
       const attackerWithLastMove = markAttackerLastMove(attackerAfterCharge);
@@ -15257,6 +18318,16 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     updatedAttacker = withBattleRuntimeDefaults(attackerAfterCharge);
+    const specialBattleRule = getActiveSpecialBattleRule(battleEnvironment);
+    let specialBattleRuleState = normalizeSpecialBattleRuleState(battleEnvironment?.specialBattleRuleState);
+    let nextBattleEnvironment = battleEnvironment;
+    const updateSpecialBattleRuleState = (statePatch = {}) => {
+      specialBattleRuleState = normalizeSpecialBattleRuleState({
+        ...specialBattleRuleState,
+        ...(statePatch && typeof statePatch === 'object' ? statePatch : {})
+      });
+      nextBattleEnvironment = withSpecialBattleRuleState(nextBattleEnvironment || battleEnvironment, specialBattleRuleState);
+    };
 
     if (move.effect === 'nothing') {
       await playMovePhaseWithResult('status', `${attackerName} 使用了 ${move.name}，但没有任何效果。`, {
@@ -15275,7 +18346,20 @@ export default function OriginalGame({ user, onLogout }) {
       for (let hitIndex = 0; hitIndex < hitCount && updatedDefender.currentHp > 0; hitIndex += 1) {
         const resolvedPower = getDynamicBattleMovePower(moveKey, move, updatedAttacker, updatedDefender);
         const result = calculateBattleDamage(updatedAttacker, updatedDefender, { ...move, power: resolvedPower });
-        const hitDamage = Math.max(0, result.damage);
+        const baseHitDamage = Math.max(0, result.damage);
+        const specialDamageMultiplier = getSpecialBattleDamageMultiplier({
+          rule: specialBattleRule,
+          state: specialBattleRuleState,
+          attacker: updatedAttacker,
+          defender: updatedDefender,
+          move,
+          attackerSide,
+          defenderSide
+        });
+        const adjustedHitDamage = baseHitDamage > 0 && specialDamageMultiplier !== 1
+          ? Math.max(1, Math.floor(baseHitDamage * specialDamageMultiplier))
+          : baseHitDamage;
+        const hitDamage = Math.min(updatedDefender.currentHp, adjustedHitDamage);
         damage += hitDamage;
         effectiveness = result.effectiveness;
         capped = capped || result.capped;
@@ -15291,6 +18375,21 @@ export default function OriginalGame({ user, onLogout }) {
           (Number(defenderVolatileStatuses.rageFistHits) || 0) + resolvedHitCount
         );
         updatedDefender = { ...updatedDefender, volatileStatuses: defenderVolatileStatuses };
+      }
+      if (
+        attackerSide === 'player' &&
+        defenderSide === 'enemy' &&
+        critHit &&
+        damage > 0 &&
+        updatedDefender.currentHp > 0 &&
+        specialBattleRule?.enemyDamageBoostOnCriticalTaken?.turns
+      ) {
+        const volatileStatuses = { ...(updatedDefender.volatileStatuses || {}) };
+        volatileStatuses.eliteCriticalDamageBoostTurns = Math.max(
+          Number(volatileStatuses.eliteCriticalDamageBoostTurns) || 0,
+          specialBattleRule.enemyDamageBoostOnCriticalTaken.turns
+        );
+        updatedDefender = { ...updatedDefender, volatileStatuses };
       }
       const damageMessages = [];
       if (critHit && damage > 0) damageMessages.push('命中了要害！');
@@ -15333,6 +18432,38 @@ export default function OriginalGame({ user, onLogout }) {
           extraMs: 100,
         });
       }
+    }
+
+    const typeHitStageRule = specialBattleRule?.enemyMoveTypeHitPlayerStatStage;
+    if (
+      typeHitStageRule &&
+      attackerSide === 'enemy' &&
+      defenderSide === 'player' &&
+      updatedDefender.currentHp > 0 &&
+      effectiveness > 0 &&
+      specialBattleRuleMoveTypeMatches(move.type, typeHitStageRule.moveTypes) &&
+      specialBattleRuleState.moveTypeHitTriggerCount < typeHitStageRule.maxTriggers
+    ) {
+      const changedDefender = applyStatChangeToMon(updatedDefender, {
+        stat: typeHitStageRule.stat,
+        stages: typeHitStageRule.stages
+      });
+      updatedDefender = changedDefender;
+      updateSpecialBattleRuleState({
+        moveTypeHitTriggerCount: specialBattleRuleState.moveTypeHitTriggerCount + 1
+      });
+      await playMovePhaseWithResult('secondary', `${defenderName} 的${STAT_LABELS[typeHitStageRule.stat] || typeHitStageRule.stat}${typeHitStageRule.stages > 0 ? '提高了' : '降低了'}！`, {
+        targetSide: defenderSide,
+        onImpact: () => {
+          updateBattleMonBySide({
+            side: defenderSide,
+            monId: defender.id,
+            setPlayerTeam,
+            setEnemyTeam,
+            updater: (mon) => ({ ...mon, statStages: changedDefender.statStages })
+          });
+        }
+      });
     }
 
     if (updatedDefender.currentHp > 0 && updatedDefender.status === 'freeze' && damage > 0 && isFreezeThawingMove(move)) {
@@ -15517,6 +18648,14 @@ export default function OriginalGame({ user, onLogout }) {
     } else {
       delete nextAttackerVolatileStatuses.rolloutCount;
     }
+    if (attackerSide === 'enemy' && damage > 0) {
+      const consumedAttacker = consumeSpecialBattleEnemyDamageBoosts({
+        ...updatedAttacker,
+        volatileStatuses: nextAttackerVolatileStatuses
+      }, damage);
+      Object.keys(nextAttackerVolatileStatuses).forEach((key) => delete nextAttackerVolatileStatuses[key]);
+      Object.assign(nextAttackerVolatileStatuses, consumedAttacker.volatileStatuses || {});
+    }
     nextAttackerVolatileStatuses.lastMoveKey = moveKey;
     updatedAttacker = {
       ...updatedAttacker,
@@ -15539,9 +18678,10 @@ export default function OriginalGame({ user, onLogout }) {
       attacker: updatedAttacker,
       targetFainted: updatedDefender.currentHp <= 0,
       actorFainted: updatedAttacker.currentHp <= 0,
-      defender: updatedDefender
+      defender: updatedDefender,
+      battleEnvironment: nextBattleEnvironment
     };
-  }, [addLog, battleEscapeRule, waitForBattleMoveVisual]);
+  }, [addLog, battleEnvironment, battleEscapeRule, waitForBattleMoveVisual]);
 
   const chooseEnemyAction = useCallback((enemyMon, targetMon = activePlayerMon, options = {}) => {
     const battleLogs = Array.isArray(logsRef.current) ? logsRef.current : [];
@@ -15571,7 +18711,8 @@ export default function OriginalGame({ user, onLogout }) {
     enemyMon = null,
     turn: nextTurn = 'resolving',
     extraLogs = [],
-    snapshotPatch = {}
+    snapshotPatch = {},
+    battleEnergyRefundEligibleOverride = null
   } = {}) => {
     if (!user?.id || !hasLoadedCloudSave) {
       addNotification('云端未就绪，战斗暂停。', 'error');
@@ -15598,7 +18739,9 @@ export default function OriginalGame({ user, onLogout }) {
           turn: nextTurn,
           logs: mergedLogs,
           activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
-          battleEnergyRefundEligible: false
+          battleEnergyRefundEligible: typeof battleEnergyRefundEligibleOverride === 'boolean'
+            ? battleEnergyRefundEligibleOverride
+            : false
         };
       }
     });
@@ -15623,7 +18766,7 @@ export default function OriginalGame({ user, onLogout }) {
     user?.id
   ]);
 
-  const runEnemyTrainerSwitch = useCallback(async ({ enemyMon, nextEnemy, playerMon }) => {
+  const runEnemyTrainerSwitch = useCallback(async ({ enemyMon, nextEnemy, playerMon, nextTurn = 'player' }) => {
     if (battleKind !== 'trainer' || !enemyMon || !nextEnemy || enemyMon.id === nextEnemy.id) {
       return { switched: false, enemy: enemyMon };
     }
@@ -15661,24 +18804,17 @@ export default function OriginalGame({ user, onLogout }) {
         const nextLogs = liveLogs[liveLogs.length - 1] === sendLog
           ? liveLogs
           : [...liveLogs, sendLog];
-        return {
-          ...committedSnapshot,
-          activeEnemyId: baseNextEnemy.id,
-          battleEnvironment: phaseBattleEnvironment,
-          turn: 'player',
-          battlePhase: 'sendout',
-          battlePhaseData: {
-            enemyMon: baseNextEnemy,
-	            leadMonId: committedSnapshot.activePlayerId,
-	            message: sendLog,
-	            sendOutSide: 'enemy',
-	            battleEnvironment: phaseBattleEnvironment,
-              battleEventCompletion
-	          },
+	        return {
+	          ...committedSnapshot,
+	          activeEnemyId: baseNextEnemy.id,
+	          battleEnvironment: phaseBattleEnvironment,
+	          turn: nextTurn,
+	          battlePhase: 'active',
+	          battlePhaseData: null,
             battleEventCompletion,
-	          activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
-          battleEnergyRefundEligible: false,
-          logs: nextLogs
+		          activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
+	          battleEnergyRefundEligible: false,
+	          logs: nextLogs
         };
       }
     });
@@ -15696,24 +18832,19 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
 	    const runtimeNextEnemy = withBattleRuntimeDefaults(nextEnemy);
-      const battleEventCompletion = normalizeBattleEventCompletion(
-        battleEnvironment?.battleEventCompletion,
-        battleEnvironment
-      );
+	    const sendVisualId = `enemy-switch-send-${enemyMon.id}-${nextEnemy.id}-${Date.now()}`;
 	    setActiveEnemyId(nextEnemy.id);
-	    setBattlePhase('sendout');
-	    setBattlePhaseData({
-	      enemyMon: runtimeNextEnemy,
-	      leadMonId: playerMon?.id || activePlayerId,
-	      message: sendLog,
-	      sendOutSide: 'enemy',
-	      battleEnvironment: battleEventCompletion
-          ? { ...battleEnvironment, battleEventCompletion }
-          : battleEnvironment,
-        battleEventCompletion
+	    setBattlePhase('active');
+	    setBattlePhaseData(null);
+	    setSwitchVisualEvent({
+	      id: sendVisualId,
+	      side: 'enemy',
+	      phase: 'send',
+	      monster: runtimeNextEnemy,
+	      durationMs: BATTLE_SWITCH_SEND_MS
 	    });
-    setSwitchVisualEvent(null);
-    await wait(BATTLE_SENDOUT_OVERLAY_MS + 120);
+	    await wait(BATTLE_SWITCH_SEND_MS);
+	    setSwitchVisualEvent((current) => current?.id === sendVisualId ? null : current);
     return { switched: true, enemy: runtimeNextEnemy, player: playerMon };
   }, [
     activePlayerId,
@@ -15729,7 +18860,7 @@ export default function OriginalGame({ user, onLogout }) {
   ]);
 
   // 训练师 AI 使用伤药：镜像玩家用药的回血/回蓝/解异常逻辑，但消耗的是 AI 自身的配额（不动玩家背包）。
-  const runEnemyItem = useCallback(async ({ enemyMon, playerMon, itemKey }) => {
+  const runEnemyItem = useCallback(async ({ enemyMon, playerMon, itemKey, nextTurn = 'player' }) => {
     const fallback = { used: false, enemy: enemyMon };
     if (battleKind !== 'trainer' || !enemyMon) return fallback;
     const potion = POTIONS[itemKey];
@@ -15761,7 +18892,7 @@ export default function OriginalGame({ user, onLogout }) {
     const itemLog = `${ENEMY_POTION_LOG_PREFIX}${potion.name}，${enemyMon.name}${recoveryText}！`;
 
     gameAudio.playItemUse({ category: 'potion' });
-    gameAudio.playHeal({ strong: itemKey === 'hyper_potion' });
+    gameAudio.playHeal({ strong: itemKey === 'hyper_potion' || itemKey === 'max_potion' });
 
     // 先更新场上显示，再落云端，让回血动画与玩家用药观感一致。
     updateBattleMonBySide({
@@ -15782,7 +18913,7 @@ export default function OriginalGame({ user, onLogout }) {
     const checkpointReady = await commitBattleRuntimeCheckpoint({
       enemyMon: healedEnemy,
       playerMon,
-      turn: 'player'
+      turn: nextTurn
     });
     if (!checkpointReady) {
       return { used: false, enemy: healedEnemy, commitFailed: true };
@@ -15891,8 +19022,31 @@ export default function OriginalGame({ user, onLogout }) {
       attackerSide: 'enemy',
       canTargetStillAct
     });
-    const committedEnemy = withBattleRuntimeDefaults(result.attacker || nextEnemyAfterCost);
+    let committedEnemy = withBattleRuntimeDefaults(result.attacker || nextEnemyAfterCost);
     const committedPlayer = withBattleRuntimeDefaults(result.defender || playerMon);
+    let resultBattleEnvironment = result.battleEnvironment || battleEnvironment;
+    if (!result.escaped && !result.actorFainted) {
+      const specialTurnResult = resolveSpecialBattleEnemyTurnAfterAction({
+        enemyMon: committedEnemy,
+        environment: resultBattleEnvironment
+      });
+      committedEnemy = withBattleRuntimeDefaults(specialTurnResult.enemyMon || committedEnemy);
+      resultBattleEnvironment = specialTurnResult.battleEnvironment || resultBattleEnvironment;
+      if (specialTurnResult.healed) {
+        setEnemyTeam((prev) => prev.map((mon) => (
+          mon.id === committedEnemy.id ? { ...mon, currentHp: committedEnemy.currentHp } : mon
+        )));
+      }
+      for (const logMessage of specialTurnResult.logs) {
+        await addBattleLogAndWait(addLog, logMessage);
+      }
+    }
+    const resultBattleEnvironmentPatch = resultBattleEnvironment
+      ? {
+        battleEnvironment: resultBattleEnvironment,
+        battleEventCompletion: resultBattleEnvironment.battleEventCompletion || battleEnvironment?.battleEventCompletion || null
+      }
+      : {};
     const checkpointReady = await commitBattleRuntimeCheckpoint({
       enemyMon: committedEnemy,
       playerMon: committedPlayer,
@@ -15904,9 +19058,11 @@ export default function OriginalGame({ user, onLogout }) {
             reason: 'teleport',
             side: result.escapeSide || 'enemy',
             actorName: committedEnemy.name
-          }
+          },
+          ...resultBattleEnvironmentPatch
         }
-        : {}
+        : resultBattleEnvironmentPatch,
+      battleEnergyRefundEligibleOverride: false
     });
     if (!checkpointReady) {
       return {
@@ -15936,7 +19092,7 @@ export default function OriginalGame({ user, onLogout }) {
       attacker: committedEnemy,
       defender: committedPlayer
     };
-  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
+  }, [addLog, battleEnvironment, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
 
   const runPlayerAction = useCallback(async ({ playerMon, enemyMon, moveKey, canTargetStillAct = false }) => {
     if (!playerMon || !enemyMon || !moveKey) return { actorFainted: false, targetFainted: false };
@@ -16042,6 +19198,13 @@ export default function OriginalGame({ user, onLogout }) {
     });
     const committedPlayer = withBattleRuntimeDefaults(result.attacker || actingPlayer);
     const committedEnemy = withBattleRuntimeDefaults(result.defender || enemyMon);
+    const resultBattleEnvironment = result.battleEnvironment || battleEnvironment;
+    const resultBattleEnvironmentPatch = resultBattleEnvironment
+      ? {
+        battleEnvironment: resultBattleEnvironment,
+        battleEventCompletion: resultBattleEnvironment.battleEventCompletion || battleEnvironment?.battleEventCompletion || null
+      }
+      : {};
     const checkpointReady = await commitBattleRuntimeCheckpoint({
       playerMon: committedPlayer,
       enemyMon: committedEnemy,
@@ -16053,9 +19216,13 @@ export default function OriginalGame({ user, onLogout }) {
             reason: 'teleport',
             side: result.escapeSide || 'player',
             actorName: committedPlayer.name
-          }
+          },
+          ...resultBattleEnvironmentPatch
         }
-        : {}
+        : resultBattleEnvironmentPatch,
+      battleEnergyRefundEligibleOverride: result.escaped
+        ? Boolean(battleEnergyRefundEligible)
+        : false
     });
     if (!checkpointReady) {
       return {
@@ -16074,7 +19241,7 @@ export default function OriginalGame({ user, onLogout }) {
         actorName: committedPlayer.name
       });
       setTurn('player');
-      setBattleEnergyRefundEligible(false);
+      setBattleEnergyRefundEligible(Boolean(battleEnergyRefundEligible));
     }
 
     return {
@@ -16085,7 +19252,7 @@ export default function OriginalGame({ user, onLogout }) {
       attacker: committedPlayer,
       defender: committedEnemy
     };
-  }, [addLog, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
+  }, [addLog, battleEnergyRefundEligible, battleEnvironment, commitBattleRuntimeCheckpoint, executeBattleMove, finishEnemyDefeat, handlePlayerDefeatCheck, playBattleStatusEvents, playerTeam]);
 
   const runEndOfTurnStatusResolution = useCallback(async ({ side, mon, opposingMon }) => {
     if (!mon) {
@@ -16268,9 +19435,14 @@ export default function OriginalGame({ user, onLogout }) {
 
   const handleTurn = useCallback(async (moveKey) => {
     if (turn !== 'player' || gameOver) return;
+    if (playtimeExpiredRef.current) {
+      addNotification(PLAYTIME_EXPIRED_NOTIFICATION, 'warning');
+      return;
+    }
     if (battleTurnInFlightRef.current) return;
     battleTurnInFlightRef.current = true;
     let restorePlayerTurn = null;
+    let locallyLockedTurn = false;
 
     try {
       const currentPlayer = withBattleRuntimeDefaults(activePlayerMon);
@@ -16341,6 +19513,11 @@ export default function OriginalGame({ user, onLogout }) {
         return;
       }
 
+      locallyLockedTurn = true;
+      setTurn('resolving');
+      setBattlePhase('active');
+      setBattlePhaseData(null);
+
       restorePlayerTurn = async (logMessage = null) => {
       const commitResult = await commitCloudSnapshot({
         buildSnapshot: (baseSnapshot) => ({
@@ -16368,6 +19545,9 @@ export default function OriginalGame({ user, onLogout }) {
       })
     });
     if (!resolvingCommit.success) {
+      if (locallyLockedTurn) {
+        setTurn('player');
+      }
       if (resolvingCommit.message) {
         addNotification(
           resolvingCommit.message,
@@ -16390,7 +19570,8 @@ export default function OriginalGame({ user, onLogout }) {
         const switchResult = await runEnemyTrainerSwitch({
           enemyMon: currentEnemy,
           nextEnemy: enemyAction.target,
-          playerMon: currentPlayer
+          playerMon: currentPlayer,
+          nextTurn: 'resolving'
         });
         if (switchResult.commitFailed) return;
         const switchedEnemy = switchResult.enemy || enemyAction.target;
@@ -16399,15 +19580,16 @@ export default function OriginalGame({ user, onLogout }) {
           enemyMon: switchedEnemy,
           moveKey: playerMoveKey,
           canTargetStillAct: false
-        });
-        if (playerResult.commitFailed) return;
-        if (playerResult.escaped) return;
-        const postSwitchTurnResult = await resolveTurnAfterFaint({
-          playerMon: playerResult.attacker || currentPlayer,
-          enemyMon: playerResult.defender || switchedEnemy,
-          playerFainted: playerResult.actorFainted,
-          enemyFainted: playerResult.targetFainted
-        });
+	        });
+	        if (playerResult.commitFailed) return;
+	        if (playerResult.escaped) return;
+	        const playerFaints = resolveBattleActionFaintFlags(playerResult, currentPlayer, switchedEnemy);
+	        const postSwitchTurnResult = await resolveTurnAfterFaint({
+	          playerMon: playerFaints.actorMon,
+	          enemyMon: playerFaints.targetMon,
+	          playerFainted: playerFaints.actorFainted,
+	          enemyFainted: playerFaints.targetFainted
+	        });
         if (postSwitchTurnResult.commitFailed || postSwitchTurnResult.playerFainted || postSwitchTurnResult.enemyFainted) return;
         if (!gameOver) {
           await restorePlayerTurn();
@@ -16423,7 +19605,8 @@ export default function OriginalGame({ user, onLogout }) {
         const itemResult = await runEnemyItem({
           enemyMon: currentEnemy,
           playerMon: currentPlayer,
-          itemKey: enemyAction.itemKey
+          itemKey: enemyAction.itemKey,
+          nextTurn: 'resolving'
         });
         if (itemResult.commitFailed) return;
         const healedEnemy = itemResult.enemy || currentEnemy;
@@ -16433,15 +19616,16 @@ export default function OriginalGame({ user, onLogout }) {
           enemyMon: healedEnemy,
           moveKey: playerMoveKey,
           canTargetStillAct: false
-        });
-        if (playerResult.commitFailed) return;
-        if (playerResult.escaped) return;
-        const postItemTurnResult = await resolveTurnAfterFaint({
-          playerMon: playerResult.attacker || currentPlayer,
-          enemyMon: playerResult.defender || healedEnemy,
-          playerFainted: playerResult.actorFainted,
-          enemyFainted: playerResult.targetFainted
-        });
+	        });
+	        if (playerResult.commitFailed) return;
+	        if (playerResult.escaped) return;
+	        const playerFaints = resolveBattleActionFaintFlags(playerResult, currentPlayer, healedEnemy);
+	        const postItemTurnResult = await resolveTurnAfterFaint({
+	          playerMon: playerFaints.actorMon,
+	          enemyMon: playerFaints.targetMon,
+	          playerFainted: playerFaints.actorFainted,
+	          enemyFainted: playerFaints.targetFainted
+	        });
         if (postItemTurnResult.commitFailed || postItemTurnResult.playerFainted || postItemTurnResult.enemyFainted) return;
         if (!gameOver) {
           await restorePlayerTurn();
@@ -16455,15 +19639,16 @@ export default function OriginalGame({ user, onLogout }) {
           playerMon: currentPlayer,
           enemyMon: currentEnemy,
           moveKey: playerMoveKey
-        });
-        if (playerResult.commitFailed) return;
-        if (playerResult.escaped) return;
-        const noEnemyActionTurnResult = await resolveTurnAfterFaint({
-          playerMon: playerResult.attacker || currentPlayer,
-          enemyMon: playerResult.defender || currentEnemy,
-          playerFainted: playerResult.actorFainted,
-          enemyFainted: playerResult.targetFainted
-        });
+	        });
+	        if (playerResult.commitFailed) return;
+	        if (playerResult.escaped) return;
+	        const playerFaints = resolveBattleActionFaintFlags(playerResult, currentPlayer, currentEnemy);
+	        const noEnemyActionTurnResult = await resolveTurnAfterFaint({
+	          playerMon: playerFaints.actorMon,
+	          enemyMon: playerFaints.targetMon,
+	          playerFainted: playerFaints.actorFainted,
+	          enemyFainted: playerFaints.targetFainted
+	        });
         if (!noEnemyActionTurnResult.commitFailed && !noEnemyActionTurnResult.playerFainted && !noEnemyActionTurnResult.enemyFainted) {
           if (!gameOver) {
             await restorePlayerTurn(`敌方 ${currentEnemy.name} 技能值不足，无法行动!`);
@@ -16493,17 +19678,18 @@ export default function OriginalGame({ user, onLogout }) {
             canTargetStillAct: actionOrder.indexOf('enemy') > actionOrder.indexOf('player')
           });
           if (playerResult.commitFailed) return;
-          if (playerResult.escaped) {
-            battleEscapedThisTurn = true;
-            break;
-          }
-          latestPlayer = playerResult.attacker || latestPlayer;
-          latestEnemy = playerResult.defender || latestEnemy;
-          if (playerResult.actorFainted || playerResult.targetFainted) {
-            playerFaintedThisTurn = playerResult.actorFainted;
-            enemyFaintedThisTurn = playerResult.targetFainted;
-            break;
-          }
+	          if (playerResult.escaped) {
+	            battleEscapedThisTurn = true;
+	            break;
+	          }
+	          const playerFaints = resolveBattleActionFaintFlags(playerResult, latestPlayer, latestEnemy);
+	          latestPlayer = playerFaints.actorMon || latestPlayer;
+	          latestEnemy = playerFaints.targetMon || latestEnemy;
+	          if (playerFaints.actorFainted || playerFaints.targetFainted) {
+	            playerFaintedThisTurn = playerFaints.actorFainted;
+	            enemyFaintedThisTurn = playerFaints.targetFainted;
+	            break;
+	          }
         } else {
           const enemyResult = await runEnemyAction({
             enemyMon: latestEnemy,
@@ -16512,17 +19698,18 @@ export default function OriginalGame({ user, onLogout }) {
             canTargetStillAct: actionOrder.indexOf('player') > actionOrder.indexOf('enemy')
           });
           if (enemyResult.commitFailed) return;
-          if (enemyResult.escaped) {
-            battleEscapedThisTurn = true;
-            break;
-          }
-          latestEnemy = enemyResult.attacker || latestEnemy;
-          latestPlayer = enemyResult.defender || latestPlayer;
-          if (enemyResult.actorFainted || enemyResult.targetFainted) {
-            enemyFaintedThisTurn = enemyResult.actorFainted;
-            playerFaintedThisTurn = enemyResult.targetFainted;
-            break;
-          }
+	          if (enemyResult.escaped) {
+	            battleEscapedThisTurn = true;
+	            break;
+	          }
+	          const enemyFaints = resolveBattleActionFaintFlags(enemyResult, latestEnemy, latestPlayer);
+	          latestEnemy = enemyFaints.actorMon || latestEnemy;
+	          latestPlayer = enemyFaints.targetMon || latestPlayer;
+	          if (enemyFaints.actorFainted || enemyFaints.targetFainted) {
+	            enemyFaintedThisTurn = enemyFaints.actorFainted;
+	            playerFaintedThisTurn = enemyFaints.targetFainted;
+	            break;
+	          }
         }
       }
       if (battleEscapedThisTurn) return;
@@ -16554,10 +19741,40 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         ? { level: encounterPayload }
         : encounterPayload || {}
 
+    if (
+      encounterStartInFlightRef.current ||
+      viewRef.current !== 'map' ||
+      Boolean(activeEnemyIdRef.current)
+    ) {
+      return;
+    }
+
+    encounterStartInFlightRef.current = true;
+    setEncounterStartBusy(true);
+    if (mapMovementSaveTimerRef.current) {
+      clearTimeout(mapMovementSaveTimerRef.current);
+      mapMovementSaveTimerRef.current = null;
+    }
+    if (queuedCloudSaveRef.current && !queuedCloudSaveRef.current.manual) {
+      queuedCloudSaveRef.current = null;
+    }
+
+    let committedBattle = false;
+    try {
+
     if (!user?.id || !hasLoadedCloudSave) {
       const message = '云端未就绪，暂不能战斗。';
       addLog(message);
       addNotification(message, 'error');
+      return;
+    }
+
+    const partySpeciesViolation = getPartySpeciesClauseViolation(playerTeam);
+    if (partySpeciesViolation) {
+      const message = getPartySpeciesClauseMessage(partySpeciesViolation);
+      addLog(message);
+      addNotification(message, 'warning');
+      gameAudio.playError();
       return;
     }
 
@@ -16585,14 +19802,24 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         baseLevel = rerolledEncounter.level;
       }
     }
-    const rareEncounter = encounterZoneMeta.hiddenZone
-      ? null
-      : pickProgressRareEncounter({
-        mapName: currentMapName,
-        world,
-        basePokemonId,
-        baseLevel
-      });
+    const hiddenExclusiveEncounter = encounterZoneMeta.hiddenZone
+      ? getHiddenEncounterExclusiveMeta({
+        zone: encounterZoneMeta.zone,
+        encounterTableId: encounterZoneMeta.encounterTableId || payload.encounterTableId,
+        pokemonId: basePokemonId,
+        encounterRate: payload.encounterRate
+      })
+      : null;
+    const rareEncounter = hiddenExclusiveEncounter
+      ? { ...hiddenExclusiveEncounter, level: baseLevel }
+      : encounterZoneMeta.hiddenZone
+        ? null
+        : pickProgressRareEncounter({
+          mapName: currentMapName,
+          world,
+          basePokemonId,
+          baseLevel
+        });
     const wildPokemonId =
       rareEncounter?.pokemonId ?? basePokemonId ?? getRandomWildPokemon(currentMapName)
     const newEnemyLevel = rareEncounter?.level ?? baseLevel ?? getRandomWildLevel(currentMapName)
@@ -16614,7 +19841,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const newEnemyInstance = createMonsterInstance(
       randomBaseMonster,
       newEnemyLevel,
-      `e${nextEnemyMonsterId}`
+      `e${nextEnemyMonsterId}`,
+      undefined,
+      undefined,
+      undefined,
+      null,
+      { moveLoadoutMode: 'wild' }
     );
 
     const battleLeadId = resolveBattleLeadId(playerTeam);
@@ -16623,7 +19855,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const mapInfo = getMapConfig(currentMapName).displayName;
     const encounterRarity = buildWildEncounterRarityMeta({
       pokemonId: wildPokemonId,
-      encounterTableId: payload.encounterTableId,
+      encounterTableId: encounterZoneMeta.encounterTableId || payload.encounterTableId,
       encounterRate: payload.encounterRate,
       rareEncounter
     });
@@ -16638,10 +19870,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       triggerPosition: payload.playerPos,
     });
     const zoneHint = payload.zoneName ? `【${payload.zoneName}】` : '';
-    const encounterLog = rareEncounter?.bossRare
-      ? `在 ${mapInfo}${zoneHint} 发现首领解锁的专属稀有生态，遇到了 ${newEnemyInstance.name}！`
+    const encounterLog = rareEncounter?.hiddenExclusive
+      ? `在 ${mapInfo}${zoneHint} 发现秘境专属宝可梦，遇到了 ${newEnemyInstance.name}！`
+      : rareEncounter?.bossRare
+      ? `在 ${mapInfo}${zoneHint} 发现首领稀有，遇到了 ${newEnemyInstance.name}！`
       : rareEncounter?.challengeRare
-      ? `在 ${mapInfo}${zoneHint} 发现试炼解锁的隐藏生态，遇到了稀有的 ${newEnemyInstance.name}！`
+      ? `在 ${mapInfo}${zoneHint} 发现试炼稀有，遇到了 ${newEnemyInstance.name}！`
       : rareEncounter?.rare
       ? `在 ${mapInfo}${zoneHint} 感受到稀有气息，遇到了 ${newEnemyInstance.name}！`
       : rareEncounter?.progressTier >= 2
@@ -16654,6 +19888,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const encounterCooldown = Math.max(0, Math.trunc(Number(payload.encounterCooldownSteps ?? encounterCooldownStepsRef.current ?? encounterCooldownSteps) || 0));
     const atomicResult = await commitCloudSnapshotWithResources({
       buildSnapshot: (baseSnapshot) => {
+        const snapshotSpeciesViolation = getPartySpeciesClauseViolation(baseSnapshot.playerTeam);
+        if (snapshotSpeciesViolation) {
+          return abortCloudSnapshotCommit(getPartySpeciesClauseMessage(snapshotSpeciesViolation), 'warning');
+        }
         const snapshotLeadId = resolveBattleLeadId(baseSnapshot.playerTeam) || battleLeadId || baseSnapshot.activePlayerId;
         const worldPositionPatch = buildWorldPositionPatch(baseSnapshot, encounterPlayerPos);
         return {
@@ -16679,17 +19917,34 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         };
       },
       energyDelta: -energyCost,
-      energyReason: `战斗消耗（${getMapConfig(currentMapName).displayName}）`
+      energyReason: `战斗消耗（${getMapConfig(currentMapName).displayName}）`,
+      waitTimeoutMs: 12000
     });
     if (atomicResult.success) {
+      recordGameLog('wild_encounter_start', {
+        title: `遇到了 ${newEnemyInstance.name}`,
+        summary: `${getMapConfig(currentMapName).displayName}${zoneHint}出现了野生 ${newEnemyInstance.name} Lv.${newEnemyInstance.level}。`,
+        position: encounterPlayerPos,
+        details: {
+          enemyName: newEnemyInstance.name,
+          enemyLevel: newEnemyInstance.level,
+          zoneId: payload.zoneId || null,
+          zoneName: payload.zoneName || '',
+          encounterTableId: encounterZoneMeta.encounterTableId || payload.encounterTableId || '',
+          rarity: encounterRarity?.label || '',
+          rarityTier: encounterRarity?.tier || '',
+          energyCost
+        }
+      });
       gameAudio.playEncounter({
         boss: Boolean(rareEncounter?.bossRare),
         challenge: Boolean(rareEncounter?.challengeRare),
-        rare: Boolean(rareEncounter?.rare)
+        rare: Boolean(rareEncounter?.rare || rareEncounter?.hiddenExclusive)
       });
       activeBattleEnergyCostRef.current = energyCost;
       setActiveBattleEnergyCost(energyCost);
       setBattleEnergyRefundEligible(true);
+      committedBattle = true;
       return;
     }
     addLog(atomicResult.message || '战斗开始失败。');
@@ -16703,6 +19958,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       }
     }
     return;
+    } finally {
+      if (!committedBattle) {
+        encounterStartInFlightRef.current = false;
+        setEncounterStartBusy(false);
+      }
+    }
   }, [
     activePlayerId,
     addLog,
@@ -16716,6 +19977,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     refreshPlayerResources,
     user?.id,
     hasLoadedCloudSave,
+    recordGameLog,
     world
   ]);
 
@@ -16725,6 +19987,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       addLog("商店: 购买数量无效。");
       addNotification('购买数量无效。', 'warning');
       return { success: false, message: '购买数量无效。' };
+    }
+    const isMasterBallPurchase = isMasterBallShopItem(itemType, itemKey);
+    const purchaseMapName = currentMapNameRef.current || currentMapName;
+    if (isMasterBallPurchase && purchaseAmount !== 1) {
+      const message = '大师球每个区域限购 1 个。';
+      addLog(`商店: ${message}`);
+      addNotification(message, 'warning');
+      return { success: false, message };
+    }
+    if (isMasterBallPurchase && hasPurchasedMasterBallInRegion(worldRef.current, purchaseMapName)) {
+      const message = '本区域的大师球已经购买过了。';
+      addLog(`商店: ${message}`);
+      addNotification(message, 'info');
+      return { success: false, message };
     }
 
     let itemDetails =
@@ -16772,15 +20048,34 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       };
 
       const atomicResult = await commitCloudSnapshotWithResources({
-        buildSnapshot: (baseSnapshot) => ({
-          ...baseSnapshot,
-          playerInventory: mergeInventoryEntries(baseSnapshot.playerInventory, itemType, itemKey, purchaseAmount),
-          logs: [...(Array.isArray(baseSnapshot.logs) ? baseSnapshot.logs : []), `商店: 购买了 ${purchaseAmount} 个 ${itemDetails.name}。`]
-        }),
+        buildSnapshot: (baseSnapshot) => {
+          if (isMasterBallPurchase && hasPurchasedMasterBallInRegion(baseSnapshot.world, purchaseMapName)) {
+            return abortCloudSnapshotCommit('本区域的大师球已经购买过了。', 'info');
+          }
+          return {
+            ...baseSnapshot,
+            playerInventory: mergeInventoryEntries(baseSnapshot.playerInventory, itemType, itemKey, purchaseAmount),
+            world: isMasterBallPurchase
+              ? recordMasterBallPurchaseInRegion(baseSnapshot.world, purchaseMapName)
+              : baseSnapshot.world,
+            logs: [...(Array.isArray(baseSnapshot.logs) ? baseSnapshot.logs : []), `商店: 购买了 ${purchaseAmount} 个 ${itemDetails.name}。`]
+          };
+        },
         goldDelta: -totalPrice,
         goldReason: `购买${itemDetails.name}`
       });
       if (atomicResult.success) {
+        recordGameLog('item_bought', {
+          title: `购买 ${itemDetails.name}`,
+          summary: `在商店购买 ${itemDetails.name} x${purchaseAmount}，花费 ${totalPrice} 金币。`,
+          details: {
+            itemType,
+            itemKey,
+            itemName: itemDetails.name,
+            quantity: purchaseAmount,
+            gold: -totalPrice
+          }
+        });
         gameAudio.playItemUse({ category: 'shop' });
         return purchaseSuccess;
       }
@@ -16795,6 +20090,152 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
   };
 
+  const handleSellItem = async (itemType, itemKey, amount) => {
+    const sellAmount = Math.trunc(Number(amount));
+    const normalizedItemType = resolveInventoryItemType({ itemType, itemKey });
+    const itemDetails = normalizedItemType
+      ? resolveInventoryItemDetails(normalizedItemType, itemKey)
+      : null;
+    const sellPrice = getInventoryItemSellPrice(normalizedItemType, itemKey);
+
+    if (!Number.isSafeInteger(sellAmount) || sellAmount <= 0) {
+      addLog("回收商: 出售数量无效。");
+      addNotification('出售数量无效。', 'warning');
+      return { success: false, message: '出售数量无效。' };
+    }
+    if (!normalizedItemType || !itemDetails || sellPrice <= 0 || !isSellableInventoryItem(normalizedItemType, itemKey)) {
+      addLog("回收商: 这个道具不能出售。");
+      addNotification('这个道具不能出售。', 'warning');
+      return { success: false, message: '该道具不可出售。' };
+    }
+    if (!user?.id || !hasLoadedCloudSave) {
+      const message = '云端未就绪，暂不能出售。';
+      addLog(`回收商: ${message}`);
+      addNotification(message, 'error');
+      return { success: false, message };
+    }
+    if (itemSellInFlightRef.current) {
+      return { success: false, busy: true, message: '上一笔出售正在处理中。' };
+    }
+
+    itemSellInFlightRef.current = true;
+    try {
+      await refreshPlayerResources();
+      let cloudQuantity = 0;
+      const totalGold = sellPrice * sellAmount;
+      const sellSuccess = {
+        success: true,
+        itemType: normalizedItemType,
+        itemKey,
+        itemName: itemDetails.name,
+        quantity: sellAmount,
+        sellPrice,
+        totalGold,
+      };
+
+      const atomicResult = await commitCloudSnapshotWithResources({
+        buildSnapshot: (baseSnapshot) => {
+          cloudQuantity = getInventoryItemQuantity(baseSnapshot.playerInventory, normalizedItemType, itemKey);
+          if (cloudQuantity < sellAmount) {
+            return abortCloudSnapshotCommit(`${itemDetails.name}数量不足，无法出售。`, 'warning');
+          }
+          return {
+            ...baseSnapshot,
+            playerInventory: consumeInventoryItem(baseSnapshot.playerInventory, normalizedItemType, itemKey, sellAmount),
+            logs: [...(Array.isArray(baseSnapshot.logs) ? baseSnapshot.logs : []), `回收商: 出售了 ${sellAmount} 个 ${itemDetails.name}。`]
+          };
+        },
+        goldDelta: totalGold,
+        goldReason: `出售${itemDetails.name}`
+      });
+      if (atomicResult.success) {
+        recordGameLog('item_sold', {
+          title: `出售 ${itemDetails.name}`,
+          summary: `在回收商出售 ${itemDetails.name} x${sellAmount}，获得 ${totalGold} 金币。`,
+          details: {
+            itemType: normalizedItemType,
+            itemKey,
+            itemName: itemDetails.name,
+            quantity: sellAmount,
+            sellPrice,
+            gold: totalGold
+          }
+        });
+        gameAudio.playItemUse({ category: 'shop' });
+        return sellSuccess;
+      }
+      const message = atomicResult.message || '出售失败，请重试。';
+      addLog(`回收商: ${message}`);
+      addNotification(
+        message,
+        atomicResult.notificationType || (atomicResult.requiresReload ? 'error' : 'warning')
+      );
+      if (cloudQuantity >= 0 && cloudQuantity < sellAmount) {
+        await refreshPlayerResources().catch(() => {});
+      }
+      return { success: false, message };
+    } finally {
+      itemSellInFlightRef.current = false;
+    }
+  };
+
+  const handleCommitEliteMinigame = useCallback(async (taskId) => {
+    const activeTrial = activeEliteMinigame;
+    if (!activeTrial || activeTrial.task?.id !== taskId || eliteMinigameCommitBusy) return false;
+    if (!user?.id || !hasLoadedCloudSave) {
+      addNotification('云端进度尚未就绪，挑战印记没有写入。', 'error');
+      return false;
+    }
+
+    setEliteMinigameCommitBusy(true);
+    let completionResult = null;
+    try {
+      const commitResult = await commitCloudSnapshot({
+        buildSnapshot: (baseSnapshot) => {
+          const baseWorld = normalizeWorldState(baseSnapshot?.world);
+          completionResult = completeEliteUnlockTask(baseWorld, activeTrial.mapId, taskId);
+          if (!completionResult.success) {
+            return abortCloudSnapshotCommit(
+              completionResult.status === 'locked'
+                ? '任务前置条件已变化，请返回地图确认。'
+                : '小游戏任务信息未同步，请重新进入机关。',
+              'warning'
+            );
+          }
+          return {
+            ...baseSnapshot,
+            world: completionResult.world,
+            logs: appendSnapshotLogs(baseSnapshot, [
+              `地图试炼: 完成「${completionResult.task?.title || activeTrial.task?.title}」，挑战印记已刻入。`
+            ])
+          };
+        }
+      });
+      if (!commitResult.success) {
+        addNotification(commitResult.message || '挑战印记未能保存，解题结果仍保留。', commitResult.notificationType || 'warning');
+        return false;
+      }
+      const taskTitle = completionResult?.task?.title || activeTrial.task?.title || '部下试炼';
+      addNotification(`「${taskTitle}」完成，对应部下挑战已开放！`, 'success');
+      addLog(`试炼印记完成：${taskTitle}。`);
+      recordGameLog('elite_unlock_minigame_completed', {
+        title: '部下小游戏完成',
+        summary: `完成「${taskTitle}」，云端挑战印记已确认。`,
+        position: activeTrial.playerPos,
+        details: {
+          mapName: activeTrial.mapId,
+          taskId,
+          minigameKind: activeTrial.task?.minigame?.kind,
+          sourceEventId: activeTrial.sourceEventId,
+          taskCompleted: true
+        }
+      });
+      return true;
+    } finally {
+      setEliteMinigameCommitBusy(false);
+    }
+  }, [activeEliteMinigame, addLog, addNotification, commitCloudSnapshot, eliteMinigameCommitBusy, hasLoadedCloudSave, user?.id]);
+
   const handleCollect = useCallback(async (type, amount, context = {}) => {
     const tileX = toMapTileCoordinate(context.tileX);
     const tileY = toMapTileCoordinate(context.tileY);
@@ -16805,7 +20246,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (!mapEvent?.type) return type;
       if (mapEvent.type === 'sign') return 'info';
       if (mapEvent.type === 'pickup') return 'item';
-      if (['item', 'heal', 'trainer', 'boss', 'challenge', 'fast_travel'].includes(mapEvent.type)) return mapEvent.type;
+      if (['item', 'heal', 'trainer', 'boss', 'challenge', 'objective', 'fast_travel', 'merchant'].includes(mapEvent.type)) return mapEvent.type;
       return type;
     })();
     const eventId = typeof mapEvent?.id === 'string' && mapEvent.id.length > 0 ? mapEvent.id : null;
@@ -16819,6 +20260,123 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     if (effectiveType === 'gold') {
       addNotification('地图金币已关闭。', 'info');
       return false;
+    }
+
+    if (effectiveType === 'merchant') {
+      if (!user?.id || !hasLoadedCloudSave) {
+        addNotification('云端未就绪，暂不能出售道具。', 'error');
+        return false;
+      }
+      const merchantName = mapEventProps.name || '回收商';
+      addLog(`${merchantName}: ${mapEventProps.message || '用不上的补给，我可以回收。'}`);
+      gameAudio.playMapTouch({ kind: 'npc' });
+      refreshPlayerResources().catch(() => {});
+      handleNavigateView('itemSell');
+      return false;
+    }
+
+    if (effectiveType === 'objective') {
+      if (!user?.id || !hasLoadedCloudSave) {
+        addNotification('云端进度尚未就绪，暂不能操作机关。', 'error');
+        return false;
+      }
+      if (!eventId || mapEvent?.type !== 'objective') {
+        addNotification('机关信息未同步，请离开一步再回来。', 'warning');
+        return false;
+      }
+      const objectiveKey = `${currentMapName}:${eventId}`;
+      if (eliteObjectiveInFlightRef.current.has(objectiveKey)) return false;
+      const currentVisualState = getEliteObjectiveEventVisualState(currentMapName, interactionWorld, mapEvent);
+      if (currentVisualState?.status === 'completed') {
+        addNotification(`${mapEventProps.stepName || '这个机关'}已经完成，能量回路保持稳定。`, 'info');
+        gameAudio.playUiSelect();
+        return false;
+      }
+      if (currentVisualState?.status === 'locked') {
+        const progress = currentVisualState.taskProgress;
+        const message = !progress?.available
+          ? `「${mapEventProps.taskTitle || '解锁任务'}」尚未开放，请先完成前一段机关与守关者。`
+          : `机关顺序尚未到这里，下一步是「${progress?.nextStep?.name || '前一座机关'}」。`;
+        addNotification(message, 'warning');
+        gameAudio.playError();
+        return false;
+      }
+
+      const minigameTask = currentVisualState?.taskProgress?.task;
+      if (minigameTask?.minigame) {
+        gameAudio.playMapTouch({ kind: 'trial' });
+        setActiveEliteMinigame({
+          task: minigameTask,
+          mapId: currentMapName,
+          sourceEventId: eventId,
+          playerPos: eventPlayerPos
+        });
+        return false;
+      }
+
+      eliteObjectiveInFlightRef.current.add(objectiveKey);
+      gameAudio.playMapTouch({ kind: 'trial' });
+      let completionResult = null;
+      try {
+        const commitResult = await commitCloudSnapshot({
+          buildSnapshot: (baseSnapshot) => {
+            const baseWorld = normalizeWorldState(baseSnapshot?.world);
+            completionResult = completeEliteUnlockObjective(baseWorld, currentMapName, eventId);
+            if (!completionResult.success) {
+              const nextName = completionResult.progress?.nextStep?.name;
+              return abortCloudSnapshotCommit(
+                completionResult.status === 'out_of_order'
+                  ? `机关顺序已变化，下一步是「${nextName || '前一座机关'}」。`
+                  : '机关前置条件尚未完成。',
+                'warning'
+              );
+            }
+            return {
+              ...baseSnapshot,
+              world: completionResult.world,
+              logs: appendSnapshotLogs(baseSnapshot, [
+                completionResult.taskCompleted
+                  ? `地图任务: 完成「${completionResult.task?.title || mapEventProps.taskTitle}」。`
+                  : `地图任务: 激活「${completionResult.step?.name || mapEventProps.stepName}」。`
+              ])
+            };
+          }
+        });
+        if (!commitResult.success) {
+          addNotification(commitResult.message || '机关进度未能保存，请重试。', commitResult.notificationType || 'warning');
+          return false;
+        }
+        const updatedProgress = completionResult?.progress;
+        if (completionResult?.taskCompleted) {
+          addNotification(`解锁任务「${completionResult.task?.title || mapEventProps.taskTitle}」完成，对应挑战已开放！`, 'success');
+          addLog(`机关共鸣完成：${completionResult.task?.title || mapEventProps.taskTitle}。`);
+          gameAudio.playUiConfirm();
+        } else {
+          const nextStepName = updatedProgress?.nextStep?.name;
+          addNotification(
+            `已激活「${completionResult?.step?.name || mapEventProps.stepName}」 ${updatedProgress?.completedStepCount || 0}/${updatedProgress?.totalStepCount || 1}${nextStepName ? `，下一步：${nextStepName}` : ''}。`,
+            'success'
+          );
+          gameAudio.playUiConfirm();
+        }
+        recordGameLog('elite_unlock_objective_completed', {
+          title: completionResult?.taskCompleted ? '解锁任务完成' : '任务机关激活',
+          summary: completionResult?.taskCompleted
+            ? `完成「${completionResult.task?.title || mapEventProps.taskTitle}」。`
+            : `激活「${completionResult?.step?.name || mapEventProps.stepName}」。`,
+          position: eventPlayerPos,
+          details: {
+            mapName: currentMapName,
+            eventId,
+            taskId: mapEventProps.taskId,
+            stepId: mapEventProps.stepId,
+            taskCompleted: Boolean(completionResult?.taskCompleted)
+          }
+        });
+        return false;
+      } finally {
+        eliteObjectiveInFlightRef.current.delete(objectiveKey);
+      }
     }
 
     if (effectiveType === 'info') {
@@ -16837,6 +20395,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         if (isHiddenEncounterGateUnlocked(interactionWorld, currentMapName, mapEvent)) {
           setMapGrid((prev) => buildMapGridForWorld(currentMapName, interactionWorld, prev));
           addNotification(mapEventProps.unlockSuccessText || `${hiddenZoneName}已经开放。`, 'info');
+          gameAudio.playUiSelect();
+          return false;
+        }
+
+        if (!isHiddenEncounterGateBossRequirementMet(interactionWorld, currentMapName, mapEvent)) {
+          addNotification(getHiddenEncounterGateBossLockedReason(mapEventProps), 'warning');
           gameAudio.playUiSelect();
           return false;
         }
@@ -16925,8 +20489,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         ? resolveInventoryItemDetails(fixedItemType, mapEventProps.itemKey)
         : null;
       const allItems = [
-        ...Object.entries(POKEBALLS).filter(([, item]) => !item.notForSale).map(([key]) => key),
-        ...Object.keys(POTIONS)
+        ...Object.entries(POKEBALLS).filter(([, item]) => !item.randomDropDisabled).map(([key]) => key),
+        ...Object.entries(POTIONS).filter(([, item]) => !item.randomDropDisabled).map(([key]) => key)
       ];
       const randomKey = allItems[Math.floor(Math.random() * allItems.length)];
       const isBall = Boolean(POKEBALLS[randomKey]);
@@ -16940,18 +20504,19 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification('云端未就绪，暂不能拾取。', 'error');
         return false;
       }
-      if (eventId && hasCollectedMapEvent(interactionWorld, currentMapName, eventId)) {
-        setWorld((current) => (
-          JSON.stringify(uniqueStringList(current?.collectedEventIds)) === JSON.stringify(uniqueStringList(interactionWorld?.collectedEventIds))
+	      if (eventId && hasCollectedMapEvent(interactionWorld, currentMapName, eventId)) {
+	        setWorld((current) => (
+	          JSON.stringify(uniqueStringList(current?.collectedEventIds)) === JSON.stringify(uniqueStringList(interactionWorld?.collectedEventIds))
             ? current
             : interactionWorld
         ));
         setMapGrid((prev) => buildMapGridForWorld(currentMapName, interactionWorld, prev));
-        addNotification('这个补给已经领取了。', 'info');
-        return true;
-      }
-      let committedPickupState = null;
-      const commitResult = await commitCloudSnapshot({
+	        addNotification('这个补给已经领取了。', 'info');
+	        return true;
+	      }
+	      gameAudio.playMapTouch({ kind: 'chest' });
+	      let committedPickupState = null;
+	      const commitResult = await commitCloudSnapshot({
         buildSnapshot: (baseSnapshot) => {
           const liveSnapshotPlayerPos = normalizeWorldPosition(
             playerPosRef.current || eventPlayerPos,
@@ -17031,11 +20596,23 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         customText: mapEventProps.text,
         itemDetails,
         quantity
+	      });
+      recordGameLog('pickup_collected', {
+        title: `获得 ${itemDetails.name}`,
+        summary: rewardMessage,
+        position: eventPlayerPos,
+        details: {
+          itemType,
+          itemKey,
+          itemName: itemDetails.name,
+          quantity,
+          eventId,
+          eventType: mapEvent?.type || effectiveType
+        }
       });
-      addNotification(rewardMessage, 'item');
-      gameAudio.playItemUse({ category: 'pickup' });
-      return true;
-    }
+	      addNotification(rewardMessage, 'item');
+	      return true;
+	    }
 
     if (effectiveType === 'heal') {
       if (!user?.id || !hasLoadedCloudSave) {
@@ -17051,11 +20628,12 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       const springKey = `${currentMapName}:${eventId || healEvent?.id || 'heal'}:${tileX ?? 'x'}:${tileY ?? 'y'}`;
       const currentGold = latestPlayerResourcesRef.current?.gold ?? playerGold;
 
-      if (pendingSpringRestoreConfirm?.key === springKey || springRestoreBusy) {
-        return false;
-      }
+	      if (pendingSpringRestoreConfirm?.key === springKey || springRestoreBusy) {
+	        return false;
+	      }
+	      gameAudio.playMapTouch({ kind: 'spring' });
 
-      setPendingSpringRestoreConfirm({
+	      setPendingSpringRestoreConfirm({
         key: springKey,
         mapName: currentMapName,
         springName,
@@ -17177,6 +20755,14 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(message, 'error');
         return false;
       }
+      const partySpeciesViolation = getPartySpeciesClauseViolation(playerTeam);
+      if (partySpeciesViolation) {
+        const message = getPartySpeciesClauseMessage(partySpeciesViolation);
+        addLog(message);
+        addNotification(message, 'warning');
+        gameAudio.playError();
+        return false;
+      }
       const battleMapEvent = resolveConfiguredBattleMapEvent({
         mapName: currentMapName,
         eventType: effectiveType,
@@ -17192,6 +20778,31 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         ? battleMapEvent.id
         : eventId;
       const battleEventProps = getMapEventProperties(battleMapEvent || mapEvent);
+      const isChampionTowerChallenge = Boolean(
+        LONG_TERM_PROGRESSION_FLAGS.championTowerV1 &&
+        currentMapName === CHAMPION_TOWER_MAP_ID &&
+        battleEventType === 'challenge' &&
+        battleEventProps.towerChallenge
+      );
+      const liveChampionTowerFloor = isChampionTowerChallenge
+        ? getTowerNextFloor(interactionWorld)
+        : null;
+      const liveChampionTowerProgress = isChampionTowerChallenge
+        ? normalizeTowerSeason(interactionWorld?.championTower)
+        : null;
+      const championTowerStoryClimb = Boolean(
+        isChampionTowerChallenge && liveChampionTowerProgress?.highestStoryFloor < 10
+      );
+      const championTowerSeasonKey = isChampionTowerChallenge ? getCurrentIsoWeekKey() : null;
+      const requestedChampionTowerFloor = Math.trunc(Number(context.championTowerFloor));
+      const resolvedChampionTowerFloor = Number.isSafeInteger(requestedChampionTowerFloor) && requestedChampionTowerFloor === liveChampionTowerFloor
+        ? requestedChampionTowerFloor
+        : liveChampionTowerFloor;
+      const championTowerFloorDefinition = isChampionTowerChallenge
+        ? championTowerStoryClimb
+          ? getChampionTowerFloor(resolvedChampionTowerFloor)
+          : getChampionTowerWeeklyFloor(resolvedChampionTowerFloor, championTowerSeasonKey)
+        : null;
 
       if (!battleEventId) {
         console.warn('[OriginalGame] Blocked untracked configured battle event.', {
@@ -17205,16 +20816,29 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
-      const battleEventRole = resolveConfiguredBattleRole(battleEventType, battleEventProps);
-      const roleBalance = getTrainerRoleBalance(battleEventRole);
-      const isDailyScalingTrainer = isDailyScalingTrainerEvent(battleEventType, battleEventRole);
+	      const battleEventRole = resolveConfiguredBattleRole(battleEventType, battleEventProps);
+	      const roleBalance = getTrainerRoleBalance(battleEventRole);
+	      const isDailyScalingTrainer = isDailyScalingTrainerEvent(battleEventType, battleEventRole);
       const isDailyVariantBattle = isDailyVariantBattleEvent(battleEventType, battleEventRole);
       const isProgressiveRepeatableTrainer = isRepeatableTrainerEvent(battleEventType, battleEventRole);
       const usesProgressiveBattleState = isDailyVariantBattle || isProgressiveRepeatableTrainer;
-      const eventName = battleEventProps.name || (
-        battleEventType === 'boss' ? '区域首领' : battleEventType === 'challenge' ? '区域试炼' : '训练家'
-      );
-      const completionKey = getConfiguredBattleCompletionKey(battleEventType);
+	      const eventName = championTowerFloorDefinition?.name || battleEventProps.name || (
+	        battleEventType === 'boss' ? '区域首领' : battleEventType === 'challenge' ? '区域试炼' : '训练家'
+	      );
+	      if (isChampionTowerChallenge && !isChampionTowerUnlocked(interactionWorld)) {
+	        addNotification('击败龙穹天王后，冠军挑战塔才会认可新的挑战者。', 'warning');
+	        return false;
+	      }
+	      if (!context.skipBattleConfirm) {
+	        gameAudio.playMapTouch({
+	          kind: battleEventType === 'challenge'
+	            ? 'trial'
+	            : battleEventType === 'boss' || normalizeTrainerRole(battleEventRole) === 'boss'
+	              ? 'boss'
+	              : 'npc'
+	        });
+	      }
+	      const completionKey = getConfiguredBattleCompletionKey(battleEventType);
       const isCompletedBattleEvent = isProgressiveRepeatableTrainer
         ? false
         : battleEventType === 'boss'
@@ -17314,18 +20938,32 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         );
         return false;
       }
-      if (battleEventType === 'boss') {
-        const requiredTrainerIds = Array.isArray(battleEventProps.requiredTrainerIds)
-          ? battleEventProps.requiredTrainerIds.filter((id) => typeof id === 'string' && id.length > 0)
-          : [];
-        const missingCount = Math.max(
-          0,
-          requiredTrainerIds.length - countMapScopedWorldEventIds(interactionWorld, 'defeatedTrainerIds', currentMapName, requiredTrainerIds)
+      const requiredTrainerIds = Array.isArray(battleEventProps.requiredTrainerIds)
+        ? battleEventProps.requiredTrainerIds.filter((id) => typeof id === 'string' && id.length > 0)
+        : [];
+      const missingRequiredTrainerCount = Math.max(
+        0,
+        requiredTrainerIds.length - countMapScopedWorldEventIds(interactionWorld, 'defeatedTrainerIds', currentMapName, requiredTrainerIds)
+      );
+      if (missingRequiredTrainerCount > 0) {
+        addNotification(
+          battleEventProps.lockedText || `还需击败 ${missingRequiredTrainerCount} 名前置部下。`,
+          'warning'
         );
-        if (missingCount > 0) {
-          addNotification(battleEventProps.lockedText || `还需击败 ${missingCount} 名部下。`, 'warning');
-          return false;
-        }
+        return false;
+      }
+      const unlockTaskGate = LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1
+        ? getEliteUnlockTargetGate(interactionWorld, currentMapName, battleEventId)
+        : null;
+      if (unlockTaskGate && !unlockTaskGate.completed) {
+        const nextStepName = unlockTaskGate.nextStep?.name || '对应机关';
+        addNotification(
+          unlockTaskGate.available
+            ? `先完成解锁任务「${unlockTaskGate.task.title}」 ${unlockTaskGate.completedStepCount}/${unlockTaskGate.totalStepCount}，下一步：${nextStepName}。`
+            : `「${unlockTaskGate.task.title}」尚未开放，请先完成前一段机关与守关者。`,
+          'warning'
+        );
+        return false;
       }
       const currentMapConfig = getMapConfig(currentMapName);
       const bossLevelCap = getMapBossLevelCap(currentMapName);
@@ -17336,7 +20974,9 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         playerAverageLevel: playerAvgLevel,
         leadLevel: battleLeadMon?.level
       });
-      const baseResolvedTeamConfig = usesProgressiveBattleState
+      const baseResolvedTeamConfig = championTowerFloorDefinition
+        ? championTowerFloorDefinition.team
+        : usesProgressiveBattleState
         ? resolveDailyBattleTeamConfig(battleEventProps.team, {
           mapName: currentMapName,
           world: interactionWorld,
@@ -17349,12 +20989,14 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           dailyVariantLevelJitter: battleEventProps.dailyVariantLevelJitter
         })
         : battleEventProps.team;
-      const resolvedTeamConfig = rebalanceTrainerBattleTeamLevels(baseResolvedTeamConfig, {
-        role: battleEventRole,
-        mapConfig: currentMapConfig,
-        bossLevelCap,
-        playerLevel: playerPressureLevel
-      });
+      const resolvedTeamConfig = championTowerFloorDefinition
+        ? baseResolvedTeamConfig.map((member) => ({ ...member }))
+        : rebalanceTrainerBattleTeamLevels(baseResolvedTeamConfig, {
+          role: battleEventRole,
+          mapConfig: currentMapConfig,
+          bossLevelCap,
+          playerLevel: playerPressureLevel
+        });
       const energyCost = getBattleEnergyCost({ battleKind: 'trainer', mapLevel });
       const shouldStartBattleImmediately = Boolean(context.skipBattleConfirm);
       let battleEventStartLockHeld = false;
@@ -17379,6 +21021,47 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
         return false;
       }
+      if (battleEventType === 'challenge' && championTowerFloorDefinition && !context.skipBattleConfirm) {
+        const resolvedTowerTeamSize = getConfiguredBattleOpponentCount(resolvedTeamConfig);
+        const isStoryClimb = championTowerStoryClimb;
+        setPendingBattleEventConfirm({
+          type,
+          amount,
+          eventName,
+          eventTitle: championTowerFloorDefinition.title,
+          energyCost,
+          teamSize: resolvedTowerTeamSize,
+          levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
+          rewardItems: [],
+          rewardLabel: isStoryClimb ? '首轮登塔记录' : '本周登塔记录',
+          rewardDescriptions: [],
+          unlockSpeciesPool: [],
+          unlockDescription: championTowerFloorDefinition.floor === 10
+            ? (isStoryClimb ? '胜利后获得冠军之证，并开放每周登塔。' : '胜利后完成本周登顶记录。')
+            : `胜利后点亮第 ${championTowerFloorDefinition.floor} 层，失败不会降低已完成层数。`,
+          unlockProgress: {
+            previousUnlockedCount: championTowerFloorDefinition.floor - 1,
+            unlockedCount: championTowerFloorDefinition.floor,
+            totalCount: 10,
+            nextBatchIndex: championTowerFloorDefinition.floor
+          },
+          battlePreviewTeam: resolvedTeamConfig,
+          alreadyCompleted: false,
+          challengeKind: 'champion_tower',
+          context: {
+            ...context,
+            tileX,
+            tileY,
+            mapEvent: battleMapEvent,
+            playerPos: eventPlayerPos,
+            encounterCooldownSteps: eventCooldown,
+            skipBattleConfirm: true,
+            championTowerFloor: championTowerFloorDefinition.floor
+          }
+        });
+        return false;
+      }
+
       if (battleEventType === 'challenge' && !context.skipBattleConfirm) {
         const resolvedChallengeTeamSize = getConfiguredBattleOpponentCount(resolvedTeamConfig);
         const resolvedChallengeTitle = `${eventName} · ${resolvedChallengeTeamSize} 连战`;
@@ -17390,7 +21073,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         const nextChallengeRareUnlockBatch = challengeRareUnlockContext.unlockBatch;
         const challengeRunRewardItems = getChallengeRunRewardItems({
           mapName: currentMapName,
-          teamSize: resolvedChallengeTeamSize
+          teamSize: resolvedChallengeTeamSize,
+          repeatClear: isCompletedBattleEvent
         });
         const challengeDisplayRewardItems = mergeNormalizedMapRewardItems([
           ...(isCompletedBattleEvent ? [] : normalizeMapRewardItems(battleEventProps.rewardItems)),
@@ -17409,8 +21093,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           rewardDescriptions: describeMapRewardItems(challengeDisplayRewardItems),
           unlockSpeciesPool: nextChallengeRareUnlockBatch,
           unlockDescription: nextChallengeRareUnlockBatch.length > 0
-            ? `本次通关会解锁下一批隐藏生态。`
-            : `本区域隐藏生态已全部解锁。`,
+            ? `本次通关会解锁下一批试炼稀有。`
+            : `本区域试炼稀有已全部解锁。`,
           unlockProgress: {
             previousUnlockedCount: challengeRareUnlockContext.previousUnlockedCount,
             unlockedCount: challengeRareUnlockContext.unlockedCount,
@@ -17468,6 +21152,22 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           }
           return [isDailyScalingTrainer ? '今日首胜' : '常驻奖励'];
         })();
+        const configuredStatusChips = buildConfiguredNpcBattleStatusChips({
+          eventRole: normalizedEventRole,
+          properties: battleEventProps,
+          defaultStatusChips
+        });
+        const lieutenantSequenceOrder = normalizedEventRole === 'lieutenant'
+          ? Math.max(1, Math.trunc(Number(battleEventProps.sequenceOrder)) || 1)
+          : 0;
+        const lieutenantSequenceTotal = normalizedEventRole === 'lieutenant'
+          ? Math.max(
+            1,
+            (getAdventureMapInfo(currentMapName)?.runtimeEvents || [])
+              .filter((event) => event?.type === 'trainer' && normalizeTrainerRole(event?.properties?.role || 'normal') === 'lieutenant')
+              .length || 3
+          )
+          : 0;
         setPendingNpcBattleConfirm({
           type,
           amount,
@@ -17477,13 +21177,21 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           ruleDescription: typeof battleEventProps.ruleDescription === 'string'
             ? battleEventProps.ruleDescription
             : '',
+          battleHintText: typeof battleEventProps.battleHintText === 'string'
+            ? battleEventProps.battleHintText
+            : '',
           energyCost,
           teamSize: resolvedNpcTeamSize,
           levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
           expectedGold: npcRewardPreview.gold,
           rewardItems: npcRewardItems,
-          statusChips: defaultStatusChips,
+          statusChips: configuredStatusChips,
           eventRole: battleEventRole,
+          sequenceOrder: lieutenantSequenceOrder,
+          sequenceTotal: lieutenantSequenceTotal,
+          battleStyleLabel: typeof battleEventProps.battleStyleLabel === 'string'
+            ? battleEventProps.battleStyleLabel
+            : '',
           anchorDirection: eventPlayerPos?.direction || playerPosRef.current?.direction || 'up',
           context: {
             ...context,
@@ -17498,7 +21206,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         return false;
       }
 
-      const challengeRareUnlockContext = battleEventType === 'challenge'
+      const challengeRareUnlockContext = battleEventType === 'challenge' && !championTowerFloorDefinition
         ? getChallengeRareUnlockContext({
           event: battleMapEvent,
           world: interactionWorld,
@@ -17557,12 +21265,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         challengeRareUnlockStage: challengeRareUnlockContext?.unlockStage || null,
         challengeRareUnlockedCount: challengeRareUnlockContext?.unlockedCount ?? null,
         challengeRareTotalCount: challengeRareUnlockContext?.totalCount ?? null,
+        championTowerFloor: championTowerFloorDefinition?.floor || null,
+        championTowerStoryClimb,
+        championTowerSeasonKey: championTowerStoryClimb ? null : championTowerSeasonKey,
         battleEventCompletion,
+        specialBattleRule: battleEventProps.specialBattleRule || null,
         eventPosition: battleMapEvent?.position || mapEvent?.position || { x: tileX, y: tileY },
         triggerPosition: eventPlayerPos,
       });
       const atomicResult = await commitCloudSnapshotWithResources({
         buildSnapshot: (baseSnapshot) => {
+          const snapshotSpeciesViolation = getPartySpeciesClauseViolation(baseSnapshot.playerTeam);
+          if (snapshotSpeciesViolation) {
+            return abortCloudSnapshotCommit(getPartySpeciesClauseMessage(snapshotSpeciesViolation), 'warning');
+          }
           const snapshotLeadId = resolveBattleLeadId(baseSnapshot.playerTeam) || battleLeadId || baseSnapshot.activePlayerId;
           const worldPositionPatch = buildWorldPositionPatch(baseSnapshot, eventPlayerPos);
           return {
@@ -17591,6 +21307,21 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       energyReason: `战斗消耗（${eventName}）`
       });
       if (atomicResult.success) {
+        recordGameLog('trainer_battle_start', {
+          title: `挑战 ${eventName}`,
+          summary: `${currentMapConfig.displayName}触发${battleEventProps.title || roleBalance.label}，对手 ${newTeam.length} 只，首发 ${newTeam[0]?.name || '宝可梦'}。`,
+          position: eventPlayerPos,
+          details: {
+            eventId: battleEventId,
+            eventType: battleEventType,
+            eventRole: battleEventRole,
+            trainerName: eventName,
+            enemyName: newTeam[0]?.name || '',
+            enemyLevel: newTeam[0]?.level || null,
+            teamSize: newTeam.length,
+            energyCost
+          }
+        });
         gameAudio.playEncounter({ trainer: true, challenge: battleEventType === 'challenge', boss: battleEventType === 'boss' });
         activeBattleEnergyCostRef.current = energyCost;
         setActiveBattleEnergyCost(energyCost);
@@ -17609,7 +21340,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     return false;
-  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, hasLoadedCloudSave, hiddenEncounterUnlockBusy, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingHiddenEncounterUnlock, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
+  }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, handleNavigateView, hasLoadedCloudSave, hiddenEncounterUnlockBusy, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingHiddenEncounterUnlock, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, recordGameLog, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
 
   const handleCancelBattleEventConfirm = useCallback(() => {
     if (battleEventConfirmBusy) return;
@@ -17705,6 +21436,16 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           ? getMapEventAt(currentMapName, pendingHiddenEncounterUnlock.tileX, pendingHiddenEncounterUnlock.tileY, 'sign')
           : null
       );
+      if (!isHiddenEncounterGateBossRequirementMet(worldRef.current, currentMapName, gateEvent)) {
+        const message = getHiddenEncounterGateBossLockedReason(getMapEventProperties(gateEvent));
+        setPendingHiddenEncounterUnlock((current) => (
+          current?.key === pendingHiddenEncounterUnlock.key
+            ? { ...current, error: message }
+            : current
+        ));
+        addNotification(message, 'warning');
+        return;
+      }
       const flagKey = pendingHiddenEncounterUnlock.flagKey || getHiddenEncounterGateFlagKey(currentMapName, gateEvent);
       if (!flagKey) {
         addNotification('隐藏通路配置缺失，暂时无法开启。', 'error');
@@ -17738,6 +21479,17 @@ const handleEncounter = useCallback(async (encounterPayload) => {
 
       setPendingHiddenEncounterUnlock(null);
       gameAudio.playItemUse({ category: 'shop' });
+      recordGameLog('hidden_area_unlock', {
+        title: `开启${zoneName}`,
+        summary: `支付 ${unlockCost} 金币，开启了${zoneName}的隐藏通路。`,
+        position: eventPlayerPos,
+        details: {
+          zoneName,
+          gold: -unlockCost,
+          flagKey,
+          eventId: gateEvent?.id || pendingHiddenEncounterUnlock.key
+        }
+      });
       addNotification(pendingHiddenEncounterUnlock.successText || `${zoneName}的隐秘通路已经打开。`, 'item');
     } finally {
       setHiddenEncounterUnlockBusy(false);
@@ -17752,6 +21504,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     hiddenEncounterUnlockBusy,
     pendingHiddenEncounterUnlock,
     playerPos,
+    recordGameLog,
     refreshPlayerResources,
     user?.id
   ]);
@@ -17843,6 +21596,17 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       springRestoreAnimationTimerRef.current = window.setTimeout(() => {
         setSpringRestoreAnimation((current) => current?.id === nextAnimation.id ? null : current);
       }, 2600);
+      recordGameLog('healing_spring', {
+        title: `${springName}恢复`,
+        summary: `${springName}恢复全队体力、技能值并解除异常，花费 ${healCost} 金币。`,
+        position: eventPlayerPos,
+        details: {
+          springName,
+          gold: -healCost,
+          tileX: pendingSpringRestoreConfirm.tileX,
+          tileY: pendingSpringRestoreConfirm.tileY
+        }
+      });
       addNotification(`${springName}已恢复全队并解除异常。`, 'info');
     } finally {
       setSpringRestoreBusy(false);
@@ -17856,6 +21620,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     hasLoadedCloudSave,
     pendingSpringRestoreConfirm,
     playerPos,
+    recordGameLog,
     refreshPlayerResources,
     springRestoreBusy,
     user?.id
@@ -17914,6 +21679,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       phase: 'departing',
       fromLabel,
       toLabel,
+      concealMap: ELITE_FOUR_CEREMONY_MAP_IDS.includes(targetMapName),
       terrain: getFastTravelStationMeta(targetMapName)?.terrain || 'meadow',
       renderMode: getAdventureMapInfo(currentMapName)?.renderMode || getAdventureMapInfo(targetMapName)?.renderMode || null,
       travelDirection: 'right'
@@ -17988,7 +21754,23 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         travelDirection: nextPosition.direction || 'down',
         renderMode: getAdventureMapInfo(targetMapName)?.renderMode || null
       } : current);
-      await wait(1120);
+      await wait(680);
+      startEliteFourCeremony(targetMapName, 'entry');
+      await wait(440);
+      recordGameLog('fast_travel', {
+        title: `快速传送到${toLabel}`,
+        summary: `从${fromLabel}快速传送到${toLabel}，消耗 ${travelCost} 金币。`,
+        mapName: targetMapName,
+        mapDisplayName: toLabel,
+        position: nextPosition,
+        details: {
+          fromMapName: currentMapName,
+          fromMapDisplayName: fromLabel,
+          targetMapName,
+          targetMapDisplayName: toLabel,
+          gold: -travelCost
+        }
+      });
     } catch (error) {
       const message = error?.message || '快速传送失败，请重试。';
       setPendingFastTravel({ ...travelRequest, currentGold: latestGoldForFailure, error: message });
@@ -18007,7 +21789,9 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     pendingFastTravel,
     playerGold,
     playerTeam,
+    recordGameLog,
     refreshPlayerResources,
+    startEliteFourCeremony,
     user?.id,
     world
   ]);
@@ -18085,6 +21869,126 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     addNotification,
     commitCloudSnapshot,
     hasLoadedCloudSave,
+    user?.id,
+  ]);
+
+  const handleCustomizeMonsterMoves = useCallback(async (monsterId, moveKeys = [], from = 'party') => {
+    const targetMon = from === 'storage'
+      ? storageBox.find((mon) => mon.id === monsterId)
+      : playerTeam.find((mon) => mon.id === monsterId);
+    if (!targetMon) {
+      addNotification('目标宝可梦已变化，请重新选择。', 'warning');
+      return false;
+    }
+
+    if (pendingGrowthEvents.length > 0) {
+      addNotification('请先完成当前升级、学会技能或进化事件，再调整技能。', 'warning');
+      return false;
+    }
+
+    const normalizedMoveKeys = normalizeRuntimeKnownMoveKeys(moveKeys);
+    if (normalizedMoveKeys.length === 0) {
+      addNotification('至少保留 1 个技能。', 'warning');
+      return false;
+    }
+
+    const currentMoveKeys = normalizeRuntimeKnownMoveKeys(targetMon.moves);
+    if (JSON.stringify(normalizedMoveKeys) === JSON.stringify(currentMoveKeys)) {
+      addNotification('技能方案没有变化。', 'info');
+      return false;
+    }
+
+    const editableMoveKeySet = new Set([
+      ...getMoveKeysAvailableForMonsterLevel(targetMon, targetMon.level, { includeEmergencyFallback: false }),
+      ...currentMoveKeys,
+    ]);
+    const hasInvalidSelection = normalizedMoveKeys.some((moveKey) => !editableMoveKeySet.has(moveKey));
+    if (hasInvalidSelection) {
+      addNotification('所选技能中包含当前不可调整的技能，请重新选择。', 'warning');
+      return false;
+    }
+
+    const currentGold = latestPlayerResourcesRef.current?.gold ?? playerGold;
+    if (currentGold < MOVE_CUSTOMIZATION_COST) {
+      addNotification(`调整技能需要 ${MOVE_CUSTOMIZATION_COST} 金币，当前金币不足。`, 'warning');
+      return false;
+    }
+
+    if (!user?.id || !hasLoadedCloudSave) {
+      addNotification('云端未就绪，技能方案未保存。', 'error');
+      return false;
+    }
+
+    const atomicResult = await commitCloudSnapshotWithResources({
+      buildSnapshot: (baseSnapshot) => {
+        const baseRoster = {
+          playerTeam: Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [],
+          storageBox: Array.isArray(baseSnapshot.storageBox) ? baseSnapshot.storageBox : [],
+          activePlayerId: baseSnapshot.activePlayerId,
+        };
+        const baseTarget = from === 'storage'
+          ? baseRoster.storageBox.find((mon) => mon.id === monsterId)
+          : baseRoster.playerTeam.find((mon) => mon.id === monsterId);
+        if (!baseTarget) {
+          return abortCloudSnapshotCommit('目标宝可梦已变化，请重新选择。');
+        }
+
+        const baseCurrentMoveKeys = normalizeRuntimeKnownMoveKeys(baseTarget.moves);
+        const baseEditableMoveKeySet = new Set([
+          ...getMoveKeysAvailableForMonsterLevel(baseTarget, baseTarget.level, { includeEmergencyFallback: false }),
+          ...baseCurrentMoveKeys,
+        ]);
+        if (
+          normalizedMoveKeys.length === 0 ||
+          normalizedMoveKeys.some((moveKey) => !baseEditableMoveKeySet.has(moveKey))
+        ) {
+          return abortCloudSnapshotCommit('技能方案已过期，请重新选择。');
+        }
+
+        const updateResult = updateRosterMonster(baseRoster, monsterId, {
+          ...baseTarget,
+          moves: normalizedMoveKeys,
+          moveLoadoutMode: 'custom',
+        });
+        if (!updateResult.success) {
+          return abortCloudSnapshotCommit('目标宝可梦已变化，请重新选择。');
+        }
+
+        return {
+          ...baseSnapshot,
+          playerTeam: updateResult.playerTeam,
+          storageBox: updateResult.storageBox,
+          activePlayerId: resolveDefaultActivePlayerId(updateResult.playerTeam, updateResult.activePlayerId),
+          logs: appendSnapshotLogs(baseSnapshot, [
+            `花费 ${MOVE_CUSTOMIZATION_COST} 金币，为 ${baseTarget.name} 调整了技能方案。`
+          ])
+        };
+      },
+      goldDelta: -MOVE_CUSTOMIZATION_COST,
+      goldReason: `调整${targetMon.name}的技能`
+    });
+
+    if (atomicResult.success) {
+      addNotification(`${targetMon.name} 的技能方案已保存。`, 'success');
+      gameAudio.playUiConfirm();
+      return true;
+    }
+
+    if (atomicResult.message) {
+      addNotification(
+        atomicResult.message,
+        atomicResult.notificationType || (atomicResult.requiresReload ? 'error' : 'warning')
+      );
+    }
+    return false;
+  }, [
+    addNotification,
+    commitCloudSnapshotWithResources,
+    hasLoadedCloudSave,
+    pendingGrowthEvents,
+    playerGold,
+    playerTeam,
+    storageBox,
     user?.id,
   ]);
 
@@ -18186,6 +22090,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
+      recordGameLog('item_used', {
+        title: `使用 ${pokeball.name}`,
+        summary: `${activePlayerMon.name} 向 ${targetMon.name} 投出了 ${pokeball.name}。`,
+        details: {
+          itemType: 'pokeball',
+          itemKey,
+          itemName: pokeball.name,
+          pokemonName: targetMon.name,
+          pokemonLevel: targetMon.level,
+          catchRate: finalCatchRate,
+          caught,
+          inBattle: true
+        }
+      });
       return true;
     }
 
@@ -18245,16 +22163,38 @@ const handleEncounter = useCallback(async (encounterPayload) => {
               nextPlayerMonsterId + 1
             ),
             pendingMonsterAcquisition: rosterResult.needsDecision ? pendingCapture : null,
+            world: registerPokemonSpecies(baseSnapshot.world, caughtMonster, { wildCaptured: true }),
             logs: appendSnapshotLogs(baseSnapshot, [`成功捕捉到 ${result.pokemonName}!`])
           });
         }
       });
 
       if (commitResult.success) {
+        recordGameLog('capture_result', {
+          title: `捕捉成功：${result.pokemonName}`,
+          summary: `使用${result.ballName || '精灵球'}成功捕捉 ${result.pokemonName} Lv.${result.pokemonLevel || caughtMonster.level}。`,
+          details: {
+            result: '成功',
+            pokemonName: result.pokemonName || caughtMonster.name,
+            pokemonLevel: result.pokemonLevel || caughtMonster.level,
+            ballName: result.ballName || '',
+            ballKey: result.ballKey || caughtMonster.capturedBallKey || '',
+            catchRate: result.catchRate ?? null
+          }
+        });
         activeBattleEnergyCostRef.current = 0;
         setBattleEnergyRefundEligible(false);
         if (result.pokemonName && !commitResult.saveRow?.game_data?.pendingMonsterAcquisition) {
-          addNotification(`${result.pokemonName} 已加入队伍。`, 'item');
+          const savedStorageBox = commitResult.saveRow?.game_data?.storageBox;
+          const wasSentToStorage = Array.isArray(savedStorageBox) && savedStorageBox.some((monster) => (
+            monster?.id === caughtMonster.id
+          ));
+          addNotification(
+            wasSentToStorage
+              ? `${result.pokemonName} 与队伍成员同物种，已送入仓库。`
+              : `${result.pokemonName} 已加入队伍。`,
+            'item'
+          );
         }
         return;
       }
@@ -18285,6 +22225,18 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
+      recordGameLog('capture_result', {
+        title: `捕捉失败：${result?.pokemonName || '野生宝可梦'}`,
+        summary: `${result?.pokemonName || '野生宝可梦'}挣脱了${result?.ballName ? ` ${result.ballName}` : '精灵球'}。`,
+        details: {
+          result: '失败',
+          pokemonName: result?.pokemonName || '',
+          pokemonLevel: result?.pokemonLevel || null,
+          ballName: result?.ballName || '',
+          ballKey: result?.ballKey || '',
+          catchRate: result?.catchRate ?? null
+        }
+      });
       return;
     }
 
@@ -18295,7 +22247,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
       );
     }
-  }, [addLog, addNotification, commitCloudSnapshot, hasLoadedCloudSave, nextPlayerMonsterId, resolveTrackedActiveBattleEnergyCost, user?.id]);
+  }, [addLog, addNotification, commitCloudSnapshot, hasLoadedCloudSave, nextPlayerMonsterId, recordGameLog, resolveTrackedActiveBattleEnergyCost, user?.id]);
 
   // 胜利过场结束后返回地图
   const handleVictoryContinue = useCallback(async () => {
@@ -18308,6 +22260,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     let completedBattleEventWorld = null;
     let completedBattleEventMapName = null;
     let completedBattleEventLocalOverrideMeta = null;
+    let completedEliteBossMapName = null;
+    let completedChampionTowerMapName = null;
+    let completedChampionTowerFloor = null;
+    let completedChampionTowerStoryClimb = false;
 
     const commitResult = await commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => {
@@ -18319,6 +22275,19 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           fallbackMapName: currentMapName
         });
         const completionResult = applyConfiguredBattleCompletionToWorld(committedSnapshot.world, completionMeta);
+        if (completionMeta.eventType === 'boss' && isEliteFourBossEvent(completionMeta.mapName, completionMeta.eventId)) {
+          completedEliteBossMapName = completionMeta.mapName;
+        }
+        if (
+          completionMeta.mapName === CHAMPION_TOWER_MAP_ID &&
+          completionMeta.eventId === 'champion_tower_trial'
+        ) {
+          completedChampionTowerFloor = hydratedBattleSnapshot.battleEnvironment?.championTowerFloor || null;
+          completedChampionTowerStoryClimb = Boolean(hydratedBattleSnapshot.battleEnvironment?.championTowerStoryClimb);
+          if (completedChampionTowerFloor === 10 && completedChampionTowerStoryClimb) {
+            completedChampionTowerMapName = completionMeta.mapName;
+          }
+        }
         completedBattleEventWorld = completionResult.world;
         completedBattleEventMapName = completionMeta.mapName;
         completedBattleEventLockKeys = getBattleEventCompletedLockKeys({
@@ -18359,6 +22328,13 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       activeBattleEnergyCostRef.current = 0;
       setBattleEnergyRefundEligible(false);
       refreshPlayerResources();
+      if (completedEliteBossMapName) {
+        startEliteFourCeremony(completedEliteBossMapName, 'victory');
+      } else if (completedChampionTowerMapName) {
+        startEliteFourCeremony(completedChampionTowerMapName, 'victory');
+      } else if (completedChampionTowerFloor) {
+        startChampionTowerFloorCeremony(completedChampionTowerFloor, completedChampionTowerStoryClimb);
+      }
       return;
     }
 
@@ -18369,7 +22345,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
       );
     }
-  }, [addLog, addNotification, battleEnvironment, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, markCompletedBattleEventLocally, playerPos, refreshPlayerResources, user?.id]);
+  }, [addLog, addNotification, battleEnvironment, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, markCompletedBattleEventLocally, playerPos, refreshPlayerResources, startChampionTowerFloorCeremony, startEliteFourCeremony, user?.id]);
 
   // 逃跑过场结束后返回地图（成功逃跑退回本场已扣能量）
   const handleEscapeContinue = useCallback(async () => {
@@ -18398,6 +22374,16 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         activeBattleEnergyCostRef.current = 0;
         setBattleEnergyRefundEligible(false);
         gameAudio.playEscape({ success: true });
+        recordGameLog('battle_escape', {
+          title: '逃跑成功',
+          summary: '成功逃跑并回到地图。',
+          details: {
+            refundedEnergy: 0,
+            battleKind,
+            enemyName: activeEnemyMon?.name || '',
+            enemyLevel: activeEnemyMon?.level || null
+          }
+        });
         return;
       }
 
@@ -18424,6 +22410,16 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       gameAudio.playEscape({ success: true });
       activeBattleEnergyCostRef.current = 0;
       setBattleEnergyRefundEligible(false);
+      recordGameLog('battle_escape', {
+        title: '逃跑成功',
+        summary: `成功逃跑并退回 ${refundAmount} 点能量。`,
+        details: {
+          refundedEnergy: refundAmount,
+          battleKind,
+          enemyName: activeEnemyMon?.name || '',
+          enemyLevel: activeEnemyMon?.level || null
+        }
+      });
       return;
     }
 
@@ -18438,7 +22434,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       recoveryMessage,
       atomicResult.requiresReload ? 'error' : 'warning'
     );
-  }, [addLog, addNotification, battleEnergyRefundEligible, commitCloudSnapshot, commitCloudSnapshotWithResources, hasLoadedCloudSave, resolveTrackedActiveBattleEnergyCost, user?.id]);
+  }, [activeEnemyMon, addLog, addNotification, battleEnergyRefundEligible, battleKind, commitCloudSnapshot, commitCloudSnapshotWithResources, hasLoadedCloudSave, recordGameLog, resolveTrackedActiveBattleEnergyCost, user?.id]);
 
   const handleRun = useCallback(async () => {
     if (turn !== 'player') return;
@@ -18596,6 +22592,22 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     });
 
     if (commitResult.success) {
+      gameAudio.playItemUse({ category: 'potion' });
+      recordGameLog('item_used', {
+        title: `使用 ${potion.name}`,
+        summary: `${targetMon.name} 使用 ${potion.name}，${getRecoveryBehaviorText({ hp: hpRestoreAmount, mp: mpRestoreAmount, curedStatus: curesStatus })}。`,
+        details: {
+          itemType: 'potion',
+          itemKey: potionKey,
+          itemName: potion.name,
+          pokemonName: targetMon.name,
+          pokemonLevel: targetMon.level,
+          hp: hpRestoreAmount,
+          mp: mpRestoreAmount,
+          curedStatus: curesStatus,
+          inBattle: view === 'battle'
+        }
+      });
       return true;
     }
 
@@ -18607,7 +22619,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       );
     }
     return false;
-  }, [activeEnemyId, activePlayerMon, addLog, addNotification, battlePhase, commitCloudSnapshot, hasLoadedCloudSave, playerInventory, playerTeam, resolveTrackedActiveBattleEnergyCost, user?.id, view]);
+  }, [activeEnemyId, activePlayerMon, addLog, addNotification, battlePhase, commitCloudSnapshot, hasLoadedCloudSave, playerInventory, playerTeam, recordGameLog, resolveTrackedActiveBattleEnergyCost, user?.id, view]);
 
   const handleUseExpPotion = useCallback(async (monsterId, potionKey) => {
     const potion = EXP_POTIONS[potionKey];
@@ -18712,6 +22724,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
 
     releaseGrowthModalDelay(EXP_ANIMATION_DURATION_MS);
     gameAudio.playItemUse({ category: 'exp' });
+    recordGameLog('item_used', {
+      title: `使用 ${potion.name}`,
+      summary: `${targetMon.name} 获得 ${potion.expAmount} 经验${committedGrowthPreview.levelUps.length > 0 ? `，升级 ${committedGrowthPreview.levelUps.length} 次` : ''}。`,
+      details: {
+        itemType: 'expPotion',
+        itemKey: potionKey,
+        itemName: potion.name,
+        pokemonName: targetMon.name,
+        pokemonLevel: targetMon.level,
+        exp: potion.expAmount,
+        levelUps: committedGrowthPreview.levelUps,
+        hasEvolution: committedGrowthPreview.events.some((evt) => evt.type === 'evolution' || evt.type === 'evolutionChoice')
+      }
+    });
     scheduleLevelUpCelebration(
       committedGrowthPreview.levelUps,
       committedGrowthPreview.updatedMon || targetMon,
@@ -18733,6 +22759,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     pendingGrowthEvents,
     playerInventory,
     playerTeam,
+    recordGameLog,
     scheduleLevelUpCelebration,
     user?.id,
     view
@@ -18839,6 +22866,18 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
 
     gameAudio.playItemUse({ category: 'exp' });
+    recordGameLog('item_used', {
+      title: `使用 ${item.name}`,
+      summary: `${targetMon.name} 使用 ${item.name}，${getStatBoostEffectText(item)}。`,
+      details: {
+        itemType: 'statBoost',
+        itemKey,
+        itemName: item.name,
+        pokemonName: targetMon.name,
+        pokemonLevel: targetMon.level,
+        effect: getStatBoostEffectText(item)
+      }
+    });
     return true;
   }, [
     addLog,
@@ -18848,6 +22887,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     hasLoadedCloudSave,
     playerInventory,
     playerTeam,
+    recordGameLog,
     user?.id,
     view
   ]);
@@ -18905,6 +22945,13 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (result.error === 'party_full') {
         return { success: false, message: '队伍已满，请先调整。', notificationType: 'error' };
       }
+      if (result.error === 'duplicate_species') {
+        return {
+          success: false,
+          message: `${result.monster?.name || targetMon?.name || '该宝可梦'} 已在出战队伍中，同物种最多出战 1 只。`,
+          notificationType: 'warning'
+        };
+      }
       return { success: false, message: '未找到目标宝可梦。', notificationType: 'warning' };
     }, {
       logMessage: `${targetMon?.name || '宝可梦'} 已加入队伍。`,
@@ -18922,6 +22969,13 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const result = await commitRosterMutation(({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }) => {
       const result = swapPartyAndStorage({ playerTeam: baseTeam, storageBox: baseStorageBox, activePlayerId: baseActivePlayerId }, partyId, storageId);
       if (result.success) return result;
+      if (result.error === 'duplicate_species') {
+        return {
+          success: false,
+          message: `${result.monster?.name || oldStorageMon?.name || '该宝可梦'} 已在出战队伍中，不能通过互换重复上阵。`,
+          notificationType: 'warning'
+        };
+      }
       return { success: false, message: '目标已变化，请重试。', notificationType: 'warning' };
     }, {
       logMessage: `${oldStorageMon?.name || '仓库宝可梦'} 与 ${oldPartyMon?.name || '队伍宝可梦'} 完成互换。`,
@@ -18963,6 +23017,13 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       if (result.success) return result;
       if (result.error === 'storage_full') {
         return { success: false, message: '仓库已满，无法替换。', notificationType: 'error' };
+      }
+      if (result.error === 'duplicate_species') {
+        return {
+          success: false,
+          message: `${result.monster?.name || pending.monster.name} 已在出战队伍中，请替换同物种的那只或放入仓库。`,
+          notificationType: 'warning'
+        };
       }
       return { success: false, message: '目标已变化，请重选。', notificationType: 'warning' };
     }, {
@@ -19230,6 +23291,10 @@ const handleReorderTeam = useCallback((newTeam) => {
         const baseActiveId = baseSnapshot.activePlayerId;
         const baseActiveMon = baseTeam.find((mon) => mon.id === baseActiveId);
         const hasAvailableBench = getAliveBattleBench(baseTeam, baseActiveId).length > 0;
+        const basePendingSwitch = normalizePendingBattleSwitch(baseSnapshot.pendingBattleSwitch);
+        if (basePendingSwitch || getLiveBattleSwitchInFlight(basePendingSwitch)) {
+          return baseSnapshot;
+        }
         if (baseSnapshot.activeEnemyId && isBattleMonFainted(baseActiveMon) && hasAvailableBench) {
           return {
             ...baseSnapshot,
@@ -19242,12 +23307,13 @@ const handleReorderTeam = useCallback((newTeam) => {
           };
         }
 
-        return {
+        const activeSnapshot = applySpecialBattleOpeningToSnapshot({
           ...baseSnapshot,
           battlePhase: 'active',
           battlePhaseData: null,
           turn: 'player'
-        };
+        });
+        return activeSnapshot;
       }
     });
 
@@ -19262,7 +23328,7 @@ const handleReorderTeam = useCallback((newTeam) => {
         commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
       );
     }
-  }, [addLog, addNotification, commitCloudSnapshot, hasLoadedCloudSave, user?.id]);
+  }, [addLog, addNotification, commitCloudSnapshot, getLiveBattleSwitchInFlight, hasLoadedCloudSave, user?.id]);
 
   useEffect(() => {
     if (!isActiveBattleContextView(view, activeEnemyId) || battlePhase !== 'active') {
@@ -19299,13 +23365,17 @@ const handleReorderTeam = useCallback((newTeam) => {
       playerTeam.find((mon) => mon.id === normalizedPendingSwitch.previousActivePlayerId) ||
       activePlayerMon ||
       null;
+    const shouldSkipRecall = normalizedPendingSwitch.forced || isBattleMonFainted(recallMonster);
+    const sendDelayMs = shouldSkipRecall ? 0 : BATTLE_SWITCH_RECALL_MS;
 
-    setSwitchVisualEvent({
-      id: `recover-switch-recall-${activePendingSwitchKey}`,
-      phase: 'recall',
-      monster: recallMonster,
-      durationMs: BATTLE_SWITCH_RECALL_MS
-    });
+    if (!shouldSkipRecall) {
+      setSwitchVisualEvent({
+        id: `recover-switch-recall-${activePendingSwitchKey}`,
+        phase: 'recall',
+        monster: recallMonster,
+        durationMs: BATTLE_SWITCH_RECALL_MS
+      });
+    }
 
     const sendTimer = window.setTimeout(() => {
       if (localBattleSwitchInFlightRef.current?.key !== activePendingSwitchKey) return;
@@ -19315,13 +23385,13 @@ const handleReorderTeam = useCallback((newTeam) => {
         monster: targetMon,
         durationMs: BATTLE_SWITCH_SEND_MS
       });
-    }, BATTLE_SWITCH_RECALL_MS);
+    }, sendDelayMs);
 
     const clearTimer = window.setTimeout(() => {
       if (localBattleSwitchInFlightRef.current?.key !== activePendingSwitchKey) return;
       setSwitchVisualEvent(null);
       localBattleSwitchInFlightRef.current = null;
-    }, BATTLE_SWITCH_RECALL_MS + BATTLE_SWITCH_SEND_MS);
+    }, sendDelayMs + BATTLE_SWITCH_SEND_MS);
 
     return () => {
       window.clearTimeout(sendTimer);
@@ -19334,7 +23404,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     const switchAlreadyInProgress =
       turn === 'resolving' ||
       Boolean(normalizedPendingSwitch?.nextActivePlayerId) ||
-      Boolean(localBattleSwitchInFlightRef.current?.key);
+      Boolean(getLiveBattleSwitchInFlight(normalizedPendingSwitch)?.key);
 
     if (
       view !== 'battle' ||
@@ -19357,11 +23427,19 @@ const handleReorderTeam = useCallback((newTeam) => {
     const recoveryMessage = '你的宝可梦倒下了！请选择一只宝可梦继续战斗。';
 
     const recoverForcedSwitchState = async () => {
+	      if (getLiveBattleSwitchInFlight(pendingBattleSwitch)) {
+	        playerDefeatRecoveryInFlightRef.current = false;
+	        return;
+	      }
 	      const commitResult = await commitCloudSnapshot({
 	        buildSnapshot: (baseSnapshot) => {
 	          const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
 	          const currentMon = baseTeam.find((mon) => mon.id === baseSnapshot.activePlayerId);
 	          const hasAvailableBench = getAliveBattleBench(baseTeam, baseSnapshot.activePlayerId).length > 0;
+	          const basePendingSwitch = normalizePendingBattleSwitch(baseSnapshot.pendingBattleSwitch);
+	          if (basePendingSwitch || getLiveBattleSwitchInFlight(basePendingSwitch)) {
+	            return baseSnapshot;
+	          }
 	          if (hasBattleHp(currentMon) || !hasAvailableBench) {
 	            return baseSnapshot;
 	          }
@@ -19397,6 +23475,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     battlePhase,
     commitCloudSnapshot,
     gameOver,
+    getLiveBattleSwitchInFlight,
     hasLoadedCloudSave,
     playerTeam,
     pendingBattleSwitch,
@@ -19468,10 +23547,34 @@ const handleReorderTeam = useCallback((newTeam) => {
 
     if (turn !== 'resolving') return undefined;
 
-    const timer = window.setTimeout(() => {
-      const recoverResolvingTurn = async () => {
+    const recoveryTimers = new Set();
+    let cancelled = false;
+    const scheduleRecoverResolvingTurn = (delayMs) => {
+      const timer = window.setTimeout(() => {
+        recoveryTimers.delete(timer);
+        if (cancelled) return;
+        recoverResolvingTurn();
+      }, Math.max(0, delayMs));
+      recoveryTimers.add(timer);
+    };
+
+    async function recoverResolvingTurn() {
+        if (battleTurnInFlightRef.current || enemyTurnInFlightRef.current) {
+          scheduleRecoverResolvingTurn(BATTLE_TURN_RECOVERY_MS);
+          return;
+        }
         const normalizedPendingSwitch = normalizePendingBattleSwitch(pendingBattleSwitch);
         const activePendingSwitchKey = getPendingBattleSwitchKey(normalizedPendingSwitch);
+        const liveSwitch = getLiveBattleSwitchInFlight(normalizedPendingSwitch);
+        if (liveSwitch) {
+          const startedAtMs = Number(liveSwitch.startedAtMs) || 0;
+          const elapsedMs = startedAtMs > 0 ? Date.now() - startedAtMs : 0;
+          const retryDelayMs = startedAtMs > 0
+            ? Math.max(500, BATTLE_SWITCH_LIVE_GUARD_MS - elapsedMs + 250)
+            : BATTLE_TURN_RECOVERY_MS;
+          scheduleRecoverResolvingTurn(retryDelayMs);
+          return;
+        }
         if (
           activePendingSwitchKey &&
           localBattleSwitchInFlightRef.current?.key === activePendingSwitchKey &&
@@ -19540,31 +23643,43 @@ const handleReorderTeam = useCallback((newTeam) => {
                     logs: appendSnapshotLogs(baseSnapshot, ['换人目标已失效，请重新选择可上场宝可梦。'])
                   };
                 }
-                if (baseSnapshot.activePlayerId === targetMon.id) {
-                  const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
-                  const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
-                    enemyMon: basePendingSwitch?.followUpEnemyMon || null,
-                    leadMonId: targetMon.id,
-                    message: basePendingSwitch?.followUpEnemyMessage || '',
-                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
-                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
-                  });
-                  return {
-                    ...baseSnapshot,
-                    view: 'battle',
-                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
-                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
-                    activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
-                    battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
-                    battlePhaseData: queuedEnemySendOut,
-                    turn: nextTurn,
-                    pendingBattleSwitch: null,
-                    logs: appendSnapshotLogs(baseSnapshot, [
-                      `上吧，${targetMon.name}！`,
-                      ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
-                    ])
-                  };
-                }
+	                if (baseSnapshot.activePlayerId === targetMon.id) {
+	                  const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+	                  const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
+	                    enemyMon: basePendingSwitch?.followUpEnemyMon || null,
+	                    leadMonId: targetMon.id,
+	                    message: basePendingSwitch?.followUpEnemyMessage || '',
+	                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+	                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+	                  });
+                  const switchPressure = basePendingSwitch?.forced
+                    ? { enemyTeam: baseSnapshot.enemyTeam, applied: false, rule: null }
+                    : applySpecialBattlePlayerSwitchPressure({
+                      enemyTeam: baseSnapshot.enemyTeam,
+                      activeEnemyId: baseSnapshot.activeEnemyId,
+                      environment: hydratedBattleSnapshot.battleEnvironment
+                    });
+                  const switchPressureLogs = switchPressure.applied
+                    ? [`${getSpecialBattleRuleDisplayName(switchPressure.rule)}发动，敌方下一次造成伤害提高。`]
+                    : [];
+	                  return {
+	                    ...baseSnapshot,
+	                    view: 'battle',
+	                    battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+	                    battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+	                    activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
+	                    battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
+	                    battlePhaseData: queuedEnemySendOut,
+	                    turn: nextTurn,
+                    enemyTeam: switchPressure.enemyTeam,
+	                    pendingBattleSwitch: null,
+	                    logs: appendSnapshotLogs(baseSnapshot, [
+	                      `上吧，${targetMon.name}！`,
+                      ...switchPressureLogs,
+	                      ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
+	                    ])
+	                  };
+	                }
 
                 const cleanedTeam = baseTeam.map((mon) => (
                   mon.id === baseSnapshot.activePlayerId || mon.id === targetMon.id
@@ -19572,36 +23687,53 @@ const handleReorderTeam = useCallback((newTeam) => {
                     : mon
                 ));
 
-                const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
-                const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
-                  enemyMon: basePendingSwitch?.followUpEnemyMon || null,
-                  leadMonId: targetMon.id,
-                  message: basePendingSwitch?.followUpEnemyMessage || '',
-                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
-                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
-                });
-                return {
-                  ...baseSnapshot,
-                  view: 'battle',
-                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
-                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
-                  activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
-                  battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
-                  battlePhaseData: queuedEnemySendOut,
-                  turn: nextTurn,
-                  playerTeam: cleanedTeam,
-                  activePlayerId: targetMon.id,
-                  pendingBattleSwitch: null,
-                  participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, targetMon.id].filter(Boolean))],
-                  logs: appendSnapshotLogs(baseSnapshot, [
-                    '换人状态已恢复，已继续完成换人。',
-                    `上吧，${targetMon.name}！`,
-                    ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
-                  ])
-                };
+	                const hydratedBattleSnapshot = hydrateCommittedBattleSnapshot(baseSnapshot);
+	                const queuedEnemySendOut = buildQueuedEnemySendOutPhaseData({
+	                  enemyMon: basePendingSwitch?.followUpEnemyMon || null,
+	                  leadMonId: targetMon.id,
+	                  message: basePendingSwitch?.followUpEnemyMessage || '',
+	                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+	                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion
+	                });
+                const switchPressure = basePendingSwitch?.forced
+                  ? { enemyTeam: baseSnapshot.enemyTeam, applied: false, rule: null }
+                  : applySpecialBattlePlayerSwitchPressure({
+                    enemyTeam: baseSnapshot.enemyTeam,
+                    activeEnemyId: baseSnapshot.activeEnemyId,
+                    environment: hydratedBattleSnapshot.battleEnvironment
+                  });
+                const switchPressureLogs = switchPressure.applied
+                  ? [`${getSpecialBattleRuleDisplayName(switchPressure.rule)}发动，敌方下一次造成伤害提高。`]
+                  : [];
+	                return {
+	                  ...baseSnapshot,
+	                  view: 'battle',
+	                  battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+	                  battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+	                  activeEnemyId: queuedEnemySendOut?.enemyMon?.id || baseSnapshot.activeEnemyId,
+	                  battlePhase: queuedEnemySendOut ? 'sendout' : 'active',
+	                  battlePhaseData: queuedEnemySendOut,
+	                  turn: nextTurn,
+	                  playerTeam: cleanedTeam,
+                  enemyTeam: switchPressure.enemyTeam,
+	                  activePlayerId: targetMon.id,
+	                  pendingBattleSwitch: null,
+	                  participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, targetMon.id].filter(Boolean))],
+	                  logs: appendSnapshotLogs(baseSnapshot, [
+	                    '换人状态已恢复，已继续完成换人。',
+	                    `上吧，${targetMon.name}！`,
+                    ...switchPressureLogs,
+	                    ...(queuedEnemySendOut?.message ? [queuedEnemySendOut.message] : [])
+	                  ])
+	                };
               }
             });
-            if (commitResult.success || !commitResult.message) return;
+            if (commitResult.success) {
+              localBattleSwitchInFlightRef.current = null;
+              setSwitchVisualEvent(null);
+              return;
+            }
+            if (!commitResult.message) return;
             addNotification(
               commitResult.message,
               commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
@@ -19613,14 +23745,18 @@ const handleReorderTeam = useCallback((newTeam) => {
 	        }
 
 	        addLog('战斗状态已恢复，请继续操作。');
-	        const commitResult = await commitCloudSnapshot({
-	          buildSnapshot: (baseSnapshot) => {
-	            if (baseSnapshot.turn !== 'resolving') return baseSnapshot;
-	            const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
-	            const currentMon = baseTeam.find((mon) => mon.id === baseSnapshot.activePlayerId);
-	            if (isBattleMonFainted(currentMon) && getAliveBattleBench(baseTeam, baseSnapshot.activePlayerId).length > 0) {
-	              return {
-	                ...baseSnapshot,
+        const commitResult = await commitCloudSnapshot({
+          buildSnapshot: (baseSnapshot) => {
+            if (baseSnapshot.turn !== 'resolving') return baseSnapshot;
+            const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
+            const currentMon = baseTeam.find((mon) => mon.id === baseSnapshot.activePlayerId);
+            const basePendingSwitch = normalizePendingBattleSwitch(baseSnapshot.pendingBattleSwitch);
+            if (basePendingSwitch || getLiveBattleSwitchInFlight(basePendingSwitch)) {
+              return baseSnapshot;
+            }
+            if (isBattleMonFainted(currentMon) && getAliveBattleBench(baseTeam, baseSnapshot.activePlayerId).length > 0) {
+              return {
+                ...baseSnapshot,
 	                view: 'team',
 	                battlePhase: 'active',
 	                battlePhaseData: null,
@@ -19638,16 +23774,25 @@ const handleReorderTeam = useCallback((newTeam) => {
 	            };
 	          }
 	        });
-	        if (commitResult.success || !commitResult.message) return;
+	        if (commitResult.success) {
+	          localBattleSwitchInFlightRef.current = null;
+	          setSwitchVisualEvent(null);
+	          return;
+	        }
+	        if (!commitResult.message) return;
 	        addNotification(
 	          commitResult.message,
 	          commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
 	        );
-	      };
-      recoverResolvingTurn();
-    }, BATTLE_TURN_RECOVERY_MS);
+	      }
 
-    return () => window.clearTimeout(timer);
+    scheduleRecoverResolvingTurn(BATTLE_TURN_RECOVERY_MS);
+
+    return () => {
+      cancelled = true;
+      recoveryTimers.forEach((timer) => window.clearTimeout(timer));
+      recoveryTimers.clear();
+    };
   }, [
     activeEnemyMon,
     activePlayerMon,
@@ -19656,6 +23801,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     battleEnvironment,
     captureSequenceData,
     gameOver,
+    getLiveBattleSwitchInFlight,
     isThrowingPokeball,
     logs.length,
     addNotification,
@@ -19668,166 +23814,210 @@ const handleReorderTeam = useCallback((newTeam) => {
     turn,
     user?.id,
     view
-  ]);
+	  ]);
 
-		  useEffect(() => {
-		    if (!cloudBlocked && user?.id && hasLoadedCloudSave && turn === 'enemy' && !gameOver && !isThrowingPokeball) {
-		      const enemyActionDelayMs = getEnemyTurnDelayMs(logsRef.current);
-		      const timer = setTimeout(async () => {
-		        if (cloudBlockedRef.current || enemyTurnInFlightRef.current) return;
-            enemyTurnInFlightRef.current = true;
-            try {
-		        const currentEnemyMon = withBattleRuntimeDefaults(enemyTeam.find(m => m.id === activeEnemyId));
-		        const currentPlayerMon = withBattleRuntimeDefaults(playerTeam.find(m => m.id === activePlayerId));
-	        if (!currentEnemyMon || !currentPlayerMon) {
-	          if (!gameOver) {
-	            const commitResult = await commitCloudSnapshot({
-	              buildSnapshot: (baseSnapshot) => ({
-	                ...baseSnapshot,
-	                turn: 'player'
-	              })
-	            });
-	            if (!commitResult.success && commitResult.message) {
-	              addNotification(
-	                commitResult.message,
-	                commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-	              );
-	            }
-	          }
-	          return;
-	        }
-        const playerFainted = isBattleMonFainted(currentPlayerMon);
-        const enemyFainted = isBattleMonFainted(currentEnemyMon);
-        if (playerFainted || enemyFainted) {
-          await resolveTurnAfterFaint({
-            playerMon: currentPlayerMon,
-            enemyMon: currentEnemyMon,
-            playerFainted,
-            enemyFainted
+  const resolveEnemyTurn = useCallback(async ({
+    delayMs = 0,
+    playerMon: playerMonOverride = null,
+    enemyMon: enemyMonOverride = null,
+    activePlayerId: activePlayerIdOverride = null,
+    activeEnemyId: activeEnemyIdOverride = null,
+    ownResolution = false
+  } = {}) => {
+    if (!user?.id || !hasLoadedCloudSave) {
+      addNotification('云端未就绪，对手回合暂停。', 'error');
+      return { completed: false, blocked: true };
+    }
+    if (cloudBlockedRef.current || playtimeExpiredRef.current || requiresCloudReloadRef.current) {
+      return { completed: false, blocked: true };
+    }
+    if (enemyTurnInFlightRef.current && !ownResolution) {
+      return { completed: false, inFlight: true };
+    }
+
+    enemyTurnInFlightRef.current = true;
+
+    const commitPlayerTurn = async (logMessage = null) => {
+      if (gameOver) return true;
+      const commitResult = await commitCloudSnapshot({
+        buildSnapshot: (baseSnapshot) => ({
+          ...baseSnapshot,
+          turn: 'player',
+          activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
+          battleEnergyRefundEligible: false,
+          logs: logMessage ? appendSnapshotLogs(baseSnapshot, [logMessage]) : baseSnapshot.logs
+        })
+      });
+      if (!commitResult.success && commitResult.message) {
+        addNotification(
+          commitResult.message,
+          commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
+        );
+      }
+      return commitResult.success;
+    };
+
+    try {
+      if (delayMs > 0) {
+        await wait(delayMs);
+      }
+      if (cloudBlockedRef.current || playtimeExpiredRef.current || requiresCloudReloadRef.current) {
+        return { completed: false, blocked: true };
+      }
+
+      const resolvedActiveEnemyId = activeEnemyIdOverride ?? activeEnemyId;
+      const resolvedActivePlayerId = activePlayerIdOverride ?? activePlayerId;
+      const currentEnemyMon = withBattleRuntimeDefaults(
+        enemyMonOverride || enemyTeam.find((mon) => mon.id === resolvedActiveEnemyId)
+      );
+      const currentPlayerMon = withBattleRuntimeDefaults(
+        playerMonOverride || playerTeam.find((mon) => mon.id === resolvedActivePlayerId)
+      );
+
+      if (!currentEnemyMon || !currentPlayerMon) {
+        const committed = await commitPlayerTurn();
+        return { completed: committed, missingCombatant: true };
+      }
+
+      const playerFainted = isBattleMonFainted(currentPlayerMon);
+      const enemyFainted = isBattleMonFainted(currentEnemyMon);
+      if (playerFainted || enemyFainted) {
+        const faintResult = await resolveTurnAfterFaint({
+          playerMon: currentPlayerMon,
+          enemyMon: currentEnemyMon,
+          playerFainted,
+          enemyFainted
+        });
+        return {
+          completed: !faintResult?.commitFailed,
+          playerFainted: Boolean(faintResult?.playerFainted),
+          enemyFainted: Boolean(faintResult?.enemyFainted)
+        };
+      }
+
+      const enemyAction = chooseEnemyAction(currentEnemyMon, currentPlayerMon);
+      if (enemyAction.type === 'switch' && enemyAction.target) {
+        const intentMessage = getEnemyAiSwitchIntentMessage(enemyAction);
+        if (intentMessage) {
+          await addBattleLogAndWait(addLog, intentMessage, {
+            minMs: 620,
+            maxMs: 1120,
+            extraMs: 60,
           });
-          return;
         }
+        const switchResult = await runEnemyTrainerSwitch({
+          enemyMon: currentEnemyMon,
+          nextEnemy: enemyAction.target,
+          playerMon: currentPlayerMon
+        });
+        if (switchResult.commitFailed) return { completed: false, commitFailed: true };
+        const committed = await commitPlayerTurn();
+        return { completed: committed, enemySwitched: Boolean(switchResult.switched) };
+      }
 
-        const enemyAction = chooseEnemyAction(currentEnemyMon, currentPlayerMon);
-        if (enemyAction.type === 'switch' && enemyAction.target) {
-          const intentMessage = getEnemyAiSwitchIntentMessage(enemyAction);
-          if (intentMessage) {
-            await addBattleLogAndWait(addLog, intentMessage, {
-              minMs: 620,
-              maxMs: 1120,
-              extraMs: 60,
-            });
-          }
-          const switchResult = await runEnemyTrainerSwitch({
-            enemyMon: currentEnemyMon,
-            nextEnemy: enemyAction.target,
-            playerMon: currentPlayerMon
-          });
-          if (switchResult.commitFailed) return;
-          if (!gameOver) {
-            const commitResult = await commitCloudSnapshot({
-              buildSnapshot: (baseSnapshot) => ({
-                ...baseSnapshot,
-                turn: 'player'
-              })
-            });
-            if (!commitResult.success && commitResult.message) {
-              addNotification(
-                commitResult.message,
-                commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-              );
-            }
-          }
-          return;
+      if (enemyAction.type === 'item' && enemyAction.itemKey) {
+        const intentMessage = getEnemyAiItemIntentMessage(enemyAction);
+        if (intentMessage) {
+          await addBattleLogAndWait(addLog, intentMessage, { minMs: 620, maxMs: 1120, extraMs: 60 });
         }
-
-        if (enemyAction.type === 'item' && enemyAction.itemKey) {
-          const intentMessage = getEnemyAiItemIntentMessage(enemyAction);
-          if (intentMessage) {
-            await addBattleLogAndWait(addLog, intentMessage, { minMs: 620, maxMs: 1120, extraMs: 60 });
-          }
-          const itemResult = await runEnemyItem({
-            enemyMon: currentEnemyMon,
-            playerMon: currentPlayerMon,
-            itemKey: enemyAction.itemKey
-          });
-          if (itemResult.commitFailed) return;
-          // runEnemyItem 已提交 turn:'player' 的检查点，使用道具即结束对手回合，交还玩家。
-          if (!itemResult.used && !gameOver) {
-            const commitResult = await commitCloudSnapshot({
-              buildSnapshot: (baseSnapshot) => ({
-                ...baseSnapshot,
-                turn: 'player'
-              })
-            });
-            if (!commitResult.success && commitResult.message) {
-              addNotification(
-                commitResult.message,
-                commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-              );
-            }
-          }
-          return;
-        }
-
-        const randomMoveKey = enemyAction.moveKey;
-	        if (!randomMoveKey) {
-	          addLog(`敌方 ${currentEnemyMon.name} 技能值不足，无法行动!`);
-	          if (!gameOver) {
-	            const commitResult = await commitCloudSnapshot({
-	              buildSnapshot: (baseSnapshot) => ({
-	                ...baseSnapshot,
-	                turn: 'player',
-	                logs: appendSnapshotLogs(baseSnapshot, [`敌方 ${currentEnemyMon.name} 技能值不足，无法行动!`])
-	              })
-	            });
-	            if (!commitResult.success && commitResult.message) {
-	              addNotification(
-	                commitResult.message,
-	                commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-	              );
-	            }
-	          }
-	          return;
-	        }
-
-        const result = await runEnemyAction({
+        const itemResult = await runEnemyItem({
           enemyMon: currentEnemyMon,
           playerMon: currentPlayerMon,
-          moveKey: randomMoveKey
+          itemKey: enemyAction.itemKey
         });
-	        if (result.commitFailed) return;
-	        if (result.escaped) return;
-	        if (result.actorFainted || result.targetFainted) {
-          await resolveTurnAfterFaint({
-            playerMon: result.defender || currentPlayerMon,
-            enemyMon: result.attacker || currentEnemyMon,
-            playerFainted: result.targetFainted,
-            enemyFainted: result.actorFainted
-          });
-          return;
+        if (itemResult.commitFailed) return { completed: false, commitFailed: true };
+        if (!itemResult.used) {
+          const committed = await commitPlayerTurn();
+          return { completed: committed, enemyItemSkipped: true };
         }
-	        if (!gameOver) {
-	          const commitResult = await commitCloudSnapshot({
-	            buildSnapshot: (baseSnapshot) => ({
-	              ...baseSnapshot,
-	              turn: 'player'
-	            })
-	          });
-	          if (!commitResult.success && commitResult.message) {
-	            addNotification(
-	              commitResult.message,
-	              commitResult.notificationType || (commitResult.requiresReload ? 'error' : 'warning')
-	            );
-		          }
-		        }
-            } finally {
-              enemyTurnInFlightRef.current = false;
-            }
-      }, enemyActionDelayMs);
-      return () => clearTimeout(timer);
+        return { completed: true, enemyUsedItem: true };
+      }
+
+      const randomMoveKey = enemyAction.moveKey;
+      if (!randomMoveKey) {
+        const noMoveMessage = `敌方 ${currentEnemyMon.name} 技能值不足，无法行动!`;
+        addLog(noMoveMessage);
+        const committed = await commitPlayerTurn(noMoveMessage);
+        return { completed: committed, noMove: true };
+      }
+
+      const result = await runEnemyAction({
+        enemyMon: currentEnemyMon,
+        playerMon: currentPlayerMon,
+        moveKey: randomMoveKey
+      });
+      if (result.commitFailed) return { completed: false, commitFailed: true };
+      if (result.escaped) return { completed: true, escaped: true };
+      const enemyFaints = resolveBattleActionFaintFlags(result, currentEnemyMon, currentPlayerMon);
+      if (enemyFaints.actorFainted || enemyFaints.targetFainted) {
+        const faintResult = await resolveTurnAfterFaint({
+          playerMon: enemyFaints.targetMon,
+          enemyMon: enemyFaints.actorMon,
+          playerFainted: enemyFaints.targetFainted,
+          enemyFainted: enemyFaints.actorFainted
+        });
+        return {
+          completed: !faintResult?.commitFailed,
+          playerFainted: Boolean(faintResult?.playerFainted),
+          enemyFainted: Boolean(faintResult?.enemyFainted)
+        };
+      }
+
+      const committed = await commitPlayerTurn();
+      return { completed: committed };
+    } catch (error) {
+      console.error('[Battle] enemy turn resolution failed:', error);
+      addNotification('对手回合结算失败，请重新读取进度。', 'error');
+      return { completed: false, error };
+    } finally {
+      enemyTurnInFlightRef.current = false;
     }
-	  }, [turn, cloudBlocked, gameOver, playerTeam, enemyTeam, activePlayerId, activeEnemyId, activeEnemyMon, isThrowingPokeball, addLog, addNotification, chooseEnemyAction, commitCloudSnapshot, hasLoadedCloudSave, resolveTurnAfterFaint, runEnemyAction, runEnemyTrainerSwitch, user?.id]);
+  }, [
+    activeEnemyId,
+    activePlayerId,
+    addLog,
+    addNotification,
+    chooseEnemyAction,
+    commitCloudSnapshot,
+    enemyTeam,
+    gameOver,
+    hasLoadedCloudSave,
+    playerTeam,
+    resolveTrackedActiveBattleEnergyCost,
+    resolveTurnAfterFaint,
+    runEnemyAction,
+    runEnemyItem,
+    runEnemyTrainerSwitch,
+    user?.id
+  ]);
+
+  useLayoutEffect(() => {
+    resolveEnemyTurnRef.current = resolveEnemyTurn;
+  }, [resolveEnemyTurn]);
+
+  useEffect(() => {
+    if (!isActiveBattleContextView(view, activeEnemyId) || gameOver || battlePhase !== 'active') return undefined;
+    if (!user?.id || !hasLoadedCloudSave) return undefined;
+    if (turn !== 'enemy' || isThrowingPokeball || battleModalScreenOpen || cloudBlocked || playtimeExpired) return undefined;
+
+    const enemyActionDelayMs = getEnemyTurnDelayMs(logsRef.current);
+    const timer = window.setTimeout(() => {
+      void resolveEnemyTurnRef.current?.();
+    }, enemyActionDelayMs);
+    return () => window.clearTimeout(timer);
+  }, [
+    activeEnemyId,
+    battleModalScreenOpen,
+    battlePhase,
+    cloudBlocked,
+    gameOver,
+    hasLoadedCloudSave,
+    isThrowingPokeball,
+    playtimeExpired,
+    turn,
+    user?.id,
+    view
+  ]);
 
   const handleSwitch = useCallback(async (newId) => {
     const isForced = activePlayerMon && isBattleMonFainted(activePlayerMon);
@@ -19851,7 +24041,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       followUpEnemyMessage: queuedEnemySendOutData?.message || ''
     });
     const pendingSwitchKey = getPendingBattleSwitchKey(pendingSwitch);
-    const inFlightSwitch = localBattleSwitchInFlightRef.current;
+    const inFlightSwitch = getLiveBattleSwitchInFlight(pendingSwitch);
     if (inFlightSwitch?.source === 'live') {
       if (inFlightSwitch.key === pendingSwitchKey) {
         return true;
@@ -19860,10 +24050,19 @@ const handleReorderTeam = useCallback((newTeam) => {
       return false;
     }
     localBattleSwitchInFlightRef.current = pendingSwitchKey
-      ? { key: pendingSwitchKey, source: 'live' }
+      ? {
+        key: pendingSwitchKey,
+        previousActivePlayerId: pendingSwitch.previousActivePlayerId,
+        nextActivePlayerId: pendingSwitch.nextActivePlayerId,
+        forced: pendingSwitch.forced,
+        pendingSwitch,
+        startedAtMs: Date.now(),
+        source: 'live'
+      }
       : null;
 
     const oldMonName = activePlayerMon ? activePlayerMon.name : '宝可梦';
+    const shouldSkipRecall = isForced || isBattleMonFainted(activePlayerMon);
     const resolvingCommitPromise = commitCloudSnapshot({
       buildSnapshot: (baseSnapshot) => {
         const baseTeam = Array.isArray(baseSnapshot.playerTeam) ? baseSnapshot.playerTeam : [];
@@ -19891,7 +24090,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           pendingBattleSwitch: pendingSwitch,
           activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
           battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false,
-          logs: appendSnapshotLogs(baseSnapshot, [`回来吧，${currentMon?.name || oldMonName}！`])
+          logs: isForced ? baseSnapshot.logs : appendSnapshotLogs(baseSnapshot, [`回来吧，${currentMon?.name || oldMonName}！`])
         };
       }
     });
@@ -19901,28 +24100,18 @@ const handleReorderTeam = useCallback((newTeam) => {
     setBattlePhaseData(null);
     setTurn('resolving');
     setPendingBattleSwitch(pendingSwitch);
-    setSwitchVisualEvent({
-      id: `switch-recall-${activePlayerId || 'none'}-${newId}-${Date.now()}`,
-      phase: 'recall',
-      monster: activePlayerMon || null,
-      durationMs: BATTLE_SWITCH_RECALL_MS
-    });
+    setSwitchVisualEvent(null);
     await waitForPaint();
-    await wait(BATTLE_SWITCH_RECALL_MS);
-
-    setSwitchVisualEvent({
-      id: `switch-send-${newId}-${Date.now()}`,
-      phase: 'send',
-      monster: newMonster,
-      durationMs: BATTLE_SWITCH_SEND_MS
-    });
-    await waitForPaint();
-    await wait(BATTLE_SWITCH_SEND_MS);
 
     const resolvingCommit = await resolvingCommitPromise;
     if (!resolvingCommit.success) {
       localBattleSwitchInFlightRef.current = null;
       setSwitchVisualEvent(null);
+      setView(isForced ? 'team' : 'battle');
+      setBattlePhase(isForced && queuedEnemySendOutData ? 'sendout' : 'active');
+      setBattlePhaseData(isForced && queuedEnemySendOutData ? queuedEnemySendOutData : null);
+      setTurn('player');
+      setPendingBattleSwitch(null);
       if (resolvingCommit.message) {
         addLog(`换人失败: ${resolvingCommit.message}`);
         addNotification(
@@ -19932,6 +24121,31 @@ const handleReorderTeam = useCallback((newTeam) => {
       }
       return false;
     }
+
+    setView('battle');
+    setBattlePhase('active');
+    setBattlePhaseData(null);
+    setTurn('resolving');
+    setPendingBattleSwitch(pendingSwitch);
+    if (!shouldSkipRecall) {
+      setSwitchVisualEvent({
+        id: `switch-recall-${activePlayerId || 'none'}-${newId}-${Date.now()}`,
+        phase: 'recall',
+        monster: activePlayerMon || null,
+        durationMs: BATTLE_SWITCH_RECALL_MS
+      });
+      await waitForPaint();
+      await wait(BATTLE_SWITCH_RECALL_MS);
+    }
+
+    setSwitchVisualEvent({
+      id: `switch-send-${newId}-${Date.now()}`,
+      phase: 'send',
+      monster: newMonster,
+      durationMs: BATTLE_SWITCH_SEND_MS
+    });
+    await waitForPaint();
+    await wait(BATTLE_SWITCH_SEND_MS);
 
     const nextTurn = isForced ? 'player' : 'enemy';
     const commitResult = await commitCloudSnapshot({
@@ -19973,54 +24187,88 @@ const handleReorderTeam = useCallback((newTeam) => {
           };
         }
 
-        const cleanedTeam = baseTeam.map((mon) => (
-          mon.id === baseSnapshot.activePlayerId || mon.id === newId
-            ? clearTemporaryBattleRuntime(mon)
-            : mon
-        ));
+	        const cleanedTeam = baseTeam.map((mon) => (
+	          mon.id === baseSnapshot.activePlayerId || mon.id === newId
+	            ? clearTemporaryBattleRuntime(mon)
+	            : mon
+	        ));
+        const switchPressure = isForced
+          ? { enemyTeam: baseSnapshot.enemyTeam, applied: false, rule: null }
+          : applySpecialBattlePlayerSwitchPressure({
+            enemyTeam: baseSnapshot.enemyTeam,
+            activeEnemyId: baseSnapshot.activeEnemyId,
+            environment: hydratedBattleSnapshot.battleEnvironment
+          });
+        const switchPressureLogs = switchPressure.applied
+          ? [`${getSpecialBattleRuleDisplayName(switchPressure.rule)}发动，敌方下一次造成伤害提高。`]
+          : [];
 
-        return {
-          ...baseSnapshot,
-          view: 'battle',
-          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
-          battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
-          activeEnemyId: queuedBattlePhaseData?.enemyMon?.id || baseSnapshot.activeEnemyId,
-          battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
-          battlePhaseData: queuedBattlePhaseData,
-          turn: nextTurn,
-          playerTeam: cleanedTeam,
-          activePlayerId: newId,
-          pendingBattleSwitch: null,
-          activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
-          battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false,
-          participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, newId].filter(Boolean))],
-          logs: appendSnapshotLogs(baseSnapshot, [
-            `上吧，${targetMon.name}！`,
-            ...queuedLogs
-          ])
-        };
-      }
-    });
+	        return {
+	          ...baseSnapshot,
+	          view: 'battle',
+	          battleEnvironment: hydratedBattleSnapshot.battleEnvironment,
+	          battleEventCompletion: hydratedBattleSnapshot.battleEventCompletion,
+	          activeEnemyId: queuedBattlePhaseData?.enemyMon?.id || baseSnapshot.activeEnemyId,
+	          battlePhase: queuedBattlePhaseData ? 'sendout' : 'active',
+	          battlePhaseData: queuedBattlePhaseData,
+	          turn: nextTurn,
+	          playerTeam: cleanedTeam,
+          enemyTeam: switchPressure.enemyTeam,
+	          activePlayerId: newId,
+	          pendingBattleSwitch: null,
+	          activeBattleEnergyCost: resolveTrackedActiveBattleEnergyCost(baseSnapshot.activeBattleEnergyCost),
+	          battleEnergyRefundEligible: isForced ? baseSnapshot.battleEnergyRefundEligible : false,
+	          participatedMonIds: [...new Set([...(Array.isArray(baseSnapshot.participatedMonIds) ? baseSnapshot.participatedMonIds : []), currentMon?.id, newId].filter(Boolean))],
+	          logs: appendSnapshotLogs(baseSnapshot, [
+	            `上吧，${targetMon.name}！`,
+            ...switchPressureLogs,
+	            ...queuedLogs
+	          ])
+	        };
+	      }
+	    });
 
-    if (commitResult.success) {
-      setPlayerTeam((prev) => prev.map((mon) => (
-        mon.id === activePlayerId || mon.id === newId
-          ? clearTemporaryBattleRuntime(mon)
-          : mon
-      )));
-      setActivePlayerId(newId);
+	    if (commitResult.success) {
+	      setPlayerTeam((prev) => prev.map((mon) => (
+	        mon.id === activePlayerId || mon.id === newId
+	          ? clearTemporaryBattleRuntime(mon)
+	          : mon
+	      )));
+	      setActivePlayerId(newId);
       if (queuedEnemySendOutData?.enemyMon?.id) {
         setActiveEnemyId(queuedEnemySendOutData.enemyMon.id);
       }
       setView('battle');
-      setBattlePhase(queuedEnemySendOutData ? 'sendout' : 'active');
-      setBattlePhaseData(queuedEnemySendOutData || null);
-      setTurn(nextTurn);
-      setPendingBattleSwitch(null);
-      localBattleSwitchInFlightRef.current = null;
-      setSwitchVisualEvent(null);
-      return true;
-    }
+	      setBattlePhase(queuedEnemySendOutData ? 'sendout' : 'active');
+	      setBattlePhaseData(queuedEnemySendOutData || null);
+	      setTurn(nextTurn);
+	      setPendingBattleSwitch(null);
+	      localBattleSwitchInFlightRef.current = null;
+	      setSwitchVisualEvent(null);
+		      if (!isForced) {
+		        const followUpPlayerMon = withBattleRuntimeDefaults(clearTemporaryBattleRuntime(newMonster));
+	        const switchPressure = applySpecialBattlePlayerSwitchPressure({
+	          enemyTeam,
+	          activeEnemyId,
+	          environment: battleEnvironment
+	        });
+	        if (switchPressure.applied) {
+	          setEnemyTeam(switchPressure.enemyTeam);
+	        }
+		        const followUpEnemyMon = withBattleRuntimeDefaults(
+	          switchPressure.enemyTeam.find((mon) => mon.id === activeEnemyId) || activeEnemyMon
+		        );
+		        await resolveEnemyTurn({
+		          delayMs: getEnemyTurnDelayMs(logsRef.current),
+	          playerMon: followUpPlayerMon,
+	          enemyMon: followUpEnemyMon,
+	          activePlayerId: newId,
+	          activeEnemyId,
+	          ownResolution: true
+	        });
+	      }
+	      return true;
+	    }
 
     localBattleSwitchInFlightRef.current = null;
     const rollbackCommit = await commitCloudSnapshot({
@@ -20067,7 +24315,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       );
     }
     return false;
-  }, [activePlayerId, activePlayerMon, addLog, addNotification, battleEnvironment, battlePhase, battlePhaseData, commitCloudSnapshot, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, playerTeam, resolveTrackedActiveBattleEnergyCost, user?.id]);
+	  }, [activeEnemyId, activeEnemyMon, activePlayerId, activePlayerMon, addLog, addNotification, battlePhase, battlePhaseData, commitCloudSnapshot, enemyTeam, getLiveBattleSwitchInFlight, hasLoadedCloudSave, hydrateCommittedBattleSnapshot, playerTeam, resolveEnemyTurn, resolveTrackedActiveBattleEnergyCost, user?.id]);
 
   const handleStartGame = useCallback(async (selectedMonster) => {
     if (!selectedMonster) return false;
@@ -20169,6 +24417,18 @@ const handleReorderTeam = useCallback((newTeam) => {
       setLaunchDepartureTransition({ ...transitionBase, stage: 'arriving' });
       await wait(1240);
       setLaunchDepartureTransition(null);
+      recordGameLog('starter_selected', {
+        title: `选择 ${starterInstance.name}`,
+        summary: `选择 ${starterInstance.name} 作为初始伙伴，开始进入${getMapConfig(startMapName).displayName}。`,
+        mapName: startMapName,
+        mapDisplayName: getMapConfig(startMapName).displayName,
+        position: startPosition,
+        details: {
+          pokemonName: starterInstance.name,
+          pokemonLevel: starterInstance.level,
+          starterId: selectedMonster.id
+        }
+      });
       return true;
     } catch (error) {
       setLaunchDepartureTransition(null);
@@ -20177,7 +24437,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       addNotification(message, 'error');
       return false;
     }
-  }, [addLog, addNotification, clearNotifications, commitCloudSnapshot, hasLoadedCloudSave, user?.id]);
+  }, [addLog, addNotification, clearNotifications, commitCloudSnapshot, hasLoadedCloudSave, recordGameLog, user?.id]);
 
   const handleZoneEnter = useCallback((zoneName, zoneMeta = {}) => {
     if (zoneMeta?.locked && zoneMeta?.lockReason) {
@@ -20214,7 +24474,6 @@ const handleReorderTeam = useCallback((newTeam) => {
     }
 
     const mapConfig = getMapConfig(targetMapName);
-    const playerAvgLevel = getPlayerAverageLevel(playerTeam);
     const bossGate = getForwardMapBossGate({
       currentMapName,
       targetMapName,
@@ -20226,28 +24485,14 @@ const handleReorderTeam = useCallback((newTeam) => {
       world,
       playerTeam
     });
-    const levelLocked = isMapLockedForLevel(mapConfig, playerAvgLevel);
 
     if (warpGate.locked) {
       addNotification(warpGate.reason || '暂不能进入。', 'warning');
       return;
     }
 
-    if (bossGate && levelLocked) {
-      addNotification(`先击败${bossGate.mapName}的${bossGate.bossName}，再来${mapConfig.displayName}。`, 'warning');
-      return;
-    }
-
     if (bossGate) {
-      addNotification(`先击败${bossGate.mapName}的${bossGate.bossName}。`, 'warning');
-      return;
-    }
-
-    if (levelLocked) {
-      addNotification(
-        `平均 Lv.${Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel) || 1))} 后可进入。`,
-        'warning'
-      );
+      addNotification(`先击败${bossGate.mapName}的${bossGate.bossName}，才能前往${mapConfig.displayName}。`, 'warning');
       return;
     }
 
@@ -20282,6 +24527,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       phase: 'departing',
       fromLabel,
       toLabel,
+      concealMap: ELITE_FOUR_CEREMONY_MAP_IDS.includes(targetMapName),
       terrain: getFastTravelStationMeta(targetMapName)?.terrain || 'meadow',
       renderMode: getAdventureMapInfo(currentMapName)?.renderMode || targetMapInfo?.renderMode || null,
       travelDirection: currentDirection
@@ -20325,15 +24571,36 @@ const handleReorderTeam = useCallback((newTeam) => {
         renderMode: targetMapInfo?.renderMode || null,
         travelDirection: nextPosition.direction || currentDirection
       } : current);
-      await Promise.race([warmupPromise, wait(720)]);
+      const arrivalWarmup = Promise.race([warmupPromise, wait(720)]);
+      if (ELITE_FOUR_CEREMONY_MAP_IDS.includes(targetMapName)) {
+        await Promise.all([arrivalWarmup, wait(680)]);
+        startEliteFourCeremony(targetMapName, 'entry');
+      } else {
+        await arrivalWarmup;
+      }
       await wait(520);
+      recordGameLog('map_enter', {
+        title: `进入${mapConfig.displayName}`,
+        summary: `从${fromLabel}前往${toLabel}。`,
+        mapName: targetMapName,
+        mapDisplayName: mapConfig.displayName,
+        position: nextPosition,
+        details: {
+          fromMapName: currentMapName,
+          fromMapDisplayName: fromLabel,
+          targetMapName,
+          targetMapDisplayName: toLabel,
+          via: 'warp',
+          warpId: warp?.id || ''
+        }
+      });
       addNotification(`已进入${mapConfig.displayName}。`, 'info');
     } finally {
       mapWarpBusyRef.current = false;
       setMapWarpBusy(false);
       setMapWarpTransitTarget(null);
     }
-  }, [addNotification, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, playerPos?.direction, playerTeam, user?.id, world]);
+	  }, [addNotification, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, playerPos?.direction, playerTeam, recordGameLog, startEliteFourCeremony, user?.id, world]);
 
   const handleManualSave = useCallback(() => {
     if (requiresCloudReload) {
@@ -20342,6 +24609,69 @@ const handleReorderTeam = useCallback((newTeam) => {
     }
     saveGameToCloud({ manual: true, force: true });
   }, [loadGameFromCloud, requiresCloudReload, saveGameToCloud]);
+
+  const handleClaimMapCompletionReward = useCallback(async (mapName, threshold) => {
+    const definition = getMapCompletionRewardDefinition(mapName, threshold);
+    if (!LONG_TERM_PROGRESSION_FLAGS.completionRewardsV1 || !definition || completionRewardClaimInFlightRef.current) {
+      return { success: false };
+    }
+    if (!hasLoadedCloudSave) {
+      addNotification('云端进度仍在读取，请稍后再领取。', 'warning');
+      return { success: false };
+    }
+
+    completionRewardClaimInFlightRef.current = true;
+    setCompletionRewardClaimBusyId(definition.id);
+    try {
+      const commitResult = await claimLongTermProgressionReward({
+        rewardKind: 'map_completion',
+        mapName,
+        threshold: definition.threshold
+      });
+
+      if (!commitResult.success) {
+        addNotification(commitResult.message || '奖励领取未保存，请稍后重试。', commitResult.notificationType || 'warning');
+        return commitResult;
+      }
+      const rewardNames = describeMapRewardItems(definition.items);
+      addNotification(`${definition.threshold}% 阶段奖励已领取：${rewardNames.join('、')}。`, 'success');
+      addLog(`领取了地图 ${definition.threshold}% 完成度奖励：${rewardNames.join('、')}。`);
+      return commitResult;
+    } finally {
+      completionRewardClaimInFlightRef.current = false;
+      setCompletionRewardClaimBusyId('');
+    }
+  }, [addLog, addNotification, claimLongTermProgressionReward, hasLoadedCloudSave]);
+
+  const handleClaimTowerWeeklyReward = useCallback(async () => {
+    if (!LONG_TERM_PROGRESSION_FLAGS.championTowerV1 || completionRewardClaimInFlightRef.current) {
+      return { success: false };
+    }
+    if (!hasLoadedCloudSave) {
+      addNotification('云端进度仍在读取，请稍后再领取。', 'warning');
+      return { success: false };
+    }
+    const seasonKey = getCurrentIsoWeekKey();
+    const claimId = getTowerWeeklyRewardClaimId(seasonKey);
+    completionRewardClaimInFlightRef.current = true;
+    setCompletionRewardClaimBusyId(claimId);
+    try {
+      const commitResult = await claimLongTermProgressionReward({
+        rewardKind: 'tower_weekly'
+      });
+      if (!commitResult.success) {
+        addNotification(commitResult.message || '周冠军补给领取未保存，请稍后重试。', commitResult.notificationType || 'warning');
+        return commitResult;
+      }
+      const rewardNames = describeMapRewardItems(CHAMPION_TOWER_WEEKLY_REWARD);
+      addNotification(`周冠军补给已领取：${rewardNames.join('、')}。`, 'success');
+      addLog(`领取了 ${seasonKey} 周冠军补给：${rewardNames.join('、')}。`);
+      return commitResult;
+    } finally {
+      completionRewardClaimInFlightRef.current = false;
+      setCompletionRewardClaimBusyId('');
+    }
+  }, [addLog, addNotification, claimLongTermProgressionReward, hasLoadedCloudSave]);
 
   const currentMapBossCompleted = hasCompletedBossEvent(world, currentMapName);
   const currentMapEventVisualState = useMemo(
@@ -20352,26 +24682,95 @@ const handleReorderTeam = useCallback((newTeam) => {
     () => buildEncounterZoneLocks(currentMapName, world, playerTeam),
     [currentMapName, playerTeam, world]
   );
+  const currentMapProgressSummary = useMemo(
+    () => getMapProgressSummary(currentMapName, world),
+    [currentMapName, world]
+  );
+  const adventureProgressChapters = useMemo(() => ADVENTURE_CHAPTERS.map((chapter) => {
+    const isTower = chapter.mapId === CHAMPION_TOWER_MAP_ID;
+    const mapExists = isTower || hasAdventureMap(chapter.mapId);
+    const lockState = mapExists && !isTower
+      ? getFastTravelMapLockState({
+        targetMapName: chapter.mapId,
+        currentMapName,
+        world,
+        playerTeam
+      })
+      : null;
+    return {
+      ...chapter,
+      unlocked: chapter.chapter === 1 || chapter.mapId === currentMapName || (isTower
+        ? isChampionTowerUnlocked(world)
+        : Boolean(mapExists && !lockState?.locked)),
+      summary: getMapProgressSummary(chapter.mapId, world)
+    };
+  }), [currentMapName, playerTeam, world]);
+  const mapEnergyValue = Number.isFinite(Number(playerEnergy)) ? Number(playerEnergy) : 0;
+  const mapEnergyDepleted = (
+    view === 'map' &&
+    hasLoadedCloudSave &&
+    !showLaunchScreen &&
+    !cloudLoading &&
+    !cloudError &&
+    !cloudBlocked &&
+    !requiresCloudReload &&
+    !activeEnemyId &&
+    mapEnergyValue <= 0
+  );
+
+  useEffect(() => {
+    if (!mapEnergyDepleted) {
+      energyDepletedNoticeShownRef.current = false;
+      return;
+    }
+    if (energyDepletedNoticeShownRef.current) return;
+    energyDepletedNoticeShownRef.current = true;
+    addLog(ENERGY_DEPLETED_MAP_LOG);
+    addNotification(ENERGY_DEPLETED_MAP_NOTIFICATION, 'warning');
+  }, [addLog, addNotification, mapEnergyDepleted]);
 
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
-  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm);
+  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(activeEliteMinigame) || Boolean(eliteFourCeremony);
   const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress);
-  const showBootScreen = cloudLoading || Boolean(cloudError) || (hasLoadedCloudSave && !entryAssetsReady);
+  const bootError = cloudError
+    ? `必须联网并成功连接后端才能游戏。${cloudError}`
+    : playtimeError;
+  const playtimeBootPending = hasLoadedCloudSave && entryAssetsReady && !cloudLoading && !cloudError && !playtimeStatus;
+  const showBootScreen = (
+    cloudLoading ||
+    Boolean(cloudError) ||
+    !hasLoadedCloudSave ||
+    !entryAssetsReady ||
+    playtimeLoading ||
+    Boolean(playtimeError) ||
+    !playtimeStatus
+  );
 
   if (showBootScreen) {
+    const retryBoot = cloudError
+      ? () => loadGameFromCloud({ force: true })
+      : (playtimeError ? () => { void beginStudentPlaytimeSession({ silent: false, retry: true }) } : null);
+    const showLogoutAction = Boolean(bootError) && typeof onLogout === 'function';
     return (
       <UnifiedBootScreen
         progress={bootProgress}
-        error={cloudError ? `必须联网并成功连接后端才能游戏。${cloudError}` : null}
-        actionLabel={cloudError ? '重新连接后端' : null}
-        onAction={cloudError ? () => loadGameFromCloud({ force: true }) : null}
-        secondaryActionLabel={!cloudError && entryPreloadStalled ? '加载卡住？清除缓存并重试' : null}
-        onSecondaryAction={!cloudError && entryPreloadStalled ? () => { void recoverEntryPreloadFromStall() } : null}
-        showProgressBar={!cloudError}
+        phase={playtimeBootPending ? '正在校验今日剩余游玩时间...' : ''}
+        error={bootError}
+        actionLabel={bootError ? (cloudError ? '重新连接后端' : '重新校验时长') : null}
+        onAction={retryBoot}
+        secondaryActionLabel={showLogoutAction
+          ? '退出登录'
+          : (!cloudError && entryPreloadStalled ? '加载卡住？清除缓存并重试' : null)}
+        onSecondaryAction={showLogoutAction
+          ? onLogout
+          : (!cloudError && entryPreloadStalled ? () => { void recoverEntryPreloadFromStall() } : null)}
+        showProgressBar={!bootError}
       />
     );
   }
+
+  const showPlaytimeCountdown = Boolean(playtimeStatus && fullPlayableScreenReady);
 
   const battleVictoryOverlayKey = (() => {
     if (view !== 'battle' || battlePhase !== 'victory') {
@@ -20395,6 +24794,8 @@ const handleReorderTeam = useCallback((newTeam) => {
             playerGold={playerGold}
             playerEnergy={playerEnergy}
             maxEnergy={maxEnergy}
+            mapProgressSummary={currentMapProgressSummary}
+            onOpenProgress={LONG_TERM_PROGRESSION_FLAGS.mapProgressV1 ? () => handleNavigateView('adventureProgress') : null}
             onLogout={onLogout}
             onResetGame={() => setResetConfirmOpen(true)}
             resetDisabled={!hasLoadedCloudSave || isResettingProgress}
@@ -20415,6 +24816,14 @@ const handleReorderTeam = useCallback((newTeam) => {
           />
         )}
       <div className="game-screen-frame">
+      {showPlaytimeCountdown && (
+        <PlaytimeCountdownBadge
+          remainingSeconds={playtimeRemainingSeconds}
+          limitMinutes={playtimeLimitMinutes}
+          expired={playtimeExpired}
+          view={view}
+        />
+      )}
       <div className="flex-1 min-h-0 flex flex-col relative z-10 h-full">
         {!activePlayerMon && !showLaunchScreenUnderlay ? (
           <div className="game-app-bg flex flex-1 items-center justify-center">
@@ -20444,7 +24853,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 	              onMapWarp={handleMapWarp}
 	              onZoneEnter={handleZoneEnter}
 	              onBlockedMove={handleBlockedMove}
-              cloudBlocked={cloudBlocked || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || battleEventConfirmBusy || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy}
+              cloudBlocked={cloudBlocked || mapEnergyDepleted || playtimeExpired || encounterStartBusy || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || battleEventConfirmBusy || Boolean(activeEliteMinigame) || eliteMinigameCommitBusy || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || Boolean(eliteFourCeremony)}
 	              encounterCooldownSteps={encounterCooldownSteps}
 	              onEncounterCooldownChange={handleEncounterCooldownChange}
 	              mapActive
@@ -20463,7 +24872,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           <CaptureSequenceOverlay
             show={isThrowingPokeball}
             data={captureSequenceData}
-            paused={cloudBlocked}
+            paused={cloudBlocked || playtimeExpired}
             onComplete={handleCaptureSequenceComplete}
           />
         )}
@@ -20485,12 +24894,12 @@ const handleReorderTeam = useCallback((newTeam) => {
         {view === 'battle' && battlePhase === 'escape' && (
           <BattleEscapeOverlay
             onComplete={handleEscapeContinue}
-            paused={cloudBlocked}
+            paused={cloudBlocked || playtimeExpired}
             refundEligible={battleEnergyRefundEligible}
             phaseData={battlePhaseData}
           />
         )}
-        {pendingMonsterAcquisition && (
+        {shouldShowMonsterAcquisitionDecision && (
           <MonsterAcquisitionDecisionModal
             pending={pendingMonsterAcquisition}
             party={playerTeam}
@@ -20521,12 +24930,34 @@ const handleReorderTeam = useCallback((newTeam) => {
               onDeposit={handleDepositToStorage}
               onWithdraw={handleWithdrawFromStorage}
               onSwapWithStorage={handleSwapPartyAndStorage}
+              onCustomizeMoves={handleCustomizeMonsterMoves}
+              playerGold={playerGold}
+              moveCustomizationBlockedReason={pendingGrowthEvents.length > 0 ? '请先完成当前升级、学会技能或进化事件。' : ''}
             />
           </Suspense>
         )}
         {view === 'dex' && (
           <Suspense fallback={<DeferredPanelFallback title="正在打开图鉴" />}>
-            <DeferredDexScreen onBack={() => handleNavigateView('map')} />
+            <DeferredDexScreen
+              permanentDexEnabled={LONG_TERM_PROGRESSION_FLAGS.permanentDexV1}
+              dexProgress={world?.dexProgress}
+              playerTeam={playerTeam}
+              storageBox={storageBox}
+              pendingMonsterAcquisition={pendingMonsterAcquisition}
+              onBack={() => handleNavigateView('map')}
+            />
+          </Suspense>
+        )}
+        {LONG_TERM_PROGRESSION_FLAGS.mapProgressV1 && view === 'adventureProgress' && (
+          <Suspense fallback={<DeferredPanelFallback title="正在展开冒险图册" />}>
+            <DeferredAdventureProgressScreen
+              chapters={adventureProgressChapters}
+              currentMapName={currentMapName}
+              onClaimReward={handleClaimMapCompletionReward}
+              onClaimTowerWeeklyReward={handleClaimTowerWeeklyReward}
+              claimingRewardId={completionRewardClaimBusyId}
+              onBack={() => handleNavigateView('map')}
+            />
           </Suspense>
         )}
         {view === 'shop' && (
@@ -20534,10 +24965,21 @@ const handleReorderTeam = useCallback((newTeam) => {
             <DeferredShopScreen
               playerGold={playerGold}
               playerInventory={playerInventory}
+              masterBallPurchasedInCurrentRegion={hasPurchasedMasterBallInRegion(world, currentMapName)}
               onPurchase={handlePurchase}
               onBack={() => handleNavigateView('map')}
               getInventoryItemQuantity={getInventoryItemQuantity}
               getPotionEffectText={getPotionEffectText}
+            />
+          </Suspense>
+        )}
+        {view === 'itemSell' && (
+          <Suspense fallback={<DeferredPanelFallback title="正在打开回收商" />}>
+            <DeferredItemSellScreen
+              playerGold={playerGold}
+              playerInventory={playerInventory}
+              onSell={handleSellItem}
+              onBack={() => handleNavigateView('map')}
             />
           </Suspense>
         )}
@@ -20575,6 +25017,19 @@ const handleReorderTeam = useCallback((newTeam) => {
           requiresReload={requiresCloudReload}
           onRetry={handleManualSave}
         />
+        {playtimeExpired && (
+          <PlaytimeExpiredOverlay
+            remainingSeconds={playtimeRemainingSeconds}
+            limitMinutes={playtimeLimitMinutes}
+            onLogout={onLogout}
+          />
+        )}
+        {mapEnergyDepleted && !playtimeExpired && (
+          <EnergyDepletedOverlay
+            energy={playerEnergy}
+            maxEnergy={maxEnergy}
+          />
+        )}
         <ResetProgressConfirmModal
           open={resetConfirmOpen}
           busy={isResettingProgress}
@@ -20597,6 +25052,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           unlockProgress={pendingBattleEventConfirm?.unlockProgress}
           battlePreviewTeam={pendingBattleEventConfirm?.battlePreviewTeam}
           alreadyCompleted={pendingBattleEventConfirm?.alreadyCompleted}
+          challengeKind={pendingBattleEventConfirm?.challengeKind}
           onCancel={handleCancelBattleEventConfirm}
           onConfirm={handleConfirmBattleEvent}
         />
@@ -20607,6 +25063,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           eventTitle={pendingNpcBattleConfirm?.eventTitle}
           dialogueText={pendingNpcBattleConfirm?.dialogueText}
           ruleDescription={pendingNpcBattleConfirm?.ruleDescription}
+          battleHintText={pendingNpcBattleConfirm?.battleHintText}
           energyCost={pendingNpcBattleConfirm?.energyCost}
           teamSize={pendingNpcBattleConfirm?.teamSize}
           levelRangeText={pendingNpcBattleConfirm?.levelRangeText}
@@ -20614,6 +25071,9 @@ const handleReorderTeam = useCallback((newTeam) => {
           rewardItems={pendingNpcBattleConfirm?.rewardItems}
           statusChips={pendingNpcBattleConfirm?.statusChips}
           eventRole={pendingNpcBattleConfirm?.eventRole}
+          sequenceOrder={pendingNpcBattleConfirm?.sequenceOrder}
+          sequenceTotal={pendingNpcBattleConfirm?.sequenceTotal}
+          battleStyleLabel={pendingNpcBattleConfirm?.battleStyleLabel}
           anchorDirection={pendingNpcBattleConfirm?.anchorDirection}
           onCancel={handleCancelNpcBattleConfirm}
           onConfirm={handleConfirmNpcBattleEvent}
@@ -20653,6 +25113,29 @@ const handleReorderTeam = useCallback((newTeam) => {
 	        />
 	        <FastTravelTransitOverlay transit={fastTravelTransitTarget} />
 	        <FastTravelTransitOverlay transit={mapWarpTransitTarget} />
+        {activeEliteMinigame && (
+          <Suspense fallback={<div className="elite-minigame-overlay"><div className="game-card p-5 font-black text-slate-700">正在启动试炼机关…</div></div>}>
+            <DeferredEliteUnlockMinigameOverlay
+              key={activeEliteMinigame.task?.id}
+              task={activeEliteMinigame.task}
+              busy={eliteMinigameCommitBusy}
+              onCommit={handleCommitEliteMinigame}
+              onClose={() => {
+                if (!eliteMinigameCommitBusy) setActiveEliteMinigame(null);
+              }}
+            />
+          </Suspense>
+        )}
+        <EliteFourCeremonyOverlay
+          ceremony={eliteFourCeremony}
+          onComplete={handleEliteFourCeremonyComplete}
+        />
+        {shouldShowTeacherRewardCeremony && (
+          <TeacherRewardChestCeremony
+            ceremony={activeTeacherRewardCeremony}
+            onComplete={handleTeacherRewardCeremonyComplete}
+          />
+        )}
         {levelUpCelebration && (
           <LevelUpCelebrationModal
             celebration={levelUpCelebration}

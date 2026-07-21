@@ -1,5 +1,5 @@
 import { getExpToNextLevelOfficial } from './gameBalance'
-import { getBalancedMovesForLevel } from './gameData'
+import { getWildMovesForPokemonLevel } from './gameData'
 import { calculateStatsForLevel } from './pokemonStats'
 
 // 地图相关常量
@@ -124,7 +124,8 @@ export const createMonsterInstance = (baseMonster, level, id, initialCurrentHp, 
   return {
     ...baseMonster,
     ...calculatedStats,
-    moves: getBalancedMovesForLevel(baseMonster, level),
+    moveLoadoutMode: 'wild',
+    moves: getWildMovesForPokemonLevel(baseMonster, level),
     level,
     id,
     baseId: baseMonster.id,

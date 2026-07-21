@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { clone as cloneSkeletonScene } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { getAdventureMapInfo, getEncounterZoneAt, getMapSignMessage } from './data/overworldMaps'
-import { getMapEventAt } from './data/mapEvents'
+import { getMapEventAt, getMapEvents } from './data/mapEvents'
 import { getMapEventTile } from './data/mapEventTypes'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
@@ -11,7 +11,15 @@ import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES 
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
 import { resolveEncounterTableId } from './data/mapRegistry'
 import { animateLowPolyPlayer, createLowPolyPlayer } from './playerFigureVisual'
+import { createEliteFourCharacterTemplate, isEliteFourCharacterType } from './eliteFourCharacterVisual'
+import {
+  getEliteRouteBlockerInteractionTile,
+  getEliteRouteStepAsideOffset,
+  isEliteRouteBlockerCleared
+} from './eliteRouteBlocker'
+import { applyMapAssetMaterialStyle } from './mapMaterialStyle'
 import { getDecorativeModel, getRequiredModelKeys, loadModels } from './threeLowPolyModelCache'
+import { gameAudio } from '../utils/gameAudio'
 import {
   REGION_MAP_TILE,
   isInsideDecorationFootprint,
@@ -32,6 +40,7 @@ const PLAYER_BASE_Y = 0.16
 const MAX_RENDERER_VIEWPORT_MULTIPLIER = 1.25
 const MIN_RENDERER_DIMENSION = 1
 const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
+const ENCOUNTER_ALERT_MS = 760
 
 const GRASS_SWAY_KEYS = new Set(['grass', 'grassLarge'])
 const GRASS_SWAY_DISABLED = -999
@@ -196,16 +205,33 @@ function prepareMeshGeometry(geometry) {
   return prepared
 }
 
-function polishModelTexture(texture, maxAnisotropy = 8) {
+function polishModelTexture(texture, maxAnisotropy = 8, colorSpace = THREE.NoColorSpace) {
   if (!texture) return
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.anisotropy = Math.max(1, Math.min(maxAnisotropy, 16))
-  if (texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.NearestMipmapNearestFilter) {
-    texture.minFilter = THREE.LinearMipmapLinearFilter
-    texture.magFilter = THREE.LinearFilter
-    texture.generateMipmaps = true
+  let needsUpdate = false
+  const nextAnisotropy = Math.max(1, Math.min(maxAnisotropy, 16))
+  if (texture.colorSpace !== colorSpace) {
+    texture.colorSpace = colorSpace
+    needsUpdate = true
   }
-  texture.needsUpdate = true
+  if (texture.anisotropy !== nextAnisotropy) {
+    texture.anisotropy = nextAnisotropy
+    needsUpdate = true
+  }
+  if (texture.minFilter !== THREE.NearestFilter && texture.minFilter !== THREE.NearestMipmapNearestFilter) {
+    if (texture.minFilter !== THREE.LinearMipmapLinearFilter) {
+      texture.minFilter = THREE.LinearMipmapLinearFilter
+      needsUpdate = true
+    }
+    if (texture.magFilter !== THREE.LinearFilter) {
+      texture.magFilter = THREE.LinearFilter
+      needsUpdate = true
+    }
+    if (!texture.generateMipmaps) {
+      texture.generateMipmaps = true
+      needsUpdate = true
+    }
+  }
+  if (needsUpdate) texture.needsUpdate = true
 }
 
 function convertToSmoothLitMaterial(material) {
@@ -236,10 +262,19 @@ function enhanceMeshMaterial(material, { maxAnisotropy = 8 } = {}) {
   mat.flatShading = false
   if (typeof mat.roughness === 'number') mat.roughness = Math.min(Math.max(mat.roughness, 0.72), 0.88)
   if (typeof mat.metalness === 'number') mat.metalness = Math.min(mat.metalness, 0.05)
-  polishModelTexture(mat.map, maxAnisotropy)
-  polishModelTexture(mat.normalMap, maxAnisotropy)
+  polishModelTexture(mat.map, maxAnisotropy, THREE.SRGBColorSpace)
+  polishModelTexture(mat.normalMap, maxAnisotropy, THREE.NoColorSpace)
   mat.needsUpdate = true
   return mat
+}
+
+function cloneAndEnhanceMeshMaterial(material, options = {}) {
+  if (!material) return material
+  if (Array.isArray(material)) {
+    return material.map((entry) => cloneAndEnhanceMeshMaterial(entry, options))
+  }
+  const clone = typeof material.clone === 'function' ? material.clone() : material
+  return enhanceMeshMaterial(clone, options)
 }
 
 function ensureGrassSwayMaterial(material) {
@@ -339,12 +374,10 @@ const DIRS = {
   right: { x: 1, y: 0, rot: Math.PI / 2 }
 }
 
-const NPC_INTERACTION_EVENT_TYPES = new Set(['trainer', 'boss'])
-const BLOCKING_INTERACTIONS = new Set(['exit', 'heal', 'trainer', 'boss', 'challenge', 'info'])
+const NPC_INTERACTION_EVENT_TYPES = new Set(['trainer', 'boss', 'merchant'])
+const BLOCKING_INTERACTIONS = new Set(['exit', 'heal', 'trainer', 'boss', 'challenge', 'objective', 'info', 'merchant'])
 const MUTED_EVENT_VISUAL_STATES = new Set(['locked', 'daily_complete', 'cleared', 'completed'])
 const NON_BATTLE_INFO_VISUAL_STATES = new Set(['daily_complete', 'cleared', 'completed', 'locked'])
-const IS_HOT_RELOAD_ENV = Boolean(import.meta?.hot)
-
 let activeThreeMapRendererLease = null
 
 function disposeActiveThreeMapRenderer(reason = 'handoff') {
@@ -365,6 +398,33 @@ function registerActiveThreeMapRenderer(host, teardown) {
 function clearActiveThreeMapRenderer(host, teardown) {
   if (activeThreeMapRendererLease?.host === host && activeThreeMapRendererLease?.teardown === teardown) {
     activeThreeMapRendererLease = null
+  }
+}
+
+function releaseThreeRenderer(renderer, reason = 'cleanup') {
+  if (!renderer) return
+  try {
+    const gl = renderer.getContext?.()
+    const alreadyLost = typeof gl?.isContextLost === 'function' ? gl.isContextLost() : false
+    if (!alreadyLost) {
+      renderer.forceContextLoss?.()
+    }
+  } catch (error) {
+    if (isMapRuntimeDebugEnabled()) {
+      console.warn(`[ThreeLowPolyMap] WebGL context release skipped (${reason}):`, error)
+    }
+  }
+  try {
+    renderer.dispose?.()
+  } catch (error) {
+    if (isMapRuntimeDebugEnabled()) {
+      console.warn(`[ThreeLowPolyMap] Renderer dispose failed (${reason}):`, error)
+    }
+  }
+  try {
+    renderer.domElement?.remove?.()
+  } catch {
+    // Canvas may already be detached.
   }
 }
 
@@ -583,12 +643,13 @@ function cloneScene(scene, { scale = 1, shadows = true, maxAnisotropy = 8 } = {}
       child.receiveShadow = shadows
       if (child.isSkinnedMesh) child.frustumCulled = false
       child.geometry = prepareMeshGeometry(child.geometry)
-      child.material = child.material?.clone?.() || child.material
-      enhanceMeshMaterial(child.material, { maxAnisotropy })
-      if (child.material && !Array.isArray(child.material)) {
-        child.material.roughness = 0.82
-        child.material.metalness = 0.03
-      }
+      child.material = cloneAndEnhanceMeshMaterial(child.material, { maxAnisotropy })
+      const materials = Array.isArray(child.material) ? child.material : [child.material]
+      materials.forEach((material) => {
+        if (!material) return
+        if (typeof material.roughness === 'number') material.roughness = 0.82
+        if (typeof material.metalness === 'number') material.metalness = 0.03
+      })
     }
   })
   return clone
@@ -865,6 +926,21 @@ const MAP_EVENT_SIGNAL_STYLES = {
     npcBaseLift: 0.08,
     npcForwardOffset: 0.18
   },
+  merchant: {
+    label: '商人',
+    tier: 4,
+    colorA: 0xd97706,
+    colorB: 0x14b8a6,
+    radius: 0.2,
+    hoverY: 0.34,
+    coreShape: 'dodeca',
+    coreSize: 0.1,
+    baseOpacity: 0.055,
+    ringOpacity: 0.3,
+    coreOpacity: 0.78,
+    npcBaseLift: 0.1,
+    npcForwardOffset: 0.2
+  },
   lieutenant: {
     label: '部下训练家',
     tier: 4,
@@ -897,6 +973,33 @@ const MAP_EVENT_SIGNAL_STYLES = {
     npcBaseLift: 0.16,
     npcForwardOffset: 0.28
   },
+  objective: {
+    label: '任务机关',
+    tier: 5,
+    colorA: 0x22d3ee,
+    colorB: 0xfef08a,
+    radius: 0.3,
+    hoverY: 0.94,
+    ringCount: 2,
+    ringGap: 0.055,
+    ringTube: 0.012,
+    coreShape: 'icosa',
+    coreSize: 0.12,
+    baseOpacity: 0.07,
+    ringOpacity: 0.4,
+    coreOpacity: 0.9,
+    moteCount: 5,
+    moteSize: 0.02,
+    light: 0.18,
+    lightRange: 2.4,
+    pulseSpeed: 1.7,
+    basePulseScale: 0.05,
+    ringPulseScale: 0.075,
+    corePulseScale: 0.12,
+    bobAmount: 0.04,
+    ringSpinSpeed: 0.28,
+    coreSpinSpeed: 0.72
+  },
   challenge: {
     label: '区域试炼',
     tier: 5,
@@ -926,6 +1029,7 @@ const MAP_EVENT_SIGNAL_STYLES = {
 function getEventSignalStyleKey(eventType, npcRole = null) {
   if (eventType === 'boss' || npcRole === 'boss') return 'boss'
   if (eventType === 'trainer' && npcRole === 'lieutenant') return 'lieutenant'
+  if (eventType === 'merchant' || npcRole === 'merchant') return 'merchant'
   if (eventType === 'trainer') return 'trainer'
   if (eventType === 'pickup') return 'item'
   if (MAP_EVENT_SIGNAL_STYLES[eventType]) return eventType
@@ -1022,7 +1126,7 @@ function getModelVisualTopY(modelScene, modelScale = 1, modelLift = 0) {
 
 function getEventSignalBaseY(eventType, npcRole = null, modelScale = 1, modelLift = 0, modelScene = null) {
   const spec = getEventSignalSpec(eventType, { npcRole })
-  if (eventType === 'trainer' || eventType === 'boss' || npcRole === 'boss' || npcRole === 'lieutenant' || npcRole === 'normal') {
+  if (eventType === 'trainer' || eventType === 'boss' || eventType === 'merchant' || npcRole === 'boss' || npcRole === 'lieutenant' || npcRole === 'normal' || npcRole === 'merchant') {
     const topY = getNpcModelTopY(modelScale, modelLift)
     return topY + spec.npcBaseLift
   }
@@ -1033,7 +1137,7 @@ function getEventSignalBaseY(eventType, npcRole = null, modelScale = 1, modelLif
 }
 
 function getNpcSignalForwardOffsetZ(eventType, npcRole = null) {
-  if (eventType !== 'trainer' && eventType !== 'boss' && !npcRole) return 0
+  if (eventType !== 'trainer' && eventType !== 'boss' && eventType !== 'merchant' && !npcRole) return 0
   return getEventSignalSpec(eventType, { npcRole }).npcForwardOffset ?? 0
 }
 
@@ -1203,6 +1307,257 @@ function updateEventSignals(signals, now) {
         part.material.opacity = (part.userData.baseOpacity || 0.5) * opacityMultiplier * (0.78 + pulse * 0.16)
       } else if (part.userData.signalPart === 'light') {
         part.intensity = muted ? 0 : (part.userData.baseIntensity || 0.5) * (0.74 + pulse * 0.24)
+      }
+    })
+  })
+}
+
+const OBJECTIVE_DEVICE_THEMES = {
+  tide: { base: 0x123f49, metal: 0x2a7980, accent: 0x22d3ee, glow: 0xa5f3fc, complete: 0x67e8f9, fins: 3 },
+  iron: { base: 0x252b31, metal: 0x737b82, accent: 0xf59e0b, glow: 0xfde68a, complete: 0xfbbf24, fins: 4 },
+  dragon: { base: 0x25182d, metal: 0x6d4a7f, accent: 0xa855f7, glow: 0xf5d0fe, complete: 0xfacc15, fins: 5 }
+}
+
+function createObjectiveDevice(theme = 'tide', visualKind = '', seed = 0) {
+  const spec = OBJECTIVE_DEVICE_THEMES[theme] || OBJECTIVE_DEVICE_THEMES.tide
+  const isCore = /altar|core|console/.test(visualKind)
+  const group = new THREE.Group()
+  group.userData.kind = 'elite-objective-device'
+  group.userData.theme = theme
+  group.userData.visualKind = visualKind
+  group.userData.phase = seed * 0.57
+  group.userData.visualState = 'available'
+  group.userData.spec = spec
+
+  const baseMaterial = new THREE.MeshStandardMaterial({
+    color: spec.base,
+    roughness: theme === 'iron' ? 0.48 : 0.68,
+    metalness: theme === 'iron' ? 0.58 : 0.24
+  })
+  const trimMaterial = new THREE.MeshStandardMaterial({
+    color: spec.metal,
+    roughness: 0.38,
+    metalness: 0.62
+  })
+  const glowMaterial = createSpringGlowMaterial(spec.accent, 0.72)
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(isCore ? 0.38 : 0.3, isCore ? 0.46 : 0.37, isCore ? 0.34 : 0.28, theme === 'iron' ? 8 : theme === 'dragon' ? 6 : 12),
+    baseMaterial
+  )
+  base.position.y = isCore ? 0.18 : 0.15
+  base.castShadow = true
+  base.receiveShadow = true
+  base.userData.objectivePart = 'base'
+  group.add(base)
+
+  const trim = new THREE.Mesh(
+    new THREE.TorusGeometry(isCore ? 0.36 : 0.29, 0.035, 8, theme === 'iron' ? 8 : 32),
+    trimMaterial
+  )
+  trim.rotation.x = Math.PI / 2
+  trim.position.y = isCore ? 0.37 : 0.31
+  trim.castShadow = true
+  trim.userData.objectivePart = 'trim'
+  group.add(trim)
+
+  const coreGeometry = theme === 'iron'
+    ? new THREE.OctahedronGeometry(isCore ? 0.2 : 0.15, 0)
+    : theme === 'dragon'
+      ? new THREE.DodecahedronGeometry(isCore ? 0.19 : 0.145, 0)
+      : new THREE.IcosahedronGeometry(isCore ? 0.18 : 0.14, 1)
+  const core = new THREE.Mesh(coreGeometry, glowMaterial)
+  core.position.y = isCore ? 0.74 : 0.62
+  core.userData.objectivePart = 'core'
+  core.userData.baseY = core.position.y
+  group.add(core)
+
+  for (let index = 0; index < spec.fins; index += 1) {
+    const angle = (Math.PI * 2 * index) / spec.fins
+    const finGeometry = theme === 'dragon'
+      ? new THREE.ConeGeometry(0.075, isCore ? 0.42 : 0.34, 4)
+      : new THREE.BoxGeometry(theme === 'iron' ? 0.11 : 0.075, isCore ? 0.38 : 0.3, theme === 'iron' ? 0.075 : 0.06)
+    const fin = new THREE.Mesh(finGeometry, trimMaterial.clone())
+    const radius = isCore ? 0.35 : 0.28
+    fin.position.set(Math.cos(angle) * radius, isCore ? 0.55 : 0.48, Math.sin(angle) * radius)
+    fin.rotation.y = -angle
+    if (theme === 'dragon') fin.rotation.z = -0.18
+    fin.castShadow = true
+    fin.userData.objectivePart = 'fin'
+    fin.userData.angle = angle
+    group.add(fin)
+  }
+
+  const addVariantMesh = (geometry, material, position, objectivePart, rotation = null) => {
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.set(...position)
+    if (rotation) mesh.rotation.set(...rotation)
+    mesh.castShadow = material !== glowMaterial
+    mesh.userData.objectivePart = objectivePart
+    mesh.userData.baseY = mesh.position.y
+    mesh.userData.baseRotation = { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z }
+    group.add(mesh)
+    return mesh
+  }
+
+  // Each lieutenant trial has a readable silhouette on the map. These are kept
+  // emissive/material-only so the extra detail does not add per-device lights.
+  if (visualKind === 'tide_pressure') {
+    ;[-0.18, 0.18].forEach((x, index) => {
+      const piston = addVariantMesh(new THREE.CylinderGeometry(0.075, 0.085, 0.36, 10), trimMaterial.clone(), [x, 0.68, 0], 'variant-piston')
+      piston.userData.index = index
+      addVariantMesh(new THREE.SphereGeometry(0.09, 12, 8), glowMaterial.clone(), [x, 0.89, 0], 'variant-glow')
+    })
+    addVariantMesh(new THREE.BoxGeometry(0.5, 0.055, 0.08), trimMaterial.clone(), [0, 0.52, 0], 'variant-frame')
+  } else if (visualKind === 'tide_gauge') {
+    addVariantMesh(new THREE.CylinderGeometry(0.2, 0.2, 0.055, 18), trimMaterial.clone(), [0, 0.7, 0.03], 'variant-frame', [Math.PI / 2, 0, 0])
+    const needle = addVariantMesh(new THREE.BoxGeometry(0.025, 0.17, 0.025), glowMaterial.clone(), [0, 0.71, -0.01], 'variant-needle')
+    needle.geometry.translate(0, 0.075, 0)
+  } else if (visualKind === 'tide_anchor') {
+    ;[0, 1, 2].forEach((index) => {
+      const ring = addVariantMesh(new THREE.TorusGeometry(0.18 + index * 0.045, 0.018, 6, 24), index === 1 ? glowMaterial.clone() : trimMaterial.clone(), [0, 0.68, 0], 'variant-rotor', [index === 0 ? Math.PI / 2 : Math.PI / 3, index * 0.72, index * 0.42])
+      ring.userData.index = index
+    })
+  } else if (visualKind === 'iron_forge') {
+    addVariantMesh(new THREE.CylinderGeometry(0.21, 0.26, 0.19, 8), baseMaterial.clone(), [0, 0.54, 0], 'variant-frame')
+    addVariantMesh(new THREE.OctahedronGeometry(0.12, 0), glowMaterial.clone(), [0, 0.66, 0], 'variant-glow')
+    const hammer = addVariantMesh(new THREE.BoxGeometry(0.28, 0.1, 0.12), trimMaterial.clone(), [0.13, 0.91, 0], 'variant-hammer', [0, 0, -0.52])
+    hammer.geometry.translate(-0.1, 0, 0)
+  } else if (visualKind === 'iron_relay') {
+    ;[-0.15, 0.15].forEach((x) => addVariantMesh(new THREE.BoxGeometry(0.08, 0.39, 0.08), trimMaterial.clone(), [x, 0.68, 0], 'variant-frame'))
+    const arc = addVariantMesh(new THREE.TorusGeometry(0.15, 0.018, 6, 18, Math.PI), glowMaterial.clone(), [0, 0.83, 0], 'variant-arc', [0, 0, 0])
+    arc.userData.baseOpacity = arc.material.opacity
+  } else if (visualKind === 'iron_armor') {
+    ;[-0.15, 0, 0.15].forEach((x, index) => {
+      const plate = addVariantMesh(new THREE.BoxGeometry(0.16, 0.34 + index * 0.04, 0.07), index === 1 ? glowMaterial.clone() : trimMaterial.clone(), [x, 0.68, index === 1 ? 0.02 : 0], 'variant-plate')
+      plate.rotation.z = (index - 1) * -0.11
+      plate.userData.index = index
+    })
+  } else if (visualKind === 'dragon_fang') {
+    ;[-0.16, 0, 0.16].forEach((x, index) => {
+      const fang = addVariantMesh(new THREE.ConeGeometry(0.08, 0.42, 5), index === 1 ? glowMaterial.clone() : trimMaterial.clone(), [x, 0.72 + (index === 1 ? 0.09 : 0), 0], 'variant-fang')
+      fang.userData.index = index
+    })
+  } else if (visualKind === 'dragon_beacon') {
+    addVariantMesh(new THREE.OctahedronGeometry(0.2, 0), glowMaterial.clone(), [0, 0.74, 0], 'variant-star')
+    ;[0, 1].forEach((index) => {
+      const orbit = addVariantMesh(new THREE.TorusGeometry(0.25 + index * 0.06, 0.014, 5, 24), trimMaterial.clone(), [0, 0.74, 0], 'variant-rotor', [Math.PI / 2 - index * 0.55, index * 0.35, 0])
+      orbit.userData.index = index
+    })
+  } else if (visualKind === 'dragon_seal') {
+    addVariantMesh(new THREE.TorusGeometry(0.23, 0.045, 5, 6), trimMaterial.clone(), [0, 0.73, 0], 'variant-rune-ring', [Math.PI / 2, 0, 0])
+    ;[0, 1, 2, 3].forEach((index) => {
+      const angle = index * Math.PI / 2
+      const rune = addVariantMesh(new THREE.TetrahedronGeometry(0.07, 0), glowMaterial.clone(), [Math.cos(angle) * 0.23, 0.74, Math.sin(angle) * 0.23], 'variant-rune')
+      rune.userData.index = index
+    })
+  }
+
+  const halo = new THREE.Mesh(
+    new THREE.TorusGeometry(isCore ? 0.3 : 0.23, 0.018, 8, 40),
+    createSpringGlowMaterial(spec.glow, 0.5)
+  )
+  halo.rotation.x = Math.PI / 2
+  halo.position.y = isCore ? 0.73 : 0.61
+  halo.userData.objectivePart = 'halo'
+  halo.userData.baseOpacity = 0.5
+  group.add(halo)
+
+  const light = new THREE.PointLight(spec.accent, isCore ? 0.56 : 0.38, isCore ? 3.2 : 2.5)
+  light.position.y = isCore ? 0.82 : 0.7
+  light.userData.objectivePart = 'light'
+  light.userData.baseIntensity = light.intensity
+  // A point light on every multi-step objective forces all nearby map materials
+  // through additional lighting passes. Keep one on the final altar/core only;
+  // regular steps retain their emissive core, halo and activation burst.
+  if (isCore) group.add(light)
+
+  if (isCore) group.scale.setScalar(1.08)
+  return group
+}
+
+function applyObjectiveDeviceVisualState(device, visualState = 'available') {
+  if (!device) return
+  const spec = device.userData.spec || OBJECTIVE_DEVICE_THEMES.tide
+  const completed = visualState === 'completed' || visualState === 'cleared'
+  const locked = visualState === 'locked'
+  const previousState = device.userData.visualState
+  if (completed && previousState !== 'completed' && previousState !== 'cleared') {
+    device.userData.activatedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  }
+  device.userData.visualState = visualState
+  device.children.forEach((part) => {
+    if (part.userData.objectivePart === 'core') {
+      part.material.color.setHex(completed ? spec.complete : locked ? 0x64748b : spec.accent)
+      part.material.opacity = completed ? 0.92 : locked ? 0.22 : 0.72
+    } else if (part.userData.objectivePart === 'halo') {
+      part.material.color.setHex(completed ? spec.complete : locked ? 0x64748b : spec.glow)
+      part.material.opacity = completed ? 0.62 : locked ? 0.12 : 0.5
+    } else if (part.userData.objectivePart === 'light') {
+      part.color.setHex(completed ? spec.complete : spec.accent)
+      part.intensity = locked ? 0.04 : completed ? part.userData.baseIntensity * 1.2 : part.userData.baseIntensity
+    } else if (part.material?.emissive) {
+      part.material.emissive.setHex(completed ? spec.complete : 0x000000)
+      part.material.emissiveIntensity = completed ? 0.13 : 0
+    }
+  })
+}
+
+function updateObjectiveDevices(devices, now) {
+  if (!Array.isArray(devices) || devices.length === 0) return
+  const time = now * 0.001
+  devices.forEach((device, deviceIndex) => {
+    if (!device?.visible) return
+    const visualState = device.userData.visualState || 'available'
+    const locked = visualState === 'locked'
+    const completed = visualState === 'completed' || visualState === 'cleared'
+    const phase = device.userData.phase || 0
+    const wave = (Math.sin(time * (completed ? 1.05 : 1.8) + phase + deviceIndex * 0.17) + 1) / 2
+    const activationElapsed = device.userData.activatedAt ? now - device.userData.activatedAt : Number.POSITIVE_INFINITY
+    const activationProgress = clamp(activationElapsed / 1300, 0, 1)
+    const activationBurst = activationProgress < 1 ? Math.sin(activationProgress * Math.PI) : 0
+    if (activationProgress >= 1) device.userData.activatedAt = 0
+    device.children.forEach((part) => {
+      if (part.userData.objectivePart === 'core') {
+        part.position.y = part.userData.baseY + Math.sin(time * 1.5 + phase) * (locked ? 0.008 : 0.035)
+        part.rotation.y = time * (locked ? 0.08 : completed ? 0.34 : 0.72) + phase
+        const scale = 1 + wave * (locked ? 0.015 : 0.08) + activationBurst * 0.34
+        part.scale.setScalar(scale)
+      } else if (part.userData.objectivePart === 'halo') {
+        part.rotation.z = time * (locked ? 0.05 : completed ? 0.16 : 0.42) + phase
+        part.material.opacity = (part.userData.baseOpacity || 0.5) * (locked ? 0.24 : 0.72 + wave * 0.28)
+        const haloScale = 1 + activationBurst * 1.65
+        part.scale.setScalar(haloScale)
+      } else if (part.userData.objectivePart === 'trim') {
+        part.rotation.z = time * (locked ? 0.02 : 0.08) + phase
+      } else if (part.userData.objectivePart === 'light' && !locked) {
+        part.intensity = (part.userData.baseIntensity || 0.4) * (completed ? 0.95 : 0.7 + wave * 0.38) + activationBurst * 0.72
+      } else if (part.userData.objectivePart === 'variant-piston') {
+        part.position.y = part.userData.baseY + Math.sin(time * 2.4 + phase + (part.userData.index || 0) * Math.PI) * (locked ? 0.01 : 0.08)
+      } else if (part.userData.objectivePart === 'variant-needle') {
+        part.rotation.z = -0.8 + wave * (locked ? 0.12 : 1.6)
+      } else if (part.userData.objectivePart === 'variant-rotor') {
+        const base = part.userData.baseRotation || { x: 0, y: 0, z: 0 }
+        part.rotation.y = base.y + time * (locked ? 0.04 : 0.32 + (part.userData.index || 0) * 0.12)
+        part.rotation.z = base.z + time * (locked ? 0.02 : 0.15) * ((part.userData.index || 0) % 2 ? -1 : 1)
+      } else if (part.userData.objectivePart === 'variant-hammer') {
+        part.rotation.z = -0.52 + (locked ? 0 : Math.max(0, Math.sin(time * 2.1 + phase)) * 0.36)
+      } else if (part.userData.objectivePart === 'variant-arc') {
+        part.material.opacity = locked ? 0.08 : 0.28 + wave * 0.6
+        part.visible = !locked && (completed || wave > 0.22)
+      } else if (part.userData.objectivePart === 'variant-plate') {
+        const lift = completed ? (part.userData.index || 0) * 0.025 : 0
+        part.position.y = part.userData.baseY + lift + activationBurst * 0.12
+      } else if (part.userData.objectivePart === 'variant-fang') {
+        part.position.y = part.userData.baseY + Math.sin(time * 1.7 + phase + (part.userData.index || 0)) * (locked ? 0.004 : 0.025)
+      } else if (part.userData.objectivePart === 'variant-star') {
+        part.rotation.y = time * (locked ? 0.08 : 0.58)
+        part.rotation.x = time * (locked ? 0.03 : 0.22)
+      } else if (part.userData.objectivePart === 'variant-rune-ring') {
+        part.rotation.z = time * (locked ? 0.04 : 0.24) + phase
+      } else if (part.userData.objectivePart === 'variant-rune') {
+        const angle = (part.userData.index || 0) * Math.PI / 2 + time * (locked ? 0.03 : 0.22)
+        part.position.x = Math.cos(angle) * 0.23
+        part.position.z = Math.sin(angle) * 0.23
       }
     })
   })
@@ -1415,6 +1770,186 @@ function updateRestoreBurstEffect(group, animation, player, now) {
   })
 }
 
+function createEncounterAlertSprite() {
+  if (typeof document === 'undefined') {
+    const fallback = new THREE.Mesh(
+      createSignalCoreGeometry('octa', 0.14),
+      createSignalCoreMaterial(0xffffff, 0.88, { depthTest: false })
+    )
+    fallback.userData.encounterPart = 'sprite'
+    fallback.renderOrder = 72
+    return fallback
+  }
+
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.clearRect(0, 0, size, size)
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.35)'
+    ctx.shadowBlur = 10
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, 46, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(255, 247, 167, 0.96)'
+    ctx.fill()
+    ctx.shadowBlur = 0
+    ctx.lineWidth = 7
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.98)'
+    ctx.stroke()
+    ctx.font = '900 76px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#7c2d12'
+    ctx.fillText('!', size / 2, size / 2 + 4)
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false
+  }))
+  sprite.userData.encounterPart = 'sprite'
+  sprite.userData.texture = texture
+  sprite.renderOrder = 72
+  sprite.scale.set(0.54, 0.54, 0.54)
+  return sprite
+}
+
+function createEncounterAlertEffect() {
+  const group = new THREE.Group()
+  group.visible = false
+  group.userData.kind = 'encounter-alert-effect'
+  group.userData.active = false
+  group.userData.startedAt = 0
+  group.userData.duration = ENCOUNTER_ALERT_MS
+  group.userData.onComplete = null
+
+  const groundRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.32, 0.018, 8, 60),
+    createSpringGlowMaterial(0xfef08a, 0.66, { depthTest: false })
+  )
+  groundRing.rotation.x = Math.PI / 2
+  groundRing.position.y = 0.13
+  groundRing.userData.encounterPart = 'ground-ring'
+  groundRing.userData.baseOpacity = 0.66
+  groundRing.renderOrder = 68
+  group.add(groundRing)
+
+  const flash = new THREE.Mesh(
+    new THREE.SphereGeometry(0.19, 18, 12),
+    createSpringGlowMaterial(0xffffff, 0.62, { depthTest: false })
+  )
+  flash.position.y = 0.86
+  flash.userData.encounterPart = 'flash'
+  flash.userData.baseOpacity = 0.62
+  flash.renderOrder = 69
+  group.add(flash)
+
+  const halo = new THREE.Mesh(
+    new THREE.TorusGeometry(0.18, 0.012, 8, 44),
+    createSpringGlowMaterial(0xfb923c, 0.78, { depthTest: false })
+  )
+  halo.position.y = 1.42
+  halo.rotation.x = Math.PI / 2
+  halo.userData.encounterPart = 'halo'
+  halo.userData.baseOpacity = 0.78
+  halo.renderOrder = 70
+  group.add(halo)
+
+  const sprite = createEncounterAlertSprite()
+  sprite.position.y = 1.62
+  group.add(sprite)
+
+  for (let i = 0; i < 8; i += 1) {
+    const mote = new THREE.Mesh(
+      new THREE.SphereGeometry(0.028 + (i % 2) * 0.006, 10, 8),
+      createSpringGlowMaterial(i % 2 === 0 ? 0xfef3c7 : 0xf97316, 0.64, { depthTest: false })
+    )
+    mote.userData.encounterPart = 'mote'
+    mote.userData.angle = (Math.PI * 2 * i) / 8
+    mote.userData.radius = 0.18 + (i % 4) * 0.035
+    mote.userData.speed = 1.05 + (i % 3) * 0.18
+    mote.userData.baseOpacity = 0.64
+    mote.renderOrder = 71
+    group.add(mote)
+  }
+
+  const light = new THREE.PointLight(0xfbbf24, 0, 4.2)
+  light.position.y = 1.05
+  light.userData.encounterPart = 'light'
+  group.add(light)
+
+  return group
+}
+
+function updateEncounterAlertEffect(effect, player, now) {
+  if (!effect || !player) return
+  if (!effect.userData.active) {
+    effect.visible = false
+    return
+  }
+
+  const duration = effect.userData.duration || ENCOUNTER_ALERT_MS
+  const age = now - (effect.userData.startedAt || now)
+  const t = clamp(age / duration, 0, 1)
+  if (t >= 1) {
+    const onComplete = effect.userData.onComplete
+    effect.userData.active = false
+    effect.userData.startedAt = 0
+    effect.userData.onComplete = null
+    effect.visible = false
+    player.scale.setScalar(1)
+    if (typeof onComplete === 'function') onComplete()
+    return
+  }
+
+  const easeOut = 1 - Math.pow(1 - t, 3)
+  const fade = Math.max(0, 1 - t)
+  const pulse = Math.sin(t * Math.PI)
+  effect.visible = true
+  effect.position.set(player.position.x, PLAYER_BASE_Y + 0.02, player.position.z)
+  player.scale.setScalar(1 + pulse * 0.035)
+
+  effect.children.forEach((part) => {
+    const kind = part.userData.encounterPart
+    if (kind === 'ground-ring') {
+      const scale = 0.72 + easeOut * 1.9
+      part.scale.set(scale, scale, scale)
+      part.rotation.z = now * 0.002
+      part.material.opacity = (part.userData.baseOpacity || 0.6) * fade
+    } else if (kind === 'flash') {
+      const scale = 0.36 + pulse * 1.75
+      part.scale.set(scale, scale, scale)
+      part.material.opacity = (part.userData.baseOpacity || 0.55) * fade * (0.5 + pulse * 0.5)
+    } else if (kind === 'halo') {
+      const scale = 0.72 + pulse * 0.38 + easeOut * 0.34
+      part.scale.set(scale, scale, scale)
+      part.rotation.z = now * 0.004
+      part.material.opacity = (part.userData.baseOpacity || 0.7) * fade
+    } else if (kind === 'sprite') {
+      const scale = 0.46 + pulse * 0.18
+      part.position.y = 1.5 + Math.sin(t * Math.PI * 2) * 0.07
+      part.scale.set(scale, scale, scale)
+      if (part.material) part.material.opacity = Math.min(1, fade * 1.35)
+      part.rotation.z = Math.sin(t * Math.PI * 2) * 0.08
+    } else if (kind === 'mote') {
+      const angle = part.userData.angle + now * 0.001 * part.userData.speed
+      const radius = (part.userData.radius || 0.2) + easeOut * 0.42
+      part.position.x = Math.cos(angle) * radius
+      part.position.z = Math.sin(angle) * radius * 0.82
+      part.position.y = 0.62 + easeOut * 0.72 + Math.sin(now * 0.006 + part.userData.angle) * 0.05
+      part.material.opacity = (part.userData.baseOpacity || 0.6) * fade
+    } else if (kind === 'light') {
+      part.intensity = 0.45 + pulse * 1.8
+    }
+  })
+}
+
 function createPickupCollectBurstEffect(seed = 0) {
   const group = new THREE.Group()
   group.userData.kind = 'pickup-burst'
@@ -1493,6 +2028,7 @@ function updatePickupCollectBursts(bursts, now) {
 function normalizeNpcRole(role) {
   if (role === 'boss') return 'boss'
   if (role === 'lieutenant') return 'lieutenant'
+  if (role === 'merchant') return 'merchant'
   return role === 'normal' ? 'normal' : null
 }
 
@@ -1519,6 +2055,17 @@ const NPC_ROLE_EFFECT_STYLES = {
     pulseScale: 0.032,
     spinSpeed: 0.11
   },
+  merchant: {
+    baseColor: 0xd97706,
+    accentColor: 0x14b8a6,
+    radius: CELL * 0.22,
+    baseOpacity: 0.055,
+    ringOpacity: 0.24,
+    ringTube: 0.009,
+    lightIntensity: 0.04,
+    pulseScale: 0.026,
+    spinSpeed: 0.09
+  },
   boss: {
     baseColor: 0xdc2626,
     accentColor: 0xfbbf24,
@@ -1532,6 +2079,13 @@ const NPC_ROLE_EFFECT_STYLES = {
   }
 }
 
+const ELITE_NPC_THEME_EFFECT_STYLES = {
+  frost: { baseColor: 0x67e8f9, accentColor: 0xffffff, spinSpeed: 0.12 },
+  tide: { baseColor: 0x14b8a6, accentColor: 0x99f6e4, spinSpeed: 0.15 },
+  iron: { baseColor: 0x64748b, accentColor: 0xfbbf24, spinSpeed: 0.08 },
+  dragon: { baseColor: 0x8b5cf6, accentColor: 0xf0abfc, spinSpeed: 0.19 }
+}
+
 function createNpcRoleEffect(role, seed = 0, options = {}) {
   const normalizedRole = normalizeNpcRole(role)
   if (!normalizedRole) return null
@@ -1540,7 +2094,12 @@ function createNpcRoleEffect(role, seed = 0, options = {}) {
   group.userData.kind = 'npc-role-effect'
   group.userData.role = normalizedRole
   group.userData.phase = seed * 0.47
-  group.userData.spec = NPC_ROLE_EFFECT_STYLES[normalizedRole]
+  const eliteTheme = typeof options.visualTheme === 'string'
+    ? ELITE_NPC_THEME_EFFECT_STYLES[options.visualTheme]
+    : null
+  group.userData.spec = eliteTheme
+    ? { ...NPC_ROLE_EFFECT_STYLES[normalizedRole], ...eliteTheme }
+    : NPC_ROLE_EFFECT_STYLES[normalizedRole]
   group.userData.eventId = typeof options.eventId === 'string' ? options.eventId : null
   group.userData.visualState = options.visualState || 'available'
   group.userData.muted = Boolean(options.muted)
@@ -1622,22 +2181,335 @@ function updateNpcRoleEffects(effects, now) {
   })
 }
 
-function createBridge({ length = 3, width = 1.4, rotation = 0 } = {}) {
+const ELITE_FOUR_LANDMARK_TYPES = new Set([
+  'elite_frost_portal',
+  'elite_tide_portal',
+  'elite_iron_portal',
+  'elite_dragon_portal',
+  'elite_champion_portal',
+  'elite_frost_crystal',
+  'elite_frost_mirror',
+  'elite_tide_pillar',
+  'elite_tide_gate',
+  'elite_iron_bastion',
+  'elite_iron_beacon',
+  'elite_iron_gate',
+  'elite_dragon_spire',
+  'elite_dragon_arch',
+  'elite_dragon_gate',
+  'champion_tower',
+  'champion_obelisk',
+  'champion_gate'
+])
+
+const eliteFourLandmarkTemplateCache = new Map()
+
+function createEliteFourLandmarkTemplate(type) {
+  if (!ELITE_FOUR_LANDMARK_TYPES.has(type)) return null
+
   const group = new THREE.Group()
-  const deckMaterial = new THREE.MeshStandardMaterial({ color: 0xb9824b, roughness: 0.88 })
-  const beamMaterial = new THREE.MeshStandardMaterial({ color: 0x7a4d2b, roughness: 0.92 })
-  const postMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4125, roughness: 0.9 })
+  const add = (geometry, material, position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) => {
+    const mesh = new THREE.Mesh(geometry, material)
+    mesh.position.set(...position)
+    mesh.rotation.set(...rotation)
+    mesh.scale.set(...scale)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    group.add(mesh)
+    return mesh
+  }
+  const material = (color, options = {}) => new THREE.MeshStandardMaterial({
+    color,
+    roughness: options.roughness ?? 0.48,
+    metalness: options.metalness ?? 0.08,
+    emissive: options.emissive ?? 0x000000,
+    emissiveIntensity: options.emissiveIntensity ?? 0,
+    transparent: options.transparent ?? false,
+    opacity: options.opacity ?? 1,
+    depthWrite: options.depthWrite ?? true,
+    side: options.side ?? THREE.FrontSide
+  })
+
+  if (type.endsWith('_portal')) {
+    const portalStyles = {
+      elite_frost_portal: { frame: 0xb9f5ff, glow: 0x55d9ef, dark: 0x397f92, shape: 'crystal' },
+      elite_tide_portal: { frame: 0x62e8dd, glow: 0x1eb9b4, dark: 0x17646d, shape: 'wave' },
+      elite_iron_portal: { frame: 0xaab4ba, glow: 0xf3b83f, dark: 0x424c54, shape: 'iron' },
+      elite_dragon_portal: { frame: 0xc28ae9, glow: 0x8b5cf6, dark: 0x4e2c62, shape: 'horn' },
+      elite_champion_portal: { frame: 0xf4cf69, glow: 0x8d9cff, dark: 0x24263d, shape: 'crown' }
+    }
+    const portal = portalStyles[type]
+    const frame = material(portal.frame, {
+      roughness: portal.shape === 'iron' ? 0.28 : 0.34,
+      metalness: portal.shape === 'iron' ? 0.72 : 0.28,
+      emissive: portal.glow,
+      emissiveIntensity: 0.18
+    })
+    const dark = material(portal.dark, {
+      roughness: 0.5,
+      metalness: portal.shape === 'iron' ? 0.62 : 0.16
+    })
+    const glow = material(portal.glow, {
+      roughness: 0.12,
+      emissive: portal.glow,
+      emissiveIntensity: 0.5,
+      transparent: true,
+      opacity: 0.2,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+    add(
+      new THREE.CircleGeometry(1.72, portal.shape === 'iron' ? 4 : 32),
+      glow,
+      [0, 1.86, -0.02],
+      [0, 0, portal.shape === 'iron' ? Math.PI / 4 : 0]
+    )
+    if (portal.shape === 'iron') {
+      ;[-1.9, 1.9].forEach((x) => {
+        add(new THREE.BoxGeometry(0.28, 2.3, 0.42), dark, [x, 1.15, 0])
+        add(new THREE.BoxGeometry(0.42, 0.18, 0.56), frame, [x, 2.34, 0])
+      })
+      add(new THREE.BoxGeometry(4.1, 0.34, 0.48), frame, [0, 2.5, 0])
+      add(new THREE.BoxGeometry(3.58, 0.08, 0.52), material(portal.glow, {
+        emissive: portal.glow,
+        emissiveIntensity: 0.42,
+        metalness: 0.58
+      }), [0, 2.28, 0])
+    } else {
+      add(new THREE.TorusGeometry(1.86, 0.13, 9, portal.shape === 'crystal' ? 12 : 30), frame, [0, 1.86, 0])
+      ;[-1.88, 1.88].forEach((x) => {
+        add(new THREE.CylinderGeometry(0.16, 0.24, 1.45, portal.shape === 'horn' ? 6 : 8), dark, [x, 0.74, 0])
+      })
+      if (portal.shape === 'crystal') {
+        ;[-0.2, 0, 0.2].forEach((x, index) => {
+          add(new THREE.OctahedronGeometry(index === 1 ? 0.22 : 0.15, 0), frame, [x, 3.82 + (index === 1 ? 0.12 : 0), 0], [0, index * 0.3, 0], [0.72, 1.5, 0.72])
+        })
+      } else if (portal.shape === 'wave') {
+        ;[-1, 1].forEach((side) => {
+          add(new THREE.ConeGeometry(0.22, 0.8, 7), frame, [side * 1.58, 3.12, 0], [0, 0, side * -0.85], [0.62, 1, 1])
+        })
+      } else if (portal.shape === 'crown') {
+        add(new THREE.BoxGeometry(2.2, 0.12, 0.22), dark, [0, 3.28, 0])
+        ;[-0.82, -0.42, 0, 0.42, 0.82].forEach((x, index) => {
+          const center = index === 2
+          add(
+            new THREE.ConeGeometry(center ? 0.18 : 0.13, center ? 0.72 : 0.5, 5),
+            frame,
+            [x, center ? 3.68 : 3.56, 0]
+          )
+        })
+        add(new THREE.OctahedronGeometry(0.17, 0), glow, [0, 3.32, 0.04], [0, Math.PI / 4, 0])
+      } else {
+        ;[-1, 1].forEach((side) => {
+          add(new THREE.ConeGeometry(0.15, 0.9, 6), frame, [side * 1.2, 3.48, 0], [0, 0, side * -0.62])
+        })
+      }
+    }
+    const light = new THREE.PointLight(portal.glow, 0.65, 5.2)
+    light.position.set(0, 1.9, 0.35)
+    group.add(light)
+  } else if (type === 'elite_frost_crystal') {
+    const ice = material(0xa8edf7, { roughness: 0.2, emissive: 0x2aa9c2, emissiveIntensity: 0.16 })
+    const iceLight = material(0xe9fdff, { roughness: 0.16, emissive: 0x73d9eb, emissiveIntensity: 0.18 })
+    const base = material(0x6ba6b4, { roughness: 0.52 })
+    add(new THREE.CylinderGeometry(0.44, 0.52, 0.18, 6), base, [0, 0.09, 0])
+    add(new THREE.OctahedronGeometry(0.46, 0), ice, [0, 0.82, 0], [0, 0.28, 0], [0.72, 1.7, 0.72])
+    add(new THREE.OctahedronGeometry(0.24, 0), iceLight, [0.38, 0.45, 0.08], [0, -0.22, 0.18], [0.7, 1.45, 0.7])
+  } else if (type === 'elite_frost_mirror') {
+    const frame = material(0xc9f5fb, { roughness: 0.18, metalness: 0.42, emissive: 0x4fc9df, emissiveIntensity: 0.14 })
+    const glass = material(0x8adcec, { roughness: 0.06, metalness: 0.28, transparent: true, opacity: 0.54, depthWrite: false, side: THREE.DoubleSide })
+    const base = material(0x618c99, { roughness: 0.5 })
+    add(new THREE.CylinderGeometry(0.48, 0.58, 0.18, 8), base, [0, 0.09, 0])
+    add(new THREE.TorusGeometry(0.44, 0.075, 10, 28), frame, [0, 0.72, 0])
+    add(new THREE.CircleGeometry(0.38, 28), glass, [0, 0.72, -0.015])
+  } else if (type === 'elite_tide_pillar') {
+    const stone = material(0x176d73, { roughness: 0.36, metalness: 0.14 })
+    const tide = material(0x5ee2dc, { roughness: 0.22, emissive: 0x0c8f95, emissiveIntensity: 0.2 })
+    add(new THREE.CylinderGeometry(0.38, 0.48, 0.22, 8), stone, [0, 0.11, 0])
+    add(new THREE.CylinderGeometry(0.22, 0.3, 1.5, 8), stone, [0, 0.92, 0])
+    add(new THREE.TorusGeometry(0.3, 0.055, 8, 20), tide, [0, 0.58, 0], [Math.PI / 2, 0, 0])
+    add(new THREE.TorusGeometry(0.27, 0.05, 8, 20), tide, [0, 1.22, 0], [Math.PI / 2, 0, 0])
+    add(new THREE.ConeGeometry(0.32, 0.42, 8), tide, [0, 1.84, 0])
+  } else if (type === 'elite_tide_gate') {
+    const stone = material(0x1c7479, { roughness: 0.4, metalness: 0.12 })
+    const tide = material(0x75eee4, { roughness: 0.2, emissive: 0x12939a, emissiveIntensity: 0.18 })
+    add(new THREE.BoxGeometry(1.42, 0.18, 0.48), stone, [0, 0.09, 0])
+    ;[-0.5, 0.5].forEach((x) => add(new THREE.CylinderGeometry(0.16, 0.21, 1.22, 8), stone, [x, 0.7, 0]))
+    add(new THREE.BoxGeometry(1.28, 0.22, 0.28), tide, [0, 1.34, 0])
+    add(new THREE.TorusGeometry(0.36, 0.05, 8, 24), tide, [0, 0.78, 0.02])
+  } else if (type === 'elite_iron_bastion') {
+    const steel = material(0x4c555d, { roughness: 0.34, metalness: 0.72 })
+    const steelLight = material(0x89939a, { roughness: 0.3, metalness: 0.64 })
+    const gold = material(0xe0ad3d, { roughness: 0.3, metalness: 0.7, emissive: 0x8a4f08, emissiveIntensity: 0.08 })
+    add(new THREE.BoxGeometry(1.28, 0.34, 0.9), steel, [0, 0.17, 0])
+    add(new THREE.BoxGeometry(1.08, 0.62, 0.76), steelLight, [0, 0.65, 0])
+    ;[-0.42, 0, 0.42].forEach((x) => add(new THREE.BoxGeometry(0.24, 0.28, 0.82), steel, [x, 1.08, 0]))
+    add(new THREE.BoxGeometry(1.12, 0.08, 0.84), gold, [0, 0.92, 0])
+  } else if (type === 'elite_iron_beacon') {
+    const steel = material(0x545e66, { roughness: 0.32, metalness: 0.72 })
+    const gold = material(0xf0b83f, { roughness: 0.2, metalness: 0.62, emissive: 0xf59e0b, emissiveIntensity: 0.42 })
+    add(new THREE.CylinderGeometry(0.38, 0.48, 0.2, 8), steel, [0, 0.1, 0])
+    add(new THREE.CylinderGeometry(0.14, 0.24, 1.05, 8), steel, [0, 0.7, 0])
+    add(new THREE.SphereGeometry(0.27, 12, 8), gold, [0, 1.34, 0])
+    add(new THREE.TorusGeometry(0.34, 0.045, 8, 20), gold, [0, 1.34, 0], [Math.PI / 2, 0, 0])
+  } else if (type === 'elite_iron_gate') {
+    const steel = material(0x515b63, { roughness: 0.3, metalness: 0.74 })
+    const steelLight = material(0x929ca3, { roughness: 0.28, metalness: 0.68 })
+    const gold = material(0xe7b33d, { roughness: 0.24, metalness: 0.72, emissive: 0xa35d08, emissiveIntensity: 0.12 })
+    ;[-2, 2].forEach((x) => {
+      add(new THREE.BoxGeometry(0.3, 2.55, 0.36), steel, [x, 1.28, 0])
+      add(new THREE.BoxGeometry(0.42, 0.18, 0.48), steelLight, [x, 2.62, 0])
+    })
+    add(new THREE.BoxGeometry(4.38, 0.3, 0.4), steelLight, [0, 2.78, 0])
+    add(new THREE.BoxGeometry(3.74, 0.07, 0.43), gold, [0, 2.57, 0])
+    add(new THREE.TorusGeometry(0.3, 0.05, 8, 20), gold, [0, 2.8, 0.02])
+  } else if (type === 'elite_dragon_spire') {
+    const stone = material(0x4e315f, { roughness: 0.42, metalness: 0.14 })
+    const crystal = material(0xae6fe0, { roughness: 0.2, emissive: 0x7c3aed, emissiveIntensity: 0.26 })
+    const gold = material(0xe3bd55, { roughness: 0.3, metalness: 0.58 })
+    add(new THREE.CylinderGeometry(0.42, 0.54, 0.22, 6), stone, [0, 0.11, 0])
+    add(new THREE.ConeGeometry(0.42, 1.7, 6), crystal, [0, 1.02, 0], [0, 0.28, 0])
+    add(new THREE.TorusGeometry(0.38, 0.055, 8, 20), gold, [0, 0.55, 0], [Math.PI / 2, 0, 0])
+  } else if (type === 'elite_dragon_arch') {
+    const stone = material(0x5b386d, { roughness: 0.4, metalness: 0.12 })
+    const crystal = material(0xb879e4, { roughness: 0.2, emissive: 0x7c3aed, emissiveIntensity: 0.22 })
+    const gold = material(0xe6c15b, { roughness: 0.26, metalness: 0.62 })
+    add(new THREE.BoxGeometry(1.5, 0.18, 0.5), stone, [0, 0.09, 0])
+    ;[-0.54, 0.54].forEach((x) => add(new THREE.BoxGeometry(0.25, 1.28, 0.32), stone, [x, 0.73, 0]))
+    add(new THREE.BoxGeometry(1.32, 0.25, 0.36), crystal, [0, 1.46, 0])
+    add(new THREE.TorusGeometry(0.43, 0.055, 8, 24), gold, [0, 0.82, 0.02])
+    ;[-0.46, 0.46].forEach((z) => add(new THREE.BoxGeometry(0.24, 1.12, 0.24), stone, [0, 0.65, z]))
+    add(new THREE.BoxGeometry(0.36, 0.22, 1.22), crystal, [0, 1.35, 0])
+    add(new THREE.TorusGeometry(0.35, 0.045, 8, 20), gold, [0.02, 0.78, 0], [0, Math.PI / 2, 0])
+  } else if (type === 'elite_dragon_gate') {
+    const stone = material(0x563268, { roughness: 0.4, metalness: 0.14 })
+    const crystal = material(0xc084ed, { roughness: 0.2, emissive: 0x8b5cf6, emissiveIntensity: 0.26 })
+    const gold = material(0xe8c75f, { roughness: 0.26, metalness: 0.62 })
+    ;[-2, 2].forEach((x, xIndex) => {
+      add(new THREE.BoxGeometry(0.3, 2.55, 0.38), stone, [x, 1.28, 0])
+      add(new THREE.ConeGeometry(0.18, 0.72, 6), crystal, [x + (xIndex === 0 ? -0.08 : 0.08), 2.88, 0], [0, 0, xIndex === 0 ? 0.28 : -0.28])
+    })
+    add(new THREE.BoxGeometry(4.4, 0.28, 0.42), stone, [0, 2.78, 0])
+    add(new THREE.BoxGeometry(3.74, 0.07, 0.46), gold, [0, 2.57, 0])
+    add(new THREE.DodecahedronGeometry(0.24, 0), crystal, [0, 2.82, 0])
+  } else if (type === 'champion_tower') {
+    const basalt = material(0x171827, { roughness: 0.34, metalness: 0.36 })
+    const basaltLight = material(0x303149, { roughness: 0.28, metalness: 0.44 })
+    const crownGold = material(0xf4c95d, { roughness: 0.18, metalness: 0.82, emissive: 0xa86a12, emissiveIntensity: 0.2 })
+    const starGlass = material(0xa9b8ff, { roughness: 0.08, metalness: 0.16, emissive: 0x6677ff, emissiveIntensity: 0.8, transparent: true, opacity: 0.76, depthWrite: false })
+    const beam = material(0x8a9cff, { roughness: 0.02, emissive: 0x7185ff, emissiveIntensity: 1.15, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide })
+    add(new THREE.CylinderGeometry(2.5, 2.85, 0.42, 8), basalt, [0, 0.21, 0])
+    add(new THREE.CylinderGeometry(2.15, 2.45, 0.35, 8), crownGold, [0, 0.52, 0])
+    ;[0, 1, 2, 3].forEach((tier) => {
+      const y = 1.2 + tier * 1.12
+      const radius = 1.82 - tier * 0.22
+      add(new THREE.CylinderGeometry(radius * 0.88, radius, 1.0, 8), tier % 2 ? basaltLight : basalt, [0, y, 0])
+      add(new THREE.CylinderGeometry(radius + 0.12, radius + 0.12, 0.11, 8), crownGold, [0, y + 0.48, 0])
+      ;[-1, 1].forEach((side) => add(new THREE.BoxGeometry(0.16, 0.55, 0.06), starGlass, [side * radius * 0.56, y, radius * 0.91]))
+    })
+    add(new THREE.CylinderGeometry(0.48, 0.62, 1.25, 8), basaltLight, [0, 5.5, 0])
+    add(new THREE.ConeGeometry(1.18, 1.25, 8), crownGold, [0, 6.48, 0])
+    add(new THREE.OctahedronGeometry(0.48, 0), starGlass, [0, 7.16, 0], [0, Math.PI / 8, 0], [0.78, 1.28, 0.78])
+    add(new THREE.CylinderGeometry(0.18, 0.42, 5.7, 18, 1, true), beam, [0, 3.26, 0])
+    const towerLight = new THREE.PointLight(0x8291ff, 1.05, 9)
+    towerLight.position.set(0, 5.7, 0.8)
+    group.add(towerLight)
+  } else if (type === 'champion_obelisk') {
+    const stone = material(0x24263b, { roughness: 0.31, metalness: 0.42 })
+    const gold = material(0xf0c55b, { roughness: 0.2, metalness: 0.8, emissive: 0x8b580d, emissiveIntensity: 0.18 })
+    const core = material(0x9caaff, { roughness: 0.08, emissive: 0x6677ff, emissiveIntensity: 0.76 })
+    add(new THREE.CylinderGeometry(0.5, 0.62, 0.24, 8), stone, [0, 0.12, 0])
+    add(new THREE.CylinderGeometry(0.2, 0.36, 1.42, 6), stone, [0, 0.93, 0])
+    add(new THREE.TorusGeometry(0.34, 0.052, 8, 24), gold, [0, 0.62, 0], [Math.PI / 2, 0, 0])
+    add(new THREE.TorusGeometry(0.28, 0.045, 8, 24), gold, [0, 1.28, 0], [Math.PI / 2, 0, 0])
+    add(new THREE.OctahedronGeometry(0.28, 0), core, [0, 1.83, 0], [0, Math.PI / 6, 0], [0.76, 1.25, 0.76])
+  } else if (type === 'champion_gate') {
+    const stone = material(0x202238, { roughness: 0.3, metalness: 0.48 })
+    const gold = material(0xf2c65a, { roughness: 0.18, metalness: 0.82, emissive: 0x94610d, emissiveIntensity: 0.2 })
+    const star = material(0xa8b7ff, { roughness: 0.08, emissive: 0x6a7cff, emissiveIntensity: 0.82 })
+    ;[-2.15, 2.15].forEach((x) => {
+      add(new THREE.CylinderGeometry(0.28, 0.38, 2.85, 8), stone, [x, 1.43, 0])
+      add(new THREE.ConeGeometry(0.34, 0.68, 8), gold, [x, 3.15, 0])
+    })
+    add(new THREE.BoxGeometry(4.7, 0.34, 0.48), stone, [0, 2.84, 0])
+    add(new THREE.BoxGeometry(4.05, 0.075, 0.52), gold, [0, 2.62, 0])
+    add(new THREE.OctahedronGeometry(0.3, 0), star, [0, 2.9, 0], [0, Math.PI / 4, 0])
+  }
+
+  group.userData.kind = 'elite-four-landmark'
+  return group
+}
+
+function createEliteFourLandmark(type) {
+  if (!ELITE_FOUR_LANDMARK_TYPES.has(type)) return null
+  if (!eliteFourLandmarkTemplateCache.has(type)) {
+    eliteFourLandmarkTemplateCache.set(type, createEliteFourLandmarkTemplate(type))
+  }
+  return eliteFourLandmarkTemplateCache.get(type)?.clone(true) || null
+}
+
+const ELITE_FOUR_LANDMARK_MAX_SCALES = {
+  elite_frost_portal: 0.82,
+  elite_tide_portal: 0.82,
+  elite_iron_portal: 0.82,
+  elite_dragon_portal: 0.82,
+  elite_champion_portal: 0.82,
+  elite_frost_crystal: 1.08,
+  elite_frost_mirror: 0.92,
+  elite_tide_pillar: 0.68,
+  elite_tide_gate: 0.78,
+  elite_iron_bastion: 0.9,
+  elite_iron_beacon: 0.72,
+  elite_iron_gate: 0.86,
+  elite_dragon_spire: 0.82,
+  elite_dragon_arch: 0.82,
+  elite_dragon_gate: 0.82,
+  champion_tower: 0.72,
+  champion_obelisk: 0.86,
+  champion_gate: 0.82
+}
+
+function resolveEliteFourLandmarkScale(type, scale) {
+  const safeScale = Math.max(0.28, Number(scale) || 1)
+  const maxScale = ELITE_FOUR_LANDMARK_MAX_SCALES[type]
+  return Number.isFinite(maxScale) ? Math.min(safeScale, maxScale) : safeScale
+}
+
+function createBridge({ length = 3, width = 1.4, rotation = 0 } = {}, palette = {}) {
+  const group = new THREE.Group()
+  const deckMaterial = new THREE.MeshStandardMaterial({
+    color: palette.bridgeDeck ?? 0xb9824b,
+    roughness: palette.bridgeRoughness ?? 0.88,
+    metalness: palette.bridgeMetalness ?? 0.02
+  })
+  const beamMaterial = new THREE.MeshStandardMaterial({
+    color: palette.bridgeRail ?? 0x7a4d2b,
+    roughness: palette.bridgeRoughness ?? 0.92,
+    metalness: palette.bridgeMetalness ?? 0.02
+  })
+  const postMaterial = new THREE.MeshStandardMaterial({
+    color: palette.bridgeAccent ?? 0x6b4125,
+    roughness: palette.bridgeRoughness ?? 0.9,
+    metalness: palette.bridgeMetalness ?? 0.02,
+    emissive: palette.bridgeEmissive ?? 0x000000,
+    emissiveIntensity: palette.bridgeEmissive ? 0.12 : 0
+  })
 
   const visualWidth = clamp(Number(width) || 1.12, 0.84, 1.16)
   const bridgeLength = length * CELL
   const bridgeWidth = visualWidth * CELL
-  const plankCount = 6
+  const isEliteBridge = palette.bridgeStyle === 'elite'
+  const plankCount = isEliteBridge ? 1 : 6
   for (let i = 0; i < plankCount; i += 1) {
     const plank = new THREE.Mesh(
-      new THREE.BoxGeometry(bridgeLength, 0.08, bridgeWidth / plankCount * 0.72),
+      new THREE.BoxGeometry(
+        bridgeLength,
+        isEliteBridge ? 0.13 : 0.08,
+        isEliteBridge ? bridgeWidth : bridgeWidth / plankCount * 0.72
+      ),
       deckMaterial
     )
-    plank.position.set(0, 0.12, -bridgeWidth / 2 + (i + 0.5) * (bridgeWidth / plankCount))
+    plank.position.set(0, isEliteBridge ? 0.1 : 0.12, isEliteBridge ? 0 : -bridgeWidth / 2 + (i + 0.5) * (bridgeWidth / plankCount))
     plank.castShadow = true
     plank.receiveShadow = true
     group.add(plank)
@@ -1657,6 +2529,15 @@ function createBridge({ length = 3, width = 1.4, rotation = 0 } = {}) {
       group.add(post)
     })
   })
+
+  if (isEliteBridge) {
+    const seamCount = Math.max(3, Math.round(length))
+    for (let i = 1; i < seamCount; i += 1) {
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.025, bridgeWidth * 0.82), postMaterial)
+      seam.position.set(-bridgeLength / 2 + (i / seamCount) * bridgeLength, 0.18, 0)
+      group.add(seam)
+    }
+  }
 
   group.rotation.y = rotation
   return group
@@ -1955,6 +2836,9 @@ function ThreeLowPolyMap({
     let resizeObserver = null
     let healthTimerId = 0
     let recoveryTimerId = 0
+    let rendererRestartPending = false
+    let browserContextLost = false
+    let cleanupRenderer = null
     const perfProbeEnabled = mapDebugEnabled
 
     const reportRenderIssue = (message, error) => {
@@ -1964,13 +2848,18 @@ function ThreeLowPolyMap({
     }
 
     const scheduleRendererRestart = (reason, error, delay = 160) => {
-      if (disposed) return
+      if (disposed || rendererRestartPending) return
+      if (String(reason || '').startsWith('webgl-context')) {
+        reportRenderIssue('地图渲染被浏览器暂停，请点击重建地图。', error)
+        return
+      }
       reportRenderIssue('地图渲染暂时失效，正在自动恢复...', error)
       recoverAttemptsRef.current += 1
       if (recoverAttemptsRef.current > 4) {
         reportRenderIssue('地图渲染连续恢复失败，请点击重建地图。', error)
         return
       }
+      rendererRestartPending = true
       window.clearTimeout(recoveryTimerId)
       recoveryTimerId = window.setTimeout(() => {
         if (!disposed) requestRendererRestart(reason)
@@ -2004,6 +2893,14 @@ function ThreeLowPolyMap({
         renderProfile.maxAnisotropy,
         renderer.capabilities.getMaxAnisotropy?.() || renderProfile.maxAnisotropy
       )
+      registerActiveThreeMapRenderer(host, (reason) => {
+        if (typeof cleanupRenderer === 'function') {
+          cleanupRenderer(reason)
+          return
+        }
+        disposed = true
+        releaseThreeRenderer(renderer, reason)
+      })
     } catch (error) {
       scheduleRendererRestart('renderer-create-failed', error, 600)
       return undefined
@@ -2015,16 +2912,21 @@ function ThreeLowPolyMap({
 
     const handleContextLost = (event) => {
       event.preventDefault()
-      scheduleRendererRestart('webgl-context-lost', null, 220)
+      browserContextLost = true
+      reportRenderIssue('地图渲染被浏览器暂停，请点击重建地图。')
     }
     const handleContextRestored = () => {
+      browserContextLost = false
       requestRendererRestart('webgl-context-restored')
     }
     renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false)
     renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored, false)
 
+    const usesCompactMapCamera = Number(mapInfo?.width) <= 28 && Number(mapInfo?.height) <= 24
+    const cameraHeight = usesCompactMapCamera ? 11.8 : CAMERA_HEIGHT
+    const cameraForwardOffset = usesCompactMapCamera ? 9.6 : CAMERA_FORWARD_OFFSET
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200)
-    camera.position.set(0, CAMERA_HEIGHT, CAMERA_FORWARD_OFFSET)
+    camera.position.set(0, cameraHeight, cameraForwardOffset)
     camera.lookAt(0, CAMERA_LOOK_Y, 0)
 
     // 视锥剔除复用对象（chunk-level frustum cull 用）
@@ -2142,18 +3044,21 @@ function ThreeLowPolyMap({
       onEncounterCooldownChange,
       cloudBlocked,
       mapActive,
-	      springRestoreAnimation,
+      encounterPending: false,
+      springRestoreAnimation,
 	      player: null,
 	      springEffects: [],
 	      eventSignals: [],
 	      dynamicEventDecorations: [],
 	      npcFacingControllers: [],
 	      npcFacingControllersByEventId: new Map(),
-	      npcRoleEffects: [],
+		      npcRoleEffects: [],
+        objectiveDevices: [],
         eventVisualBindings: [],
 	      pickupBursts: [],
 	      pickupBurstPool: [],
 	      restoreBurst: null,
+      encounterAlertEffect: null,
 	      triggerPickupBurst: null,
 	      cameraFocus,
 	      cameraTarget,
@@ -2188,7 +3093,6 @@ function ThreeLowPolyMap({
     const buildWorld = async () => {
       const height = mapGrid.length
       const width = mapGrid[0].length
-      const glintMeshes = []
 
       const start = worldFromTile(pointer.tileX, pointer.tileY, width, height)
       const fallbackPlayer = createLowPolyPlayer()
@@ -2206,7 +3110,8 @@ function ThreeLowPolyMap({
 	      const dynamicEventDecorations = []
 	      const npcFacingControllers = []
 	      const npcFacingControllersByEventId = new Map()
-	      const npcRoleEffects = []
+		      const npcRoleEffects = []
+        const objectiveDevices = []
         const eventVisualBindings = []
 	      const pickupBursts = []
 	      const pickupBurstPool = []
@@ -2225,6 +3130,8 @@ function ThreeLowPolyMap({
       })
 	      const restoreBurst = createRestoreBurstEffect()
 	      root.add(restoreBurst)
+      const encounterAlertEffect = createEncounterAlertEffect()
+      root.add(encounterAlertEffect)
 	      const triggerPickupBurst = (controller, now = performance.now()) => {
 	        if (!controller) return
 	        let burst = pickupBurstPool.find((candidate) => !candidate?.userData?.active)
@@ -2245,11 +3152,13 @@ function ThreeLowPolyMap({
 	      stateRef.current.dynamicEventDecorations = dynamicEventDecorations
 	      stateRef.current.npcFacingControllers = npcFacingControllers
 	      stateRef.current.npcFacingControllersByEventId = npcFacingControllersByEventId
-	      stateRef.current.npcRoleEffects = npcRoleEffects
+		      stateRef.current.npcRoleEffects = npcRoleEffects
+        stateRef.current.objectiveDevices = objectiveDevices
         stateRef.current.eventVisualBindings = eventVisualBindings
 	      stateRef.current.pickupBursts = pickupBursts
 	      stateRef.current.pickupBurstPool = pickupBurstPool
 	      stateRef.current.restoreBurst = restoreBurst
+      stateRef.current.encounterAlertEffect = encounterAlertEffect
 	      stateRef.current.triggerPickupBurst = triggerPickupBurst
 
       const legacyRequiredModelKeys = getRequiredModelKeys(mapInfo)
@@ -2269,31 +3178,31 @@ function ThreeLowPolyMap({
       if (disposed) return
 
       const pathMaterial = new THREE.MeshStandardMaterial({
-        color: 0xd9bd86,
+        color: visualPalette.path ?? 0xd9bd86,
         roughness: 0.96,
-        metalness: 0.01
+        metalness: visualPalette.pathMetalness ?? 0.01
       })
       const pathEdgeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xbe9461,
+        color: visualPalette.pathEdge ?? 0xbe9461,
         roughness: 0.98,
         transparent: true,
         opacity: 0.46
       })
       const pathHighlightMaterial = new THREE.MeshStandardMaterial({
-        color: 0xf6dfa9,
+        color: visualPalette.pathHighlight ?? 0xf6dfa9,
         roughness: 0.9,
         transparent: true,
         opacity: 0.18
       })
       const waterMaterial = new THREE.MeshStandardMaterial({
-        color: 0x74d7df,
+        color: visualPalette.water ?? 0x74d7df,
         roughness: 0.5,
         metalness: 0.02,
         transparent: true,
         opacity: 0.97
       })
       const waterDeepMaterial = new THREE.MeshStandardMaterial({
-        color: 0x2d9fc5,
+        color: visualPalette.waterDeep ?? 0x2d9fc5,
         roughness: 0.34,
         metalness: 0.02,
         transparent: true,
@@ -2301,17 +3210,11 @@ function ThreeLowPolyMap({
         depthWrite: false
       })
       const waterBankMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe0c893,
+        color: visualPalette.waterBank ?? 0xe0c893,
         roughness: 0.94,
         metalness: 0.01,
         transparent: true,
         opacity: 0.5
-      })
-      const rareGrassMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffe066,
-        transparent: true,
-        opacity: 0.28,
-        depthWrite: false
       })
       const forestFloorMaterial = new THREE.MeshStandardMaterial({
         color: visualPalette.forestFloor ?? 0x5fa85a,
@@ -2366,20 +3269,22 @@ function ThreeLowPolyMap({
       const _templateCache = {}
       const getInstanceTemplate = (key) => {
         if (key in _templateCache) return _templateCache[key]
-        const scene = models[key]
+        const scene = models[key] || createEliteFourCharacterTemplate(key)
         if (!scene) { _templateCache[key] = null; return null }
         const subMeshes = []
         scene.updateMatrixWorld(true)
         scene.traverse((child) => {
           if (!child.isMesh || !child.geometry) return
-          const mat = (typeof child.material?.clone === 'function')
-            ? child.material.clone()
-            : child.material
-          enhanceMeshMaterial(mat, { maxAnisotropy: renderProfile.maxAnisotropy })
-          if (mat && !Array.isArray(mat)) {
-            mat.roughness = 0.82
-            mat.metalness = 0.03
-          }
+          const mat = cloneAndEnhanceMeshMaterial(child.material, {
+            maxAnisotropy: renderProfile.maxAnisotropy
+          })
+          const materials = Array.isArray(mat) ? mat : [mat]
+          materials.forEach((entry) => {
+            if (!entry) return
+            if (typeof entry.roughness === 'number') entry.roughness = 0.82
+            if (typeof entry.metalness === 'number') entry.metalness = 0.03
+          })
+          applyMapAssetMaterialStyle(mat, MAP_ASSET_CATALOG[key])
           subMeshes.push({
             geometry: prepareMeshGeometry(child.geometry),
             material: mat,
@@ -2640,29 +3545,56 @@ function ThreeLowPolyMap({
         posY,
         posZ,
         rotationY,
-        scale
+        scale,
+        routeBlockerEvent = null
       }) => {
         if (!NPC_INTERACTION_EVENT_TYPES.has(eventType) || typeof eventId !== 'string' || eventId.length === 0) return null
         const instancedRefs = Array.isArray(refs) ? refs : []
         if (instancedRefs.length === 0) return null
         const baseScale = Number.isFinite(Number(scale)) ? Number(scale) : 1
         const baseRotation = Number.isFinite(Number(rotationY)) ? Number(rotationY) : 0
+        const stepAsideOffset = getEliteRouteStepAsideOffset(routeBlockerEvent)
+        const asideOffsetX = stepAsideOffset.x * stepAsideOffset.distance * CELL
+        const asideOffsetZ = stepAsideOffset.y * stepAsideOffset.distance * CELL
         const controller = {
           eventType,
           eventId,
           tileX,
           tileY,
+          interactionTileX: tileX,
+          interactionTileY: tileY,
           refs: instancedRefs,
           posX,
           posY,
           posZ,
+          currentPosX: posX,
+          currentPosZ: posZ,
+          targetPosX: posX,
+          targetPosZ: posZ,
+          moveFromX: posX,
+          moveFromZ: posZ,
+          moveStartedAt: 0,
+          moveDurationMs: 360,
           scale: baseScale,
           baseRotation,
           currentRotation: baseRotation,
           targetRotation: baseRotation,
           active: false,
-          applyRotation(rotationValue = this.currentRotation) {
-            _instTmpPos.set(this.posX, this.posY, this.posZ)
+          routeBlockerEvent,
+          routeBlockerYielded: false,
+          companions: [],
+          addCompanions(objects = []) {
+            this.companions = objects
+              .filter(Boolean)
+              .map((object3D) => ({
+                object3D,
+                baseX: object3D.position.x,
+                baseZ: object3D.position.z
+              }))
+            this.applyTransform(this.currentRotation)
+          },
+          applyTransform(rotationValue = this.currentRotation) {
+            _instTmpPos.set(this.currentPosX, this.posY, this.currentPosZ)
             _instTmpEuler.set(0, rotationValue, 0)
             _instTmpQuat.setFromEuler(_instTmpEuler)
             _instTmpScale.setScalar(this.scale)
@@ -2672,10 +3604,52 @@ function ThreeLowPolyMap({
               ref.mesh.setMatrixAt(ref.index, _instTmpMatrix)
               ref.mesh.instanceMatrix.needsUpdate = true
             })
+            const offsetX = this.currentPosX - this.posX
+            const offsetZ = this.currentPosZ - this.posZ
+            this.companions.forEach((companion) => {
+              companion.object3D.position.x = companion.baseX + offsetX
+              companion.object3D.position.z = companion.baseZ + offsetZ
+            })
+          },
+          syncRouteBlockerState(visualState, options = {}) {
+            if (stepAsideOffset.distance <= 0 || !this.routeBlockerEvent) return false
+            const yielded = isEliteRouteBlockerCleared(
+              this.routeBlockerEvent,
+              visualState,
+              Boolean(options.currentMapBossCompleted)
+            )
+            const nextTargetX = this.posX + (yielded ? asideOffsetX : 0)
+            const nextTargetZ = this.posZ + (yielded ? asideOffsetZ : 0)
+            const targetChanged = (
+              this.routeBlockerYielded !== yielded ||
+              Math.abs(this.targetPosX - nextTargetX) > 0.001 ||
+              Math.abs(this.targetPosZ - nextTargetZ) > 0.001
+            )
+            if (!targetChanged) return false
+
+            this.routeBlockerYielded = yielded
+            this.interactionTileX = this.tileX + (yielded ? stepAsideOffset.x : 0)
+            this.interactionTileY = this.tileY + (yielded ? stepAsideOffset.y : 0)
+            this.targetPosX = nextTargetX
+            this.targetPosZ = nextTargetZ
+            this.targetRotation = this.baseRotation
+            this.active = false
+            if (options.immediate) {
+              this.currentPosX = nextTargetX
+              this.currentPosZ = nextTargetZ
+              this.moveStartedAt = 0
+              this.applyTransform(this.currentRotation)
+              return true
+            }
+
+            this.moveFromX = this.currentPosX
+            this.moveFromZ = this.currentPosZ
+            this.moveStartedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+            return true
           },
           facePlayer(playerTileX, playerTileY) {
-            if (!isCardinalAdjacentTile(this.tileX, this.tileY, playerTileX, playerTileY)) return false
-            const direction = getDirectionTowardTile(this.tileX, this.tileY, playerTileX, playerTileY)
+            if (!isCardinalAdjacentTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)) return false
+            const direction = getDirectionTowardTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)
             const nextRotation = DIRS[direction]?.rot
             if (!Number.isFinite(nextRotation)) return false
             this.targetRotation = nextRotation
@@ -2690,10 +3664,19 @@ function ThreeLowPolyMap({
           },
           syncWithPlayerTile(playerTileX, playerTileY) {
             if (!this.active) return false
-            if (isCardinalAdjacentTile(this.tileX, this.tileY, playerTileX, playerTileY)) return false
+            if (isCardinalAdjacentTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)) return false
             return this.restoreDefault()
           },
-          update() {
+          update(now = (typeof performance !== 'undefined' ? performance.now() : Date.now())) {
+            let transformChanged = false
+            if (this.moveStartedAt) {
+              const progress = clamp((now - this.moveStartedAt) / this.moveDurationMs, 0, 1)
+              const eased = 1 - Math.pow(1 - progress, 3)
+              this.currentPosX = THREE.MathUtils.lerp(this.moveFromX, this.targetPosX, eased)
+              this.currentPosZ = THREE.MathUtils.lerp(this.moveFromZ, this.targetPosZ, eased)
+              transformChanged = true
+              if (progress >= 1) this.moveStartedAt = 0
+            }
             const delta = Math.atan2(
               Math.sin(this.targetRotation - this.currentRotation),
               Math.cos(this.targetRotation - this.currentRotation)
@@ -2701,12 +3684,13 @@ function ThreeLowPolyMap({
             if (Math.abs(delta) < 0.002) {
               if (this.currentRotation !== this.targetRotation) {
                 this.currentRotation = this.targetRotation
-                this.applyRotation(this.currentRotation)
+                transformChanged = true
               }
-              return false
+              if (transformChanged) this.applyTransform(this.currentRotation)
+              return transformChanged
             }
             this.currentRotation = lerpAngle(this.currentRotation, this.targetRotation, 0.28)
-            this.applyRotation(this.currentRotation)
+            this.applyTransform(this.currentRotation)
             return true
           },
           isAnimating() {
@@ -2714,7 +3698,7 @@ function ThreeLowPolyMap({
               Math.sin(this.targetRotation - this.currentRotation),
               Math.cos(this.targetRotation - this.currentRotation)
             )
-            return Math.abs(delta) >= 0.002
+            return this.moveStartedAt > 0 || Math.abs(delta) >= 0.002
           }
         }
         return controller
@@ -2731,16 +3715,31 @@ function ThreeLowPolyMap({
         return signal
       }
 
-      const registerEventVisualBinding = ({ eventId, eventType = null, signal = null, npcRoleEffect = null, defaultState = 'available' } = {}) => {
+      const registerEventVisualBinding = ({
+        eventId,
+        eventType = null,
+        signal = null,
+        npcRoleEffect = null,
+        objectiveDevice = null,
+        npcFacingController = null,
+        defaultState = 'available'
+      } = {}) => {
         if (typeof eventId !== 'string' || eventId.length === 0) return
         const visualState = resolveEventVisualStateValue(eventId, normalizedMapEventVisualState, defaultState)
         applyEventSignalVisualState(signal, visualState)
         applyNpcRoleEffectVisualState(npcRoleEffect, visualState)
+        applyObjectiveDeviceVisualState(objectiveDevice, visualState)
+        npcFacingController?.syncRouteBlockerState?.(visualState, {
+          immediate: true,
+          currentMapBossCompleted
+        })
         eventVisualBindings.push({
           eventId,
           eventType,
           signal,
           npcRoleEffect,
+          objectiveDevice,
+          npcFacingController,
           defaultState
         })
       }
@@ -3237,14 +4236,6 @@ function ThreeLowPolyMap({
             if (insidePlayableArea) {
               grassObjects.set(`${x},${y}`, grass)
             }
-
-            if (insidePlayableArea && getEncounterZoneAt(currentMapName, x, y)?.tallGrassRate > 0.25) {
-              const glint = makeHorizontalCircle(CELL * 0.48, rareGrassMaterial, 24)
-              glint.position.set(pos.x, 0.075, pos.z)
-              root.add(glint)
-              grassObjects.set(`${x},${y}:glint`, glint)
-              glintMeshes.push({ mesh: glint, tileX: x, tileY: y })
-            }
           }
 
           if (legacy === 0 && insidePlayableArea && !isNearRoad(x, y)) {
@@ -3267,6 +4258,7 @@ function ThreeLowPolyMap({
           }
 
           if (legacy === 1) {
+            if (mapInfo?.renderForestWallUndergrowth === false) continue
             if (isInRoadClearance(mapInfo, x, y, 0.7)) {
               if (blockedEdgeTile) {
                 placeForestUndergrowth(x, y, pos, {
@@ -3329,6 +4321,7 @@ function ThreeLowPolyMap({
           if (
             legacy === 20 &&
             blockedEdgeTile &&
+            mapInfo?.renderForestWallUndergrowth !== false &&
             !isDynamicBlockerVisualSuppressed(mapInfo, mapGrid, x, y, collectedEventIdSet, currentMapName)
           ) {
             placeForestUndergrowth(x, y, pos, {
@@ -3343,7 +4336,7 @@ function ThreeLowPolyMap({
 
       mapInfo?.bridges?.forEach((bridge) => {
         const pos = worldFromTile(bridge.x, bridge.y, width, height)
-        const model = createBridge(bridge)
+        const model = createBridge(bridge, visualPalette)
         model.position.set(pos.x, 0.11, pos.z)
         root.add(model)
       })
@@ -3382,7 +4375,7 @@ function ThreeLowPolyMap({
           }
           return
         }
-        if (!models[spec.key]) {
+        if (!models[spec.key] && !isEliteFourCharacterType(spec.key) && !ELITE_FOUR_LANDMARK_TYPES.has(spec.key)) {
           trackDecorationStat('skippedNoModel')
           if (mapDebugEnabled && (object.type?.includes('rock') || object.type?.includes('stone'))) {
             console.warn(`[Map Debug] Missing model for ${object.type} (key: ${spec.key})`)
@@ -3473,16 +4466,30 @@ function ThreeLowPolyMap({
             }
           )
           : null
-        const refs = addInstance(
-          spec.key,
-          pos.x + (object.offsetX ?? 0),
-          modelLift,
-          pos.z + (object.offsetZ ?? 0),
-          decorationRotationY,
-          modelScale
-        )
+        const eliteLandmark = createEliteFourLandmark(object.type)
+        let refs = []
+        if (eliteLandmark) {
+          eliteLandmark.position.set(
+            pos.x + (object.offsetX ?? 0),
+            modelLift,
+            pos.z + (object.offsetZ ?? 0)
+          )
+          eliteLandmark.rotation.y = decorationRotationY
+          eliteLandmark.scale.setScalar(resolveEliteFourLandmarkScale(object.type, modelScale))
+          root.add(eliteLandmark)
+        } else {
+          refs = addInstance(
+            spec.key,
+            pos.x + (object.offsetX ?? 0),
+            modelLift,
+            pos.z + (object.offsetZ ?? 0),
+            decorationRotationY,
+            modelScale
+          )
+        }
+        let npcFacingController = null
         if (isNpcInteractionDecoration(object, eventType)) {
-          const npcFacingController = createNpcFacingController({
+          npcFacingController = createNpcFacingController({
             eventType,
             eventId: object.eventId,
             tileX: objectTileX,
@@ -3492,7 +4499,8 @@ function ThreeLowPolyMap({
             posY: modelLift,
             posZ: pos.z + (object.offsetZ ?? 0),
             rotationY: decorationRotationY,
-            scale: modelScale
+            scale: modelScale,
+            routeBlockerEvent: runtimeEventById.get(object.eventId) || null
           })
           if (npcFacingController) {
             npcFacingControllers.push(npcFacingController)
@@ -3540,6 +4548,7 @@ function ThreeLowPolyMap({
           eventId: typeof object.eventId === 'string' ? object.eventId : null,
           modelScale,
           modelLift,
+          visualTheme: object.visualTheme,
           muted: false
         })
         if (npcRoleEffect) {
@@ -3551,11 +4560,13 @@ function ThreeLowPolyMap({
           root.add(npcRoleEffect)
           npcRoleEffects.push(npcRoleEffect)
         }
+        npcFacingController?.addCompanions?.([signal, npcRoleEffect])
         registerEventVisualBinding({
           eventId: typeof object.eventId === 'string' ? object.eventId : null,
           eventType,
           signal,
-          npcRoleEffect
+          npcRoleEffect,
+          npcFacingController
         })
       })
       if (mapDebugEnabled && decorationStats) {
@@ -3590,8 +4601,27 @@ function ThreeLowPolyMap({
           return
         }
 
-        if (!['warp', 'fast_travel', 'heal', 'challenge', 'sign', 'info'].includes(event.type)) return
-        const signal = addEventSignalAt(signalX, signalY, event.type, {
+        if (!['warp', 'fast_travel', 'heal', 'challenge', 'objective', 'sign', 'info', 'merchant'].includes(event.type)) return
+        let objectiveDevice = null
+        if (event.type === 'objective') {
+          objectiveDevice = createObjectiveDevice(
+            event.properties?.theme,
+            event.properties?.visualKind,
+            objectiveDevices.length
+          )
+          const devicePos = worldFromTile(signalX, signalY, width, height)
+          objectiveDevice.position.set(
+            devicePos.x + signalOffsetX,
+            0,
+            devicePos.z + signalOffsetZ
+          )
+          root.add(objectiveDevice)
+          objectiveDevices.push(objectiveDevice)
+        }
+        // Objective devices already carry a themed base, halo, emissive core and
+        // state animation. Stacking the generic event beacon on every step added
+        // duplicate transparent meshes and point lights across late-game maps.
+        const signal = event.type === 'objective' ? null : addEventSignalAt(signalX, signalY, event.type, {
           alwaysVisible: isAlwaysVisibleMapSignal(event.type, event.properties?.role),
           eventId: typeof event.id === 'string' ? event.id : null,
           offsetX: signalOffsetX,
@@ -3600,12 +4630,12 @@ function ThreeLowPolyMap({
         registerEventVisualBinding({
           eventId: typeof event.id === 'string' ? event.id : null,
           eventType: event.type,
-          signal
+          signal,
+          objectiveDevice
         })
       })
 
       finalizeInstancedMeshes()
-      stateRef.current.glintMeshes = glintMeshes
 
       resize()
       recoverAttemptsRef.current = 0
@@ -3630,9 +4660,14 @@ function ThreeLowPolyMap({
       const contextLost = Boolean(context?.isContextLost?.())
       const missingCanvas = !host.contains(renderer.domElement)
       const missingPlayer = !stateRef.current?.player
-      if (contextLost || missingCanvas || missingPlayer) {
+      if (contextLost) {
+        browserContextLost = true
+        reportRenderIssue('地图渲染被浏览器暂停，请点击重建地图。')
+        return
+      }
+      if (missingCanvas || missingPlayer) {
         scheduleRendererRestart(
-          contextLost ? 'webgl-context-health-check' : missingCanvas ? 'canvas-detached-health-check' : 'world-build-health-check'
+          missingCanvas ? 'canvas-detached-health-check' : 'world-build-health-check'
         )
       }
     }
@@ -3667,9 +4702,12 @@ function ThreeLowPolyMap({
       }
 
       const grass = grassObjects.get(`${step.tileX},${step.tileY}`)
+      const isGrassStep = Boolean(grass) || ENCOUNTER_LEGACY_TILES.has(step.legacyTile)
+      if (isGrassStep) {
+        gameAudio.playMapTouch({ kind: 'grass' })
+      }
       if (grass) {
         const grassKey = `${step.tileX},${step.tileY}`
-        // cluster 对象（InstancedMesh 模式）直接挂属性；glint 仍是 Mesh，保留 userData fallback
         if (grass.subInstances) {
           grass.trampleUntil = performance.now() + TRAMPLED_GRASS_MS
           activeTrampleGrassKeys.add(grassKey)
@@ -3723,7 +4761,7 @@ function ThreeLowPolyMap({
 
     function startMove(direction, options = {}) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || !state.mapActive || !state.player) return
+      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return
       const pointerState = state.pointer
       const vec = DIRS[direction]
       if (!vec) return false
@@ -3782,7 +4820,7 @@ function ThreeLowPolyMap({
 
     function requestMove(direction) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || !state.mapActive || !state.player) return false
+      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return false
       const pointerState = state.pointer
       if (pointerState.moving) {
         pointerState.queued = direction
@@ -3799,7 +4837,7 @@ function ThreeLowPolyMap({
 
     function beginPress(direction) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || !state.mapActive) return
+      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive) return
       const vec = DIRS[direction]
       if (!vec) return
       clearMoveDelayTimer()
@@ -3913,7 +4951,17 @@ function ThreeLowPolyMap({
 
     function resolveInteractionFromEvent(tileX, tileY, fallbackInteraction) {
       const safeFallbackInteraction = ['fast_travel', 'item', 'pickup'].includes(fallbackInteraction) ? null : fallbackInteraction
-      const mapEvent = getMapEventAt(currentMapName, tileX, tileY)
+      const activeVisualState = stateRef.current?.mapEventVisualState || normalizedMapEventVisualState
+      const activeBossCompleted = Boolean(stateRef.current?.currentMapBossCompleted ?? currentMapBossCompleted)
+      const activeMapEvents = Array.isArray(stateRef.current?.mapInfo?.runtimeEvents)
+        ? stateRef.current.mapInfo.runtimeEvents
+        : getMapEvents(currentMapName)
+      const relocatedRouteBlocker = activeMapEvents.find((event) => {
+        const visualState = resolveEventVisualStateValue(event.id, activeVisualState, 'available')
+        const interactionTile = getEliteRouteBlockerInteractionTile(event, visualState, activeBossCompleted)
+        return interactionTile?.x === tileX && interactionTile?.y === tileY
+      }) || null
+      const mapEvent = relocatedRouteBlocker || getMapEventAt(currentMapName, tileX, tileY)
       if (!mapEvent && getMapSignMessage(currentMapName, tileX, tileY)) {
         return { interaction: 'info', mapEvent: null }
       }
@@ -3936,15 +4984,29 @@ function ThreeLowPolyMap({
       if (mapEvent.type === 'warp') return { interaction: 'exit', mapEvent }
       if (mapEvent.type === 'fast_travel') return { interaction: 'fast_travel', mapEvent }
       if (mapEvent.type === 'sign') return { interaction: 'info', mapEvent }
+      const battleVisualState = resolveEventVisualStateValue(
+        mapEvent.id,
+        activeVisualState,
+        'available'
+      )
+      if (isEliteRouteBlockerCleared(
+        mapEvent,
+        battleVisualState,
+        activeBossCompleted
+      )) {
+        return relocatedRouteBlocker
+          ? { interaction: 'info', mapEvent }
+          : { interaction: null, mapEvent: null }
+      }
       if (shouldRouteBattleEventToInfo(
         mapEvent,
-        stateRef.current?.mapEventVisualState || normalizedMapEventVisualState,
-        Boolean(stateRef.current?.currentMapBossCompleted ?? currentMapBossCompleted)
+        activeVisualState,
+        activeBossCompleted
       )) {
         return { interaction: 'info', mapEvent }
       }
       if (mapEvent.type === 'pickup') return { interaction: 'item', mapEvent }
-      if (['item', 'heal', 'trainer', 'boss', 'challenge'].includes(mapEvent.type)) {
+      if (['item', 'heal', 'trainer', 'boss', 'challenge', 'objective', 'merchant'].includes(mapEvent.type)) {
         return { interaction: mapEvent.type, mapEvent }
       }
       return { interaction: safeFallbackInteraction, mapEvent }
@@ -3967,7 +5029,7 @@ function ThreeLowPolyMap({
         }
       } else if (interaction === 'info') {
         state?.onCollect?.('info', 1, { tileX: targetX, tileY: targetY, mapEvent })
-      } else if (['heal', 'trainer', 'boss', 'challenge', 'fast_travel'].includes(interaction)) {
+      } else if (['heal', 'trainer', 'boss', 'challenge', 'objective', 'fast_travel', 'merchant'].includes(interaction)) {
         state?.onCollect?.(interaction, 1, {
           tileX: targetX,
           tileY: targetY,
@@ -4029,9 +5091,20 @@ function ThreeLowPolyMap({
       const nextCooldownSteps = Number.isFinite(safeStepsRaw)
         ? Math.max(0, Math.trunc(safeStepsRaw))
         : 5
+      const encounterState = stateRef.current
+      const encounterHandler = encounterState?.onEncounter
+      if (!encounterState || encounterState.encounterPending || encounterState.cloudBlocked || !encounterState.mapActive) {
+        return false
+      }
+      if (typeof encounterHandler !== 'function') return true
+      encounterState.encounterPending = true
+      if (encounterState.pointer) {
+        encounterState.pointer.holdDirection = null
+        encounterState.pointer.queued = null
+      }
       cooldownRef.current = nextCooldownSteps
-      stateRef.current?.onEncounterCooldownChange?.(nextCooldownSteps)
-      stateRef.current?.onEncounter?.({
+      encounterState.onEncounterCooldownChange?.(nextCooldownSteps)
+      const encounterPayload = {
         pokemonId: encounter.id,
         level: encounter.level,
         encounterTableId: tableId,
@@ -4041,7 +5114,46 @@ function ThreeLowPolyMap({
         terrainType: legacyTile,
         playerPos: stepPlayerPos,
         encounterCooldownSteps: cooldownRef.current
-      })
+      }
+      const releaseEncounterPending = () => {
+        const liveState = stateRef.current
+        if (liveState) liveState.encounterPending = false
+      }
+      const runEncounterHandler = () => {
+        const liveState = stateRef.current
+        if (!liveState || liveState.cloudBlocked || !liveState.mapActive) {
+          releaseEncounterPending()
+          return
+        }
+        let encounterResult
+        try {
+          encounterResult = encounterHandler(encounterPayload)
+        } catch (error) {
+          releaseEncounterPending()
+          console.error('[ThreeLowPolyMap] Encounter handler failed:', error)
+          return
+        }
+        if (encounterResult && typeof encounterResult.then === 'function') {
+          encounterResult.then(releaseEncounterPending, (error) => {
+            releaseEncounterPending()
+            console.error('[ThreeLowPolyMap] Encounter handler failed:', error)
+          })
+        } else {
+          releaseEncounterPending()
+        }
+      }
+      const alertEffect = encounterState.encounterAlertEffect
+      if (alertEffect && encounterState.player) {
+        gameAudio.playMapTouch({ kind: 'wild-alert' })
+        alertEffect.userData.active = true
+        alertEffect.userData.startedAt = performance.now()
+        alertEffect.userData.duration = ENCOUNTER_ALERT_MS
+        alertEffect.userData.onComplete = runEncounterHandler
+        alertEffect.visible = true
+        encounterState.kickAnimation?.()
+      } else {
+        runEncounterHandler()
+      }
       return false
     }
 
@@ -4105,6 +5217,12 @@ function ThreeLowPolyMap({
       return Boolean(animationId && restoreBurst?.userData?.lastCompletedId !== animationId)
     }
 
+    const hasActiveEncounterAlert = (effect) => Boolean(effect?.userData?.active)
+
+    const hasActiveObjectiveDeviceAnimation = (devices) => (
+      Array.isArray(devices) && devices.some((device) => Boolean(device?.userData?.activatedAt))
+    )
+
     const shouldRunFullSpeedFrame = (state) => Boolean(
       state?.pointer?.moving ||
       state?.pointer?.queued ||
@@ -4113,7 +5231,9 @@ function ThreeLowPolyMap({
       hasActiveDynamicDecorationAnimation(state?.dynamicEventDecorations) ||
       hasActiveNpcFacingAnimation(state?.npcFacingControllers) ||
       hasActivePickupBurst(state?.pickupBursts) ||
-      hasActiveRestoreAnimation(state?.restoreBurst, state?.springRestoreAnimation)
+      hasActiveRestoreAnimation(state?.restoreBurst, state?.springRestoreAnimation) ||
+      hasActiveEncounterAlert(state?.encounterAlertEffect) ||
+      hasActiveObjectiveDeviceAnimation(state?.objectiveDevices)
     )
 
     const animate = (now) => {
@@ -4172,7 +5292,8 @@ function ThreeLowPolyMap({
       const player = state?.player
       if (player && state.pointer.moving && state.pointer.target) {
         const target = state.pointer.target
-        target.elapsed += now - target.lastNow
+        const stepDelta = Math.min(Math.max(0, now - target.lastNow), 50)
+        target.elapsed += stepDelta
         target.lastNow = now
         const moveDuration = target.continuous ? CONTINUOUS_MOVE_MS : MOVE_MS
         const t = Math.min(target.elapsed / moveDuration, 1)
@@ -4219,9 +5340,11 @@ function ThreeLowPolyMap({
 
 	      updateHealingSpringEffects(state?.springEffects, now)
 	      updateEventSignals(state?.eventSignals, now)
-	      updateNpcRoleEffects(state?.npcRoleEffects, now)
-	      updateRestoreBurstEffect(state?.restoreBurst, state?.springRestoreAnimation, player, now)
-	      if (Array.isArray(state?.dynamicEventDecorations)) {
+	      updateObjectiveDevices(state?.objectiveDevices, now)
+		      updateNpcRoleEffects(state?.npcRoleEffects, now)
+		      updateRestoreBurstEffect(state?.restoreBurst, state?.springRestoreAnimation, player, now)
+      updateEncounterAlertEffect(state?.encounterAlertEffect, player, now)
+		      if (Array.isArray(state?.dynamicEventDecorations)) {
 	        state.dynamicEventDecorations.forEach((controller) => controller?.update?.(now))
 	      }
 	      if (Array.isArray(state?.npcFacingControllers)) {
@@ -4233,7 +5356,7 @@ function ThreeLowPolyMap({
         const liveFocus = clampCameraTarget(player.position.x, player.position.z)
         cameraTarget.copy(liveFocus)
         cameraFocus.copy(liveFocus)
-        camera.position.set(cameraFocus.x, CAMERA_HEIGHT, cameraFocus.z + CAMERA_FORWARD_OFFSET)
+        camera.position.set(cameraFocus.x, cameraHeight, cameraFocus.z + cameraForwardOffset)
         camera.lookAt(cameraFocus.x, cameraFocus.y, cameraFocus.z)
         sun.position.set(player.position.x + 12, 22, player.position.z + 8)
         sun.target.position.set(player.position.x, 0, player.position.z)
@@ -4264,21 +5387,6 @@ function ThreeLowPolyMap({
           visibilityDirty = false
         } else {
           visibleChunkCount = cachedVisibleChunkCount
-        }
-      }
-
-      const glintMeshes = state?.glintMeshes
-      if (Array.isArray(glintMeshes) && glintMeshes.length > 0) {
-        for (let i = 0; i < glintMeshes.length; i += 1) {
-          const entry = glintMeshes[i]
-          const grass = entry?.mesh
-          if (!grass) continue
-          const gx = entry.tileX
-          const gy = entry.tileY
-          // 只更新可见chunk中的闪光草丛
-          if (!isGrassTileInVisibleChunk(gx, gy, visibleChunkIds, chunkGrid)) continue
-          grass.material.opacity = 0.18 + Math.sin(now / 320 + gx + gy) * 0.08
-          grass.rotation.z += 0.01
         }
       }
 
@@ -4417,7 +5525,7 @@ function ThreeLowPolyMap({
     stateRef.current.beginPress = beginPress
     stateRef.current.endPress = endPress
 
-    const cleanupRenderer = (reason = 'effect-cleanup') => {
+    cleanupRenderer = (reason = 'effect-cleanup') => {
       if (disposed) return
       disposed = true
       clearActiveThreeMapRenderer(host, cleanupRenderer)
@@ -4432,13 +5540,6 @@ function ThreeLowPolyMap({
       resizeObserver?.disconnect?.()
       renderer?.domElement?.removeEventListener('webglcontextlost', handleContextLost, false)
       renderer?.domElement?.removeEventListener('webglcontextrestored', handleContextRestored, false)
-      const gl = renderer?.getContext?.()
-      const contextAlreadyLost = typeof gl?.isContextLost === 'function' ? gl.isContextLost() : false
-      if (!IS_HOT_RELOAD_ENV && !contextAlreadyLost && reason !== 'effect-remount' && reason !== 'handoff') {
-        renderer?.forceContextLoss?.()
-      }
-      renderer?.dispose?.()
-      renderer?.domElement?.remove()
       if (perfProbeEnabled && typeof window !== 'undefined') {
         delete window.__THREE_LOW_POLY_MAP_PERF__
       }
@@ -4449,6 +5550,7 @@ function ThreeLowPolyMap({
           else child.material?.dispose?.()
         }
       })
+      releaseThreeRenderer(renderer, reason)
       stateRef.current = null
     }
 
@@ -4474,8 +5576,13 @@ function ThreeLowPolyMap({
       const visualState = resolveEventVisualStateValue(binding?.eventId, normalizedMapEventVisualState, binding?.defaultState || 'available')
       applyEventSignalVisualState(binding?.signal, visualState)
       applyNpcRoleEffectVisualState(binding?.npcRoleEffect, visualState)
+      applyObjectiveDeviceVisualState(binding?.objectiveDevice, visualState)
+      const routePositionChanged = binding?.npcFacingController?.syncRouteBlockerState?.(visualState, {
+        currentMapBossCompleted
+      })
+      if (routePositionChanged) stateRef.current?.kickAnimation?.()
     })
-  }, [collectedEventIdSet, currentMapName, normalizedMapEventVisualState])
+  }, [collectedEventIdSet, currentMapBossCompleted, currentMapName, normalizedMapEventVisualState])
 
   useEffect(() => {
     const previous = collectedEventAnimationStateRef.current
@@ -4526,6 +5633,10 @@ function ThreeLowPolyMap({
     stateRef.current.cloudBlocked = cloudBlocked
     stateRef.current.mapActive = mapActive
     stateRef.current.springRestoreAnimation = springRestoreAnimation
+    if (cloudBlocked || !mapActive) {
+      stateRef.current.pointer.queued = null
+      stateRef.current.pointer.holdDirection = null
+    }
     if (mapActive) {
       stateRef.current.kickAnimation?.()
     }

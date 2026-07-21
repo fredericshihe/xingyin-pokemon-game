@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase } from '../../supabaseClient'
 import { OFFICIAL_DEX_MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS } from '../../utils/gameData'
+import { getPokeballEffectText, getPotionEffectText } from '../../utils/inventoryItems'
+import { GAMEPLAY_LOG_FILTERS, fetchStudentGameplayLogs, getGameplayLogEventMeta } from '../../utils/gameplayLogs'
+import { TEACHER_UPDATE_EVENTS, broadcastStudentTeacherUpdate } from '../../utils/teacherRewardUpdates'
 import {
   GOLD_REWARD_PRESETS,
   ENERGY_REWARD_PRESETS,
@@ -18,20 +21,10 @@ const SHOP_REWARD_ITEMS = {
   expPotion: { label: '经验药水', items: EXP_POTIONS }
 }
 
-const getPotionEffectText = (item) => {
-  const safeItem = item && typeof item === 'object' ? item : {}
-  const hp = Math.max(0, Number(safeItem.healAmount) || 0)
-  const mp = Math.max(0, Number(safeItem.mpRestoreAmount) || 0)
-  return [
-    hp > 0 ? `HP +${hp}` : null,
-    mp > 0 ? `MP +${mp}` : null
-  ].filter(Boolean).join(' / ') || '恢复'
-}
-
 const getRewardItemEffectText = (itemType, item = {}) => {
   if (itemType === 'potion') return getPotionEffectText(item)
   if (itemType === 'expPotion') return `经验 +${item.expAmount || 0}`
-  if (itemType === 'pokeball') return '捕捉道具'
+  if (itemType === 'pokeball') return getPokeballEffectText(item)
   return ''
 }
 
@@ -50,8 +43,15 @@ const PANEL_TABS = [
 const inputClass =
   'teacher-input w-full rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200'
 
+const DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES = 30
+
 function cn(...parts) {
   return parts.filter(Boolean).join(' ')
+}
+
+function getStudentPlaytimeLimitMinutes(student) {
+  const value = Number(student?.daily_playtime_limit_minutes)
+  return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES
 }
 
 function formatDate(dateString) {
@@ -134,6 +134,53 @@ function LogList({ logs, emptyText, renderAmount, renderMeta }) {
   )
 }
 
+function formatGameplayLogDetail(log) {
+  const details = log?.details && typeof log.details === 'object' ? log.details : {}
+  const parts = []
+
+  if (details.pokemonName) parts.push(details.pokemonLevel ? `${details.pokemonName} Lv.${details.pokemonLevel}` : details.pokemonName)
+  if (details.enemyName && !details.pokemonName) parts.push(details.enemyLevel ? `${details.enemyName} Lv.${details.enemyLevel}` : details.enemyName)
+  if (details.itemName) parts.push(details.quantity ? `${details.itemName} x${details.quantity}` : details.itemName)
+  if (details.gold != null) parts.push(`金币 ${details.gold}`)
+  if (details.exp != null) parts.push(`经验 ${details.exp}`)
+  if (details.energyCost != null) parts.push(`能量 -${details.energyCost}`)
+  if (details.result) parts.push(details.result)
+
+  return parts.filter(Boolean).slice(0, 3).join(' · ')
+}
+
+function GameplayLogList({ logs, emptyText }) {
+  if (!logs.length) return <p className="teacher-empty-inline">{emptyText}</p>
+
+  return (
+    <div className="teacher-gameplay-log-list">
+      {logs.map((log) => {
+        const meta = getGameplayLogEventMeta(log.event_type)
+        const detailText = formatGameplayLogDetail(log)
+        return (
+          <article key={log.id} className={cn('teacher-gameplay-log', `teacher-gameplay-log--${meta.tone}`)}>
+            <span className="teacher-gameplay-log__icon">
+              <i className={cn('fa-solid', meta.icon)} />
+            </span>
+            <div className="teacher-gameplay-log__body">
+              <div className="teacher-gameplay-log__head">
+                <strong>{log.title || meta.label}</strong>
+                <time>{formatDate(log.created_at)}</time>
+              </div>
+              {log.summary ? <p>{log.summary}</p> : null}
+              <div className="teacher-gameplay-log__meta">
+                <span>{meta.label}</span>
+                {log.map_display_name || log.map_name ? <span>{log.map_display_name || log.map_name}</span> : null}
+                {detailText ? <span>{detailText}</span> : null}
+              </div>
+            </div>
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function TeacherDashboard({ profile }) {
   const [students, setStudents] = useState([])
   const [pendingStudents, setPendingStudents] = useState([])
@@ -148,11 +195,16 @@ export default function TeacherDashboard({ profile }) {
   const [energyFillToMax, setEnergyFillToMax] = useState(false)
   const [reason, setReason] = useState('')
   const [energyReason, setEnergyReason] = useState('')
+  const [playtimeLimitMinutes, setPlaytimeLimitMinutes] = useState(String(DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES))
+  const [playtimeLimitLoading, setPlaytimeLimitLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
   const [approvalLoadingId, setApprovalLoadingId] = useState(null)
   const [goldLogs, setGoldLogs] = useState([])
   const [energyLogs, setEnergyLogs] = useState([])
+  const [gameplayLogs, setGameplayLogs] = useState([])
+  const [gameplayLogFilter, setGameplayLogFilter] = useState('all')
+  const [gameplayLogsLoading, setGameplayLogsLoading] = useState(false)
   const [rewardMode, setRewardMode] = useState('item')
   const [rewardItemType, setRewardItemType] = useState('pokeball')
   const [rewardItemKey, setRewardItemKey] = useState(Object.keys(POKEBALLS)[0])
@@ -173,6 +225,10 @@ export default function TeacherDashboard({ profile }) {
   const selectedRewardItem = SHOP_REWARD_ITEMS[rewardItemType]?.items?.[rewardItemKey]
   const selectedRewardItemHint = selectedRewardItem ? getRewardItemEffectText(rewardItemType, selectedRewardItem) : ''
 
+  const notifyStudentTeacherUpdate = useCallback((studentId, eventName) => {
+    void broadcastStudentTeacherUpdate(supabase, studentId, eventName)
+  }, [])
+
   const filteredStudents = useMemo(() => {
     const q = studentSearch.trim().toLowerCase()
     if (!q) return students
@@ -187,6 +243,14 @@ export default function TeacherDashboard({ profile }) {
     () => students.find((student) => String(student.id) === selectedStudentId) || null,
     [students, selectedStudentId]
   )
+
+  const filteredGameplayLogs = useMemo(() => {
+    if (gameplayLogFilter === 'all') return gameplayLogs
+    return gameplayLogs.filter((log) => {
+      const meta = getGameplayLogEventMeta(log.event_type)
+      return (log.category || meta.category) === gameplayLogFilter
+    })
+  }, [gameplayLogFilter, gameplayLogs])
 
   const studentById = useMemo(() => {
     const map = new Map()
@@ -205,9 +269,11 @@ export default function TeacherDashboard({ profile }) {
     if (selectedStudentId) {
       loadGoldLogs(selectedStudentId)
       loadEnergyLogs(selectedStudentId)
+      loadGameplayLogs(selectedStudentId)
     } else {
       setGoldLogs([])
       setEnergyLogs([])
+      setGameplayLogs([])
     }
   }, [selectedStudentId])
 
@@ -223,12 +289,18 @@ export default function TeacherDashboard({ profile }) {
     setPasswordResetLoading(false)
   }, [selectedStudentId])
 
+  useEffect(() => {
+    setPlaytimeLimitMinutes(String(getStudentPlaytimeLimitMinutes(selectedStudent)))
+    setPlaytimeLimitLoading(false)
+  }, [selectedStudent])
+
   const selectStudent = useCallback((student) => {
     if (!student?.id) return
     setSelectedStudentId(String(student.id))
     setMessage(null)
     setActivePanel('gold')
     setLogTab('gold')
+    setGameplayLogFilter('all')
   }, [])
 
   const handleStudentListActivate = useCallback((event) => {
@@ -342,6 +414,23 @@ export default function TeacherDashboard({ profile }) {
     }
   }
 
+  const loadGameplayLogs = async (studentId) => {
+    setGameplayLogsLoading(true)
+    try {
+      const logs = await fetchStudentGameplayLogs({
+        teacherId: profile.id,
+        studentId,
+        limit: 100
+      })
+      setGameplayLogs(logs)
+    } catch (error) {
+      console.error('Error loading gameplay logs:', error)
+      setGameplayLogs([])
+    } finally {
+      setGameplayLogsLoading(false)
+    }
+  }
+
   const handleGrantGold = async () => {
     if (!selectedStudent || !goldAmount || goldAmount <= 0) {
       setMessage({ type: 'error', text: '请输入有效的金币数量' })
@@ -366,6 +455,7 @@ export default function TeacherDashboard({ profile }) {
         setGoldAmount('')
         setReason('')
         patchStudent(selectedStudent.id, { gold: result.goldAfter })
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged)
         await loadStudents()
         await loadGoldLogs(selectedStudent.id)
       } else {
@@ -393,6 +483,10 @@ export default function TeacherDashboard({ profile }) {
     const warning = getEnergyRewardWarning(amount) || getMaxEnergyWarning(maxValue)
     if (warning && !window.confirm(`${warning}\n\n确认继续操作吗？`)) return
 
+    const defaultEnergyReason = energyFillToMax
+      ? '老师补满能量'
+      : (maxValue !== null && (!amount || amount <= 0) ? '老师调整能量上限' : '老师恢复能量')
+
     setLoading(true)
     setMessage(null)
     try {
@@ -400,7 +494,7 @@ export default function TeacherDashboard({ profile }) {
         p_teacher_id: profile.id,
         p_student_id: selectedStudent.id,
         p_amount: amount > 0 ? amount : 0,
-        p_reason: energyReason || '老师恢复能量',
+        p_reason: energyReason || defaultEnergyReason,
         p_fill_to_max: energyFillToMax,
         p_max_energy: maxValue
       })
@@ -416,6 +510,7 @@ export default function TeacherDashboard({ profile }) {
           energy: result.energyAfter,
           max_energy: result.maxEnergyAfter
         })
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged)
         await loadStudents()
         await loadEnergyLogs(selectedStudent.id)
       } else {
@@ -426,6 +521,50 @@ export default function TeacherDashboard({ profile }) {
       setMessage({ type: 'error', text: '能量操作失败: ' + error.message })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleUpdatePlaytimeLimit = async () => {
+    if (!selectedStudent) {
+      setMessage({ type: 'error', text: '请先选择学生' })
+      return
+    }
+
+    const nextLimit = parseInt(playtimeLimitMinutes, 10)
+    if (!Number.isFinite(nextLimit) || nextLimit < 0 || nextLimit > 1440) {
+      setMessage({ type: 'error', text: '每日游玩时长需在 0 到 1440 分钟之间' })
+      return
+    }
+
+    setPlaytimeLimitLoading(true)
+    setMessage(null)
+    try {
+      const { data, error } = await supabase.rpc('set_student_daily_playtime_limit', {
+        p_teacher_id: profile.id,
+        p_student_id: selectedStudent.id,
+        p_limit_minutes: nextLimit
+      })
+      if (error) throw error
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      if (result?.success) {
+        const limitMinutes = Number.isFinite(Number(result.limitMinutes))
+          ? Math.max(0, Math.trunc(Number(result.limitMinutes)))
+          : nextLimit
+        patchStudent(selectedStudent.id, {
+          daily_playtime_limit_minutes: limitMinutes
+        })
+        setPlaytimeLimitMinutes(String(limitMinutes))
+        setMessage({ type: 'success', text: result.message || '每日游玩时长已更新' })
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.playtimeChanged)
+        await loadStudents()
+      } else {
+        setMessage({ type: 'error', text: result?.error || '每日游玩时长更新失败' })
+      }
+    } catch (error) {
+      console.error('Error updating playtime limit:', error)
+      setMessage({ type: 'error', text: '每日游玩时长更新失败: ' + error.message })
+    } finally {
+      setPlaytimeLimitLoading(false)
     }
   }
 
@@ -511,6 +650,7 @@ export default function TeacherDashboard({ profile }) {
         setRewardQuantity('1')
         setRewardPokemonLevel('5')
         setRewardReason('')
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.rewardsChanged)
       } else {
         setMessage({ type: 'error', text: result.error || '奖励发放失败' })
       }
@@ -710,6 +850,9 @@ export default function TeacherDashboard({ profile }) {
                         <span className="teacher-student-card__energy">
                           {student.energy ?? 0}/{student.max_energy ?? 0}
                         </span>
+                        <span className="teacher-student-card__playtime">
+                          {getStudentPlaytimeLimitMinutes(student)} 分钟/天
+                        </span>
                       </div>
                     </article>
                   </li>
@@ -750,7 +893,42 @@ export default function TeacherDashboard({ profile }) {
                       {selectedStudent.energy ?? 0} / {selectedStudent.max_energy ?? 0}
                     </dd>
                   </div>
+                  <div>
+                    <dt>每日时长</dt>
+                    <dd className="teacher-profile__playtime">
+                      {getStudentPlaytimeLimitMinutes(selectedStudent)} 分钟
+                    </dd>
+                  </div>
                 </dl>
+                <form
+                  className="teacher-profile__playtime-form"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleUpdatePlaytimeLimit()
+                  }}
+                >
+                  <Field label="每日游玩时长" hint="保存后学生端立即生效">
+                    <div className="teacher-profile__playtime-control">
+                      <input
+                        type="number"
+                        value={playtimeLimitMinutes}
+                        onChange={(e) => setPlaytimeLimitMinutes(e.target.value)}
+                        min="0"
+                        max="1440"
+                        className={inputClass}
+                      />
+                      <span>分钟/天</span>
+                    </div>
+                  </Field>
+                  <button
+                    type="submit"
+                    disabled={playtimeLimitLoading || !selectedStudent}
+                    className="game-soft-button teacher-profile__playtime-btn"
+                  >
+                    <i className={cn('fa-solid', playtimeLimitLoading ? 'fa-rotate fa-spin' : 'fa-floppy-disk')} />
+                    {playtimeLimitLoading ? '保存中…' : '保存时长'}
+                  </button>
+                </form>
                 <form
                   className="teacher-profile__password"
                   onSubmit={(e) => {
@@ -876,7 +1054,10 @@ export default function TeacherDashboard({ profile }) {
                           min="0"
                         />
                       </Field>
-                      <Field label="能量上限（可选）" hint={`当前上限 ${selectedStudent.max_energy ?? 10}`}>
+                      <Field
+                        label="能量上限（可选）"
+                        hint={`当前上限 ${selectedStudent.max_energy ?? 10}；若低于当前能量，会同步下调当前能量`}
+                      >
                         <input
                           type="number"
                           value={energyMax}
@@ -1050,6 +1231,13 @@ export default function TeacherDashboard({ profile }) {
                       >
                         能量记录
                       </button>
+                      <button
+                        type="button"
+                        className={cn('teacher-segment__btn', logTab === 'gameplay' && 'teacher-segment__btn--active')}
+                        onClick={() => setLogTab('gameplay')}
+                      >
+                        游玩动向
+                      </button>
                     </div>
                     {logTab === 'gold' ? (
                       <LogList
@@ -1063,7 +1251,7 @@ export default function TeacherDashboard({ profile }) {
                         )}
                         renderMeta={(log) => `余额 ${log.balance_after}`}
                       />
-                    ) : (
+                    ) : logTab === 'energy' ? (
                       <LogList
                         logs={energyLogs}
                         emptyText="暂无能量记录"
@@ -1079,6 +1267,34 @@ export default function TeacherDashboard({ profile }) {
                         )}
                         renderMeta={(log) => `能量 ${log.energy_after}/${log.max_energy_after}`}
                       />
+                    ) : (
+                      <div className="teacher-gameplay-logs">
+                        <div className="teacher-gameplay-filters" role="tablist" aria-label="游玩日志筛选">
+                          {GAMEPLAY_LOG_FILTERS.map((filter) => (
+                            <button
+                              key={filter.id}
+                              type="button"
+                              className={cn('teacher-gameplay-filter', gameplayLogFilter === filter.id && 'teacher-gameplay-filter--active')}
+                              onClick={() => setGameplayLogFilter(filter.id)}
+                            >
+                              {filter.label}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            className="teacher-gameplay-filter teacher-gameplay-filter--refresh"
+                            onClick={() => selectedStudent && loadGameplayLogs(selectedStudent.id)}
+                            disabled={gameplayLogsLoading}
+                          >
+                            <i className="fa-solid fa-rotate-right" />
+                            刷新
+                          </button>
+                        </div>
+                        <GameplayLogList
+                          logs={filteredGameplayLogs}
+                          emptyText={gameplayLogsLoading ? '正在读取游玩动向…' : '暂无游玩动向记录'}
+                        />
+                      </div>
                     )}
                   </div>
                 )}

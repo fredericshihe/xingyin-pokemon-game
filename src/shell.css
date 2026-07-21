@@ -6167,7 +6167,7 @@ body {
   height: 100vh;
   height: 100dvh;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   /* 为右上角固定「退出」按钮留出空间 */
   padding: 52px max(12px, 4.5rem) 16px clamp(8px, 1.5vw, 16px);
   box-sizing: border-box;
@@ -6573,6 +6573,13 @@ body {
   color: #0284c7;
 }
 
+.teacher-student-card__playtime {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #7c3aed;
+  white-space: nowrap;
+}
+
 .teacher-main {
   display: flex;
   flex-direction: column;
@@ -6583,8 +6590,9 @@ body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   padding-right: 4px;
+  padding-bottom: 18px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
@@ -6624,6 +6632,7 @@ body {
 .teacher-profile,
 .teacher-panel,
 .teacher-tabs {
+  flex-shrink: 0;
   min-width: 0;
   max-width: 100%;
 }
@@ -6660,7 +6669,7 @@ body {
 .teacher-profile__grid {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }
@@ -6688,6 +6697,39 @@ body {
   margin-top: 4px;
   padding-top: 14px;
   border-top: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.teacher-profile__playtime-form {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 181, 253, 0.42);
+  background: rgba(245, 243, 255, 0.72);
+}
+
+.teacher-profile__playtime-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.teacher-profile__playtime-control span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.teacher-profile__playtime-btn {
+  min-height: 40px;
+  padding-inline: 14px;
+  white-space: nowrap;
 }
 
 .teacher-profile__password-copy {
@@ -6720,6 +6762,10 @@ body {
 
 .teacher-profile__energy {
   color: #0284c7 !important;
+}
+
+.teacher-profile__playtime {
+  color: #7c3aed !important;
 }
 
 .teacher-tabs {
@@ -6759,7 +6805,7 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 1 0 auto;
   min-height: 280px;
   min-width: 0;
   overflow: hidden;
@@ -6883,7 +6929,13 @@ body {
 }
 
 .teacher-segment--compact {
-  max-width: 320px;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.teacher-segment--compact .teacher-segment__btn {
+  flex: 1 1 110px;
 }
 
 .teacher-segment__btn {
@@ -6995,6 +7047,155 @@ body {
   font-weight: 700;
   text-align: right;
 }
+
+.teacher-gameplay-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.teacher-gameplay-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.teacher-gameplay-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  color: #475569;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.teacher-gameplay-filter:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14, 165, 233, 0.55);
+  background: #f0f9ff;
+}
+
+.teacher-gameplay-filter:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.teacher-gameplay-filter--active {
+  border-color: rgba(14, 165, 233, 0.6);
+  background: linear-gradient(135deg, #e0f2fe, #ecfeff);
+  color: #0369a1;
+  box-shadow: 0 8px 18px rgba(14, 165, 233, 0.12);
+}
+
+.teacher-gameplay-filter--refresh {
+  margin-left: auto;
+}
+
+.teacher-gameplay-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.teacher-gameplay-log {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.045);
+}
+
+.teacher-gameplay-log__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.teacher-gameplay-log__body {
+  min-width: 0;
+}
+
+.teacher-gameplay-log__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.teacher-gameplay-log__head strong {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-gameplay-log__head time {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.teacher-gameplay-log__body p {
+  margin: 4px 0 0;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.teacher-gameplay-log__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.teacher-gameplay-log__meta span {
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(241, 245, 249, 0.92);
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-gameplay-log--amber .teacher-gameplay-log__icon { background: #fef3c7; color: #b45309; }
+.teacher-gameplay-log--blue .teacher-gameplay-log__icon { background: #dbeafe; color: #1d4ed8; }
+.teacher-gameplay-log--cyan .teacher-gameplay-log__icon { background: #cffafe; color: #0e7490; }
+.teacher-gameplay-log--emerald .teacher-gameplay-log__icon { background: #d1fae5; color: #047857; }
+.teacher-gameplay-log--lime .teacher-gameplay-log__icon { background: #ecfccb; color: #4d7c0f; }
+.teacher-gameplay-log--orange .teacher-gameplay-log__icon { background: #ffedd5; color: #c2410c; }
+.teacher-gameplay-log--pink .teacher-gameplay-log__icon { background: #fce7f3; color: #be185d; }
+.teacher-gameplay-log--purple .teacher-gameplay-log__icon,
+.teacher-gameplay-log--violet .teacher-gameplay-log__icon { background: #ede9fe; color: #6d28d9; }
+.teacher-gameplay-log--rose .teacher-gameplay-log__icon { background: #ffe4e6; color: #be123c; }
+.teacher-gameplay-log--slate .teacher-gameplay-log__icon { background: #e2e8f0; color: #475569; }
+.teacher-gameplay-log--sky .teacher-gameplay-log__icon { background: #e0f2fe; color: #0369a1; }
+.teacher-gameplay-log--teal .teacher-gameplay-log__icon { background: #ccfbf1; color: #0f766e; }
 
 .teacher-empty,
 .teacher-empty-inline {
@@ -7153,6 +7354,14 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .teacher-profile__playtime-form {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-profile__playtime-btn {
+    width: 100%;
+  }
+
   .teacher-form-row,
   .teacher-form-row--3 {
     grid-template-columns: 1fr;
@@ -7188,4 +7397,3 @@ body {
     width: min(100%, clamp(400px, 42vw, 640px));
   }
 }
-

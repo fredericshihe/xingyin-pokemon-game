@@ -1,5 +1,6 @@
 import { TYPES } from './constants'
 import { MOVES, POTIONS } from './gameData'
+import { getPotionRecoveryProfile } from './inventoryItems.js'
 import { calculateBattleDamage, getStabMultiplier, getTypeEffectiveness } from './battleDamage'
 import { getTrainerRoleBalance, normalizeTrainerRole } from './gameBalance'
 
@@ -767,14 +768,17 @@ export function chooseTrainerSwitchTarget(options = {}) {
   return evaluateTrainerSwitchDecision(options).target
 }
 
-// 伤药从弱到强排序，便于按 HP 缺口选择恰当强度（避免厉害伤药治轻伤的浪费）。
-const POTION_TIERS = ['potion', 'super_potion', 'hyper_potion']
+// 伤药从弱到强排序，便于按 HP 缺口选择恰当强度（避免强药治轻伤的浪费）。
+const POTION_TIERS = ['potion', 'super_potion', 'hyper_potion', 'max_potion']
   .filter((key) => POTIONS[key])
-  .map((key) => ({
-    key,
-    healAmount: Math.max(0, Number(POTIONS[key]?.healAmount) || 0),
-    mpRestoreAmount: Math.max(0, Number(POTIONS[key]?.mpRestoreAmount) || 0)
-  }))
+  .map((key) => {
+    const recovery = getPotionRecoveryProfile(POTIONS[key])
+    return {
+      key,
+      healAmount: recovery.hp,
+      mpRestoreAmount: recovery.mp
+    }
+  })
 
 const getRecentEnemyItemCount = (battleLogs = [], lookback = 10) => (
   (Array.isArray(battleLogs) ? battleLogs.slice(-lookback) : [])
@@ -862,7 +866,8 @@ export function evaluateTrainerItemDecision({
   const incomingOutcome = getBestDamageOutcome({ enemyMon: targetMon, targetMon: activeEnemyMon })
   const lethalThisTurn = incomingOutcome.damage >= currentHp
   const potion = POTIONS[itemKey] || {}
-  const healedHp = Math.min(maxHp, currentHp + (Number(potion.healAmount) || 0))
+  const potionRecovery = getPotionRecoveryProfile(potion)
+  const healedHp = Math.min(maxHp, currentHp + potionRecovery.hp)
   // 训练家道具在本项目中先于本回合招式结算；只有“补完仍会被同一击打倒”才放弃，避免之前按速度误判导致永远不用药。
   if (needsHpRecovery && incomingOutcome.damage >= healedHp && !needsMpRecovery && !needsStatusCure) {
     return decline('would_still_be_ko')

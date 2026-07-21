@@ -96,7 +96,7 @@ function getRareCandidateEntries({ bossTeam, bossProps, mapMin, mapMax, pickLeve
   const bossRareEntry = bossProps?.bossRarePokemon || null
   const tier3 = bossRareEntry ? [bossRareEntry].map((entry, index) => {
     return {
-      source: '击败 Boss 后专属稀有生态',
+      source: '击败 Boss 后首领稀有',
       chance: `${Math.round((Number(bossProps.bossRareChance ?? 0.18) || 0.18) * 100)}%`,
       progressTier: 3,
       index,
@@ -121,7 +121,7 @@ function getChallengeRareEntries({ challenge, mapMin, mapMax, pickLevelForSpecie
     const minLevel = Math.max(1, Math.trunc(Number(entry?.minLevel ?? mapMin)) || mapMin)
     const maxLevel = Math.max(minLevel, Math.trunc(Number(entry?.maxLevel ?? mapMax)) || mapMax)
     return {
-      source: '完成区域试炼后隐藏生态',
+      source: '完成区域试炼后试炼稀有',
       chance: `${Math.round((Number(props.challengeRareChance ?? 0.3) || 0.3) * 100)}%`,
       progressTier: 4,
       index,
@@ -289,12 +289,12 @@ await withViteAuditServer(async ({ loadModule }) => {
     })
 
     if (Number.isInteger(bossRareId) && challengeRareEntries.some((entry) => entry.pokemonId === bossRareId)) {
-      addError(`${config.displayName} Boss 专属稀有 ${monstersById.get(bossRareId)?.name || bossRareId} 不应同时出现在本地图试炼隐藏生态池`)
+      addError(`${config.displayName} Boss 专属稀有 ${monstersById.get(bossRareId)?.name || bossRareId} 不应同时出现在本地图试炼稀有池`)
     }
     challengeRareEntries
       .filter((entry) => directSpecies.has(entry.pokemonId))
       .forEach((entry) => {
-        addError(`${config.displayName} 试炼隐藏生态 ${monstersById.get(entry.pokemonId)?.name || entry.pokemonId} 已在本地图基础草丛出现，会削弱试炼解锁意义`)
+        addError(`${config.displayName} 试炼稀有 ${monstersById.get(entry.pokemonId)?.name || entry.pokemonId} 已在本地图基础草丛出现，会削弱试炼解锁意义`)
       })
 
     for (const entry of [...progressRareEntries, ...challengeRareEntries]) {
@@ -364,7 +364,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   challengeRareOccurrences
     .filter((occurrence) => bossRareSpeciesIds.has(occurrence.pokemonId))
     .forEach((occurrence) => {
-      addError(`${occurrence.displayName} 试炼隐藏生态不应包含 Boss 专属稀有 ${monstersById.get(occurrence.pokemonId)?.name || occurrence.pokemonId}`)
+      addError(`${occurrence.displayName} 试炼稀有不应包含 Boss 专属稀有 ${monstersById.get(occurrence.pokemonId)?.name || occurrence.pokemonId}`)
     })
   if (directUnlockMissingSpecies.length > 0) {
     addError(`仍有 ${directUnlockMissingSpecies.length} 种宝可梦没有基础草丛或解锁后野生获得路径：${formatSpeciesList(directUnlockMissingSpecies, monstersById, 24)}`)
@@ -405,8 +405,8 @@ await withViteAuditServer(async ({ loadModule }) => {
       ? `${formatSpeciesList(row.bossRareSpecies, monstersById)}（击败 Boss 后专属解锁）`
       : '无 Boss 专属稀有'
     const challengeRare = row.challengeRareSpecies.length > 0
-      ? `${formatSpeciesList(row.challengeRareSpecies, monstersById)}（完成区域试炼后隐藏生态）`
-      : '无挑战隐藏生态'
+      ? `${formatSpeciesList(row.challengeRareSpecies, monstersById)}（完成区域试炼后试炼稀有）`
+      : '无试炼稀有'
     console.log(`- ${row.displayName}: 低权重野生=${low}; Boss 后=${bossRare}; 挑战后=${challengeRare}`)
   })
 

@@ -1,4 +1,4 @@
-import { MOVES, MONSTERS, normalizeMovesForPokemonLevel } from './gameData'
+import { MOVES, MONSTERS, normalizeMoveLoadoutMode, normalizeMovesForPokemonLevel } from './gameData'
 import { getOfficialExpToNextLevel } from './officialExperience'
 import { getEvolutionDueByLevel, getEvolutionTargetsAtLevel, getMovesLearnedAtLevel } from './pokemonGrowth'
 import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts } from './pokemonStats'
@@ -131,9 +131,11 @@ const normalizeRuntimeKnownMoveKeys = (moves = []) => {
 }
 
 const getRuntimeMovesPreservingKnown = (baseMonster, moves = [], level = 1, options = {}) => {
+  const { loadoutMode, ...normalizeOptions } = options
   return normalizeMovesForPokemonLevel(baseMonster, moves, level, {
     backfill: false,
-    ...options,
+    loadoutMode: normalizeMoveLoadoutMode(loadoutMode),
+    ...normalizeOptions,
   })
 }
 
@@ -178,12 +180,15 @@ const preserveCurrentMeter = (currentValue, previousMaxValue, nextMaxValue) => {
 const refreshMonsterStatsForLevel = (baseMonster, mon, level) => {
   const statBoosts = normalizeBaseStatBoosts(mon?.statBoosts)
   const stats = calculateStatsForLevel(applyBaseStatBoosts(getBaseStatsForLevel(baseMonster), statBoosts), level)
+  const moveLoadoutMode = normalizeMoveLoadoutMode(mon?.moveLoadoutMode)
   return {
     ...mon,
     ...stats,
     statBoosts,
     level,
+    moveLoadoutMode,
     moves: getRuntimeMovesPreservingKnown(baseMonster, mon?.moves, level, {
+      loadoutMode: moveLoadoutMode,
       preferBalancedWhenInvalid: true,
     }),
     currentHp: preserveCurrentMeter(mon?.currentHp, mon?.maxHp, stats.maxHp),
@@ -194,6 +199,7 @@ const refreshMonsterStatsForLevel = (baseMonster, mon, level) => {
 const buildLeveledMonster = (baseMonster, previousMon, level, currentExp) => {
   const statBoosts = normalizeBaseStatBoosts(previousMon?.statBoosts)
   const stats = calculateStatsForLevel(applyBaseStatBoosts(getBaseStatsForLevel(baseMonster), statBoosts), level)
+  const moveLoadoutMode = normalizeMoveLoadoutMode(previousMon?.moveLoadoutMode)
 
   return {
     ...baseMonster,
@@ -202,7 +208,11 @@ const buildLeveledMonster = (baseMonster, previousMon, level, currentExp) => {
     id: previousMon?.id,
     baseId: baseMonster.id,
     level,
-    moves: getRuntimeMovesPreservingKnown(baseMonster, previousMon?.moves, level, { backfill: false }),
+    moveLoadoutMode,
+    moves: getRuntimeMovesPreservingKnown(baseMonster, previousMon?.moves, level, {
+      backfill: false,
+      loadoutMode: moveLoadoutMode,
+    }),
     currentHp: stats.maxHp,
     currentMp: stats.maxMp,
     currentExp: level >= 100 ? 0 : currentExp,

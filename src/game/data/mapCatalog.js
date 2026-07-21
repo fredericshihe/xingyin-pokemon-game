@@ -80,6 +80,35 @@ const REGION_WILD_POKEMON = {
     { id: 129, weight: 16 },
     { id: 131, weight: 16 },
     { id: 143, weight: 14 }
+  ],
+  GodotMapV2_FrostDojo: [
+    { id: 134, weight: 24 },
+    { id: 57, weight: 22 },
+    { id: 147, weight: 20 },
+    { id: 26, weight: 18 },
+    { id: 9, weight: 16 }
+  ],
+  GodotMapV2_TideDojo: [
+    { id: 192, weight: 24 },
+    { id: 182, weight: 22 },
+    { id: 199, weight: 20 },
+    { id: 86, weight: 18 },
+    { id: 193, weight: 16 }
+  ],
+  GodotMapV2_IronDojo: [
+    { id: 139, weight: 24 },
+    { id: 143, weight: 22 },
+    { id: 205, weight: 20 },
+    { id: 206, weight: 18 },
+    { id: 204, weight: 16 }
+  ],
+  GodotMapV2_DragonDojo: [
+    { id: 12, weight: 24 },
+    { id: 86, weight: 20 },
+    { id: 207, weight: 20 },
+    { id: 208, weight: 18 },
+    { id: 209, weight: 18 },
+    { id: 69, weight: 12 }
   ]
 }
 
@@ -91,13 +120,18 @@ const REGION_ENCOUNTER_TABLE_IDS = {
   GodotMapV2_Graveyard: 'region_grave_29_36',
   GodotMapV2_HexRuins: 'region_ruin_35_42',
   GodotMapV2_SurvivalRidge: 'region_ridge_41_47',
-  GodotMapV2_BossHighland: 'region_peak_52_60'
+  GodotMapV2_BossHighland: 'region_peak_52_60',
+  GodotMapV2_FrostDojo: 'region_peak_starwatch_52_60',
+  GodotMapV2_TideDojo: 'region_peak_starwatch_52_60',
+  GodotMapV2_IronDojo: 'region_peak_starwatch_52_60',
+  GodotMapV2_DragonDojo: 'region_peak_starwatch_52_60'
 }
 
 const STARTER_MAP_CONFIG = {
   displayName: '新手山谷',
   description: '营地、低级草坡、花丘、密林、湖畔、恢复泉水、教学训练师和补给点组成的新手探索地图。',
   difficulty: 1,
+  unlockLevel: 1,
   recommendedLevel: 5,
   minLevel: 2,
   maxLevel: 8,
@@ -199,6 +233,7 @@ function buildCatalogEntry({
       defaultSpawn: normalizedStartPosition,
       useLegacyData: true,
       renderMode: normalizedMapInfo.renderMode,
+      unlockLevel: normalizedConfig.unlockLevel,
       recommendedLevel: normalizedConfig.recommendedLevel,
       minLevel: normalizedConfig.minLevel,
       maxLevel: normalizedConfig.maxLevel,

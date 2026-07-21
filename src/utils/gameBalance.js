@@ -7,7 +7,7 @@ import {
 
 export const MAP_UNDERLEVEL_MARGIN = 3
 export const ENCOUNTER_SAFE_STEPS = 5
-export const WILD_CAPTURE_LEVEL_MARGIN = 5
+export const WILD_CAPTURE_LEVEL_MARGIN = 4
 export const DEFAULT_MAX_ENERGY = 10
 export const DEFAULT_STARTING_ENERGY = 6
 export const DEFAULT_STARTING_GOLD = 500
@@ -27,9 +27,11 @@ export const BATTLE_REWARD_BALANCE = {
   overLevelPenaltyPerLevel: 0.04,
   maxLevelFactor: 1.45,
   minLevelFactor: 0.45,
-  earlyWildExpBoostLevel5: 1.3,
-  earlyWildExpBoostLevel7: 1.22,
-  earlyWildExpBoostLevel9: 1.12,
+  earlyWildExpBoostLevel5: 1.08,
+  earlyWildExpBoostLevel7: 1.03,
+  earlyWildExpBoostLevel9: 1,
+  wildExpCapMaxPlayerLevel: 30,
+  wildExpCapNextLevelRatio: 0.64,
   baseGold: 4,
   goldPerLevel: 1.15,
   trainerGoldMultiplier: 1.45,
@@ -90,7 +92,7 @@ export const TRAINER_ROLE_BALANCE = {
     label: '部下训练家',
     fallbackTeamSize: 3,
     minTeamSize: 3,
-    maxTeamSize: 4,
+    maxTeamSize: 5,
     levelOffset: 1,
     rewardMultiplier: 1.14,
     goldMultiplier: 1.25,
@@ -104,8 +106,8 @@ export const TRAINER_ROLE_BALANCE = {
   },
   boss: {
     label: 'Boss训练家',
-    fallbackTeamSize: 5,
-    minTeamSize: 5,
+    fallbackTeamSize: 6,
+    minTeamSize: 6,
     maxTeamSize: 6,
     levelOffset: 2,
     rewardMultiplier: 1.5,
@@ -152,18 +154,18 @@ export const getTrainerRoleBalance = (role = 'normal') => (
 
 export const CATCH_BALANCE = {
   baseRate: 5,
-  hpMissingBonus: 62,
+  hpMissingBonus: 68,
   hpMissingExponent: 1.18,
-  mpMissingBonus: 6,
-  maxRate: 92,
+  mpMissingBonus: 8,
+  maxRate: 95,
   minRate: 2,
-  overLevelPenaltyPerLevel: 0.86,
+  overLevelPenaltyPerLevel: 0.92,
   levelAdvantageBonusPerLevel: 0.02,
   maxLevelAdvantageBonus: 1.28,
   maxHighLevelPenalty: 0.34,
   weakSpeciesBonus: 1.1,
-  strongSpeciesPenalty: 0.74,
-  legendarySpeciesPenalty: 0.4,
+  strongSpeciesPenalty: 0.82,
+  legendarySpeciesPenalty: 0.5,
   statusMultipliers: {
     sleep: 1.85,
     freeze: 1.85,
@@ -232,8 +234,20 @@ export const getPlayerAverageLevel = (team, fallback = 5) => {
   return total / team.length
 }
 
+export const getMapRecommendedLevel = (mapConfig, fallback = 1) => (
+  Math.max(1, Math.trunc(Number(mapConfig?.recommendedLevel ?? fallback)) || fallback)
+)
+
+export const getMapUnlockLevel = (mapConfig, fallback = null) => {
+  const recommendedLevel = getMapRecommendedLevel(mapConfig, fallback ?? 1)
+  return Math.max(
+    1,
+    Math.trunc(Number(mapConfig?.unlockLevel ?? (fallback ?? (recommendedLevel - MAP_UNDERLEVEL_MARGIN)))) || 1
+  )
+}
+
 export const isMapLockedForLevel = (mapConfig, playerLevel) => (
-  Number(playerLevel) < Number(mapConfig?.recommendedLevel || 1) - MAP_UNDERLEVEL_MARGIN
+  Number(playerLevel) < getMapUnlockLevel(mapConfig)
 )
 
 export const getOfficialMediumFastTotalExp = (level) => {
@@ -251,6 +265,25 @@ export const getBattleEnergyCost = ({ battleKind = 'wild', mapLevel = 1 } = {}) 
   return battleKind === 'trainer'
     ? ENERGY_BALANCE.trainerBattleCost
     : ENERGY_BALANCE.wildBattleCost
+}
+
+const getWildBattleExpCap = ({
+  battleKind = 'wild',
+  avgLevel = 5,
+  defeatedMon = null,
+  participants = 1
+} = {}) => {
+  if (battleKind !== 'wild') return null
+  const maxCapLevel = Math.max(1, Math.trunc(Number(BATTLE_REWARD_BALANCE.wildExpCapMaxPlayerLevel)) || 1)
+  const referenceLevel = Math.max(1, Math.min(99, Math.trunc(Number(avgLevel)) || 1))
+  if (referenceLevel > maxCapLevel) return null
+
+  const nextLevelExp = Math.max(0, Math.trunc(Number(getOfficialExpToNextLevel(referenceLevel, defeatedMon))) || 0)
+  if (nextLevelExp <= 0) return null
+
+  const participantCount = Math.max(1, Math.trunc(Number(participants)) || 1)
+  const ratio = Math.max(0.1, Math.min(1, Number(BATTLE_REWARD_BALANCE.wildExpCapNextLevelRatio) || 0.64))
+  return Math.max(4, Math.round(nextLevelExp * ratio * participantCount))
 }
 
 /** 战斗失败时扣除的金币（少量惩罚，随地图略增） */
@@ -288,9 +321,13 @@ export const calculateBattleRewards = ({
 } = {}) => {
   if (!defeatedMon) return { exp: 0, gold: 0 }
 
-  const enemyLevel = Math.max(1, Number(defeatedMon.level) || 1)
+  const actualEnemyLevel = Math.max(1, Number(defeatedMon.level) || 1)
+  const rewardEnemyLevel = Math.max(
+    1,
+    Math.min(100, Math.trunc(Number(defeatedMon.rewardLevel ?? defeatedMon.level)) || actualEnemyLevel)
+  )
   const avgLevel = Math.max(1, Number(playerAverageLevel) || 1)
-  const levelDelta = enemyLevel - avgLevel
+  const levelDelta = rewardEnemyLevel - avgLevel
   const levelFactor = Math.max(
     BATTLE_REWARD_BALANCE.minLevelFactor,
     Math.min(
@@ -316,11 +353,11 @@ export const calculateBattleRewards = ({
   const participantFactor = Math.max(1, Math.min(3, Number(participants) || 1))
   const baseExpYield = getOfficialBaseExperience(defeatedMon) || BATTLE_REWARD_BALANCE.baseExpYield
 
-  const exp = Math.max(
+  const uncappedExp = Math.max(
     4,
     Math.round(
       baseExpYield *
-      enemyLevel /
+      rewardEnemyLevel /
       7 *
       levelFactor *
       trainerMultiplier *
@@ -328,6 +365,15 @@ export const calculateBattleRewards = ({
       Math.pow(participantFactor, BATTLE_REWARD_BALANCE.participantTotalExpExponent)
     )
   )
+  const wildExpCap = getWildBattleExpCap({
+    battleKind,
+    avgLevel,
+    defeatedMon,
+    participants
+  })
+  const exp = wildExpCap
+    ? Math.min(uncappedExp, wildExpCap)
+    : uncappedExp
 
   const goldCap = battleKind === 'trainer'
     ? Math.round(BATTLE_REWARD_BALANCE.maxTrainerGold * trainerRoleBalance.goldCapMultiplier)
@@ -337,7 +383,7 @@ export const calculateBattleRewards = ({
     Math.min(
       goldCap,
       Math.round(
-        (BATTLE_REWARD_BALANCE.baseGold + enemyLevel * BATTLE_REWARD_BALANCE.goldPerLevel) *
+        (BATTLE_REWARD_BALANCE.baseGold + actualEnemyLevel * BATTLE_REWARD_BALANCE.goldPerLevel) *
         (battleKind === 'trainer'
           ? BATTLE_REWARD_BALANCE.trainerGoldMultiplier * trainerRoleBalance.goldMultiplier
           : 1)
@@ -358,6 +404,7 @@ export const calculateCatchRate = ({ target, ballMultiplier = 1, playerAverageLe
   const targetLevel = Math.max(1, Math.min(100, Number(target.level) || 1))
   const avgLevel = Math.max(1, Number(playerAverageLevel) || 1)
   const safeBallMultiplier = Math.max(0.1, Number(ballMultiplier) || 1)
+  if (safeBallMultiplier >= 255) return 100
   const hpMissingRatio = maxHp > 0
     ? (maxHp - currentHp) / maxHp
     : 0
@@ -394,6 +441,28 @@ export const calculateCatchRate = ({ target, ballMultiplier = 1, playerAverageLe
 
   return Math.max(CATCH_BALANCE.minRate, Math.min(CATCH_BALANCE.maxRate, catchRate))
 }
+
+const SIMPLE_CATCH_RATE_REFERENCE_TARGET = Object.freeze({
+  name: '参考宝可梦',
+  level: 17,
+  maxHp: 100,
+  currentHp: 50,
+  maxMp: 50,
+  currentMp: 50,
+  atk: 80,
+  def: 80,
+  spAtk: 80,
+  spDef: 80,
+  spd: 80,
+})
+
+export const getSimpleCatchChancePercent = (ballMultiplier = 1) => (
+  Math.max(0, Math.min(100, Math.round(calculateCatchRate({
+    target: SIMPLE_CATCH_RATE_REFERENCE_TARGET,
+    ballMultiplier,
+    playerAverageLevel: SIMPLE_CATCH_RATE_REFERENCE_TARGET.level,
+  }))))
+)
 
 const getBaseMonsterForCatch = (target) => {
   const baseId = Number(target?.baseId)

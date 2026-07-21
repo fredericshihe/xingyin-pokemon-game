@@ -1,5 +1,5 @@
 /** 草丛遇敌表：仅基础形态，等级区间与进化阶段一致 */
-import { pickWildEncounter } from '../../utils/wildEncounterRules'
+import { getSpeciesLevelBounds, pickWildEncounter } from '../../utils/wildEncounterRules'
 
 export const DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID = 'valley_safe_grass'
 export const LEGACY_UNUSED_ENCOUNTER_TABLE_IDS = new Set([
@@ -307,9 +307,9 @@ export const ENCOUNTER_TABLES = {
       { id: 111, minLevel: 17, maxLevel: 19, weight: 10 },
       { id: 178, minLevel: 17, maxLevel: 19, weight: 9 },
       { id: 165, minLevel: 17, maxLevel: 19, weight: 8 },
-      { id: 189, minLevel: 17, maxLevel: 19, weight: 50 },
-      { id: 190, minLevel: 17, maxLevel: 19, weight: 50 },
-      { id: 191, minLevel: 17, maxLevel: 19, weight: 40 }
+      { id: 189, minLevel: 19, maxLevel: 19, weight: 50 },
+      { id: 190, minLevel: 19, maxLevel: 19, weight: 50 },
+      { id: 191, minLevel: 19, maxLevel: 19, weight: 40 }
     ]
   },
 
@@ -375,9 +375,9 @@ export const ENCOUNTER_TABLES = {
       { id: 181, minLevel: 23, maxLevel: 25, weight: 9 },
       { id: 183, minLevel: 23, maxLevel: 25, weight: 8 },
       { id: 186, minLevel: 23, maxLevel: 25, weight: 7 },
-      { id: 192, minLevel: 23, maxLevel: 25, weight: 50 },
-      { id: 193, minLevel: 23, maxLevel: 25, weight: 50 },
-      { id: 194, minLevel: 23, maxLevel: 25, weight: 40 }
+      { id: 192, minLevel: 25, maxLevel: 25, weight: 50 },
+      { id: 193, minLevel: 25, maxLevel: 25, weight: 50 },
+      { id: 194, minLevel: 25, maxLevel: 25, weight: 40 }
     ]
   },
 
@@ -450,9 +450,9 @@ export const ENCOUNTER_TABLES = {
       { id: 157, minLevel: 29, maxLevel: 31, weight: 10 },
       { id: 179, minLevel: 29, maxLevel: 31, weight: 8 },
       { id: 11, minLevel: 30, maxLevel: 31, weight: 8 },
-      { id: 195, minLevel: 29, maxLevel: 31, weight: 50 },
-      { id: 196, minLevel: 29, maxLevel: 31, weight: 50 },
-      { id: 197, minLevel: 29, maxLevel: 31, weight: 40 }
+      { id: 195, minLevel: 31, maxLevel: 31, weight: 50 },
+      { id: 196, minLevel: 31, maxLevel: 31, weight: 50 },
+      { id: 197, minLevel: 31, maxLevel: 31, weight: 40 }
     ]
   },
 
@@ -522,9 +522,9 @@ export const ENCOUNTER_TABLES = {
       { id: 175, minLevel: 35, maxLevel: 37, weight: 9 },
       { id: 188, minLevel: 35, maxLevel: 37, weight: 8 },
       { id: 131, minLevel: 35, maxLevel: 37, weight: 8 },
-      { id: 198, minLevel: 35, maxLevel: 37, weight: 50 },
-      { id: 199, minLevel: 35, maxLevel: 37, weight: 50 },
-      { id: 200, minLevel: 35, maxLevel: 37, weight: 40 }
+      { id: 198, minLevel: 40, maxLevel: 40, weight: 50 },
+      { id: 199, minLevel: 40, maxLevel: 40, weight: 50 },
+      { id: 200, minLevel: 40, maxLevel: 40, weight: 40 }
     ]
   },
 
@@ -591,9 +591,9 @@ export const ENCOUNTER_TABLES = {
       { id: 43, minLevel: 41, maxLevel: 43, weight: 8 },
       { id: 137, minLevel: 41, maxLevel: 43, weight: 8 },
       { id: 185, minLevel: 41, maxLevel: 43, weight: 8 },
-      { id: 201, minLevel: 41, maxLevel: 43, weight: 50 },
-      { id: 202, minLevel: 41, maxLevel: 43, weight: 50 },
-      { id: 203, minLevel: 41, maxLevel: 43, weight: 40 }
+      { id: 201, minLevel: 50, maxLevel: 50, weight: 50 },
+      { id: 202, minLevel: 50, maxLevel: 50, weight: 50 },
+      { id: 203, minLevel: 52, maxLevel: 52, weight: 40 }
     ]
   },
 
@@ -660,9 +660,9 @@ export const ENCOUNTER_TABLES = {
       { id: 175, minLevel: 47, maxLevel: 49, weight: 10 },
       { id: 109, minLevel: 47, maxLevel: 49, weight: 9 },
       { id: 143, minLevel: 47, maxLevel: 49, weight: 8 },
-      { id: 204, minLevel: 47, maxLevel: 49, weight: 50 },
-      { id: 205, minLevel: 47, maxLevel: 49, weight: 50 },
-      { id: 206, minLevel: 47, maxLevel: 49, weight: 40 }
+      { id: 204, minLevel: 58, maxLevel: 58, weight: 50 },
+      { id: 205, minLevel: 58, maxLevel: 58, weight: 50 },
+      { id: 206, minLevel: 61, maxLevel: 61, weight: 40 }
     ]
   },
 
@@ -811,11 +811,64 @@ export const ENCOUNTER_TABLES = {
       { id: 27, minLevel: 65, maxLevel: 67, weight: 9 },
       { id: 109, minLevel: 65, maxLevel: 67, weight: 8 },
       { id: 143, minLevel: 65, maxLevel: 67, weight: 8 },
-      { id: 207, minLevel: 69, maxLevel: 70, weight: 50 },
-      { id: 208, minLevel: 69, maxLevel: 70, weight: 50 },
-      { id: 209, minLevel: 69, maxLevel: 70, weight: 40 }
+      { id: 207, minLevel: 70, maxLevel: 70, weight: 3 },
+      { id: 208, minLevel: 70, maxLevel: 70, weight: 2 },
+      { id: 209, minLevel: 70, maxLevel: 70, weight: 2 }
     ]
   }
+}
+
+const REGULAR_ENCOUNTER_MIN_LEVEL_FLOORS = {
+  region_lake_11_18: 12,
+  region_lake_south_11_18: 12,
+  region_lake_east_11_18: 12,
+  region_farm_17_24: 18,
+  region_farm_west_17_24: 18,
+  region_farm_east_17_24: 18,
+  region_shore_23_30: 24,
+  region_shore_south_23_30: 24,
+  region_shore_wreck_23_30: 24,
+  region_grave_29_36: 31,
+  region_grave_south_29_36: 31,
+  region_grave_moon_29_36: 31,
+  region_ruin_35_42: 37,
+  region_ruin_west_35_42: 37,
+  region_ruin_east_35_42: 37,
+  region_ridge_41_47: 43,
+  region_ridge_training_41_47: 43,
+  region_ridge_south_41_47: 43,
+  region_ridge_east_41_47: 43,
+}
+
+function normalizeEncounterLevel(value, fallback = 1) {
+  return Math.max(1, Math.trunc(Number(value)) || fallback)
+}
+
+function applyEncounterMinLevelFloor(tableId, minLevelFloor) {
+  const table = ENCOUNTER_TABLES[tableId]
+  if (!table || !Array.isArray(table.pokemon)) return
+
+  const floor = normalizeEncounterLevel(minLevelFloor)
+  table.pokemon = table.pokemon.map((row) => {
+    const legalBounds = getSpeciesLevelBounds(row?.id)
+    const legalMin = normalizeEncounterLevel(legalBounds?.min, 1)
+    const legalMax = Math.max(legalMin, normalizeEncounterLevel(legalBounds?.max, legalMin))
+    const baseMin = normalizeEncounterLevel(row?.minLevel ?? row?.level, floor)
+    const baseMax = Math.max(
+      baseMin,
+      normalizeEncounterLevel(row?.maxLevel ?? row?.level ?? row?.minLevel, baseMin)
+    )
+    const nextMin = Math.min(Math.max(baseMin, floor, legalMin), legalMax)
+    return {
+      ...row,
+      minLevel: nextMin,
+      maxLevel: Math.max(nextMin, Math.min(baseMax, legalMax)),
+    }
+  })
+}
+
+for (const [tableId, minLevelFloor] of Object.entries(REGULAR_ENCOUNTER_MIN_LEVEL_FLOORS)) {
+  applyEncounterMinLevelFloor(tableId, minLevelFloor)
 }
 
 export function getEncounterTable(tableId) {

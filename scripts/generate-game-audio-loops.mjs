@@ -31,6 +31,7 @@ const ONLY_ARGS = process.argv
   .filter((arg) => arg.startsWith('--only='))
   .map((arg) => arg.slice('--only='.length))
   .filter(Boolean)
+const WRITE_MANIFEST = !process.argv.includes('--no-manifest')
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
 
@@ -130,15 +131,18 @@ selectedTracks.forEach((track) => {
   }
 })
 
-fs.writeFileSync(
-  path.join(OUT_DIR, 'manifest.json'),
-  `${JSON.stringify({ generatedAt: new Date().toISOString(), tracks: manifest }, null, 2)}\n`
-)
+if (WRITE_MANIFEST) {
+  fs.writeFileSync(
+    path.join(OUT_DIR, 'manifest.json'),
+    `${JSON.stringify({ generatedAt: new Date().toISOString(), tracks: manifest }, null, 2)}\n`
+  )
+}
 
 console.log(JSON.stringify({
   tracks: selectedTracks.length,
   outDir: 'public/assets/audio',
   sampleRate: SAMPLE_RATE,
   loopSeconds: LOOP_SECONDS,
-  only: ONLY_ARGS
+  only: ONLY_ARGS,
+  manifest: WRITE_MANIFEST ? 'written' : 'skipped'
 }, null, 2))

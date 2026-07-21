@@ -62,6 +62,7 @@ const LOW_HIDDEN_PERIMETER_TYPES = new Set([
 ])
 const MIN_HIDDEN_PERIMETER_SCALE = 0.94
 const SHORE_MIN_HIDDEN_PERIMETER_SCALE = 0.72
+const MAX_HIDDEN_PERIMETER_CENTER_OFFSET = 0.22
 const HIDDEN_GATE_ENTRANCE_MARKER_TYPES = new Set([
   'trail_sign',
   'nature_tree_oak',
@@ -395,8 +396,14 @@ for (const [mapId, map] of Object.entries(maps)) {
     perimeterObjects.forEach((object) => {
       const cellX = Math.trunc(Number(object.hiddenZoneCellX))
       const cellY = Math.trunc(Number(object.hiddenZoneCellY))
-      if (Number(object.x) !== cellX || Number(object.y) !== cellY) {
-        errors.push(`${mapId}/${zone.id} perimeter model ${object.sourceId || object.type} visual position does not match edge cell`)
+      const offsetX = Math.abs(Number(object.x) - cellX)
+      const offsetY = Math.abs(Number(object.y) - cellY)
+      if (
+        !isInsideDecorationFootprint(object, cellX, cellY, 0.12) ||
+        offsetX > MAX_HIDDEN_PERIMETER_CENTER_OFFSET ||
+        offsetY > MAX_HIDDEN_PERIMETER_CENTER_OFFSET
+      ) {
+        errors.push(`${mapId}/${zone.id} perimeter model ${object.sourceId || object.type} drifts too far from edge cell`)
       }
       if (isLowHiddenPerimeterDecoration(object)) {
         errors.push(`${mapId}/${zone.id} perimeter model ${object.sourceId || object.type} uses a low/stone filler model (${object.type})`)
@@ -410,30 +417,7 @@ for (const [mapId, map] of Object.entries(maps)) {
 
     const cornerObjects = hiddenCornerObjects(map, zone.id)
     if (cornerObjects.length > 0) {
-      const expectedCornerKeys = new Set(hiddenCornerCells(map, zone).map((cell) => key(cell.x, cell.y)))
-      const seenCornerKeys = new Set()
-      cornerObjects.forEach((object) => {
-        const cellX = Math.trunc(Number(object.hiddenZoneCellX ?? object.x))
-        const cellY = Math.trunc(Number(object.hiddenZoneCellY ?? object.y))
-        const cornerKey = key(cellX, cellY)
-        if (!expectedCornerKeys.has(cornerKey)) {
-          errors.push(`${mapId}/${zone.id} corner cap ${object.sourceId || object.type} is outside legal corners at ${cornerKey}`)
-        }
-        if (seenCornerKeys.has(cornerKey)) {
-          errors.push(`${mapId}/${zone.id} has duplicate corner cap at ${cornerKey}`)
-        }
-        seenCornerKeys.add(cornerKey)
-        if (Number(object.x) !== cellX || Number(object.y) !== cellY) {
-          errors.push(`${mapId}/${zone.id} corner cap ${object.sourceId || object.type} visual position does not match corner cell`)
-        }
-        if (isLowHiddenPerimeterDecoration(object)) {
-          errors.push(`${mapId}/${zone.id} corner cap ${object.sourceId || object.type} uses a low/stone filler model (${object.type})`)
-        }
-      })
-      const missingCorners = [...expectedCornerKeys].filter((cornerKey) => !seenCornerKeys.has(cornerKey))
-      if (missingCorners.length > 0) {
-        errors.push(`${mapId}/${zone.id} missing corner caps: ${missingCorners.join(' ')}`)
-      }
+      errors.push(`${mapId}/${zone.id} should not use separate corner cap models anymore, got ${cornerObjects.length}`)
     }
 
 

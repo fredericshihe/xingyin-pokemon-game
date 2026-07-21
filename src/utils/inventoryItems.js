@@ -1,4 +1,5 @@
 import { EVOLUTION_ITEMS, EXP_POTIONS, POKEBALLS, POTIONS, STAT_BOOST_ITEMS } from './gameData.js'
+import { getSimpleCatchChancePercent } from './gameBalance.js'
 
 const INVENTORY_ITEM_DEFINITIONS = {
   pokeball: POKEBALLS,
@@ -10,6 +11,8 @@ const INVENTORY_ITEM_DEFINITIONS = {
 
 const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion', 'statBoost'])
 const LEGACY_INVENTORY_ITEM_TYPES = new Set(['evolutionItem'])
+const SELLABLE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion'])
+const DEFAULT_ITEM_SELL_PRICE_DIVISOR = 6
 const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'statBoost', 'evolutionItem']
 const INVENTORY_ITEM_TYPE_ALIASES = {
   ball: 'pokeball',
@@ -62,11 +65,36 @@ export const resolveInventoryItemDetails = (itemType, itemKey) => (
   null
 )
 
+export const isSellableInventoryItem = (itemType, itemKey) => {
+  const normalizedItemType = resolveInventoryItemType({ itemType, itemKey })
+  const details = normalizedItemType ? resolveInventoryItemDetails(normalizedItemType, itemKey) : null
+  const price = Math.trunc(Number(details?.price))
+  return Boolean(
+    normalizedItemType &&
+    SELLABLE_INVENTORY_ITEM_TYPES.has(normalizedItemType) &&
+    details &&
+    !details.notForSale &&
+    Number.isSafeInteger(price) &&
+    price > 0
+  )
+}
+
+export const getInventoryItemSellPrice = (itemType, itemKey, {
+  divisor = DEFAULT_ITEM_SELL_PRICE_DIVISOR
+} = {}) => {
+  if (!isSellableInventoryItem(itemType, itemKey)) return 0
+  const details = resolveInventoryItemDetails(resolveInventoryItemType({ itemType, itemKey }), itemKey)
+  const safeDivisor = Math.max(1, Math.trunc(Number(divisor)) || DEFAULT_ITEM_SELL_PRICE_DIVISOR)
+  return Math.max(1, Math.floor((Math.trunc(Number(details.price)) || 0) / safeDivisor))
+}
+
 export const getPotionRecoveryProfile = (potion) => {
   const safePotion = potion && typeof potion === 'object' ? potion : {}
+  const fullRestore = Boolean(safePotion.fullRestore)
   return {
-    hp: Math.max(0, Number(safePotion.healAmount) || 0),
-    mp: Math.max(0, Number(safePotion.mpRestoreAmount) || 0),
+    hp: fullRestore ? Number.POSITIVE_INFINITY : Math.max(0, Number(safePotion.healAmount) || 0),
+    mp: fullRestore ? Number.POSITIVE_INFINITY : Math.max(0, Number(safePotion.mpRestoreAmount) || 0),
+    fullRestore,
   }
 }
 
@@ -103,10 +131,14 @@ export const clearPotionCurableStatus = (mon = {}) => {
 export const getPotionEffectParts = (potion = {}) => {
   const isPotionDefinition = potion && typeof potion === 'object' && (
     Object.prototype.hasOwnProperty.call(potion, 'healAmount') ||
-    Object.prototype.hasOwnProperty.call(potion, 'mpRestoreAmount')
+    Object.prototype.hasOwnProperty.call(potion, 'mpRestoreAmount') ||
+    Object.prototype.hasOwnProperty.call(potion, 'fullRestore')
   )
   if (!isPotionDefinition) return []
   const recovery = getPotionRecoveryProfile(potion)
+  if (recovery.fullRestore) {
+    return ['HP/MP 全满', '解除异常']
+  }
   return [
     recovery.hp > 0 ? `HP +${recovery.hp}` : null,
     recovery.mp > 0 ? `MP +${recovery.mp}` : null,
@@ -115,6 +147,13 @@ export const getPotionEffectParts = (potion = {}) => {
 }
 
 export const getPotionEffectText = (potion) => getPotionEffectParts(potion).join(' / ') || '恢复'
+
+export const getPokeballEffectText = (ball = {}) => {
+  const percent = getSimpleCatchChancePercent(ball?.catchRateMultiplier)
+  if (percent >= 100) return '成功率100%（必定成功）'
+  const attempts = Math.max(2, Math.round(100 / Math.max(1, percent)))
+  return `黄血约${percent}%（${attempts}次约1次）`
+}
 
 export const STAT_BOOST_STAT_LABELS = {
   hp: 'HP',

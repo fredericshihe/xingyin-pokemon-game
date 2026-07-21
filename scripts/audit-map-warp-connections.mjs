@@ -39,6 +39,9 @@ function manhattan(a, b) {
 }
 
 function getReturnLandingForWarp(mapId, warp) {
+  const explicitLanding = normalizePoint(warp?.properties?.returnLanding)
+  if (explicitLanding) return explicitLanding
+
   const position = normalizePoint(warp?.position)
   if (!position) return null
   const { width, height } = getMapSize(mapId)

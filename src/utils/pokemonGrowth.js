@@ -57,13 +57,11 @@ const getSupplementalLearnLevelByMove = (baseMonster) => {
 
 const getLearnLevelByMove = (baseMonster) => {
   const officialLearnLevelByMove = getOfficialLearnLevelByMove(baseMonster)
+  if (Object.keys(officialLearnLevelByMove).length > 0) {
+    return officialLearnLevelByMove
+  }
   return {
-    ...(
-      Object.keys(officialLearnLevelByMove).length > 0
-        ? {}
-        : getLocalLearnLevelByMove(baseMonster)
-    ),
-    ...officialLearnLevelByMove,
+    ...getLocalLearnLevelByMove(baseMonster),
     ...getSupplementalLearnLevelByMove(baseMonster),
   }
 }

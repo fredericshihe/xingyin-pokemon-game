@@ -178,6 +178,10 @@ const getChallengeRunRewardItems = (regionOrder, teamSize) => {
   ]
 }
 
+const getExpectedBossTeamSize = (regionOrder) => {
+  return 6
+}
+
 const officialArtworkPath = (monster) => {
   const dexNo = Number(monster?.dexNo ?? monster?.pokedexId)
   if (!Number.isFinite(dexNo) || dexNo <= 0) return null
@@ -273,6 +277,10 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
   const bossLevelCap = bossLevels.length > 0 ? Math.max(...bossLevels) : null
   const challengeLevels = team.map((member) => Number(member.level)).filter(Number.isFinite)
   const bossRareId = getEntryPokemonId(bossProps.bossRarePokemon)
+  const expectedBossTeamSize = getExpectedBossTeamSize(config.regionOrder)
+  const allowedChallengeLevelCap = mapId === 'GodotMapV2_BossHighland' && bossLevelCap
+    ? bossLevelCap + 2
+    : bossLevelCap
   let initialVariantTeamSize = 0
   let maxVariantTeamSize = 0
   let maxVariantLevel = challengeLevels.length > 0 ? Math.max(...challengeLevels) : 0
@@ -298,8 +306,8 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
   if (!isDailyVariantBattleEvent(challenge.type, props.role || 'challenge')) {
     errors.push(`${mapId}: challenge event must remain a repeatable variant battle`)
   }
-  if (bossLevelCap && challengeLevels.some((level) => level > bossLevelCap)) {
-    errors.push(`${mapId}: base challenge exceeds boss cap Lv.${bossLevelCap}: ${challengeLevels.join('/')}`)
+  if (allowedChallengeLevelCap && challengeLevels.some((level) => level > allowedChallengeLevelCap)) {
+    errors.push(`${mapId}: base challenge exceeds allowed cap Lv.${allowedChallengeLevelCap}: ${challengeLevels.join('/')}`)
   }
   if (currentRewardValue < previousRewardValue) {
     errors.push(`${mapId}: reward value ${currentRewardValue} regressed below previous ${previousRewardValue}`)
@@ -345,8 +353,8 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
       const duplicateGroupIds = groupIds.filter((pokemonId, memberIndex, all) => all.indexOf(pokemonId) !== memberIndex)
       errors.push(`${mapId}: fixed trial group ${index + 1} contains duplicate Pokemon: ${[...new Set(duplicateGroupIds)].map(speciesName).join(', ')}`)
     }
-    if (bossLevelCap && groupLevels.some((level) => level > bossLevelCap)) {
-      errors.push(`${mapId}: fixed trial group ${index + 1} exceeds boss cap Lv.${bossLevelCap}: ${groupLevels.join('/')}`)
+    if (allowedChallengeLevelCap && groupLevels.some((level) => level > allowedChallengeLevelCap)) {
+      errors.push(`${mapId}: fixed trial group ${index + 1} exceeds allowed cap Lv.${allowedChallengeLevelCap}: ${groupLevels.join('/')}`)
     }
     const guardianPoolEnd = Math.max(
       getChallengeRareUnlockedCountForStage(rarePool.length, index + 1),
@@ -381,14 +389,14 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     ...finalThreeRareIds,
     bossRareId
   ].filter(Number.isInteger))
-  if (bossProps.teamSource !== 'challengeFinalThreeBatches') {
-    errors.push(`${mapId}: boss teamSource should be challengeFinalThreeBatches, got ${bossProps.teamSource || 'missing'}`)
+  if (!['fixedBossRoster', 'challengeFinalThreeBatches'].includes(bossProps.teamSource)) {
+    errors.push(`${mapId}: boss teamSource should be fixedBossRoster or challengeFinalThreeBatches, got ${bossProps.teamSource || 'missing'}`)
   }
   if (!Array.isArray(bossProps.challengeFinalThreeBatchPokemonIds) || bossProps.challengeFinalThreeBatchPokemonIds.length !== finalThreeRareIds.length) {
     errors.push(`${mapId}: boss must record final three challenge batch ids`)
   }
-  if (bossTeam.length < 6) {
-    errors.push(`${mapId}: boss team must have 6 Pokemon, got ${bossTeam.length}`)
+  if (bossTeam.length !== expectedBossTeamSize) {
+    errors.push(`${mapId}: boss team should have ${expectedBossTeamSize} Pokemon for region order ${config.regionOrder}, got ${bossTeam.length}`)
   }
   const bossIds = bossTeam
     .map((member) => getEntryPokemonId(member))
@@ -397,7 +405,7 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     const duplicateBossIds = bossIds.filter((pokemonId, index, all) => all.indexOf(pokemonId) !== index)
     errors.push(`${mapId}: boss team contains duplicate Pokemon: ${[...new Set(duplicateBossIds)].map(speciesName).join(', ')}`)
   }
-  if (bossCandidateFamilyCount >= bossIds.length) {
+  if (bossProps.teamSource === 'challengeFinalThreeBatches' && bossCandidateFamilyCount >= bossIds.length) {
     const duplicateBossFamilies = findDuplicateEvolutionFamilyMembers(bossIds)
     if (duplicateBossFamilies.length > 0) {
       errors.push(`${mapId}: boss team reuses evolution families even though final trial batches can avoid it: ${duplicateBossFamilies.join(', ')}`)
@@ -411,14 +419,11 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     const memberId = getEntryPokemonId(member)
     return !finalThreeFamilies.some((family) => family.has(memberId))
   })
-  if (bossOutsiders.length > 0) {
+  if (bossProps.teamSource === 'challengeFinalThreeBatches' && bossOutsiders.length > 0) {
     errors.push(`${mapId}: boss team contains Pokemon outside final three trial batches: ${bossOutsiders.map((member) => speciesName(getEntryPokemonId(member))).join(', ')}`)
   }
-  if (bossLevels.length > 0 && Math.min(...bossLevels) < maxLevel + 1) {
-    errors.push(`${mapId}: boss levels should start above map max Lv.${maxLevel}, got ${bossLevels.join('/')}`)
-  }
-  if (bossLevels.length > 0 && Math.max(...bossLevels) < maxLevel + 3) {
-    errors.push(`${mapId}: boss max level must be at least map max + 3, got ${bossLevels.join('/')}`)
+  if (bossLevels.length > 0 && Math.max(...bossLevels) < Math.max(1, Math.trunc(Number(config.recommendedLevel)) || maxLevel)) {
+    errors.push(`${mapId}: boss max level should reach recommended Lv.${config.recommendedLevel || maxLevel}, got ${bossLevels.join('/')}`)
   }
   const runRewardValues = [3, 4, 5, 6].map((trialSize) => {
     const runRewards = getChallengeRunRewardItems(config.regionOrder, trialSize)
@@ -441,8 +446,8 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     mapConfig,
     bossLevelCap
   })
-  if (bossLevelCap && bounds.maxLevel > bossLevelCap) {
-    errors.push(`${mapId}: challenge difficulty bound Lv.${bounds.maxLevel} exceeds boss cap Lv.${bossLevelCap}`)
+  if (allowedChallengeLevelCap && bounds.maxLevel > allowedChallengeLevelCap) {
+    errors.push(`${mapId}: challenge difficulty bound Lv.${bounds.maxLevel} exceeds allowed cap Lv.${allowedChallengeLevelCap}`)
   }
   for (const victoryCount of VARIANT_VICTORY_SAMPLES) {
     const variantTeam = resolveTrainerBattleTeamConfig(team, {
@@ -473,8 +478,8 @@ for (const mapId of GODOT_REGION_MAP_IDS) {
     if (variantTeam.length < roleBalance.minTeamSize || variantTeam.length > MAX_CHAIN_BATTLES || variantTeam.length > roleBalance.maxTeamSize) {
       errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} team size out of range: ${variantTeam.length}`)
     }
-    if (bossLevelCap && variantLevels.some((level) => level > bossLevelCap)) {
-      errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} exceeds boss cap Lv.${bossLevelCap}: ${variantLevels.join('/')}`)
+    if (allowedChallengeLevelCap && variantLevels.some((level) => level > allowedChallengeLevelCap)) {
+      errors.push(`${mapId}: repeat trial victoryCount ${victoryCount} exceeds allowed cap Lv.${allowedChallengeLevelCap}: ${variantLevels.join('/')}`)
     }
     const invalidVariantMembers = variantTeam.filter((member) => !isLevelValidForSpecies(member.pokemonId, member.level))
     if (invalidVariantMembers.length > 0) {

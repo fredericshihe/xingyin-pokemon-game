@@ -370,8 +370,8 @@ const trainerDailyCloudMarkers = [
     message: '普通云端提交被接受后必须立即应用本次提交快照，避免胜利后的每日训练家锁在本地交互中短暂丢失。',
   },
   {
-    marker: 'world: normalizeWorldState(gameData.world',
-    message: '云端快照必须通过 normalizeWorldState 写入 world，避免新增 world 字段只停留在本地状态。',
+    marker: 'world: migrateLegacyLongTermProgress(normalizeWorldState(gameData.world',
+    message: '云端快照必须先通过 normalizeWorldState，再完成长线进度兼容迁移，避免新增 world 字段只停留在本地状态。',
   },
 ]
 
@@ -391,6 +391,18 @@ const atomicLoadMarkers = [
 ]
 
 const mapWorldProgressCloudMarkers = [
+  {
+    marker: 'preserve_game_data_long_term_progress(NEW.game_data, OLD.game_data)',
+    source: migrationSource,
+    file: 'supabase/migrations',
+    message: '永久图鉴、机关任务、奖励领取与冠军塔进度必须由表级触发器执行单调合并。',
+  },
+  {
+    marker: "merge_long_term_progress_string_arrays(v_incoming_world -> 'completionRewardClaimIds'",
+    source: migrationSource,
+    file: 'supabase/migrations',
+    message: '阶段奖励和每周奖励的唯一领取 ID 必须在服务端保留并集，防止旧标签页覆盖领取事实。',
+  },
   {
     marker: 'flags: source.flags && typeof source.flags === \'object\' ? source.flags : {}',
     source: originalGameSource,

@@ -20,6 +20,7 @@ export const ITEM_ARTWORK_SLUGS = {
   'potion.png': 'potion',
   'super-potion.png': 'super-potion',
   'hyper-potion.png': 'hyper-potion',
+  'max-potion.png': 'max-potion',
   'exp-potion-small.png': 'ether',
   'exp-potion-medium.png': 'exp-share',
   'exp-potion-large.png': 'star-piece',

@@ -14,7 +14,7 @@ const GRAVEYARD_MODEL_BASE = assetUrl('/assets/3d/kenney-graveyard/')
 const PLATFORMER_MODEL_BASE = assetUrl('/assets/3d/kenney-platformer/')
 const CATALOG_MODEL_URLS = Object.fromEntries(
   Object.values(MAP_ASSET_CATALOG)
-    .filter((asset) => asset.assetPath)
+    .filter((asset) => asset.assetPath && !asset.procedural)
     .map((asset) => [asset.id, assetUrl(asset.assetPath)])
 )
 
@@ -48,10 +48,16 @@ const MODEL_URLS = {
   mineControlLever: `${PLATFORMER_MODEL_BASE}lever.glb`
 }
 
+export function getModelAssetUrl(key) {
+  return MODEL_URLS[key] || null
+}
+
 const SHARED_GLTF_LOADER = new GLTFLoader()
 const DRACO_LOADER = new DRACOLoader()
 DRACO_LOADER.setDecoderPath(`${import.meta.env.BASE_URL || '/'}draco/gltf/`)
-DRACO_LOADER.preload()
+if (typeof window !== 'undefined') {
+  DRACO_LOADER.preload()
+}
 SHARED_GLTF_LOADER.setDRACOLoader(DRACO_LOADER)
 const MODEL_SCENE_CACHE = new Map()
 const MODEL_LOAD_PROMISE_CACHE = new Map()
@@ -204,6 +210,9 @@ export function getDecorativeModel(type) {
     case 'mine_control_lever':
       return { key: 'mineControlLever', scale: 1.0 }
     default:
+      if (MAP_ASSET_CATALOG[type]?.procedural) {
+        return { key: type, scale: MAP_ASSET_CATALOG[type].defaultScale ?? 1 }
+      }
       if (MODEL_URLS[type]) return { key: type, scale: 1.0 }
       return null
   }
@@ -369,7 +378,8 @@ export async function preloadModelKeysUntilComplete(keys = [], {
   concurrency = null,
   retries = null,
   timeoutMs = null,
-  maxRounds = Infinity
+  maxRounds = Infinity,
+  allowMissingPlaceholder = true
 } = {}) {
   const options = resolveModelPreloadOptions({
     concurrency: concurrency ?? undefined,
@@ -438,7 +448,7 @@ export async function preloadModelKeysUntilComplete(keys = [], {
     const stillMissing = []
     for (const key of failed) {
       const exists = await verifyModelAssetExists(key)
-      if (!exists) {
+      if (!exists && allowMissingPlaceholder) {
         cacheEmptyModelScene(key)
         loaded += 1
         onItemComplete?.(key, { loaded, total: pendingKeys.length, retryRound: round, placeholder: true })

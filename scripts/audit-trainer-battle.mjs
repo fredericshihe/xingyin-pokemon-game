@@ -83,9 +83,11 @@ await withViteAuditServer(async ({ loadModule }) => {
     const hasNpcDecoration = (map.decorativeObjects || []).some((object) => object.sourceId === npcSourceId)
     const isNormalTrainer = event.type === 'trainer' && role === 'normal'
     const isLieutenant = event.type === 'trainer' && role === 'lieutenant'
+    const isEliteSpecialLieutenant = isLieutenant && Boolean(event.properties?.specialBattleRule?.id)
     const isMinigameTrainer = event.type === 'trainer' && role === 'minigame'
+    const isChampionTowerChallenge = event.type === 'challenge' && Boolean(event.properties?.towerChallenge)
     const isDailyScalingTrainer = isNormalTrainer
-    const isDailyVariantBattle = isDailyVariantBattleEvent(event.type, role) || isMinigameTrainer
+    const isDailyVariantBattle = !isChampionTowerChallenge && (isDailyVariantBattleEvent(event.type, role) || isMinigameTrainer)
     if (isNormalTrainer) normalTrainerCount += 1
     if (isLieutenant) lieutenantCount += 1
     if (isMinigameTrainer) minigameCount += 1
@@ -115,33 +117,44 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
     if (isLieutenant) {
       const styleKey = event.properties?.battleStyle
-      if (!['pressure', 'control', 'elite'].includes(styleKey)) {
-        addError(`${map.id}/${event.id} 部下缺少明确风格标签`)
-      }
-      const sourceTags = Array.isArray(event.properties?.teamSourceTags) ? event.properties.teamSourceTags : []
-      const sourceSummary = typeof event.properties?.teamSourceSummary === 'string' ? event.properties.teamSourceSummary : ''
-      if (sourceTags.length !== team.length) {
-        addError(`${map.id}/${event.id} 部下缺少队伍来源标记`)
-      }
-      if (!sourceSummary.includes('wild') || !sourceSummary.includes('trial')) {
-        addError(`${map.id}/${event.id} 部下队伍必须混合本地图野生与试炼池`)
-      }
-      const sourceKinds = new Set(sourceTags)
-      if (!(sourceKinds.has('wild') && sourceKinds.has('trial'))) {
-        addError(`${map.id}/${event.id} 部下队伍必须同时包含野生池与试炼池宝可梦`)
+      const battleStyleLabel = event.properties?.battleStyleLabel || ''
+      if (isEliteSpecialLieutenant) {
+        const rule = event.properties.specialBattleRule
+        if (styleKey !== rule.id || !battleStyleLabel || battleStyleLabel !== rule.name) {
+          addError(`${map.id}/${event.id} 四天王部下的规则与风格标签未对齐`)
+        }
+        if (typeof event.properties?.difficultyLabel !== 'string' || !event.properties.difficultyLabel.includes('四天王部下')) {
+          addError(`${map.id}/${event.id} 四天王部下难度标签异常`)
+        }
+      } else {
+        if (!['pressure', 'control', 'elite'].includes(styleKey)) {
+          addError(`${map.id}/${event.id} 部下缺少明确风格标签`)
+        }
+        const sourceTags = Array.isArray(event.properties?.teamSourceTags) ? event.properties.teamSourceTags : []
+        const sourceSummary = typeof event.properties?.teamSourceSummary === 'string' ? event.properties.teamSourceSummary : ''
+        if (sourceTags.length !== team.length) {
+          addError(`${map.id}/${event.id} 部下缺少队伍来源标记`)
+        }
+        if (!sourceSummary.includes('wild') || !sourceSummary.includes('trial')) {
+          addError(`${map.id}/${event.id} 部下队伍必须混合本地图野生与试炼池`)
+        }
+        const sourceKinds = new Set(sourceTags)
+        if (!(sourceKinds.has('wild') && sourceKinds.has('trial'))) {
+          addError(`${map.id}/${event.id} 部下队伍必须同时包含野生池与试炼池宝可梦`)
+        }
       }
       const uniquePokemonIds = new Set(team.map((member) => member.pokemonId))
       if (uniquePokemonIds.size < 3) {
         addError(`${map.id}/${event.id} 部下队伍不能出现重复宝可梦`)
       }
       const leadNames = team.map((member) => getSpeciesName(member.pokemonId)).join('、')
-      if (typeof event.properties?.difficultyLabel !== 'string' || !event.properties.difficultyLabel.includes('部下训练家')) {
+      if (!isEliteSpecialLieutenant && (typeof event.properties?.difficultyLabel !== 'string' || !event.properties.difficultyLabel.includes('部下训练家'))) {
         addError(`${map.id}/${event.id} 部下难度标签异常`)
       }
-      if (typeof event.properties?.title !== 'string' || !event.properties.title.includes(event.properties?.battleStyleLabel || '')) {
+      if (typeof event.properties?.title !== 'string' || !event.properties.title.includes(battleStyleLabel)) {
         addError(`${map.id}/${event.id} 部下标题没有体现风格`)
       }
-      if (typeof event.properties?.beforeBattleText === 'string' && !event.properties.beforeBattleText.includes('boss') && !event.properties.beforeBattleText.includes('首领')) {
+      if (!isEliteSpecialLieutenant && typeof event.properties?.beforeBattleText === 'string' && !event.properties.beforeBattleText.includes('boss') && !event.properties.beforeBattleText.includes('首领')) {
         addError(`${map.id}/${event.id} 部下开场文案未明确首领目标`)
       }
       if (leadNames.length === 0) {
@@ -176,7 +189,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       if (isDailyVariantBattle) {
         addError(`${map.id}/${event.id} 部下训练师不能是每日重复战斗`)
       }
-      if (typeof event.properties?.defeatedText !== 'string' || !event.properties.defeatedText.includes('印记')) {
+      if (typeof event.properties?.defeatedText !== 'string' || (!isEliteSpecialLieutenant && !event.properties.defeatedText.includes('印记'))) {
         addError(`${map.id}/${event.id} 部下训练师缺少一次性印记完成文案`)
       }
       if (typeof event.properties?.dailyDefeatedText === 'string' && event.properties.dailyDefeatedText.includes('明天再来')) {

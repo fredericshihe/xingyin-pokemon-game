@@ -11,7 +11,10 @@ import {
 } from '../../utils/gameData'
 import {
   getInventoryItemQuantity,
+  getInventoryItemSellPrice,
+  getPokeballEffectText,
   hasPotionCurableStatus,
+  isSellableInventoryItem,
   getPotionEffectParts,
   getPotionEffectText,
   getPotionRecoveryProfile,
@@ -23,14 +26,19 @@ import {
 import { getEvolutionLevelForBranch } from '../../utils/pokemonGrowth'
 import { MAX_PARTY_SIZE, MAX_STORAGE_SIZE } from '../../utils/pokemonRoster'
 import { applyImageFallback, handlePokemonImageError } from '../../utils/localAssetPreloader'
+import { toPngFallbackUrl } from '../../utils/mediaAssetUrl'
 import { getPokemonAcquisitionInfo } from '../../utils/pokemonAcquisition'
+import { calculateCatchRate, getPlayerAverageLevel } from '../../utils/gameBalance'
+import { MASTER_BALL_ITEM_KEY } from '../../utils/shopPurchaseLimits'
 import { CollectionCard, CollectionGrid, TypeBadge } from './gameUiPrimitives'
 import { assetUrl } from '../../utils/assetUrl'
 import { gameAudio } from '../../utils/gameAudio'
+import { getPermanentDexStatus, getPokemonSpeciesKey } from '../../utils/longTermProgression'
 
 const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
 const DEFAULT_CAPTURE_BALL_KEY = 'pokeball_basic'
 const SHOP_PURCHASE_FEEDBACK_MS = 1250
+const SHOP_SELL_FEEDBACK_MS = 1250
 const HEAL_ANIMATION_DURATION_MS = 950
 const EXP_ANIMATION_DURATION_MS = 1150
 
@@ -57,6 +65,12 @@ const getMonsterCaptureBallName = (monster) => (
 )
 
 const handlePokeballImageError = (event) => {
+  const image = event?.currentTarget || event?.target
+  const currentSrc = image?.src || ''
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc))
+    return
+  }
   applyImageFallback(event, POKEBALLS[DEFAULT_CAPTURE_BALL_KEY]?.sprite || POKEMON_LOCAL_PLACEHOLDER)
 }
 
@@ -177,6 +191,8 @@ const MOVE_CATEGORY_LABELS = {
   status: '变化'
 }
 
+const MOVE_CUSTOMIZATION_COST = 10
+
 const DEX_STAT_DEFINITIONS = [
   { key: 'maxHp', label: '生命', code: 'HP', max: 255, className: 'dex-stat-hp' },
   { key: 'atk', label: '攻击', code: 'ATK', max: 180, className: 'dex-stat-atk' },
@@ -187,6 +203,12 @@ const DEX_STAT_DEFINITIONS = [
 ]
 
 const handleItemImageError = (event) => {
+  const image = event?.currentTarget || event?.target
+  const currentSrc = image?.src || ''
+  if (currentSrc.includes('.webp')) {
+    applyImageFallback(event, toPngFallbackUrl(currentSrc))
+    return
+  }
   applyImageFallback(event, POKEBALLS.pokeball_basic.sprite || POKEMON_LOCAL_PLACEHOLDER)
 }
 
@@ -305,6 +327,17 @@ const getMovePrimaryEffectDisplay = (move) => {
   return { label: '效果', value: labels[0] || '辅助' }
 }
 
+const normalizeSelectedMoveKeys = (moveKeys = [], maxLength = 4) => {
+  const seen = new Set()
+  return (Array.isArray(moveKeys) ? moveKeys : [])
+    .filter((moveKey) => {
+      if (!MOVES[moveKey] || seen.has(moveKey)) return false
+      seen.add(moveKey)
+      return true
+    })
+    .slice(0, maxLength)
+}
+
 const getEvolutionConditionLabel = (sourceMon, evolution) => {
   if (!evolution) return ''
   const simplifiedLevel = getEvolutionLevelForBranch(sourceMon, evolution)
@@ -394,8 +427,16 @@ const getDexEvolutionFamily = (mon) => {
   }
 }
 
-export function DexScreen({ onBack }) {
+export function DexScreen({
+  onBack,
+  permanentDexEnabled = false,
+  dexProgress = null,
+  playerTeam = [],
+  storageBox = [],
+  pendingMonsterAcquisition = null
+}) {
   const [selectedMon, setSelectedMon] = useState(null)
+  const [dexFilter, setDexFilter] = useState('all')
   const dexListScrollRef = useRef(0)
   const dexListScrollAreaRef = useRef(null)
   const dexDetailScrollAreaRef = useRef(null)
@@ -436,7 +477,50 @@ export function DexScreen({ onBack }) {
     gameAudio.playUiBack()
   }, [])
 
+  const ownedSpeciesCounts = useMemo(() => {
+    const counts = new Map()
+    const roster = [
+      ...(Array.isArray(playerTeam) ? playerTeam : []),
+      ...(Array.isArray(storageBox) ? storageBox : []),
+      ...(pendingMonsterAcquisition?.monster ? [pendingMonsterAcquisition.monster] : [])
+    ]
+    roster.forEach((monster) => {
+      const speciesKey = getPokemonSpeciesKey(monster)
+      if (!speciesKey) return
+      counts.set(speciesKey, (counts.get(speciesKey) || 0) + 1)
+    })
+    return counts
+  }, [pendingMonsterAcquisition, playerTeam, storageBox])
+
+  const dexEntries = useMemo(() => DEX_DISPLAY_MONSTERS.map((mon) => {
+    const speciesKey = getPokemonSpeciesKey(mon)
+    return {
+      mon,
+      status: getPermanentDexStatus(dexProgress, mon, ownedSpeciesCounts.get(speciesKey) || 0)
+    }
+  }), [dexProgress, ownedSpeciesCounts])
+
+  const dexCounts = useMemo(() => dexEntries.reduce((counts, entry) => ({
+    registered: counts.registered + (entry.status.registered ? 1 : 0),
+    wildCaptured: counts.wildCaptured + (entry.status.wildCaptured ? 1 : 0),
+    owned: counts.owned + (entry.status.ownedCount > 0 ? 1 : 0)
+  }), { registered: 0, wildCaptured: 0, owned: 0 }), [dexEntries])
+
+  const visibleDexEntries = useMemo(() => dexEntries.filter(({ status }) => {
+    if (!permanentDexEnabled) return true
+    if (dexFilter === 'registered') return status.registered
+    if (dexFilter === 'wildCaptured') return status.wildCaptured
+    if (dexFilter === 'owned') return status.ownedCount > 0
+    return true
+  }), [dexEntries, dexFilter, permanentDexEnabled])
+
   if (selectedMon) {
+    const selectedSpeciesKey = getPokemonSpeciesKey(selectedMon)
+    const permanentStatus = getPermanentDexStatus(
+      dexProgress,
+      selectedMon,
+      ownedSpeciesCounts.get(selectedSpeciesKey) || 0
+    )
     const moves = getMoveKeysAvailableForMonsterLevel(selectedMon, 100, { includeEmergencyFallback: false })
       .map((moveKey) => ({
         key: moveKey,
@@ -503,6 +587,20 @@ export function DexScreen({ onBack }) {
             <div className="dex-hero-copy">
               <div className="dex-number-chip">No.{formatDexNo(selectedMon)}</div>
               <h3>{selectedMon.name}</h3>
+              {permanentDexEnabled && <div className="permanent-dex-status-row" aria-label="永久图鉴记录">
+                <span className={permanentStatus.registered ? 'is-complete' : ''}>
+                  <i className={`fa-solid ${permanentStatus.registered ? 'fa-circle-check' : 'fa-circle-dashed'}`}></i>
+                  曾经获得
+                </span>
+                <span className={permanentStatus.wildCaptured ? 'is-captured' : ''}>
+                  <i className="fa-solid fa-bullseye"></i>
+                  {permanentStatus.wildCaptured ? '野外捕获记录' : '尚无野外捕获'}
+                </span>
+                <span className={permanentStatus.ownedCount > 0 ? 'is-owned' : ''}>
+                  <i className="fa-solid fa-box-archive"></i>
+                  当前持有 {permanentStatus.ownedCount}
+                </span>
+              </div>}
               <div className="dex-type-row">
                 {selectedMon.type2 && <TypeBadge type={selectedMon.type2} />}
                 <TypeBadge type={selectedMon.type} />
@@ -647,9 +745,9 @@ export function DexScreen({ onBack }) {
         <div>
           <h2 className="game-page-title">
             <i className="fa-solid fa-book-open text-teal-600"></i>
-            图鉴
+            {permanentDexEnabled ? '永久捕获图鉴' : '宝可梦图鉴'}
           </h2>
-          <div className="game-page-subtitle">查看宝可梦资料与技能</div>
+          <div className="game-page-subtitle">{permanentDexEnabled ? '已记录的物种不会因进化、放生或换设备而消失' : '查看宝可梦资料、属性、进化与获取途径'}</div>
         </div>
         <button onClick={onBack} className="game-icon-button" title="返回" aria-label="返回">
           <i className="fa-solid fa-arrow-left"></i>
@@ -657,16 +755,54 @@ export function DexScreen({ onBack }) {
       </div>
       <div
         ref={dexListScrollAreaRef}
-        className="game-scroll-area"
+        className="game-scroll-area permanent-dex-scroll"
         onScroll={rememberDexListScroll}
       >
+        {permanentDexEnabled && <section className="permanent-dex-dashboard">
+          <div className="permanent-dex-dashboard__glow" aria-hidden="true" />
+          <div className="permanent-dex-dashboard__copy">
+            <span>PERMANENT FIELD RECORD</span>
+            <strong>{dexCounts.registered}<small> / {dexEntries.length}</small></strong>
+            <p>永久登记物种</p>
+          </div>
+          <div className="permanent-dex-dashboard__metrics">
+            <div><i className="fa-solid fa-bullseye"></i><b>{dexCounts.wildCaptured}</b><span>亲手捕获</span></div>
+            <div><i className="fa-solid fa-box-archive"></i><b>{dexCounts.owned}</b><span>当前持有</span></div>
+            <div><i className="fa-solid fa-sparkles"></i><b>{Math.round((dexCounts.registered / Math.max(1, dexEntries.length)) * 100)}%</b><span>登记率</span></div>
+          </div>
+        </section>}
+        {permanentDexEnabled && <div className="permanent-dex-filters" role="group" aria-label="图鉴筛选">
+          {[
+            ['all', '全部', dexEntries.length],
+            ['registered', '曾经获得', dexCounts.registered],
+            ['wildCaptured', '野外捕获', dexCounts.wildCaptured],
+            ['owned', '当前持有', dexCounts.owned]
+          ].map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              className={dexFilter === key ? 'is-active' : ''}
+              onClick={() => {
+                setDexFilter(key)
+                gameAudio.playUiSelect()
+              }}
+            >
+              <span>{label}</span><b>{count}</b>
+            </button>
+          ))}
+        </div>}
         <CollectionGrid>
-          {DEX_DISPLAY_MONSTERS.map((mon) => {
+          {visibleDexEntries.map(({ mon, status }) => {
             const acquisitionInfo = getPokemonAcquisitionInfo(mon)
             return (
-              <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)}>
+              <CollectionCard key={mon.id} onClick={() => handleDexCardClick(mon)} className={permanentDexEnabled ? (status.registered ? 'permanent-dex-card--registered' : 'permanent-dex-card--unregistered') : ''}>
                 <div className="game-collection-card__sprite-wrap">
                   <img src={mon.sprite} decoding="async" onError={handlePokemonImageError} alt={mon.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} />
+                  {permanentDexEnabled && <div className="permanent-dex-card__badges" aria-label={`${mon.name}永久记录状态`}>
+                    {status.wildCaptured && <span className="is-captured" title="曾在野外捕获"><i className="fa-solid fa-bullseye"></i></span>}
+                    {status.registered && !status.wildCaptured && <span className="is-registered" title="曾经获得"><i className="fa-solid fa-check"></i></span>}
+                    {status.ownedCount > 0 && <span className="is-owned" title={`当前持有 ${status.ownedCount} 只`}>{status.ownedCount}</span>}
+                  </div>}
                 </div>
                 <div className="game-collection-card__dexno">No.{formatDexNo(mon)}</div>
                 <div className="game-collection-card__name">{mon.name}</div>
@@ -682,7 +818,261 @@ export function DexScreen({ onBack }) {
             )
           })}
         </CollectionGrid>
+        {visibleDexEntries.length === 0 && (
+          <div className="permanent-dex-empty">
+            <i className="fa-solid fa-compass"></i>
+            <strong>这个筛选下还没有记录</strong>
+            <span>继续探索、捕获或培养，永久图鉴会自动点亮。</span>
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+const getRewardPresentation = (reward) => {
+  const details = resolveInventoryItemDetails(reward.itemType, reward.itemKey)
+  return {
+    name: details?.name || reward.itemKey,
+    sprite: details?.sprite || POKEMON_LOCAL_PLACEHOLDER,
+    quantity: Math.max(1, Math.trunc(Number(reward.quantity)) || 1)
+  }
+}
+
+export function AdventureProgressScreen({
+  chapters = [],
+  currentMapName = '',
+  onBack,
+  onClaimReward,
+  onClaimTowerWeeklyReward,
+  claimingRewardId = ''
+}) {
+  const [selectedMapId, setSelectedMapId] = useState(currentMapName || chapters[0]?.mapId || '')
+  const [rewardReveal, setRewardReveal] = useState(null)
+  const selectedChapter = chapters.find((entry) => entry.mapId === selectedMapId) || chapters[0] || null
+  const completedChapterCount = chapters.filter((entry) => entry.summary?.completionPercent >= 100).length
+  const totalPercent = chapters.length > 0
+    ? Math.round(chapters.reduce((sum, entry) => sum + (entry.summary?.completionPercent || 0), 0) / chapters.length)
+    : 0
+
+  useEffect(() => {
+    if (!selectedMapId && chapters[0]?.mapId) setSelectedMapId(chapters[0].mapId)
+  }, [chapters, selectedMapId])
+
+  if (!selectedChapter) {
+    return (
+      <div className="game-page">
+        <div className="game-page-header"><h2 className="game-page-title">冒险完成度</h2></div>
+        <div className="game-scroll-area"><div className="game-card p-4">正在整理冒险记录...</div></div>
+      </div>
+    )
+  }
+
+  const summary = selectedChapter.summary || {}
+  const heroImage = selectedChapter.mapId === 'GodotMapV2_ChampionTower'
+    ? assetUrl('/assets/ui/champion-tower/champion-tower-key-art-v1.png')
+    : assetUrl('/assets/ui/adventure-progress/adventure-atlas-v1.png')
+
+  return (
+    <div className="game-page adventure-progress-page">
+      <div className="game-page-header">
+        <div>
+          <h2 className="game-page-title"><i className="fa-solid fa-map-location-dot text-amber-500"></i>冒险完成度</h2>
+          <div className="game-page-subtitle">十四章探索记录、阶段奖励与未完成线索</div>
+        </div>
+        <button onClick={onBack} className="game-icon-button" title="返回地图" aria-label="返回地图"><i className="fa-solid fa-arrow-left"></i></button>
+      </div>
+      <div className="game-scroll-area adventure-progress-scroll">
+        <section className="adventure-progress-hero" style={{ '--adventure-hero-image': `url("${heroImage}")` }}>
+          <div className="adventure-progress-hero__veil" />
+          <div className="adventure-progress-hero__copy">
+            <span>ADVENTURE ATLAS</span>
+            <h3>旅程不是通关后结束，<br />而是从完整探索开始。</h3>
+            <div className="adventure-progress-hero__stats">
+              <div><b>{totalPercent}%</b><span>全域完成度</span></div>
+              <div><b>{completedChapterCount}</b><span>完美章节</span></div>
+              <div><b>{chapters.length}</b><span>冒险篇章</span></div>
+            </div>
+          </div>
+        </section>
+
+        <nav className="adventure-chapter-rail" aria-label="冒险章节">
+          {chapters.map((entry) => {
+            const percent = entry.summary?.completionPercent || 0
+            const selected = entry.mapId === selectedChapter.mapId
+            return (
+              <button
+                key={entry.mapId}
+                type="button"
+                disabled={!entry.unlocked}
+                className={`${selected ? 'is-active ' : ''}${entry.unlocked ? '' : 'is-locked'}`}
+                style={{ '--chapter-accent': entry.accent, '--chapter-percent': `${percent}%` }}
+                onClick={() => {
+                  setSelectedMapId(entry.mapId)
+                  gameAudio.playUiSelect()
+                }}
+              >
+                <span className="adventure-chapter-rail__number">{entry.chapter}</span>
+                <span className="adventure-chapter-rail__copy"><b>{entry.name}</b><small>{entry.unlocked ? `${percent}%` : '尚未抵达'}</small></span>
+                <span className="adventure-chapter-rail__meter"><span /></span>
+                {!entry.unlocked && <i className="fa-solid fa-lock" />}
+              </button>
+            )
+          })}
+        </nav>
+
+        <section className="adventure-progress-detail" style={{ '--chapter-accent': selectedChapter.accent }}>
+          <header>
+            <div>
+              <span>CHAPTER {String(selectedChapter.chapter).padStart(2, '0')}</span>
+              <h3>{selectedChapter.name}</h3>
+              <p>{selectedChapter.mapId === currentMapName ? '你当前正在探索这里' : summary.completionPercent >= 100 ? '本章已达成完美完成' : '还有线索等待完成'}</p>
+            </div>
+            <div className="adventure-progress-ring" style={{ '--progress': `${summary.completionPercent || 0}%` }}>
+              <strong>{summary.completionPercent || 0}<small>%</small></strong>
+            </div>
+          </header>
+
+          <div className="adventure-objective-grid">
+            {(summary.categories || []).map((category) => (
+              <article key={category.id} className={category.completed >= category.total && category.total > 0 ? 'is-complete' : ''}>
+                <i className={`fa-solid ${category.icon}`}></i>
+                <div><b>{category.label}</b><span>{category.completed} / {category.total}</span></div>
+                <span className="adventure-objective-grid__bar"><span style={{ width: `${category.total > 0 ? Math.round((category.completed / category.total) * 100) : 0}%` }} /></span>
+              </article>
+            ))}
+          </div>
+
+          {summary.tower && (
+            <section className="champion-weekly-card" aria-label="冠军挑战塔周进度">
+              <div className="champion-weekly-card__glow" />
+              <header>
+                <div>
+                  <span>CHAMPION CIRCUIT · {summary.tower.seasonKey}</span>
+                  <h4><i className="fa-solid fa-crown" /> 每周冠军巡回</h4>
+                  <p>{summary.tower.highestStoryFloor < 10 ? '首次登顶后开放；当前进度不会跨周丢失。' : '每周逐层保存，失败不降层，当周登顶可领取一次补给。'}</p>
+                </div>
+                <div className="champion-weekly-card__record">
+                  <b>{summary.tower.highestStoryFloor < 10 ? summary.tower.highestStoryFloor : summary.tower.weeklyHighestFloor}<small>/10</small></b>
+                  <span>{summary.tower.highestStoryFloor < 10 ? '首次登塔' : '本周层数'}</span>
+                </div>
+              </header>
+              <div className="champion-floor-seals">
+                {Array.from({ length: 10 }, (_, index) => index + 1).map((floor) => {
+                  const activeFloor = summary.tower.highestStoryFloor < 10
+                    ? summary.tower.highestStoryFloor
+                    : summary.tower.weeklyHighestFloor
+                  return (
+                    <span key={floor} className={floor <= activeFloor ? 'is-lit' : ''} title={`第 ${floor} 层`}>
+                      <i className={floor === 10 ? 'fa-solid fa-crown' : 'fa-solid fa-star'} />
+                      <b>{floor}</b>
+                    </span>
+                  )
+                })}
+              </div>
+              <div className="champion-weekly-card__reward">
+                <div className="champion-weekly-card__reward-copy">
+                  <i className="fa-solid fa-gift" />
+                  <div><b>周冠军补给</b><span>{summary.tower.weeklyRewardClaimed ? '本周已领取' : summary.tower.weeklyRewardEligible ? '星冠补给匣已解锁' : '本周登顶后解锁'}</span></div>
+                </div>
+                <div className="champion-weekly-card__items">
+                  {(summary.tower.weeklyRewardItems || []).map((item) => {
+                    const presentation = getRewardPresentation(item)
+                    return <span key={`${item.itemType}:${item.itemKey}`} title={`${presentation.name} x${presentation.quantity}`}><img src={presentation.sprite} onError={handleItemImageError} alt="" /><b>x{presentation.quantity}</b></span>
+                  })}
+                </div>
+                <button
+                  type="button"
+                  disabled={!summary.tower.weeklyRewardEligible || summary.tower.weeklyRewardClaimed || claimingRewardId === `tower:weekly:${summary.tower.seasonKey}:clear`}
+                  onClick={async () => {
+                    const result = await onClaimTowerWeeklyReward?.()
+                    if (!result?.success) return
+                    gameAudio.playUiConfirm()
+                    setRewardReveal({
+                      id: `tower:${summary.tower.seasonKey}`,
+                      eyebrow: 'WEEKLY CHAMPION CACHE',
+                      title: '星冠补给匣开启',
+                      subtitle: `${summary.tower.seasonKey} 周冠军巡回奖励已安全存入背包`,
+                      items: summary.tower.weeklyRewardItems || []
+                    })
+                  }}
+                >
+                  <i className={`fa-solid ${claimingRewardId === `tower:weekly:${summary.tower.seasonKey}:clear` ? 'fa-spinner fa-spin' : summary.tower.weeklyRewardClaimed ? 'fa-check' : 'fa-box-open'}`} />
+                  {summary.tower.weeklyRewardClaimed ? '已领取' : '领取补给'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          <div className="adventure-reward-track">
+            <div className="adventure-reward-track__line"><span style={{ width: `${summary.completionPercent || 0}%` }} /></div>
+            {(summary.rewards || []).map((reward) => {
+              const busy = claimingRewardId === reward.id
+              return (
+                <div key={reward.id} className={`adventure-reward-node${reward.claimed ? ' is-claimed' : ''}${reward.eligible ? ' is-ready' : ''}`} style={{ '--reward-threshold': `${reward.threshold}%` }}>
+                  <button
+                    type="button"
+                    disabled={!reward.eligible || reward.claimed || busy}
+                    onClick={async () => {
+                      const result = await onClaimReward?.(selectedChapter.mapId, reward.threshold)
+                      if (!result?.success) return
+                      gameAudio.playUiConfirm()
+                      setRewardReveal({
+                        id: reward.id,
+                        eyebrow: `CHAPTER ${String(selectedChapter.chapter).padStart(2, '0')} · ${reward.threshold}%`,
+                        title: '阶段宝箱开启',
+                        subtitle: `${selectedChapter.name}的探索成果已安全存入背包`,
+                        items: reward.items || []
+                      })
+                    }}
+                    aria-label={`${reward.threshold}% 阶段奖励${reward.claimed ? '已领取' : reward.eligible ? '可领取' : '未解锁'}`}
+                  >
+                    <i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : reward.claimed ? 'fa-check' : reward.eligible ? 'fa-gift' : 'fa-lock'}`}></i>
+                  </button>
+                  <strong>{reward.threshold}%</strong>
+                  <div className="adventure-reward-node__items">
+                    {reward.items.map((item) => {
+                      const presentation = getRewardPresentation(item)
+                      return <span key={`${item.itemType}:${item.itemKey}`} title={`${presentation.name} x${presentation.quantity}`}><img src={presentation.sprite} onError={handleItemImageError} alt="" /><b>x{presentation.quantity}</b></span>
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      </div>
+      {rewardReveal && (
+        <div className="adventure-reward-reveal" role="dialog" aria-modal="true" aria-label={rewardReveal.title}>
+          <div className="adventure-reward-reveal__aurora" aria-hidden="true" />
+          <div className="adventure-reward-reveal__sparkles" aria-hidden="true">
+            {Array.from({ length: 12 }, (_, index) => <i key={index} />)}
+          </div>
+          <section className="adventure-reward-reveal__panel">
+            <span className="adventure-reward-reveal__eyebrow">{rewardReveal.eyebrow}</span>
+            <div className="adventure-reward-reveal__chest" aria-hidden="true">
+              <span><i className="fa-solid fa-box-open" /></span>
+            </div>
+            <h3>{rewardReveal.title}</h3>
+            <p>{rewardReveal.subtitle}</p>
+            <div className="adventure-reward-reveal__items">
+              {rewardReveal.items.map((item, index) => {
+                const presentation = getRewardPresentation(item)
+                return (
+                  <article key={`${item.itemType}:${item.itemKey}:${index}`} style={{ '--reveal-delay': `${520 + (index * 110)}ms` }}>
+                    <div><img src={presentation.sprite} onError={handleItemImageError} alt={presentation.name} /></div>
+                    <b>{presentation.name}</b>
+                    <span>x{presentation.quantity}</span>
+                  </article>
+                )
+              })}
+            </div>
+            <button type="button" onClick={() => { gameAudio.playUiBack(); setRewardReveal(null) }}>
+              <i className="fa-solid fa-check" /> 收下奖励
+            </button>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
@@ -690,6 +1080,7 @@ export function DexScreen({ onBack }) {
 export function ShopScreen({
   playerGold,
   playerInventory,
+  masterBallPurchasedInCurrentRegion = false,
   onPurchase,
   onBack,
   getInventoryItemQuantity,
@@ -802,6 +1193,7 @@ export function ShopScreen({
               {Object.entries(itemsMap).filter(([, item]) => !item.notForSale).map(([key, item]) => {
                 const currentQuantity = getInventoryItemQuantity(playerInventory, itemType, key)
                 const cannotAfford = playerGold < item.price
+                const regionPurchaseLimitReached = itemType === 'pokeball' && key === MASTER_BALL_ITEM_KEY && masterBallPurchasedInCurrentRegion
                 const purchaseKey = `${itemType}:${key}`
                 const isPending = pendingPurchaseKey === purchaseKey
                 const purchaseFeedbackId = purchaseFeedback?.id || 'idle'
@@ -811,7 +1203,7 @@ export function ShopScreen({
                     key={key}
                     className={[
                       'shop-item-card',
-                      cannotAfford ? 'game-collection-card--disabled' : '',
+                      cannotAfford || regionPurchaseLimitReached ? 'game-collection-card--disabled' : '',
                       isPurchased ? 'shop-item-card--purchased' : ''
                     ].filter(Boolean).join(' ')}
                   >
@@ -834,7 +1226,7 @@ export function ShopScreen({
                         ? `经验 +${item.expAmount}`
                         : itemType === 'potion'
                           ? getPotionEffectText(item)
-                          : '用于捕捉'}
+                          : getPokeballEffectText(item)}
                     </div>
                     <div className="game-collection-card__price">
                       <i className="fa-solid fa-coins"></i>
@@ -844,10 +1236,15 @@ export function ShopScreen({
                       <button
                         type="button"
                         onClick={() => handleBuy(itemType, key, 1)}
-                        disabled={cannotAfford || isShopBusy}
+                        disabled={cannotAfford || regionPurchaseLimitReached || isShopBusy}
                         className={`game-primary-button ${isPurchased ? 'shop-item-card__buy-button--done' : ''}`}
                       >
-                        {isPending ? (
+                        {regionPurchaseLimitReached ? (
+                          <>
+                            <i className="fa-solid fa-check"></i>
+                            本区域已购买
+                          </>
+                        ) : isPending ? (
                           <>
                             <i className="fa-solid fa-spinner fa-spin"></i>
                             购买中
@@ -865,6 +1262,257 @@ export function ShopScreen({
                         <i className="fa-solid fa-bag-shopping"></i>
                         <span>已放入背包</span>
                         <b>+{purchaseFeedback.quantity}</b>
+                      </div>
+                    )}
+                  </CollectionCard>
+                )
+              })}
+            </CollectionGrid>
+          </section>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function ItemSellScreen({
+  playerGold,
+  playerInventory,
+  onSell,
+  onBack,
+}) {
+  const [pendingSellKey, setPendingSellKey] = useState(null)
+  const [sellFeedback, setSellFeedback] = useState(null)
+  const [sellAmounts, setSellAmounts] = useState({})
+  const pendingSellKeyRef = useRef(null)
+  const sellFeedbackTimerRef = useRef(null)
+  const sellFeedbackFrameRef = useRef(null)
+  const allItems = {
+    pokeball: POKEBALLS,
+    potion: POTIONS,
+    expPotion: EXP_POTIONS
+  }
+  const sectionLabels = {
+    pokeball: '精灵球',
+    potion: '回复药',
+    expPotion: '经验药水'
+  }
+  const sectionDescriptions = {
+    pokeball: '多余的捕捉球可以回收',
+    potion: '不用的回复药换成金币',
+    expPotion: '多余经验药水可以出售'
+  }
+  const sellSections = Object.entries(allItems)
+    .map(([itemType, itemsMap]) => {
+      const items = Object.entries(itemsMap)
+        .map(([itemKey, item]) => {
+          const quantity = getInventoryItemQuantity(playerInventory, itemType, itemKey)
+          const sellPrice = getInventoryItemSellPrice(itemType, itemKey)
+          return {
+            itemType,
+            itemKey,
+            item,
+            quantity,
+            sellPrice,
+          }
+        })
+        .filter((entry) => (
+          entry.quantity > 0 &&
+          entry.sellPrice > 0 &&
+          isSellableInventoryItem(entry.itemType, entry.itemKey)
+        ))
+      return { itemType, items }
+    })
+    .filter((section) => section.items.length > 0)
+  const hasSellableItems = sellSections.length > 0
+
+  const showSellFeedback = (feedback) => {
+    if (sellFeedbackTimerRef.current) {
+      clearTimeout(sellFeedbackTimerRef.current)
+      sellFeedbackTimerRef.current = null
+    }
+    if (sellFeedbackFrameRef.current) {
+      cancelAnimationFrame(sellFeedbackFrameRef.current)
+      sellFeedbackFrameRef.current = null
+    }
+    setSellFeedback(null)
+    const feedbackId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    sellFeedbackFrameRef.current = requestAnimationFrame(() => {
+      sellFeedbackFrameRef.current = null
+      setSellFeedback({ ...feedback, id: feedbackId })
+      sellFeedbackTimerRef.current = setTimeout(() => {
+        setSellFeedback(null)
+        sellFeedbackTimerRef.current = null
+      }, SHOP_SELL_FEEDBACK_MS)
+    })
+  }
+
+  useEffect(() => () => {
+    if (sellFeedbackTimerRef.current) {
+      clearTimeout(sellFeedbackTimerRef.current)
+    }
+    if (sellFeedbackFrameRef.current) {
+      cancelAnimationFrame(sellFeedbackFrameRef.current)
+    }
+  }, [])
+
+  const getAmountKey = (itemType, itemKey) => `${itemType}:${itemKey}`
+  const clampSellAmount = (value, maxQuantity) => {
+    const nextValue = Math.trunc(Number(value))
+    if (!Number.isSafeInteger(nextValue)) return 1
+    return Math.max(1, Math.min(maxQuantity, nextValue))
+  }
+  const updateSellAmount = (amountKey, nextAmount, maxQuantity) => {
+    setSellAmounts((current) => ({
+      ...current,
+      [amountKey]: clampSellAmount(nextAmount, maxQuantity)
+    }))
+  }
+  const handleSell = async (itemType, itemKey, maxQuantity) => {
+    const sellKey = getAmountKey(itemType, itemKey)
+    if (pendingSellKeyRef.current) return
+    const amount = clampSellAmount(sellAmounts[sellKey] || 1, maxQuantity)
+    pendingSellKeyRef.current = sellKey
+    setPendingSellKey(sellKey)
+    try {
+      const result = await Promise.resolve(onSell(itemType, itemKey, amount))
+      if (result?.success) {
+        showSellFeedback({
+          key: sellKey,
+          itemName: result.itemName,
+          quantity: result.quantity || amount,
+          totalGold: result.totalGold || 0,
+        })
+        setSellAmounts((current) => ({
+          ...current,
+          [sellKey]: 1
+        }))
+      }
+    } finally {
+      if (pendingSellKeyRef.current === sellKey) {
+        pendingSellKeyRef.current = null
+        setPendingSellKey(null)
+      }
+    }
+  }
+
+  const isSellBusy = Boolean(pendingSellKey)
+
+  return (
+    <div className="game-page item-sell-page">
+      <div className="game-page-header">
+        <div>
+          <h2 className="game-page-title">
+            <i className="fa-solid fa-scale-balanced text-amber-600"></i>
+            出售道具
+          </h2>
+          <div className="game-page-subtitle">回收多余补给，能力石不可出售</div>
+        </div>
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <span className="adventure-chip adventure-chip--gold">
+            <i className="fa-solid fa-coins text-amber-500"></i>
+            {playerGold}
+          </span>
+          <button onClick={onBack} className="game-icon-button" title="返回" aria-label="返回">
+            <i className="fa-solid fa-arrow-left"></i>
+          </button>
+        </div>
+      </div>
+      <div className="game-scroll-area">
+        {!hasSellableItems && (
+          <div className="game-collection-empty item-sell-empty">
+            <i className="fa-solid fa-box-open"></i>
+            暂时没有可出售道具
+          </div>
+        )}
+        {sellSections.map(({ itemType, items }) => (
+          <section key={itemType} className="game-collection-section">
+            <div className="game-collection-section__head">
+              <h3 className="game-collection-section__title">{sectionLabels[itemType]}</h3>
+              <span className="game-collection-section__desc">{sectionDescriptions[itemType]}</span>
+            </div>
+            <CollectionGrid>
+              {items.map(({ itemKey, item, quantity, sellPrice }) => {
+                const sellKey = getAmountKey(itemType, itemKey)
+                const sellAmount = clampSellAmount(sellAmounts[sellKey] || 1, quantity)
+                const isPending = pendingSellKey === sellKey
+                const sellFeedbackId = sellFeedback?.id || 'idle'
+                const isSold = sellFeedback?.key === sellKey
+                const totalGold = sellPrice * sellAmount
+                return (
+                  <CollectionCard
+                    key={itemKey}
+                    className={[
+                      'shop-item-card',
+                      'item-sell-card',
+                      isSold ? 'item-sell-card--sold' : ''
+                    ].filter(Boolean).join(' ')}
+                  >
+                    <span className="game-collection-card__corner">
+                      <span className={`game-collection-card__qty ${isSold ? 'shop-item-card__qty-bump' : ''}`}>
+                        x{quantity}
+                      </span>
+                    </span>
+                    <div className={`game-collection-card__sprite-wrap ${isSold ? 'shop-item-card__sprite-wrap--purchased' : ''}`}>
+                      <img src={item.sprite} alt={item.name} className="game-collection-card__sprite" style={{ imageRendering: 'auto' }} onError={handleItemImageError} />
+                      {isSold && (
+                        <span key={`sparkles-${sellFeedbackId}`} className="shop-item-card__sparkles" aria-hidden="true">
+                          {Array.from({ length: 8 }, (_, index) => <i key={index} style={{ '--i': index }} />)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="game-collection-card__name">{item.name}</div>
+                    <div className="game-collection-card__desc">
+                      单个回收价
+                    </div>
+                    <div className="game-collection-card__price item-sell-card__price">
+                      <i className="fa-solid fa-coins"></i>
+                      {sellPrice}
+                    </div>
+                    <div className="item-sell-card__amount" aria-label={`${item.name}出售数量`}>
+                      <button
+                        type="button"
+                        onClick={() => updateSellAmount(sellKey, sellAmount - 1, quantity)}
+                        disabled={isSellBusy || sellAmount <= 1}
+                        aria-label="减少数量"
+                      >
+                        <i className="fa-solid fa-minus"></i>
+                      </button>
+                      <span>{sellAmount}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateSellAmount(sellKey, sellAmount + 1, quantity)}
+                        disabled={isSellBusy || sellAmount >= quantity}
+                        aria-label="增加数量"
+                      >
+                        <i className="fa-solid fa-plus"></i>
+                      </button>
+                    </div>
+                    <div className="game-collection-card__footer">
+                      <button
+                        type="button"
+                        onClick={() => handleSell(itemType, itemKey, quantity)}
+                        disabled={isSellBusy || quantity <= 0}
+                        className={`game-primary-button ${isSold ? 'shop-item-card__buy-button--done' : ''}`}
+                      >
+                        {isPending ? (
+                          <>
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                            出售中
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-coins"></i>
+                            卖 {totalGold}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    {isSold && (
+                      <div key={`feedback-${sellFeedbackId}`} className="shop-purchase-feedback item-sell-feedback" role="status" aria-live="polite">
+                        <i className="fa-solid fa-coins"></i>
+                        <span>获得金币</span>
+                        <b>+{sellFeedback.totalGold}</b>
                       </div>
                     )}
                   </CollectionCard>
@@ -1004,7 +1652,7 @@ const PokemonDetailDialog = ({
                 const moveCost = getMoveMpCost(move)
                 const powerDisplay = getMovePrimaryEffectDisplay(move)
                 return (
-                  <div key={move.name} className="pokemon-detail-move-card">
+                  <div key={move.key || move.name} className="pokemon-detail-move-card">
                     <div className="pokemon-detail-move-card__top">
                       <div>
                         <h4>{move.name}</h4>
@@ -1037,7 +1685,9 @@ const GameConfirmDialog = ({
   icon = 'fa-triangle-exclamation',
   confirmLabel = '确认',
   cancelLabel = '取消',
+  confirmButtonClassName = 'game-danger-button',
   busy = false,
+  children,
   onCancel,
   onConfirm
 }) => {
@@ -1053,15 +1703,223 @@ const GameConfirmDialog = ({
           <p className="reset-confirm-card__eyebrow">需要确认</p>
           <h2 id="game-local-confirm-title">{title}</h2>
           <p>{message}</p>
+          {children}
         </div>
         <div className="reset-confirm-card__actions">
           <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </button>
-          <button type="button" className="game-danger-button" onClick={onConfirm} disabled={busy}>
+          <button type="button" className={confirmButtonClassName} onClick={onConfirm} disabled={busy}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : icon}`}></i>
             {busy ? '处理中' : confirmLabel}
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const PokemonMoveCustomizerDialog = ({
+  open,
+  monster,
+  draftMoveKeys = [],
+  playerGold = 0,
+  blockedReason = '',
+  busy = false,
+  onClose,
+  onChange,
+  onRequestSave
+}) => {
+  const selectedMoveKeys = useMemo(() => normalizeSelectedMoveKeys(draftMoveKeys), [draftMoveKeys])
+
+  const currentMoveKeys = useMemo(
+    () => normalizeSelectedMoveKeys(monster?.moves || []),
+    [monster?.moves]
+  )
+
+  const moveOptions = useMemo(() => {
+    if (!monster) return []
+    const availableMoveKeys = getMoveKeysAvailableForMonsterLevel(monster, monster.level, { includeEmergencyFallback: false })
+    const availableSet = new Set(availableMoveKeys)
+    return normalizeSelectedMoveKeys([...selectedMoveKeys, ...currentMoveKeys, ...availableMoveKeys], Number.POSITIVE_INFINITY)
+      .map((moveKey) => ({
+        key: moveKey,
+        move: MOVES[moveKey],
+        learnLevel: getMoveAvailabilityLevel(monster, moveKey),
+        isLegacy: !availableSet.has(moveKey)
+      }))
+      .filter((entry) => entry.move?.name)
+      .sort((left, right) => (
+        Number(Boolean(right.isLegacy)) - Number(Boolean(left.isLegacy)) ||
+        (left.learnLevel || 1) - (right.learnLevel || 1) ||
+        left.move.name.localeCompare(right.move.name, 'zh-CN')
+      ))
+  }, [currentMoveKeys, monster, selectedMoveKeys])
+
+  if (!open || !monster) return null
+
+  const unchanged = JSON.stringify(selectedMoveKeys) === JSON.stringify(currentMoveKeys)
+  const cannotAfford = playerGold < MOVE_CUSTOMIZATION_COST
+  const saveDisabled = busy || selectedMoveKeys.length === 0 || unchanged || cannotAfford || Boolean(blockedReason)
+
+  const moveUp = (index) => {
+    if (busy || index <= 0) return
+    const next = [...selectedMoveKeys]
+    ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+    onChange?.(next)
+  }
+
+  const moveDown = (index) => {
+    if (busy || index >= selectedMoveKeys.length - 1) return
+    const next = [...selectedMoveKeys]
+    ;[next[index + 1], next[index]] = [next[index], next[index + 1]]
+    onChange?.(next)
+  }
+
+  const toggleMove = (moveKey) => {
+    if (busy || blockedReason) return
+    if (selectedMoveKeys.includes(moveKey)) {
+      onChange?.(selectedMoveKeys.filter((key) => key !== moveKey))
+      return
+    }
+    if (selectedMoveKeys.length >= 4) return
+    onChange?.([...selectedMoveKeys, moveKey])
+  }
+
+  return (
+    <div
+      className="game-screen-dialog-overlay game-screen-dialog-overlay--detail"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={`pokemon-move-customizer-title-${monster.id || 'monster'}`}
+      onClick={onClose}
+    >
+      <div className="pokemon-detail-modal pokemon-move-customizer-modal animate-bounce-in" onClick={(event) => event.stopPropagation()}>
+        <div className="pokemon-detail-hero pokemon-move-customizer-hero">
+          <div className="pokemon-detail-art">
+            <img src={monster.sprite} onError={handlePokemonImageError} alt={monster.name} style={{ imageRendering: 'auto' }} />
+          </div>
+          <div className="pokemon-detail-hero-copy">
+            <div className="pokemon-detail-eyebrow">技能定制</div>
+            <div className="pokemon-detail-name-row">
+              <h3 id={`pokemon-move-customizer-title-${monster.id || 'monster'}`}>{monster.name}</h3>
+              <span>Lv.{monster.level}</span>
+            </div>
+            <div className="pokemon-detail-type-row">
+              {monster.type2 && <TypeBadge type={monster.type2} />}
+              <TypeBadge type={monster.type} />
+            </div>
+            <div className="pokemon-move-customizer-cost-row">
+              <span><i className="fa-solid fa-wand-sparkles"></i> 本次定制</span>
+              <b>{MOVE_CUSTOMIZATION_COST} 金币</b>
+            </div>
+            <div className="pokemon-move-customizer-cost-row">
+              <span><i className="fa-solid fa-coins"></i> 当前金币</span>
+              <b>{playerGold}</b>
+            </div>
+          </div>
+          <button onClick={onClose} className="game-icon-button pokemon-detail-close" title="关闭" aria-label="关闭">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div className="pokemon-detail-body pokemon-move-customizer-body">
+          <section className="pokemon-detail-panel">
+            <div className="pokemon-detail-section-title">
+              <span>当前方案</span>
+              <b>{selectedMoveKeys.length}/4</b>
+            </div>
+            <div className="pokemon-move-customizer-picked-list">
+              {selectedMoveKeys.length === 0 && (
+                <div className="pokemon-detail-empty">至少保留 1 个技能才能保存</div>
+              )}
+              {selectedMoveKeys.map((moveKey, index) => {
+                const move = MOVES[moveKey]
+                if (!move) return null
+                const powerDisplay = getMovePrimaryEffectDisplay(move)
+                const effectLabels = getMoveEffectLabels(move)
+                return (
+                  <div key={`picked-${moveKey}`} className="pokemon-detail-move-card pokemon-move-customizer-picked-card">
+                    <div className="pokemon-detail-move-card__top">
+                      <div>
+                        <h4>{move.name}</h4>
+                        <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'} · 位置 {index + 1}</span>
+                      </div>
+                      <TypeBadge type={move.type} small />
+                    </div>
+                    <div className="pokemon-detail-move-card__meta">
+                      <span>{powerDisplay.label} <b>{powerDisplay.value}</b></span>
+                      <span>MP <b>{getMoveMpCost(move)}</b></span>
+                      {effectLabels[0] ? <span>{effectLabels[0]}</span> : null}
+                    </div>
+                    <div className="pokemon-move-customizer-picked-actions">
+                      <button type="button" className="game-icon-button !h-8 !min-h-8 !w-8" onClick={() => moveUp(index)} disabled={busy || index === 0} title="上移" aria-label="上移">
+                        <i className="fa-solid fa-arrow-up"></i>
+                      </button>
+                      <button type="button" className="game-icon-button !h-8 !min-h-8 !w-8" onClick={() => moveDown(index)} disabled={busy || index === selectedMoveKeys.length - 1} title="下移" aria-label="下移">
+                        <i className="fa-solid fa-arrow-down"></i>
+                      </button>
+                      <button type="button" className="game-soft-button !min-h-8 text-xs" onClick={() => toggleMove(moveKey)} disabled={busy}>
+                        移除
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          <section className="pokemon-detail-panel">
+            <div className="pokemon-detail-section-title">
+              <span>可选技能</span>
+              <b>{moveOptions.length}</b>
+            </div>
+            {blockedReason ? <div className="pokemon-move-customizer-hint pokemon-move-customizer-hint--warning">{blockedReason}</div> : null}
+            {cannotAfford ? <div className="pokemon-move-customizer-hint pokemon-move-customizer-hint--warning">金币不足，保存需要 {MOVE_CUSTOMIZATION_COST} 金币。</div> : null}
+            <div className="pokemon-detail-move-grid">
+              {moveOptions.map(({ key, move, learnLevel, isLegacy }) => {
+                const selected = selectedMoveKeys.includes(key)
+                const powerDisplay = getMovePrimaryEffectDisplay(move)
+                return (
+                  <button
+                    key={`option-${key}`}
+                    type="button"
+                    className={`pokemon-detail-move-card pokemon-move-customizer-option ${selected ? 'pokemon-move-customizer-option--selected' : ''}`}
+                    onClick={() => toggleMove(key)}
+                    disabled={busy || (!selected && selectedMoveKeys.length >= 4) || Boolean(blockedReason)}
+                  >
+                    <div className="pokemon-detail-move-card__top">
+                      <div>
+                        <h4>{move.name}</h4>
+                        <span>{MOVE_CATEGORY_LABELS[move.category] || '招式'} · Lv.{learnLevel || 1}</span>
+                      </div>
+                      <TypeBadge type={move.type} small />
+                    </div>
+                    <div className="pokemon-detail-move-card__meta">
+                      <span>{powerDisplay.label} <b>{powerDisplay.value}</b></span>
+                      <span>MP <b>{getMoveMpCost(move)}</b></span>
+                      <span>{selected ? '已选择' : isLegacy ? '已掌握' : '可学习'}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+
+        <div className="pokemon-detail-actions">
+          <div className="pokemon-detail-action-group pokemon-detail-action-group--manage">
+            <span>保存</span>
+            <div>
+              <button type="button" className="game-soft-button min-h-9 text-xs" onClick={onClose} disabled={busy}>
+                返回详情
+              </button>
+              <button type="button" className="game-primary-button min-h-9 text-xs" onClick={() => onRequestSave?.(selectedMoveKeys)} disabled={saveDisabled}>
+                <i className="fa-solid fa-coins"></i>
+                花费 {MOVE_CUSTOMIZATION_COST} 金币保存
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1079,7 +1937,10 @@ export function TeamScreen({
   onReleaseStorage,
   onDeposit,
   onWithdraw,
-  onSwapWithStorage
+  onSwapWithStorage,
+  onCustomizeMoves,
+  playerGold = 0,
+  moveCustomizationBlockedReason = ''
 }) {
   const [selectedPartyMonsterId, setSelectedPartyMonsterId] = useState(null)
   const [selectedStorageMonsterId, setSelectedStorageMonsterId] = useState(null)
@@ -1087,6 +1948,8 @@ export function TeamScreen({
   const [storageSwapTargetId, setStorageSwapTargetId] = useState(null)
   const [isBusy, setIsBusy] = useState(false)
   const [releaseConfirm, setReleaseConfirm] = useState(null)
+  const [moveCustomizer, setMoveCustomizer] = useState(null)
+  const [moveSaveConfirm, setMoveSaveConfirm] = useState(null)
 
   const normalizeStats = (mon) => {
     if (!mon) return { currentHp: 0, maxHp: 0, currentMp: 0, maxMp: 0 }
@@ -1104,7 +1967,11 @@ export function TeamScreen({
     if (releaseConfirm?.from === 'party' && !team.some((mon) => mon.id === releaseConfirm.monId)) {
       setReleaseConfirm(null)
     }
-  }, [releaseConfirm, selectedPartyMonsterId, team])
+    if (moveCustomizer?.from === 'party' && !team.some((mon) => mon.id === moveCustomizer.monId)) {
+      setMoveCustomizer(null)
+      setMoveSaveConfirm(null)
+    }
+  }, [moveCustomizer, releaseConfirm, selectedPartyMonsterId, team])
 
   useEffect(() => {
     if (selectedStorageMonsterId && !storageBox.some((mon) => mon.id === selectedStorageMonsterId)) {
@@ -1116,7 +1983,11 @@ export function TeamScreen({
     if (releaseConfirm?.from === 'storage' && !storageBox.some((mon) => mon.id === releaseConfirm.monId)) {
       setReleaseConfirm(null)
     }
-  }, [releaseConfirm, selectedStorageMonsterId, storageBox, storageSwapTargetId])
+    if (moveCustomizer?.from === 'storage' && !storageBox.some((mon) => mon.id === moveCustomizer.monId)) {
+      setMoveCustomizer(null)
+      setMoveSaveConfirm(null)
+    }
+  }, [moveCustomizer, releaseConfirm, selectedStorageMonsterId, storageBox, storageSwapTargetId])
 
   const handleMonsterSelect = (monId) => {
     if (selectedPartyMonsterId === monId) {
@@ -1206,6 +2077,35 @@ export function TeamScreen({
     }
   }
 
+  const handleOpenMoveCustomizer = (event, mon, from) => {
+    event.stopPropagation()
+    if (!onCustomizeMoves || isBusy) return
+    setMoveSaveConfirm(null)
+    setMoveCustomizer({
+      monId: mon.id,
+      from,
+      draftMoveKeys: normalizeSelectedMoveKeys(mon.moves)
+    })
+  }
+
+  const handleConfirmMoveCustomization = async () => {
+    if (!moveSaveConfirm || !onCustomizeMoves || isBusy) return
+    setIsBusy(true)
+    try {
+      const success = await onCustomizeMoves(
+        moveSaveConfirm.monId,
+        moveSaveConfirm.moveKeys,
+        moveSaveConfirm.from
+      )
+      if (success) {
+        setMoveSaveConfirm(null)
+        setMoveCustomizer(null)
+      }
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
   const handleSwapChoice = async (partyId) => {
     if (!onSwapWithStorage || !storageSwapTargetId || isBusy) return
     setIsBusy(true)
@@ -1225,9 +2125,19 @@ export function TeamScreen({
   const selectedStorageMonster = !isSwitching ? storageBox.find((mon) => mon.id === selectedStorageMonsterId) : null
   const selectedStats = selectedMonster ? normalizeStats(selectedMonster) : null
   const selectedStorageStats = selectedStorageMonster ? normalizeStats(selectedStorageMonster) : null
-  const selectedMoves = selectedMonster?.moves?.map((moveKey) => MOVES[moveKey]).filter(Boolean) || []
-  const selectedStorageMoves = selectedStorageMonster?.moves?.map((moveKey) => MOVES[moveKey]).filter(Boolean) || []
+  const selectedMoves = selectedMonster?.moves?.map((moveKey) => (
+    MOVES[moveKey] ? { key: moveKey, ...MOVES[moveKey] } : null
+  )).filter(Boolean) || []
+  const selectedStorageMoves = selectedStorageMonster?.moves?.map((moveKey) => (
+    MOVES[moveKey] ? { key: moveKey, ...MOVES[moveKey] } : null
+  )).filter(Boolean) || []
   const canManageRoster = !isSwitching
+  const editingMonster = moveCustomizer?.from === 'storage'
+    ? storageBox.find((mon) => mon.id === moveCustomizer?.monId)
+    : team.find((mon) => mon.id === moveCustomizer?.monId)
+  const moveSavePreviewMonster = moveSaveConfirm?.from === 'storage'
+    ? storageBox.find((mon) => mon.id === moveSaveConfirm?.monId)
+    : team.find((mon) => mon.id === moveSaveConfirm?.monId)
 
   const handleMove = async (event, index, direction) => {
     event.stopPropagation()
@@ -1307,10 +2217,7 @@ export function TeamScreen({
                   if (!canSelect || isBusy) return
                   setIsBusy(true)
                   try {
-                    const switched = await onSelect(mon.id)
-                    if (switched) {
-                      onBack()
-                    }
+                    await onSelect(mon.id)
                   } finally {
                     setIsBusy(false)
                   }
@@ -1490,6 +2397,14 @@ export function TeamScreen({
             <span>管理</span>
             <div>
               <button
+                onClick={(event) => handleOpenMoveCustomizer(event, selectedMonster, 'party')}
+                disabled={!onCustomizeMoves}
+                className="game-primary-button min-h-9 text-xs"
+              >
+                <i className="fa-solid fa-wand-sparkles"></i>
+                自定义技能
+              </button>
+              <button
                 onClick={(event) => handleDepositClick(event, selectedMonster)}
                 disabled={!onDeposit || team.length <= 1 || storageBox.length >= MAX_STORAGE_SIZE}
                 className="game-soft-button min-h-9 text-xs"
@@ -1523,6 +2438,14 @@ export function TeamScreen({
             <span>管理</span>
             <div>
               <button
+                onClick={(event) => handleOpenMoveCustomizer(event, selectedStorageMonster, 'storage')}
+                disabled={!onCustomizeMoves}
+                className="game-primary-button min-h-9 text-xs"
+              >
+                <i className="fa-solid fa-wand-sparkles"></i>
+                自定义技能
+              </button>
+              <button
                 onClick={(event) => handleWithdrawClick(event, selectedStorageMonster)}
                 disabled={!onWithdraw || team.length >= MAX_PARTY_SIZE}
                 className="game-primary-button min-h-9 text-xs"
@@ -1553,6 +2476,35 @@ export function TeamScreen({
           </div>
         </PokemonDetailDialog>
       )}
+      <PokemonMoveCustomizerDialog
+        open={Boolean(moveCustomizer && editingMonster)}
+        monster={editingMonster}
+        draftMoveKeys={moveCustomizer?.draftMoveKeys || []}
+        playerGold={playerGold}
+        blockedReason={moveCustomizationBlockedReason}
+        busy={isBusy}
+        onClose={() => {
+          if (!isBusy) {
+            setMoveSaveConfirm(null)
+            setMoveCustomizer(null)
+          }
+        }}
+        onChange={(nextMoveKeys) => {
+          setMoveCustomizer((current) => (
+            current
+              ? { ...current, draftMoveKeys: normalizeSelectedMoveKeys(nextMoveKeys) }
+              : current
+          ))
+        }}
+        onRequestSave={(nextMoveKeys) => {
+          if (!editingMonster) return
+          setMoveSaveConfirm({
+            monId: editingMonster.id,
+            from: moveCustomizer?.from || 'party',
+            moveKeys: normalizeSelectedMoveKeys(nextMoveKeys)
+          })
+        }}
+      />
       {storageSwapTargetId && (
         <div
           className="game-screen-dialog-overlay game-screen-dialog-overlay--swap"
@@ -1606,6 +2558,48 @@ export function TeamScreen({
         }}
         onConfirm={handleConfirmRelease}
       />
+      <GameConfirmDialog
+        open={Boolean(moveSaveConfirm && moveSavePreviewMonster)}
+        title={`保存 ${moveSavePreviewMonster?.name || '宝可梦'} 的技能方案？`}
+        message={`会消耗 ${MOVE_CUSTOMIZATION_COST} 金币，保存后将替换这只宝可梦当前的技能排列。`}
+        icon="fa-wand-sparkles"
+        confirmLabel="确认保存"
+        cancelLabel="再看看"
+        confirmButtonClassName="game-primary-button"
+        busy={isBusy}
+        onCancel={() => {
+          if (!isBusy) setMoveSaveConfirm(null)
+        }}
+        onConfirm={handleConfirmMoveCustomization}
+      >
+        {moveSavePreviewMonster && (
+          <div className="pokemon-move-customizer-confirm">
+            <div className="pokemon-move-customizer-confirm__block">
+              <span>当前</span>
+              <div>
+                {normalizeSelectedMoveKeys(moveSavePreviewMonster.moves).map((moveKey) => (
+                  <em key={`current-${moveKey}`}>{MOVES[moveKey]?.name || moveKey}</em>
+                ))}
+              </div>
+            </div>
+            <div className="pokemon-move-customizer-confirm__arrow" aria-hidden="true">
+              <i className="fa-solid fa-arrow-right"></i>
+            </div>
+            <div className="pokemon-move-customizer-confirm__block">
+              <span>保存后</span>
+              <div>
+                {normalizeSelectedMoveKeys(moveSaveConfirm?.moveKeys).map((moveKey) => (
+                  <em key={`next-${moveKey}`}>{MOVES[moveKey]?.name || moveKey}</em>
+                ))}
+              </div>
+            </div>
+            <div className="pokemon-move-customizer-confirm__foot">
+              <b><i className="fa-solid fa-coins"></i> {MOVE_CUSTOMIZATION_COST}</b>
+              <span>当前金币 {playerGold}</span>
+            </div>
+          </div>
+        )}
+      </GameConfirmDialog>
     </div>
   )
 }
@@ -1697,6 +2691,7 @@ export function UnifiedBagScreen({
   team = [],
   isBattle = false,
   canUseBattleBalls = true,
+  activeEnemyMon = null,
   addLog
 }) {
   const [selectedItem, setSelectedItem] = useState(null)
@@ -1770,6 +2765,19 @@ export function UnifiedBagScreen({
     const type = inventoryType === 'pokeball' ? 'ball' : inventoryType
     return { ...slot, ...details, inventoryType, type }
   }).filter((item) => item.name)
+
+  const battleCatchChanceByBall = useMemo(() => {
+    if (!isBattle || !activeEnemyMon) return {}
+    const playerAverageLevel = getPlayerAverageLevel(team)
+    return Object.fromEntries(Object.entries(POKEBALLS).map(([ballKey, ball]) => {
+      const rate = calculateCatchRate({
+        target: activeEnemyMon,
+        ballMultiplier: ball.catchRateMultiplier,
+        playerAverageLevel
+      })
+      return [ballKey, Math.round(rate)]
+    }))
+  }, [activeEnemyMon, isBattle, team])
 
   const handleItemClick = async (item) => {
     if (pendingItemTargetIdRef.current) return
@@ -1938,7 +2946,11 @@ export function UnifiedBagScreen({
               : battleGrowthLocked
                 ? '仅战斗外使用'
                 : item.type === 'ball'
-                  ? '用于捕捉宝可梦'
+                  ? Number.isFinite(Number(battleCatchChanceByBall[item.itemKey]))
+                    ? Number(battleCatchChanceByBall[item.itemKey]) >= 100
+                      ? '当前100%（必定成功）'
+                      : `当前约${battleCatchChanceByBall[item.itemKey]}%`
+                    : getPokeballEffectText(item)
                   : item.type === 'expPotion'
                     ? `经验 +${item.expAmount}`
                     : item.type === 'statBoost'
@@ -2175,6 +3187,7 @@ export function BagScreen({
       team={effectiveTeam}
       isBattle={Boolean(activeEnemyMon)}
       canUseBattleBalls={canUsePokeballs}
+      activeEnemyMon={activeEnemyMon}
       addLog={addLog}
     />
   )

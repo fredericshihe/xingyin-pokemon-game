@@ -10,7 +10,12 @@ export const FAST_TRAVEL_STATIONS = Object.freeze({
   GodotMapV2_Graveyard: { x: 18, y: 6, direction: 'right', anchor: 'moon-gate' },
   GodotMapV2_HexRuins: { x: 6, y: 14, direction: 'down', anchor: 'ruin-gate' },
   GodotMapV2_SurvivalRidge: { x: 6, y: 14, direction: 'down', anchor: 'trailhead-camp' },
-  GodotMapV2_BossHighland: { x: 6, y: 14, direction: 'down', anchor: 'summit-gate' }
+  GodotMapV2_BossHighland: { x: 6, y: 14, direction: 'down', anchor: 'summit-gate' },
+  GodotMapV2_FrostDojo: { x: 18, y: 21, direction: 'left', anchor: 'frost-dojo-gate' },
+  GodotMapV2_TideDojo: { x: 18, y: 21, direction: 'left', anchor: 'tide-dojo-gate' },
+  GodotMapV2_IronDojo: { x: 18, y: 21, direction: 'left', anchor: 'iron-dojo-gate' },
+  GodotMapV2_DragonDojo: { x: 20, y: 21, direction: 'left', anchor: 'dragon-dojo-gate' },
+  GodotMapV2_ChampionTower: { x: 19, y: 23, direction: 'left', anchor: 'champion-tower-lobby' }
 })
 
 export const FAST_TRAVEL_STATION_META = Object.freeze({
@@ -85,6 +90,51 @@ export const FAST_TRAVEL_STATION_META = Object.freeze({
     landmark: '高地旗门',
     routeTone: '峰顶星线',
     symbol: 'flag'
+  },
+  GodotMapV2_FrostDojo: {
+    terrain: 'peak',
+    eliteTheme: 'frost',
+    title: '霜镜门前台',
+    placement: '位于折返镜廊入口东侧，霜晶门框与普通地区传送台完全区分。',
+    landmark: '霜镜南门',
+    routeTone: '冰镜试炼线',
+    symbol: 'moon'
+  },
+  GodotMapV2_TideDojo: {
+    terrain: 'lake',
+    eliteTheme: 'tide',
+    title: '深潮门前台',
+    placement: '位于环潮水道入口东侧，以潮柱和水门标记第二馆。',
+    landmark: '深潮南门',
+    routeTone: '深潮航线',
+    symbol: 'water'
+  },
+  GodotMapV2_IronDojo: {
+    terrain: 'ruins',
+    eliteTheme: 'iron',
+    title: '铁壁门前台',
+    placement: '位于三重折角闸门入口东侧，以金属堡垒和信标标记第三馆。',
+    landmark: '铁壁南门',
+    routeTone: '钢轨试炼线',
+    symbol: 'hex'
+  },
+  GodotMapV2_DragonDojo: {
+    terrain: 'ridge',
+    eliteTheme: 'dragon',
+    title: '龙穹门前台',
+    placement: '位于收束龙脊入口东侧，以龙穹拱门和紫晶尖塔标记最终馆。',
+    landmark: '龙穹南门',
+    routeTone: '龙穹终局线',
+    symbol: 'flag'
+  },
+  GodotMapV2_ChampionTower: {
+    terrain: 'champion',
+    eliteTheme: 'champion',
+    title: '星冠塔大厅台',
+    placement: '位于冠军挑战塔大厅东翼，金色星环围绕深色升降核心，保留中央仪式轴线。',
+    landmark: '冠军塔大厅',
+    routeTone: '星冠挑战线',
+    symbol: 'crown'
   }
 })
 
@@ -97,7 +147,12 @@ export const FAST_TRAVEL_WORLD_LAYOUT = Object.freeze({
   GodotMapV2_Graveyard: { x: 632, y: 444, w: 156, h: 96, terrain: 'grave', route: 5 },
   GodotMapV2_HexRuins: { x: 792, y: 322, w: 156, h: 96, terrain: 'ruins', route: 6 },
   GodotMapV2_SurvivalRidge: { x: 908, y: 166, w: 156, h: 96, terrain: 'ridge', route: 7 },
-  GodotMapV2_BossHighland: { x: 904, y: 456, w: 156, h: 96, terrain: 'peak', route: 8 }
+  GodotMapV2_BossHighland: { x: 904, y: 456, w: 156, h: 96, terrain: 'peak', route: 8 },
+  GodotMapV2_FrostDojo: { x: 112, y: 34, w: 156, h: 96, terrain: 'peak', route: 9 },
+  GodotMapV2_TideDojo: { x: 326, y: 34, w: 156, h: 96, terrain: 'lake', route: 10 },
+  GodotMapV2_IronDojo: { x: 540, y: 34, w: 156, h: 96, terrain: 'ruins', route: 11 },
+  GodotMapV2_DragonDojo: { x: 754, y: 34, w: 156, h: 96, terrain: 'ridge', route: 12 },
+  GodotMapV2_ChampionTower: { x: 938, y: 34, w: 156, h: 96, terrain: 'champion', route: 13 }
 })
 
 export const FAST_TRAVEL_ROUTE_LINES = Object.freeze([
@@ -109,7 +164,12 @@ export const FAST_TRAVEL_ROUTE_LINES = Object.freeze([
   [[760, 291], [780, 366]],
   [[770, 491], [780, 366]],
   [[930, 366], [905, 226]],
-  [[930, 366], [910, 501]]
+  [[930, 366], [910, 501]],
+  [[982, 504], [190, 82]],
+  [[190, 82], [404, 82]],
+  [[404, 82], [618, 82]],
+  [[618, 82], [832, 82]],
+  [[832, 82], [1016, 82]]
 ])
 
 export function getFastTravelStation(mapName) {

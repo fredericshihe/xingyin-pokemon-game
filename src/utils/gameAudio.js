@@ -637,6 +637,60 @@ class GameAudioController {
     })
   }
 
+  playMapTouch(kindOrOptions = 'npc') {
+    if (!this.canPlay()) return
+    const options = typeof kindOrOptions === 'string' ? { kind: kindOrOptions } : (kindOrOptions || {})
+    const kind = options.kind || 'npc'
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.006
+
+      if (kind === 'chest') {
+        this.scheduleNoise({ start, duration: 0.045, gain: 0.014, highpass: 520, lowpass: 2400 })
+        this.scheduleTone({ start: start + 0.018, frequency: 493.88, toFrequency: 783.99, duration: 0.06, gain: 0.026, waveform: 'triangle' })
+        this.scheduleTone({ start: start + 0.072, frequency: 987.77, toFrequency: 1318.51, duration: 0.07, gain: 0.018, waveform: 'sine' })
+        return
+      }
+
+      if (kind === 'spring') {
+        this.scheduleTone({ start, frequency: 349.23, toFrequency: 659.25, duration: 0.13, gain: 0.03, waveform: 'sine' })
+        this.scheduleTone({ start: start + 0.065, frequency: 523.25, toFrequency: 987.77, duration: 0.12, gain: 0.022, waveform: 'sine' })
+        this.scheduleTone({ start: start + 0.13, frequency: 783.99, toFrequency: 1174.66, duration: 0.08, gain: 0.014, waveform: 'triangle' })
+        return
+      }
+
+      if (kind === 'trial') {
+        this.scheduleNoise({ start, duration: 0.09, gain: 0.018, highpass: 500, lowpass: 2200 })
+        this.scheduleTone({ start, frequency: 196, toFrequency: 293.66, duration: 0.11, gain: 0.038, waveform: 'sawtooth', filterType: 'lowpass', filterFrequency: 1100 })
+        this.scheduleTone({ start: start + 0.08, frequency: 392, toFrequency: 659.25, duration: 0.11, gain: 0.034, waveform: 'triangle' })
+        this.scheduleTone({ start: start + 0.16, frequency: 783.99, toFrequency: 1046.5, duration: 0.08, gain: 0.022, waveform: 'sine' })
+        return
+      }
+
+      if (kind === 'boss') {
+        this.scheduleTone({ start, frequency: 246.94, toFrequency: 329.63, duration: 0.1, gain: 0.036, waveform: 'square', filterType: 'lowpass', filterFrequency: 1400 })
+        this.scheduleTone({ start: start + 0.07, frequency: 329.63, toFrequency: 493.88, duration: 0.1, gain: 0.028, waveform: 'triangle' })
+        this.scheduleNoise({ start: start + 0.025, duration: 0.06, gain: 0.012, highpass: 700, lowpass: 2600 })
+        return
+      }
+
+      if (kind === 'wild-alert') {
+        this.scheduleNoise({ start, duration: 0.08, gain: 0.018, highpass: 1100, lowpass: 4800 })
+        this.scheduleTone({ start: start + 0.018, frequency: 698.46, toFrequency: 1046.5, duration: 0.08, gain: 0.03, waveform: 'triangle' })
+        this.scheduleTone({ start: start + 0.085, frequency: 1046.5, toFrequency: 1318.51, duration: 0.07, gain: 0.018, waveform: 'sine' })
+        return
+      }
+
+      if (kind === 'grass') {
+        this.scheduleNoise({ start, duration: 0.065, gain: 0.026, highpass: 760, lowpass: 4200 })
+        this.scheduleTone({ start: start + 0.012, frequency: 164.81, toFrequency: 233.08, duration: 0.055, gain: 0.018, waveform: 'triangle' })
+        return
+      }
+
+      this.scheduleTone({ start, frequency: 440, toFrequency: 554.37, duration: 0.06, gain: 0.026, waveform: 'triangle' })
+      this.scheduleTone({ start: start + 0.046, frequency: 587.33, toFrequency: 659.25, duration: 0.055, gain: 0.02, waveform: 'square' })
+    })
+  }
+
   playEncounter({ trainer = false, boss = false, challenge = false, rare = false } = {}) {
     if (!this.canPlay()) return
     this.withReadyContext((context) => {

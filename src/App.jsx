@@ -55,6 +55,28 @@ function App() {
   const [StudentGameComponent, setStudentGameComponent] = useState(null)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+
+    const unlockAudioOnGesture = () => {
+      void gameAudio.unlock().then((unlocked) => {
+        if (unlocked && typeof gameBgm?.resumeAfterUnlock === 'function') {
+          void gameBgm.resumeAfterUnlock()
+        }
+      })
+    }
+
+    window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true, capture: true })
+    window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true, capture: true })
+    window.addEventListener('keydown', unlockAudioOnGesture, { capture: true })
+
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudioOnGesture, { capture: true })
+      window.removeEventListener('touchstart', unlockAudioOnGesture, { capture: true })
+      window.removeEventListener('keydown', unlockAudioOnGesture, { capture: true })
+    }
+  }, [])
+
+  useEffect(() => {
     void import('./components/Auth/Login')
     void import('./components/Auth/Register')
     warmImageAssets(AUTH_LOCAL_IMAGE_ASSETS, { concurrency: 4, timeoutMs: 3500 })

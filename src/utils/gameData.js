@@ -96,6 +96,20 @@ Object.assign(MOVES, Object.fromEntries(
 ))
 
 const FALLBACK_ZERO_COST_MOVES = ['tackle', 'scratch', 'quickattack', 'pound', 'peck'];
+const BASIC_NORMAL_FILLER_MOVES = new Set(['tackle', 'scratch', 'quickattack', 'pound']);
+const HIDDEN_EXCLUSIVE_BATTLE_FALLBACK_MONSTER_IDS = new Set([
+  189, 190, 191,
+  192, 193, 194,
+  195, 196, 197,
+  198, 199, 200,
+  201, 202, 203,
+  204, 205, 206,
+  207, 208, 209,
+]);
+const HIDDEN_EXCLUSIVE_ZERO_COST_MOVE_BY_MONSTER_ID = {
+  202: 'shadow_sneak',
+  207: 'gust',
+};
 
 const uniqueMoveKeys = (moves = []) => {
   const seen = new Set();
@@ -105,6 +119,10 @@ const uniqueMoveKeys = (moves = []) => {
     return true;
   });
 };
+
+export const normalizeMoveLoadoutMode = (value) => (
+  value === 'custom' || value === 'wild' ? value : 'balanced'
+);
 
 export const getLocalLearnLevelByMove = (monster) => {
   const levels = {};
@@ -135,23 +153,29 @@ export const getSupplementalLearnLevelByMove = (monster) => {
 export const getLearnLevelByMove = (monster) => {
   const officialLearnLevelByMove = getOfficialLearnLevelByMove(monster);
   const supplementalLearnLevelByMove = getSupplementalLearnLevelByMove(monster);
+  if (Object.keys(officialLearnLevelByMove).length > 0) {
+    return {
+      ...officialLearnLevelByMove,
+      ...supplementalLearnLevelByMove,
+    };
+  }
   return {
-    ...(
-      Object.keys(officialLearnLevelByMove).length > 0
-        ? {}
-        : getLocalLearnLevelByMove(monster)
-    ),
-    ...officialLearnLevelByMove,
+    ...getLocalLearnLevelByMove(monster),
     ...supplementalLearnLevelByMove,
   };
 };
 
 export const getMoveAvailabilityLevel = (monster, moveKey) => {
-  const explicitLevel = getLearnLevelByMove(monster)[moveKey];
-  if (Number.isInteger(Number(explicitLevel))) return Number(explicitLevel);
   const move = MOVES[moveKey];
   if (!move) return Infinity;
-  return move.cost === 0 ? 1 : (move.unlockLevel || 1);
+  const progressionFloor = getMoveProgressionFloor(moveKey);
+  const explicitLevel = getLearnLevelByMove(monster)[moveKey];
+  if (Number.isInteger(Number(explicitLevel))) {
+    return Math.max(progressionFloor, Number(explicitLevel));
+  }
+  return move.cost === 0
+    ? progressionFloor
+    : Math.max(progressionFloor, move.unlockLevel || 1);
 };
 
 const moveMatchesType = (monster, moveKey) => {
@@ -221,6 +245,9 @@ const isDamagingMoveKey = (moveKey) => {
 };
 
 const hasDamagingMove = (moveKeys = []) => moveKeys.some((moveKey) => isDamagingMoveKey(moveKey));
+const hasZeroCostDamagingMove = (moveKeys = []) => moveKeys.some((moveKey) => (
+  isDamagingMoveKey(moveKey) && MOVES[moveKey]?.cost === 0
+));
 
 const hasAffordableDamagingMove = (moveKeys = []) => moveKeys.some((moveKey) => {
   const move = MOVES[moveKey];
@@ -228,6 +255,21 @@ const hasAffordableDamagingMove = (moveKeys = []) => moveKeys.some((moveKey) => 
 });
 
 const hasZeroCostMove = (moveKeys = []) => moveKeys.some((moveKey) => MOVES[moveKey]?.cost === 0);
+
+const isBasicNormalFillerMove = (moveKey) => BASIC_NORMAL_FILLER_MOVES.has(moveKey);
+
+const isPriorityProgressionLockedMove = (moveKey) => {
+  const move = MOVES[moveKey];
+  return Boolean(move && Number(move.priority) > 0 && Number(move.power) > 0);
+};
+
+const getMoveProgressionFloor = (moveKey) => {
+  const move = MOVES[moveKey];
+  if (!move) return Infinity;
+  return isPriorityProgressionLockedMove(moveKey)
+    ? Math.max(1, Math.trunc(Number(move.unlockLevel) || 1))
+    : 1;
+};
 
 const getBestDamagingMovePower = (moveKeys = []) => moveKeys
   .map((moveKey) => Number(MOVES[moveKey]?.power) || 0)
@@ -248,6 +290,33 @@ const getMinimumMoveCountForLevel = (level) => {
   return 1;
 };
 
+const ICONIC_SPARSE_BATTLE_MOVE_COUNT_BY_MONSTER_ID = {
+  16: 3,  // 鲤鱼王
+  188: 1, // 百变怪
+};
+const WILD_FULL_MOVE_MIN_LEVEL = 5;
+const WILD_BACKFILL_BUFFER_BY_LEVEL = [
+  [8, 10],
+  [12, 8],
+  [20, 6],
+  [100, 4],
+];
+
+const getTargetBattleMoveCount = (monster, level = 1) => {
+  const explicitCount = ICONIC_SPARSE_BATTLE_MOVE_COUNT_BY_MONSTER_ID[Number(monster?.id)];
+  if (Number.isInteger(explicitCount)) return Math.max(1, Math.min(4, explicitCount));
+  if (level <= 0) return 1;
+  return 4;
+};
+
+const getNearFutureMoveBuffer = (level) => {
+  if (level <= 1) return 4;
+  if (level <= 5) return 8;
+  if (level <= 10) return 3;
+  if (level <= 16) return 2;
+  return 0;
+};
+
 const getSupplementalBaseMoveLevel = (monster, moveKey) => {
   const move = MOVES[moveKey];
   if (!move) return Infinity;
@@ -263,24 +332,26 @@ const getSupplementalBaseMoveLevel = (monster, moveKey) => {
     move.statChanges ||
     move.effect;
 
-  let level = 28;
+  let level = 24;
   if (power > 0 && cost === 0) {
-    level = moveMatchesType(monster, moveKey) ? 1 : 8;
+    level = moveMatchesType(monster, moveKey) ? 1 : 5;
   } else if (power > 0 && cost <= 5 && power <= 50) {
-    level = moveMatchesType(monster, moveKey) ? 5 : 8;
+    level = moveMatchesType(monster, moveKey) ? 3 : 5;
   } else if (statusLike) {
-    level = 8;
+    level = 5;
   } else if (power > 0 && power <= 70 && cost <= 8) {
-    level = 14;
+    level = 9;
   } else if (power > 0 && power <= 90 && cost <= 12) {
-    level = 20;
+    level = 15;
   } else if (power > 95 || cost >= 16) {
-    level = 32;
+    level = 26;
   }
 
-  if (moveMatchesType(monster, moveKey) && power > 0 && power <= 50) level -= 2;
-  if ((move.priority || 0) > 0 && power > 0) level -= 2;
-  if (move.effect === 'heal') level = Math.max(level, 8);
+  if (moveMatchesType(monster, moveKey) && power > 0 && power <= 50) level -= 1;
+  if (isPriorityProgressionLockedMove(moveKey)) {
+    level = Math.max(level, getMoveProgressionFloor(moveKey));
+  }
+  if (move.effect === 'heal') level = Math.max(level, 6);
 
   return Math.max(1, Math.min(50, level));
 };
@@ -331,71 +402,31 @@ const getLevelMoveCandidates = (monster, level = 1) => {
     const move = MOVES[moveKey];
     return move && getMoveAvailabilityLevel(monster, moveKey) <= safeLevel;
   });
-
-  if (hasOfficialLearnset) {
-    const designMinimum = getMinimumMoveCountForLevel(safeLevel);
-    const supplementalLearnLevelByMove = getSupplementalLearnLevelByMove(monster);
-    const supplementalMoves = rawBaseMoves
-      .filter((moveKey) => MOVES[moveKey] && !eligibleMoves.includes(moveKey))
-      .filter((moveKey) => {
-        const officialLevel = officialLearnLevelByMove[moveKey];
-        const hasExplicitSupplementalLevel = supplementalLearnLevelByMove[moveKey] !== undefined;
-        if (!hasExplicitSupplementalLevel && MOVES[moveKey]?.effect === 'heal') return false;
-        const supplementalLevel = hasExplicitSupplementalLevel
-          ? supplementalLearnLevelByMove[moveKey]
-          : getSupplementalBaseMoveLevel(monster, moveKey);
-        return officialLevel !== undefined && supplementalLevel <= safeLevel && officialLevel > supplementalLevel;
-      })
-      .sort((a, b) => getSupplementalMoveRank(monster, a) - getSupplementalMoveRank(monster, b));
-
-    const supplementalSelected = [];
-    const maybeTake = (predicate) => {
-      const moveKey = supplementalMoves.find((candidate) => !supplementalSelected.includes(candidate) && predicate(candidate));
-      if (moveKey) supplementalSelected.push(moveKey);
-    };
-
-    if (!hasDamagingMove(eligibleMoves)) {
-      maybeTake((moveKey) => isDamagingMoveKey(moveKey));
-    }
-    if (eligibleMoves.length < designMinimum) {
-      while (eligibleMoves.length + supplementalSelected.length < designMinimum) {
-        maybeTake(() => true);
-        if (supplementalSelected.length >= supplementalMoves.length) break;
-      }
-    }
-    if (!hasAffordableDamagingMove([...eligibleMoves, ...supplementalSelected])) {
-      maybeTake((moveKey) => isDamagingMoveKey(moveKey) && (Number(MOVES[moveKey]?.cost) || 0) <= 8);
-    }
-    if (
-      supplementalSelected.length < supplementalMoves.length &&
-      (eligibleMoves.filter((moveKey) => isDamagingMoveKey(moveKey)).length < 2 || getBestDamagingMovePower(eligibleMoves) <= 40)
-    ) {
-      maybeTake((moveKey) => {
-        const move = MOVES[moveKey];
-        return isDamagingMoveKey(moveKey) && (Number(move?.power) || 0) <= 65 && (Number(move?.cost) || 0) <= 8;
-      });
-    }
-
-    if (supplementalSelected.length > 0) {
-      availableMoves = uniqueMoveKeys([...availableMoves, ...supplementalSelected]);
-      eligibleMoves = uniqueMoveKeys([...eligibleMoves, ...supplementalSelected]);
-    }
-  }
+  let emergencyFallbackMove = null;
 
   const needsEmergencyFallback = eligibleMoves.length === 0 || !hasDamagingMove(eligibleMoves);
   if (needsEmergencyFallback) {
     const emergencyFallbackPool = hasOfficialLearnset
-      ? uniqueMoveKeys([...Object.keys(officialLearnLevelByMove), ...Object.keys(getSupplementalLearnLevelByMove(monster))])
+      ? uniqueMoveKeys([
+        ...Object.keys(officialLearnLevelByMove),
+        ...Object.keys(getSupplementalLearnLevelByMove(monster)),
+        ...rawBaseMoves,
+      ])
       : rawBaseMoves;
     const emergencyFallback = getEmergencyFallbackMove(emergencyFallbackPool);
     if (MOVES[emergencyFallback] && (!hasOfficialLearnset || emergencyFallbackPool.includes(emergencyFallback))) {
+      emergencyFallbackMove = emergencyFallback;
       availableMoves = uniqueMoveKeys([...availableMoves, emergencyFallback]);
       eligibleMoves = uniqueMoveKeys([...eligibleMoves, emergencyFallback]);
     }
   }
 
-  return { safeLevel, baseMoves, availableMoves, eligibleMoves };
+  return { safeLevel, baseMoves, availableMoves, eligibleMoves, emergencyFallbackMove };
 };
+
+export const getEmergencyFallbackMoveForPokemonLevel = (monster, level = 1) => (
+  getLevelMoveCandidates(monster, level).emergencyFallbackMove
+);
 
 const getEmergencyFallbackMove = (baseMoves = []) => (
   FALLBACK_ZERO_COST_MOVES.find((moveKey) => MOVES[moveKey] && baseMoves.includes(moveKey)) ||
@@ -405,6 +436,45 @@ const getEmergencyFallbackMove = (baseMoves = []) => (
   FALLBACK_ZERO_COST_MOVES.find((moveKey) => MOVES[moveKey]) ||
   'tackle'
 );
+
+const flattenLearnsetMoves = (learnset = {}) => (
+  Object.values(learnset || {}).flatMap((entry) => (Array.isArray(entry) ? entry : [entry]))
+);
+
+export const getHiddenExclusiveZeroCostFallbackMove = (monster) => {
+  if (!HIDDEN_EXCLUSIVE_BATTLE_FALLBACK_MONSTER_IDS.has(Number(monster?.id))) return null;
+
+  const configuredMove = HIDDEN_EXCLUSIVE_ZERO_COST_MOVE_BY_MONSTER_ID[Number(monster?.id)];
+  const candidates = uniqueMoveKeys([
+    configuredMove,
+    ...(monster?.moves || []),
+    ...flattenLearnsetMoves(monster?.supplementalLearnset),
+    ...flattenLearnsetMoves(monster?.learnset),
+    ...FALLBACK_ZERO_COST_MOVES,
+  ].filter(Boolean));
+  const zeroCostDamagingMoves = candidates.filter((moveKey) => (
+    isDamagingMoveKey(moveKey) && MOVES[moveKey]?.cost === 0
+  ));
+
+  return (
+    zeroCostDamagingMoves.find((moveKey) => moveMatchesType(monster, moveKey)) ||
+    zeroCostDamagingMoves.find((moveKey) => !isBasicNormalFillerMove(moveKey)) ||
+    zeroCostDamagingMoves[0] ||
+    null
+  );
+};
+
+const ensureHiddenExclusiveZeroCostMove = (monster, moves = [], targetMoveCount = 4) => {
+  const selected = uniqueMoveKeys(moves).slice(0, 4);
+  if (hasZeroCostDamagingMove(selected)) return selected;
+
+  const fallbackMove = getHiddenExclusiveZeroCostFallbackMove(monster);
+  if (!fallbackMove) return selected;
+
+  const safeTargetCount = Math.max(1, Math.min(4, Math.trunc(Number(targetMoveCount)) || 4));
+  return uniqueMoveKeys([fallbackMove, ...selected.filter((moveKey) => moveKey !== fallbackMove)])
+    .slice(0, Math.max(safeTargetCount, Math.min(4, selected.length + 1)));
+};
 
 const getPreferredOpeningMove = (monster, baseMoves, eligibleMoves, level = 1) => {
   const eligibleZeroCostMoves = eligibleMoves.filter((moveKey) => MOVES[moveKey]?.cost === 0);
@@ -428,6 +498,167 @@ const backfillMoveScore = (monster, moveKey, level) => {
   return selectionMoveScore(monster, moveKey, level) - lateMovePenalty - heavyCostPenalty;
 };
 
+const getGeneratedMoveBackfillBuffer = (level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  return WILD_BACKFILL_BUFFER_BY_LEVEL.find(([maxLevel]) => safeLevel <= maxLevel)?.[1] || 4;
+};
+
+const getGeneratedMoveReferenceLevel = (monster, moveKey) => {
+  const move = MOVES[moveKey];
+  if (!move) return Infinity;
+  const learnLevel = getLearnLevelByMove(monster)[moveKey];
+  if (Number.isInteger(Number(learnLevel))) {
+    return Math.max(getMoveAvailabilityLevel(monster, moveKey), Number(learnLevel));
+  }
+  if ((monster?.moves || []).includes(moveKey)) {
+    return Math.max(getMoveAvailabilityLevel(monster, moveKey), getSupplementalBaseMoveLevel(monster, moveKey));
+  }
+  return getMoveAvailabilityLevel(monster, moveKey);
+};
+
+const isGeneratedBattleBackfillMoveReasonable = (monster, moveKey, level = 1) => {
+  const move = MOVES[moveKey];
+  if (!move) return false;
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const referenceLevel = getGeneratedMoveReferenceLevel(monster, moveKey);
+  if (!Number.isFinite(referenceLevel)) return false;
+  if (referenceLevel > safeLevel + getGeneratedMoveBackfillBuffer(safeLevel)) return false;
+  if (isPriorityProgressionLockedMove(moveKey) && getMoveAvailabilityLevel(monster, moveKey) > safeLevel) return false;
+
+  const power = Number(move.power) || 0;
+  const cost = Number(move.cost) || 0;
+  if (safeLevel <= 8 && power > 70) return false;
+  if (safeLevel <= 12 && (power > 85 || cost > 12)) return false;
+  if (safeLevel <= 20 && (power > 95 || cost > 16)) return false;
+  if (move.effect === 'heal' && safeLevel < 12) return false;
+  return true;
+};
+
+const generatedBattleBackfillMoveScore = (monster, moveKey, level = 1) => {
+  const move = MOVES[moveKey];
+  if (!move) return -Infinity;
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const referenceLevel = getGeneratedMoveReferenceLevel(monster, moveKey);
+  const levelGap = Math.max(0, referenceLevel - safeLevel);
+  const freeMoveBonus = move.cost === 0 ? 14 : 0;
+  const sameTypeBonus = moveMatchesType(monster, moveKey) ? 8 : 0;
+  const earlyPriorityPenalty = (
+    isPriorityProgressionLockedMove(moveKey) &&
+    getMoveAvailabilityLevel(monster, moveKey) > safeLevel
+  ) ? 180 : 0;
+  return selectionMoveScore(monster, moveKey, safeLevel) + freeMoveBonus + sameTypeBonus - levelGap * 10 - earlyPriorityPenalty;
+};
+
+const getGeneratedBattleTargetMoveCount = (monster, level = 1, currentMoveCount = 0) => {
+  const currentCount = Math.max(0, Math.trunc(Number(currentMoveCount)) || 0);
+  return Math.max(1, Math.min(4, currentCount || 1));
+};
+
+const getGeneratedBattleMoveCandidates = (monster, level = 1, preferredCandidates = [], {
+  includeEvolutionCarryover = true,
+  includeReasonableFuture = true,
+} = {}) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const sourceMoves = uniqueMoveKeys([
+    ...(Array.isArray(preferredCandidates) ? preferredCandidates : []),
+    ...getMoveKeysAvailableForMonsterLevel(monster, safeLevel),
+    ...(includeEvolutionCarryover ? getEvolutionCarryoverMovesForPokemonLevel(monster, safeLevel) : []),
+    ...(monster?.moves || []),
+    ...Object.keys(getLearnLevelByMove(monster)),
+  ]);
+
+  return sourceMoves
+    .filter((moveKey) => (
+      includeReasonableFuture
+        ? isGeneratedBattleBackfillMoveReasonable(monster, moveKey, safeLevel)
+        : getMoveKeysAvailableForMonsterLevel(monster, safeLevel).includes(moveKey)
+    ))
+    .sort((a, b) => generatedBattleBackfillMoveScore(monster, b, safeLevel) - generatedBattleBackfillMoveScore(monster, a, safeLevel));
+};
+
+const getGeneratedBattleLastResortCandidates = (monster, level = 1, preferredCandidates = [], {
+  includeEvolutionCarryover = true,
+} = {}) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  return uniqueMoveKeys([
+    ...(Array.isArray(preferredCandidates) ? preferredCandidates : []),
+    ...getMoveKeysAvailableForMonsterLevel(monster, safeLevel),
+    ...(includeEvolutionCarryover ? getEvolutionCarryoverMovesForPokemonLevel(monster, safeLevel) : []),
+    ...(monster?.moves || []),
+    ...Object.keys(getLearnLevelByMove(monster)),
+  ])
+    .filter((moveKey) => MOVES[moveKey])
+    .sort((a, b) => generatedBattleBackfillMoveScore(monster, b, safeLevel) - generatedBattleBackfillMoveScore(monster, a, safeLevel));
+};
+
+const replaceRedundantBasicFillerMoves = (monster, moves = [], candidates = [], level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const selected = uniqueMoveKeys(moves).slice(0, 4);
+  const basicIndexes = selected
+    .map((moveKey, index) => ({ moveKey, index }))
+    .filter(({ moveKey }) => isBasicNormalFillerMove(moveKey));
+  if (basicIndexes.length <= 1) return selected;
+
+  const replacements = candidates
+    .filter((moveKey) => (
+      MOVES[moveKey] &&
+      !selected.includes(moveKey) &&
+      !isBasicNormalFillerMove(moveKey)
+    ))
+    .sort((a, b) => generatedBattleBackfillMoveScore(monster, b, safeLevel) - generatedBattleBackfillMoveScore(monster, a, safeLevel));
+
+  const nextMoves = [...selected];
+  for (const { index } of basicIndexes.slice(1).reverse()) {
+    const replacement = replacements.find((moveKey) => !nextMoves.includes(moveKey));
+    if (!replacement) break;
+    nextMoves[index] = replacement;
+  }
+
+  return uniqueMoveKeys(nextMoves).slice(0, 4);
+};
+
+const finalizeGeneratedBattleMoves = (monster, moves = [], level = 1, preferredCandidates = [], {
+  targetMoveCount = null,
+  backfill = true,
+  includeEvolutionCarryover = true,
+} = {}) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const selected = uniqueMoveKeys(moves);
+  const targetCount = Math.max(
+    1,
+    Math.min(
+      4,
+      Math.trunc(Number(targetMoveCount)) || getGeneratedBattleTargetMoveCount(monster, safeLevel, selected.length)
+    )
+  );
+  const candidates = getGeneratedBattleMoveCandidates(monster, safeLevel, preferredCandidates, {
+    includeEvolutionCarryover,
+    includeReasonableFuture: false,
+  });
+  const nextMoves = selected.slice(0, 4);
+
+  if (backfill) {
+    for (const moveKey of candidates) {
+      if (nextMoves.length >= targetCount) break;
+      if (!nextMoves.includes(moveKey)) nextMoves.push(moveKey);
+    }
+  }
+
+  const dedupedBasicMoves = replaceRedundantBasicFillerMoves(monster, nextMoves, candidates, safeLevel);
+  if (backfill && dedupedBasicMoves.length < targetCount) {
+    for (const moveKey of candidates) {
+      if (dedupedBasicMoves.length >= targetCount) break;
+      if (!dedupedBasicMoves.includes(moveKey)) dedupedBasicMoves.push(moveKey);
+    }
+  }
+
+  return ensureHiddenExclusiveZeroCostMove(
+    monster,
+    uniqueMoveKeys(dedupedBasicMoves).slice(0, targetCount),
+    targetCount
+  );
+};
+
 const getPreferredBattleMovesForLevel = (monster, eligibleMoves, fallbackMove, safeLevel) => {
   const preferredBattleMoves = uniqueMoveKeys(Array.isArray(monster?.preferredBattleMoves) ? monster.preferredBattleMoves : []);
   if (preferredBattleMoves.length === 0) return null;
@@ -439,14 +670,30 @@ const getPreferredBattleMovesForLevel = (monster, eligibleMoves, fallbackMove, s
     .filter((moveKey) => !prioritized.includes(moveKey))
     .sort((a, b) => selectionMoveScore(monster, b, safeLevel) - selectionMoveScore(monster, a, safeLevel));
 
-  return uniqueMoveKeys([...prioritized, fallbackMove, ...remaining]).slice(0, 4);
+  const shouldPinZeroCostFallback = (
+    HIDDEN_EXCLUSIVE_BATTLE_FALLBACK_MONSTER_IDS.has(Number(monster?.id)) &&
+    MOVES[fallbackMove]?.cost === 0 &&
+    !prioritized.some((moveKey) => MOVES[moveKey]?.cost === 0)
+  );
+
+  return uniqueMoveKeys(
+    shouldPinZeroCostFallback
+      ? [fallbackMove, ...prioritized, ...remaining]
+      : [...prioritized, fallbackMove, ...remaining]
+  ).slice(0, 4);
 };
 
 export const getBalancedMovesForLevel = (monster, level = 1) => {
   const { safeLevel, baseMoves, eligibleMoves } = getLevelMoveCandidates(monster, level);
   const fallbackMove = getPreferredOpeningMove(monster, baseMoves, eligibleMoves, safeLevel);
   const preferredBattleMoves = getPreferredBattleMovesForLevel(monster, eligibleMoves, fallbackMove, safeLevel);
-  if (preferredBattleMoves) return preferredBattleMoves;
+  const balancedCandidates = uniqueMoveKeys([...eligibleMoves, fallbackMove].filter(Boolean));
+  const targetMoveCount = getGeneratedBattleTargetMoveCount(monster, safeLevel, balancedCandidates.length);
+  if (preferredBattleMoves) {
+    return getEvolutionCarryoverRepairedMovesForPokemonLevel(monster, finalizeGeneratedBattleMoves(monster, preferredBattleMoves, safeLevel, balancedCandidates, {
+      targetMoveCount,
+    }), safeLevel);
+  }
   const selected = [];
 
   if (MOVES[fallbackMove]) selected.push(fallbackMove);
@@ -463,7 +710,7 @@ export const getBalancedMovesForLevel = (monster, level = 1) => {
 
   const desiredMoveCount = Math.min(
     4,
-    getMinimumMoveCountForLevel(safeLevel),
+    getTargetBattleMoveCount(monster, safeLevel),
     uniqueMoveKeys([...eligibleMoves, fallbackMove]).length
   );
   eligibleMoves
@@ -473,15 +720,23 @@ export const getBalancedMovesForLevel = (monster, level = 1) => {
       if (selected.length < desiredMoveCount) selected.push(moveKey);
     });
 
-  return uniqueMoveKeys(selected).slice(0, 4);
+  return getEvolutionCarryoverRepairedMovesForPokemonLevel(monster, finalizeGeneratedBattleMoves(monster, selected, safeLevel, balancedCandidates, {
+    targetMoveCount,
+  }), safeLevel);
 };
 
 export const getMoveKeysAvailableForMonsterLevel = (monster, level = 1, { includeEmergencyFallback = true } = {}) => {
-  const { baseMoves, eligibleMoves } = getLevelMoveCandidates(monster, level);
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const { baseMoves, eligibleMoves } = getLevelMoveCandidates(monster, safeLevel);
   const fallbackMove = includeEmergencyFallback
     ? (eligibleMoves.length === 0 ? getEmergencyFallbackMove(baseMoves) : null)
     : null;
-  return uniqueMoveKeys([...eligibleMoves, fallbackMove].filter(Boolean));
+  return uniqueMoveKeys([
+    ...eligibleMoves,
+    fallbackMove,
+    ...getEvolutionCarryoverMovesForPokemonLevel(monster, safeLevel),
+    getHiddenExclusiveZeroCostFallbackMove(monster),
+  ].filter(Boolean));
 };
 
 export const isMoveValidForPokemonLevel = (monster, moveKey, level = 1) => (
@@ -493,31 +748,210 @@ export const normalizeMovesForPokemonLevel = (monster, moves = [], level = 1, {
   backfill = true,
   preferBalanced = false,
   preferBalancedWhenInvalid = false,
+  loadoutMode = normalizeMoveLoadoutMode(monster?.moveLoadoutMode),
 } = {}) => {
   const balancedMoves = getBalancedMovesForLevel(monster, level);
   const rawKnownMoves = Array.isArray(moves) ? moves : [];
   const knownMoves = uniqueMoveKeys(rawKnownMoves);
   const availableMoveKeys = new Set(getMoveKeysAvailableForMonsterLevel(monster, level));
+
+  if (loadoutMode === 'custom') {
+    return knownMoves.length > 0 ? knownMoves.slice(0, 4) : balancedMoves.slice(0, 4);
+  }
+  if (loadoutMode === 'wild') {
+    const wildMoves = knownMoves.length > 0 ? knownMoves : getWildMovesForPokemonLevel(monster, level);
+    return finalizeGeneratedBattleMoves(monster, wildMoves, level, wildMoves, {
+      targetMoveCount: getGeneratedBattleTargetMoveCount(monster, level, wildMoves.length),
+      backfill,
+    });
+  }
+
   const validKnownMoves = knownMoves.filter((moveKey) => availableMoveKeys.has(moveKey));
   const hasInvalidMoves = rawKnownMoves.length !== knownMoves.length || validKnownMoves.length !== knownMoves.length;
   const needsZeroCostBackfill = !validKnownMoves.some((moveKey) => MOVES[moveKey]?.cost === 0);
-  const shouldBackfill = backfill || validKnownMoves.length === 0 || needsZeroCostBackfill;
+  const hasIncompleteMoveSet = validKnownMoves.length < balancedMoves.length;
+  const shouldBackfill = backfill || validKnownMoves.length === 0 || needsZeroCostBackfill || hasIncompleteMoveSet;
   const fillerMoves = shouldBackfill ? balancedMoves : [];
-  const shouldPreferBalanced = preferBalanced || (preferBalancedWhenInvalid && hasInvalidMoves);
+  const shouldPreferBalanced = preferBalanced || (preferBalancedWhenInvalid && (hasInvalidMoves || hasIncompleteMoveSet));
 
-  return uniqueMoveKeys(
+  return finalizeGeneratedBattleMoves(monster, uniqueMoveKeys(
     shouldPreferBalanced
       ? [...fillerMoves, ...validKnownMoves]
       : [...validKnownMoves, ...fillerMoves]
+  ), level, [...balancedMoves, ...validKnownMoves], {
+    targetMoveCount: getGeneratedBattleTargetMoveCount(monster, level, balancedMoves.length),
+    backfill: shouldBackfill,
+  });
+};
+
+export const getEvolutionPreservedMovesForPokemonLevel = (monster, moves = [], level = 1, {
+  loadoutMode = normalizeMoveLoadoutMode(monster?.moveLoadoutMode),
+} = {}) => {
+  const knownMoves = uniqueMoveKeys(Array.isArray(moves) ? moves : []);
+  const balancedMoves = getBalancedMovesForLevel(monster, level);
+
+  if (loadoutMode === 'custom') {
+    return knownMoves.length > 0 ? knownMoves.slice(0, 4) : balancedMoves.slice(0, 4);
+  }
+  if (loadoutMode === 'wild') {
+    const wildMoves = knownMoves.length > 0 ? knownMoves : getWildMovesForPokemonLevel(monster, level);
+    return finalizeGeneratedBattleMoves(monster, wildMoves, level, wildMoves, {
+      targetMoveCount: getGeneratedBattleTargetMoveCount(monster, level, wildMoves.length),
+    });
+  }
+
+  return finalizeGeneratedBattleMoves(monster, [...knownMoves, ...balancedMoves], level, [...knownMoves, ...balancedMoves], {
+    targetMoveCount: getGeneratedBattleTargetMoveCount(monster, level, balancedMoves.length),
+  });
+};
+
+const getLevelEvolutionBranches = (sourceMonster) => [
+  sourceMonster?.evolvesTo,
+  ...(Array.isArray(sourceMonster?.alternateEvolutions) ? sourceMonster.alternateEvolutions : []),
+].filter((branch) => branch && Number.isInteger(Number(branch.level)));
+
+const evolutionCarryoverMovesCache = new Map();
+
+export const getEvolutionCarryoverMovesForPokemonLevel = (monster, level = 1) => {
+  const targetId = Number(monster?.id);
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  if (!Number.isInteger(targetId)) return [];
+
+  const cacheKey = `${targetId}:${safeLevel}`;
+  if (evolutionCarryoverMovesCache.has(cacheKey)) {
+    return evolutionCarryoverMovesCache.get(cacheKey);
+  }
+
+  evolutionCarryoverMovesCache.set(cacheKey, []);
+  const carryoverMoves = uniqueMoveKeys(
+    MONSTERS.flatMap((sourceMonster) => (
+      getLevelEvolutionBranches(sourceMonster)
+        .filter((branch) => Number(branch.targetId) === targetId && Number(branch.level) <= safeLevel)
+        .flatMap((branch) => getBalancedMovesForLevel(sourceMonster, Number(branch.level)))
+    ))
   ).slice(0, 4);
+  evolutionCarryoverMovesCache.set(cacheKey, carryoverMoves);
+  return carryoverMoves;
+};
+
+export const getUnifiedMoveSourceKeysForPokemonLevel = (monster, level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  return uniqueMoveKeys([
+    ...getMoveKeysAvailableForMonsterLevel(monster, safeLevel),
+    ...getEvolutionCarryoverMovesForPokemonLevel(monster, safeLevel),
+    ...(monster?.moves || []),
+    ...Object.keys(getLearnLevelByMove(monster)),
+  ]);
+};
+
+export const getEvolutionCarryoverRepairedMovesForPokemonLevel = (monster, moves = [], level = 1, {
+  loadoutMode = normalizeMoveLoadoutMode(monster?.moveLoadoutMode),
+} = {}) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const knownMoves = uniqueMoveKeys(Array.isArray(moves) ? moves : []);
+  if (loadoutMode === 'custom') {
+    return knownMoves.length > 0 ? knownMoves.slice(0, 4) : getBalancedMovesForLevel(monster, safeLevel);
+  }
+  if (loadoutMode === 'wild') {
+    const wildMoves = knownMoves.length > 0 ? knownMoves : getWildMovesForPokemonLevel(monster, safeLevel);
+    return finalizeGeneratedBattleMoves(monster, wildMoves, safeLevel, wildMoves, {
+      targetMoveCount: getGeneratedBattleTargetMoveCount(monster, safeLevel, wildMoves.length),
+    });
+  }
+  if (knownMoves.length >= 4) {
+    return finalizeGeneratedBattleMoves(monster, knownMoves, safeLevel, knownMoves, {
+      targetMoveCount: getGeneratedBattleTargetMoveCount(monster, safeLevel, knownMoves.length),
+    });
+  }
+
+  const carryoverMoves = getEvolutionCarryoverMovesForPokemonLevel(monster, safeLevel);
+  if (carryoverMoves.length === 0) {
+    return finalizeGeneratedBattleMoves(monster, knownMoves, safeLevel, knownMoves, {
+      targetMoveCount: getGeneratedBattleTargetMoveCount(monster, safeLevel, knownMoves.length),
+      backfill: false,
+    });
+  }
+
+  const inheritedMoves = uniqueMoveKeys([
+    ...knownMoves,
+    ...carryoverMoves,
+  ]);
+
+  return finalizeGeneratedBattleMoves(monster, inheritedMoves, safeLevel, [
+    ...knownMoves,
+    ...carryoverMoves,
+  ], {
+    targetMoveCount: getGeneratedBattleTargetMoveCount(monster, safeLevel, inheritedMoves.length),
+  });
+};
+
+const isWildFullMoveExemptMonster = (monster) => (
+  Number.isInteger(ICONIC_SPARSE_BATTLE_MOVE_COUNT_BY_MONSTER_ID[Number(monster?.id)])
+);
+
+const getWildMoveBackfillBuffer = (level = 1) => {
+  return getGeneratedMoveBackfillBuffer(level);
+};
+
+const getWildMoveReferenceLevel = (monster, moveKey) => {
+  return getGeneratedMoveReferenceLevel(monster, moveKey);
+};
+
+const isWildBackfillMoveReasonable = (monster, moveKey, level = 1) => {
+  return isGeneratedBattleBackfillMoveReasonable(monster, moveKey, level);
+};
+
+const wildBackfillMoveScore = (monster, moveKey, level = 1) => {
+  return generatedBattleBackfillMoveScore(monster, moveKey, level);
+};
+
+const getWildMoveBackfillCandidates = (monster, level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  return getUnifiedMoveSourceKeysForPokemonLevel(monster, safeLevel)
+    .filter((moveKey) => isWildBackfillMoveReasonable(monster, moveKey, safeLevel))
+    .sort((a, b) => wildBackfillMoveScore(monster, b, safeLevel) - wildBackfillMoveScore(monster, a, safeLevel));
+};
+
+const getWildMoveLastResortCandidates = (monster, level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  return getUnifiedMoveSourceKeysForPokemonLevel(monster, safeLevel)
+    .filter((moveKey) => MOVES[moveKey])
+    .sort((a, b) => wildBackfillMoveScore(monster, b, safeLevel) - wildBackfillMoveScore(monster, a, safeLevel));
+};
+
+export const getWildMovesForPokemonLevel = (monster, level = 1) => {
+  const safeLevel = Math.max(1, Math.min(100, Math.trunc(Number(level) || 1)));
+  const balancedMoves = getBalancedMovesForLevel(monster, safeLevel);
+  const baseMoves = getEvolutionCarryoverRepairedMovesForPokemonLevel(monster, balancedMoves, safeLevel);
+  const targetMoveCount = getGeneratedBattleTargetMoveCount(monster, safeLevel, baseMoves.length);
+
+  if (baseMoves.length >= targetMoveCount) {
+    return finalizeGeneratedBattleMoves(monster, baseMoves, safeLevel, baseMoves, {
+      targetMoveCount,
+    });
+  }
+
+  const selected = [...baseMoves];
+  for (const moveKey of getWildMoveBackfillCandidates(monster, safeLevel)) {
+    if (selected.length >= targetMoveCount) break;
+    if (!selected.includes(moveKey)) selected.push(moveKey);
+  }
+  for (const moveKey of getWildMoveLastResortCandidates(monster, safeLevel)) {
+    if (selected.length >= targetMoveCount) break;
+    if (!selected.includes(moveKey)) selected.push(moveKey);
+  }
+
+  return finalizeGeneratedBattleMoves(monster, selected, safeLevel, selected, {
+    targetMoveCount,
+  });
 };
 
 // ─── 精灵球 ──────────────────────────────────────────────────────────────────
 export const POKEBALLS = {
-  pokeball_basic: { name: '精灵球', price: 150,  catchRateMultiplier: 1.0, sprite: itemSprite('poke-ball.png') },
-  pokeball_great: { name: '超级球', price: 600,  catchRateMultiplier: 1.5, sprite: itemSprite('great-ball.png') },
-  pokeball_ultra: { name: '高级球', price: 1200, catchRateMultiplier: 2.0, sprite: itemSprite('ultra-ball.png') },
-  pokeball_master: { name: '大师球', price: 0, notForSale: true, catchRateMultiplier: 255, sprite: itemSprite('master-ball.png'), description: '必定捕获任何宝可梦的究极精灵球' },
+  pokeball_basic: { name: '精灵球', price: 150,  catchRateMultiplier: 1.0, sprite: itemSprite('poke-ball.png'), description: '同级普通目标黄血时约30%成功' },
+  pokeball_great: { name: '超级球', price: 600,  catchRateMultiplier: 1.5, sprite: itemSprite('great-ball.png'), description: '同级普通目标黄血时约46%成功' },
+  pokeball_ultra: { name: '高级球', price: 1200, catchRateMultiplier: 2.0, sprite: itemSprite('ultra-ball.png'), description: '同级普通目标黄血时约61%成功' },
+  pokeball_master: { name: '大师球', price: 5200, catchRateMultiplier: 255, sprite: itemSprite('master-ball.png'), randomDropDisabled: true, description: '必定捕获，成功率100%' },
 }
 
 // ─── 回复药水 ────────────────────────────────────────────────────────────────
@@ -526,25 +960,33 @@ export const POTIONS = {
     name: '伤药',
     price: 100,
     healAmount: 20,
-    mpRestoreAmount: 5,
+    mpRestoreAmount: 12,
     sprite: itemSprite('potion.png'),
-    description: '恢复 HP 20 / MP 5 / 解除异常',
+    description: '恢复 HP 20 / MP 12 / 解除异常',
   },
   super_potion: {
     name: '好伤药',
     price: 250,
     healAmount: 50,
-    mpRestoreAmount: 20,
+    mpRestoreAmount: 30,
     sprite: itemSprite('super-potion.png'),
-    description: '恢复 HP 50 / MP 20 / 解除异常',
+    description: '恢复 HP 50 / MP 30 / 解除异常',
   },
   hyper_potion: {
     name: '厉害伤药',
     price: 600,
     healAmount: 120,
-    mpRestoreAmount: 50,
+    mpRestoreAmount: 70,
     sprite: itemSprite('hyper-potion.png'),
-    description: '恢复 HP 120 / MP 50 / 解除异常',
+    description: '恢复 HP 120 / MP 70 / 解除异常',
+  },
+  max_potion: {
+    name: '超级伤药',
+    price: 1000,
+    fullRestore: true,
+    sprite: itemSprite('max-potion.png'),
+    randomDropDisabled: true,
+    description: 'HP/MP 全满 / 解除异常',
   },
 }
 
@@ -553,6 +995,7 @@ export const EXP_POTIONS = {
   exp_potion_small:  { name: '小经验药水', price: 120, expAmount: 90,  sprite: itemSprite('exp-potion-small.png') },
   exp_potion_medium: { name: '中经验药水', price: 360, expAmount: 300, sprite: itemSprite('exp-potion-medium.png') },
   exp_potion_large:  { name: '大经验药水', price: 900, expAmount: 840, sprite: itemSprite('exp-potion-large.png') },
+  exp_potion_super:  { name: '超级经验药水', price: 2100, expAmount: 2100, sprite: itemSprite('rare-candy.png'), description: '大量提升一只宝可梦的经验' },
 }
 
 // ─── 进化道具（仅保留历史库存/后台白名单兼容；现行进化不再消耗它们）───────────
@@ -2152,7 +2595,7 @@ export const MONSTERS = [
   {
     id: 194, dexNo: 272, name: '乐天河童',
     type: TYPES.WATER, type2: TYPES.GRASS,
-    maxHp: 85, maxMp: 82, atk: 75, def: 80, spAtk: 100, spDef: 110, spd: 80,
+    maxHp: 80, maxMp: 82, atk: 70, def: 70, spAtk: 90, spDef: 100, spd: 70,
     moves: ['tackle', 'watergun', 'surf', 'razorleaf'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'watergun', 'surf', 'razorleaf'),
     ...sp(272),
@@ -2168,7 +2611,7 @@ export const MONSTERS = [
   {
     id: 196, dexNo: 286, name: '斗笠菇',
     type: TYPES.GRASS, type2: TYPES.FIGHTING,
-    maxHp: 75, maxMp: 58, atk: 135, def: 90, spAtk: 70, spDef: 70, spd: 80,
+    maxHp: 60, maxMp: 58, atk: 130, def: 80, spAtk: 60, spDef: 60, spd: 70,
     moves: ['tackle', 'vinewhip', 'razorleaf', 'low_kick'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'vinewhip', 'razorleaf', 'low_kick'),
     ...sp(286),
@@ -2176,7 +2619,7 @@ export const MONSTERS = [
   {
     id: 197, dexNo: 241, name: '大奶罐',
     type: TYPES.NORMAL,
-    maxHp: 105, maxMp: 60, atk: 90, def: 110, spAtk: 55, spDef: 80, spd: 100,
+    maxHp: 95, maxMp: 60, atk: 80, def: 105, spAtk: 40, spDef: 70, spd: 100,
     moves: ['tackle', 'rollout', 'bodyslam', 'earthquake'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'rollout', 'bodyslam', 'earthquake'),
     ...sp(241),
@@ -2184,7 +2627,7 @@ export const MONSTERS = [
   {
     id: 198, dexNo: 160, name: '大力鳄',
     type: TYPES.WATER,
-    maxHp: 100, maxMp: 66, atk: 130, def: 110, spAtk: 90, spDef: 95, spd: 100,
+    maxHp: 85, maxMp: 66, atk: 105, def: 100, spAtk: 79, spDef: 83, spd: 78,
     moves: ['waterfall', 'crunch', 'thunder_fang', 'earthquake'],
     preferredBattleMoves: ['waterfall', 'crunch', 'thunder_fang', 'earthquake'],
     supplementalLearnset: hiddenBossLearnset('waterfall', 'crunch', 'thunder_fang', 'earthquake'),
@@ -2193,7 +2636,7 @@ export const MONSTERS = [
   {
     id: 199, dexNo: 260, name: '巨沼怪',
     type: TYPES.WATER, type2: TYPES.GROUND,
-    maxHp: 110, maxMp: 68, atk: 125, def: 100, spAtk: 95, spDef: 95, spd: 75,
+    maxHp: 100, maxMp: 68, atk: 110, def: 90, spAtk: 85, spDef: 90, spd: 60,
     moves: ['tackle', 'surf', 'earthquake', 'thunder_punch'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'surf', 'earthquake', 'thunder_punch'),
     ...sp(260),
@@ -2201,7 +2644,7 @@ export const MONSTERS = [
   {
     id: 200, dexNo: 319, name: '巨牙鲨',
     type: TYPES.WATER, type2: TYPES.DARK,
-    maxHp: 95, maxMp: 78, atk: 130, def: 75, spAtk: 105, spDef: 70, spd: 115,
+    maxHp: 70, maxMp: 78, atk: 120, def: 40, spAtk: 95, spDef: 40, spd: 95,
     moves: ['tackle', 'waterfall', 'crunch', 'thunder_fang'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'waterfall', 'crunch', 'thunder_fang'),
     ...sp(319),
@@ -2217,16 +2660,16 @@ export const MONSTERS = [
   {
     id: 202, dexNo: 477, name: '黑夜魔灵',
     type: TYPES.GHOST,
-    maxHp: 90, maxMp: 80, atk: 125, def: 140, spAtk: 85, spDef: 145, spd: 80,
+    maxHp: 45, maxMp: 80, atk: 100, def: 135, spAtk: 65, spDef: 135, spd: 45,
     moves: ['shadowball', 'fire_punch', 'thunder_punch', 'recover'],
     preferredBattleMoves: ['shadowball', 'fire_punch', 'thunder_punch', 'recover'],
-    supplementalLearnset: hiddenBossLearnset('shadowball', 'fire_punch', 'thunder_punch', 'recover'),
+    supplementalLearnset: hiddenBossLearnset(['quickattack', 'astonish'], 'shadowball', 'fire_punch', 'recover'),
     ...sp(477),
   },
   {
     id: 203, dexNo: 609, name: '水晶灯火灵',
     type: TYPES.GHOST, type2: TYPES.FIRE,
-    maxHp: 80, maxMp: 104, atk: 60, def: 95, spAtk: 155, spDef: 100, spd: 105,
+    maxHp: 60, maxMp: 104, atk: 55, def: 90, spAtk: 145, spDef: 90, spd: 80,
     moves: ['tackle', 'shadowball', 'dark_pulse', 'fire_blast'],
     supplementalLearnset: hiddenBossLearnset('tackle', 'shadowball', 'dark_pulse', 'fire_blast'),
     ...sp(609),
@@ -2234,7 +2677,7 @@ export const MONSTERS = [
   {
     id: 204, dexNo: 376, name: '巨金怪',
     type: TYPES.STEEL, type2: TYPES.PSYCHIC,
-    maxHp: 85, maxMp: 90, atk: 140, def: 130, spAtk: 105, spDef: 95, spd: 80,
+    maxHp: 80, maxMp: 90, atk: 135, def: 130, spAtk: 95, spDef: 90, spd: 70,
     moves: ['bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'],
     preferredBattleMoves: ['bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'],
     supplementalLearnset: hiddenBossLearnset('bullet_punch', 'meteor_mash', 'thunder_punch', 'earthquake'),
@@ -2243,7 +2686,7 @@ export const MONSTERS = [
   {
     id: 205, dexNo: 448, name: '路卡利欧',
     type: TYPES.FIGHTING, type2: TYPES.STEEL,
-    maxHp: 85, maxMp: 88, atk: 125, def: 80, spAtk: 125, spDef: 80, spd: 105,
+    maxHp: 70, maxMp: 88, atk: 110, def: 70, spAtk: 115, spDef: 70, spd: 90,
     moves: ['quickattack', 'dark_pulse', 'thunder_punch', 'meteor_mash'],
     supplementalLearnset: hiddenBossLearnset('quickattack', 'dark_pulse', 'thunder_punch', 'meteor_mash'),
     ...sp(448),
@@ -2251,7 +2694,7 @@ export const MONSTERS = [
   {
     id: 206, dexNo: 681, name: '坚盾剑怪',
     type: TYPES.STEEL, type2: TYPES.GHOST,
-    maxHp: 75, maxMp: 86, atk: 115, def: 140, spAtk: 115, spDef: 140, spd: 80,
+    maxHp: 60, maxMp: 86, atk: 50, def: 140, spAtk: 50, spDef: 140, spd: 60,
     moves: ['bullet_punch', 'iron_head', 'shadowball', 'thunderbolt'],
     supplementalLearnset: hiddenBossLearnset('bullet_punch', 'iron_head', 'shadowball', 'thunderbolt'),
     ...sp(681),
@@ -2259,16 +2702,16 @@ export const MONSTERS = [
   {
     id: 207, dexNo: 373, name: '暴飞龙',
     type: TYPES.DRAGON, type2: TYPES.FLYING,
-    maxHp: 100, maxMp: 80, atk: 145, def: 90, spAtk: 115, spDef: 90, spd: 110,
+    maxHp: 95, maxMp: 80, atk: 135, def: 80, spAtk: 110, spDef: 80, spd: 100,
     moves: ['thunder_fang', 'fly', 'earthquake', 'dragonclaw'],
     preferredBattleMoves: ['thunder_fang', 'fly', 'earthquake', 'dragonclaw'],
-    supplementalLearnset: hiddenBossLearnset('thunder_fang', 'fly', 'earthquake', 'dragonclaw'),
+    supplementalLearnset: hiddenBossLearnset(['quickattack', 'thunder_fang'], 'fly', 'earthquake', 'dragonclaw'),
     ...sp(373),
   },
   {
     id: 208, dexNo: 445, name: '烈咬陆鲨',
     type: TYPES.DRAGON, type2: TYPES.GROUND,
-    maxHp: 128, maxMp: 70, atk: 160, def: 110, spAtk: 90, spDef: 95, spd: 125,
+    maxHp: 108, maxMp: 70, atk: 130, def: 95, spAtk: 80, spDef: 85, spd: 102,
     moves: ['earthquake', 'dragonclaw', 'crunch', 'thunder_fang'],
     preferredBattleMoves: ['earthquake', 'dragonclaw', 'crunch', 'thunder_fang'],
     supplementalLearnset: hiddenBossLearnset('earthquake', 'dragonclaw', 'crunch', 'thunder_fang'),
@@ -2277,7 +2720,7 @@ export const MONSTERS = [
   {
     id: 209, dexNo: 635, name: '三首恶龙',
     type: TYPES.DARK, type2: TYPES.DRAGON,
-    maxHp: 112, maxMp: 98, atk: 120, def: 100, spAtk: 145, spDef: 100, spd: 115,
+    maxHp: 92, maxMp: 98, atk: 105, def: 90, spAtk: 125, spDef: 90, spd: 98,
     moves: ['low_kick', 'surf', 'air_slash', 'recover'],
     preferredBattleMoves: ['low_kick', 'surf', 'air_slash', 'recover'],
     supplementalLearnset: hiddenBossLearnset('low_kick', 'surf', 'air_slash', 'recover'),

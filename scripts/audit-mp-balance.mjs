@@ -202,7 +202,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   const report = {
     generatedAt: new Date().toISOString(),
-    formula: 'max(18, floor(18 + baseMp*0.18 + level*(0.35 + baseMp/320)))',
+    formula: 'max(24, floor(22 + baseMp*0.24 + level*(0.45 + baseMp/280)))',
     summary: {
       monsterCount: MONSTERS.length,
       moveCount: Object.keys(MOVES).length,

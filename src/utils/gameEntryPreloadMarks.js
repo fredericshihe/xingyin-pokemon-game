@@ -1,33 +1,57 @@
 const APP_BUILD_ID = typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'dev'
 const PRELOAD_DONE_PREFIX = 'game:entry-preload-done:'
-const ENTRY_PRELOAD_ASSET_VERSION = 'entry-assets-20260602'
+const ENTRY_PRELOAD_ASSET_VERSION = 'entry-assets-20260603-blocking'
+
+let runtimeEntryPreloadComplete = false
+
+function getCurrentEntryHash() {
+  if (typeof document === 'undefined') return null
+  const script = document.querySelector('script[src*="/assets/index-"]')
+  const src = script?.getAttribute?.('src') || ''
+  const match = src.match(/index-([A-Za-z0-9_-]+)\.js/)
+  return match?.[1] || null
+}
+
+function getEntryPreloadSignature() {
+  return [
+    ENTRY_PRELOAD_ASSET_VERSION,
+    APP_BUILD_ID,
+    getCurrentEntryHash() || 'entry'
+  ].join(':')
+}
 
 export function getEntryPreloadStorageKey() {
-  return `${PRELOAD_DONE_PREFIX}${ENTRY_PRELOAD_ASSET_VERSION}`
+  return `${PRELOAD_DONE_PREFIX}${getEntryPreloadSignature()}`
 }
 
 export function isEntryPreloadComplete() {
-  if (typeof window === 'undefined') return false
+  if (runtimeEntryPreloadComplete) return true
+  if (typeof window === 'undefined' || import.meta.env.DEV) return false
   try {
-    if (window.localStorage.getItem(getEntryPreloadStorageKey()) === '1') return true
-
-    // 旧版本把完成标记绑定到 build id。玩家升级后不应因为构建号变化被迫重下全量资源。
-    for (let i = 0; i < window.localStorage.length; i += 1) {
-      const key = window.localStorage.key(i)
-      if (key?.startsWith(PRELOAD_DONE_PREFIX) && window.localStorage.getItem(key) === '1') {
-        return true
-      }
-    }
-    return false
+    const raw = window.localStorage.getItem(getEntryPreloadStorageKey())
+    if (!raw) return false
+    const payload = JSON.parse(raw)
+    const complete = payload?.signature === getEntryPreloadSignature()
+    runtimeEntryPreloadComplete = complete
+    return complete
   } catch {
     return false
   }
 }
 
 export function markEntryPreloadComplete() {
-  if (typeof window === 'undefined') return
+  runtimeEntryPreloadComplete = true
   try {
-    window.localStorage.setItem(getEntryPreloadStorageKey(), '1')
+    if (typeof window !== 'undefined' && !import.meta.env.DEV) {
+      const signature = getEntryPreloadSignature()
+      window.localStorage.setItem(getEntryPreloadStorageKey(), JSON.stringify({
+        signature,
+        assetVersion: ENTRY_PRELOAD_ASSET_VERSION,
+        buildId: APP_BUILD_ID,
+        entryHash: getCurrentEntryHash(),
+        completedAt: new Date().toISOString()
+      }))
+    }
   } catch {
     // ignore quota / private mode
   }
@@ -35,6 +59,7 @@ export function markEntryPreloadComplete() {
 
 /** 版本更新或清缓存时调用 */
 export function clearEntryPreloadMarks() {
+  runtimeEntryPreloadComplete = false
   if (typeof window === 'undefined') return
   try {
     const keysToRemove = []

@@ -73,6 +73,8 @@ class GameBgmController {
     this.enabled = true
     this.volume = 0.72
     this.pendingScene = null
+    this.pendingTrackKey = null
+    this.pendingTrackMode = null
 
     gameAudio.addUnlockListener(() => {
       void this.resumeAfterUnlock()
@@ -82,6 +84,31 @@ class GameBgmController {
   rememberScene(scene) {
     if (!scene || typeof scene !== 'object') return
     this.pendingScene = scene
+  }
+
+  markPendingTrack(trackKey, mode = null) {
+    if (!trackKey) return
+    this.pendingTrackKey = trackKey
+    this.pendingTrackMode = mode || null
+  }
+
+  clearPendingTrack(trackKey = null) {
+    if (trackKey && this.pendingTrackKey !== trackKey) return
+    this.pendingTrackKey = null
+    this.pendingTrackMode = null
+  }
+
+  isTrackActive(trackKey) {
+    return Boolean(trackKey && this.currentTrackKey === trackKey && this.activeLayer)
+  }
+
+  isTrackPending(trackKey) {
+    return Boolean(trackKey && this.pendingTrackKey === trackKey)
+  }
+
+  syncExistingTrack() {
+    this.syncBgmBusGain(0.05)
+    this.syncActiveLayerGain(0.05)
   }
 
   async resumeAfterUnlock() {
@@ -248,6 +275,7 @@ class GameBgmController {
       if (!context) return null
 
       let lastError = null
+      const candidateErrors = []
       for (const candidateUrl of candidateUrls) {
         try {
           const arrayBuffer = await loadAudioArrayBuffer(candidateUrl, timeoutMs)
@@ -262,12 +290,14 @@ class GameBgmController {
           return audioBuffer
         } catch (error) {
           lastError = error
-          if (String(error?.message || error).includes('timeout')) {
-            console.warn('[gameBgm] preload timeout', candidateUrl)
-          }
+          candidateErrors.push({ url: candidateUrl, error })
         }
       }
 
+      const timeoutError = candidateErrors.find((entry) => String(entry.error?.message || entry.error).includes('timeout'))
+      if (timeoutError) {
+        console.warn('[gameBgm] preload timeout', timeoutError.url)
+      }
       throw lastError || new Error(`BGM preload failed ${url}`)
     })()
       .catch((error) => {
@@ -291,11 +321,23 @@ class GameBgmController {
     }
   }
 
-  async stop({ immediate = false } = {}) {
-    this.playToken += 1
+  async stop({
+    immediate = false,
+    preserveScene = false,
+    preservePendingTrack = false,
+    advanceToken = true
+  } = {}) {
+    if (advanceToken) {
+      this.playToken += 1
+    }
     this.currentMode = null
     this.currentTrackKey = null
-    this.pendingScene = null
+    if (!preserveScene) {
+      this.pendingScene = null
+    }
+    if (!preservePendingTrack) {
+      this.clearPendingTrack()
+    }
 
     const fadeMs = immediate ? 0 : FADE_MS
     return this.enqueueTransition(async () => {
@@ -344,15 +386,19 @@ class GameBgmController {
     return layer
   }
 
-  async transitionTo(trackKey, buffer, { mode, loop = true, fadeMs = FADE_MS } = {}) {
+  async transitionTo(trackKey, buffer, { mode, loop = true, fadeMs = FADE_MS, playToken = null } = {}) {
     if (!buffer || !this.canPlay()) {
       await this.stop({ immediate: false })
       return false
     }
 
     return this.enqueueTransition(async () => {
+      if (playToken != null && playToken !== this.playToken) return false
+
       const unlocked = await this.ensureUnlocked()
       if (!unlocked) return false
+
+      if (playToken != null && playToken !== this.playToken) return false
 
       if (!this.canPlay()) {
         await this.stop({ immediate: false })
@@ -360,14 +406,15 @@ class GameBgmController {
       }
 
       // 如果已经在播放相同的曲目，只需同步音量
-      if (this.currentTrackKey === trackKey && this.activeLayer) {
-        this.syncBgmBusGain(0.05)
-        this.syncActiveLayerGain(0.05)
+      if (this.isTrackActive(trackKey)) {
+        this.syncExistingTrack()
         return true
       }
 
       // 停止所有现有的BGM层，防止叠加
       await this.fadeOutAllLayers({ fadeMs, immediate: false })
+
+      if (playToken != null && playToken !== this.playToken) return false
 
       if (!this.canPlay()) {
         this.currentMode = null
@@ -397,28 +444,49 @@ class GameBgmController {
     const trackKey = `map:${mapName}`
 
     // 如果已经在播放相同的地图BGM，只需同步音量
-    if (this.currentTrackKey === trackKey && this.activeLayer) {
-      this.syncBgmBusGain(0.05)
-      this.syncActiveLayerGain(0.05)
+    if (this.isTrackActive(trackKey)) {
+      this.syncExistingTrack()
       return true
     }
 
-    // 立即停止所有现有BGM，防止叠加
-    await this.stop({ immediate: true })
+    if (this.isTrackPending(trackKey)) {
+      this.syncExistingTrack()
+      return true
+    }
 
     const playToken = ++this.playToken
+    this.markPendingTrack(trackKey, 'map')
+
+    // 立即停止所有现有BGM，防止叠加
+    await this.stop({
+      immediate: true,
+      preserveScene: true,
+      preservePendingTrack: true,
+      advanceToken: false
+    })
+
+    if (playToken !== this.playToken || this.pendingTrackKey !== trackKey) {
+      this.clearPendingTrack(trackKey)
+      return false
+    }
+
     const url = getMapAmbientTrackPath(mapName)
     const [primaryUrl, ...alternateUrls] = getMapAmbientTrackLoadUrls(mapName)
     const buffer = await this.preloadUrl(primaryUrl || url, { alternateUrls })
 
     // 检查是否被取消（用户可能已经切换场景）
-    if (playToken !== this.playToken) return false
+    if (playToken !== this.playToken || this.pendingTrackKey !== trackKey) {
+      this.clearPendingTrack(trackKey)
+      return false
+    }
 
-    return this.transitionTo(trackKey, buffer, { mode: 'map', loop: true })
+    const played = await this.transitionTo(trackKey, buffer, { mode: 'map', loop: true, playToken })
+    this.clearPendingTrack(trackKey)
+    return played
   }
 
-  async playBattleBgm({ battleKind, eventRole, eventType } = {}) {
-    const params = { battleKind, eventRole, eventType }
+  async playBattleBgm({ battleKind, eventRole, eventType, championTowerFloor } = {}) {
+    const params = { battleKind, eventRole, eventType, championTowerFloor }
     this.rememberScene({ kind: 'battle', params })
 
     if (!this.canPlay()) {
@@ -426,28 +494,49 @@ class GameBgmController {
       return false
     }
 
-    const trackId = getBattleBgmTrackId({ battleKind, eventRole, eventType })
+    const trackId = getBattleBgmTrackId({ battleKind, eventRole, eventType, championTowerFloor })
     const trackKey = `battle:${trackId}`
 
     // 如果已经在播放相同的战斗BGM，只需同步音量
-    if (this.currentTrackKey === trackKey && this.activeLayer) {
-      this.syncBgmBusGain(0.05)
-      this.syncActiveLayerGain(0.05)
+    if (this.isTrackActive(trackKey)) {
+      this.syncExistingTrack()
       return true
     }
 
-    // 立即停止所有现有BGM，防止叠加
-    await this.stop({ immediate: true })
+    if (this.isTrackPending(trackKey)) {
+      this.syncExistingTrack()
+      return true
+    }
 
     const playToken = ++this.playToken
-    const url = getBattleBgmTrackPath({ battleKind, eventRole, eventType })
-    const [primaryUrl, ...alternateUrls] = getBattleBgmTrackLoadUrls({ battleKind, eventRole, eventType })
+    this.markPendingTrack(trackKey, 'battle')
+
+    // 立即停止所有现有BGM，防止叠加
+    await this.stop({
+      immediate: true,
+      preserveScene: true,
+      preservePendingTrack: true,
+      advanceToken: false
+    })
+
+    if (playToken !== this.playToken || this.pendingTrackKey !== trackKey) {
+      this.clearPendingTrack(trackKey)
+      return false
+    }
+
+    const url = getBattleBgmTrackPath({ battleKind, eventRole, eventType, championTowerFloor })
+    const [primaryUrl, ...alternateUrls] = getBattleBgmTrackLoadUrls({ battleKind, eventRole, eventType, championTowerFloor })
     const buffer = await this.preloadUrl(primaryUrl || url, { alternateUrls })
 
     // 检查是否被取消（用户可能已经切换场景）
-    if (playToken !== this.playToken) return false
+    if (playToken !== this.playToken || this.pendingTrackKey !== trackKey) {
+      this.clearPendingTrack(trackKey)
+      return false
+    }
 
-    return this.transitionTo(trackKey, buffer, { mode: 'battle', loop: true })
+    const played = await this.transitionTo(trackKey, buffer, { mode: 'battle', loop: true, playToken })
+    this.clearPendingTrack(trackKey)
+    return played
   }
 
   async resumeMapAmbient(mapName) {

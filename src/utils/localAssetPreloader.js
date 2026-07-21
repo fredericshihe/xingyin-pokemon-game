@@ -126,7 +126,8 @@ export const preloadImageAssetWithFallback = async (url, { timeoutMs = 10000, re
       if (fallbackUrl && fallbackUrl !== url) {
         const fallback = await preloadImageAsset(fallbackUrl, { timeoutMs: attemptTimeoutMs })
         if (fallback.ok) {
-          return { ...fallback, requestedUrl: url, usedFallback: true }
+          aliasDecodedImageAsset(url, fallbackUrl)
+          return { ...fallback, url, fallbackUrl, requestedUrl: url, usedFallback: true }
         }
         lastResult = { ...primary, fallbackUrl, fallbackReason: fallback.reason }
       }
@@ -346,8 +347,13 @@ export const applyImageFallback = (eventOrImage, fallbackUrl) => {
     : ''
   const currentSrc = image.getAttribute?.('src') || ''
   const absoluteSrc = image.src || ''
+  const triedFallbackUrls = new Set(
+    String(image.dataset.fallbackUrls || '')
+      .split('\n')
+      .filter(Boolean)
+  )
   const alreadyTriedFallback =
-    image.dataset.fallbackApplied === 'true' ||
+    triedFallbackUrls.has(safeFallbackUrl) ||
     (safeFallbackUrl && (currentSrc === safeFallbackUrl || absoluteSrc.endsWith(safeFallbackUrl)))
 
   if (!safeFallbackUrl || alreadyTriedFallback) {
@@ -355,7 +361,10 @@ export const applyImageFallback = (eventOrImage, fallbackUrl) => {
     return
   }
 
+  triedFallbackUrls.add(safeFallbackUrl)
   image.dataset.fallbackApplied = 'true'
+  image.dataset.fallbackUrl = safeFallbackUrl
+  image.dataset.fallbackUrls = [...triedFallbackUrls].join('\n')
   image.style.visibility = ''
   image.removeAttribute('srcset')
   image.src = safeFallbackUrl

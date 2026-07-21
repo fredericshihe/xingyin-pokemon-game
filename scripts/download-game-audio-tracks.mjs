@@ -75,6 +75,21 @@ function wavFallbackPath(oggOutput) {
   return oggOutput.replace(/\.ogg$/i, '.wav')
 }
 
+function ensureWavFallbacks(tracks) {
+  const missingFallbackTracks = tracks.filter((track) => {
+    const fallbackPath = path.join(OUT_DIR, wavFallbackPath(track.output))
+    return !isValidWavFile(fallbackPath)
+  })
+
+  if (missingFallbackTracks.length === 0) return
+
+  console.warn('[audio] generating lightweight wav fallbacks:', missingFallbackTracks.map((track) => track.output))
+  runFallbackGenerator([
+    ...missingFallbackTracks.map((track) => `--only=${track.output}`),
+    '--no-manifest'
+  ])
+}
+
 function writeCredits(manifestEntries) {
   const lines = [
     '# 游戏音频来源说明',
@@ -149,8 +164,13 @@ async function main() {
 
   if (missingTracks.length > 0) {
     console.warn('[audio] generating wav fallbacks for missing tracks:', missingTracks.map((track) => track.output))
-    runFallbackGenerator(missingTracks.map((track) => `--only=${track.output}`))
+    runFallbackGenerator([
+      ...missingTracks.map((track) => `--only=${track.output}`),
+      '--no-manifest'
+    ])
   }
+
+  ensureWavFallbacks(GAME_AUDIO_TRACK_MANIFEST)
 
   GAME_AUDIO_TRACK_MANIFEST.forEach((track) => {
     const destination = path.join(OUT_DIR, track.output)

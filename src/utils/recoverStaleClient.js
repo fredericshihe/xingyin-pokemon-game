@@ -1,5 +1,6 @@
 import { clearEntryPreloadMarks } from './gameEntryPreloadMarks'
 import { clearBgmPreloadCache } from './gameBgm'
+import { resetEntryPreloadSession } from './gameEntryPreload'
 import { clearDecodedImageCache } from './localAssetPreloader'
 
 const RELOAD_GUARD_KEY = 'game:stale-client-reload'
@@ -43,7 +44,6 @@ export async function clearClientCaches({
     clearEntryPreloadMarks()
   }
   try {
-    const { resetEntryPreloadSession } = await import('./gameEntryPreload')
     resetEntryPreloadSession({ clearImageCache: false })
   } catch (error) {
     console.warn('[recover] reset entry preload session failed', error)

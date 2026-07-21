@@ -67,8 +67,8 @@ const ROLE_PLAYER_CATCH_UP_RULES = {
     maxBonus: 4
   },
   lieutenant: {
-    overlevelFactor: 0.9,
-    maxBonus: 5
+    overlevelFactor: 0,
+    maxBonus: 0
   },
   minigame: {
     overlevelFactor: 0.35,
@@ -79,8 +79,8 @@ const ROLE_PLAYER_CATCH_UP_RULES = {
     maxBonus: 0
   },
   boss: {
-    overlevelFactor: 0.45,
-    maxBonus: 3
+    overlevelFactor: 0,
+    maxBonus: 0
   }
 }
 
@@ -142,7 +142,12 @@ const normalizeTeamConfig = (teamConfig = []) => (
         const pokemonId = Math.trunc(Number(entry?.pokemonId ?? entry?.id))
         const level = clampLevel(entry?.level, 1)
         if (!Number.isInteger(pokemonId) || !MONSTERS.some((monster) => monster.id === pokemonId)) return null
-        return { pokemonId, level }
+        const rewardLevel = Math.trunc(Number(entry?.rewardLevel))
+        return {
+          pokemonId,
+          level,
+          ...(Number.isInteger(rewardLevel) ? { rewardLevel: clampLevel(rewardLevel, level) } : {})
+        }
       })
       .filter(Boolean)
     : []
@@ -399,18 +404,25 @@ export const rebalanceTrainerBattleTeamLevels = (teamConfig = [], {
     bossLevelCap,
     playerLevel
   })
-  if (bonus <= 0) return normalizedTeam
+  if (bonus <= 0) {
+    return normalizedTeam.map((entry) => ({
+      ...entry,
+      rewardLevel: entry.rewardLevel ?? entry.level
+    }))
+  }
 
   const bounds = getTrainerDifficultyBounds({
     role,
     mapConfig,
     bossLevelCap
   })
-  const hardCap = Math.max(bounds.minLevel, Math.min(100, bounds.maxLevel))
+  const configuredMaxLevel = Math.max(...normalizedTeam.map((entry) => entry.level))
+  const hardCap = Math.max(bounds.minLevel, Math.min(100, Math.max(bounds.maxLevel, configuredMaxLevel)))
 
   return normalizedTeam.map((entry) => ({
     ...entry,
-    level: Math.max(bounds.minLevel, Math.min(hardCap, entry.level + bonus))
+    level: Math.max(bounds.minLevel, Math.min(hardCap, entry.level + bonus)),
+    rewardLevel: entry.rewardLevel ?? entry.level
   }))
 }
 

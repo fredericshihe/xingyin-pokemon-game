@@ -10,8 +10,8 @@ export const saveCloudGameWithLock = async (saveFunction) => {
   // 如果正在保存，加入队列
   if (cloudSaveLock) {
     console.warn('[CloudSave] Save in progress, queuing request')
-    return new Promise((resolve) => {
-      cloudSaveQueue.push({ saveFunction, resolve })
+    return new Promise((resolve, reject) => {
+      cloudSaveQueue.push({ saveFunction, resolve, reject })
     })
   }
 
@@ -24,8 +24,8 @@ export const saveCloudGameWithLock = async (saveFunction) => {
 
     // 处理队列中的下一个保存请求
     if (cloudSaveQueue.length > 0) {
-      const { saveFunction: nextSave, resolve } = cloudSaveQueue.shift()
-      saveCloudGameWithLock(nextSave).then(resolve)
+      const { saveFunction: nextSave, resolve, reject } = cloudSaveQueue.shift()
+      saveCloudGameWithLock(nextSave).then(resolve, reject)
     }
   }
 }
@@ -33,7 +33,8 @@ export const saveCloudGameWithLock = async (saveFunction) => {
 /**
  * 清除保存队列（用于组件卸载时）
  */
-export const clearCloudSaveQueue = () => {
+export const clearCloudSaveQueue = (reason = new Error('云存档队列已取消。')) => {
+  const queuedSaves = cloudSaveQueue
   cloudSaveQueue = []
-  cloudSaveLock = false
+  queuedSaves.forEach(({ reject }) => reject(reason))
 }

@@ -61,10 +61,10 @@ export const calculateOfficialBattleStat = (baseStat, level, { iv = 0, ev = 0, n
 export const calculateProjectMpStat = (baseMp, level) => {
   const safeLevel = Math.max(1, Math.min(100, Number(level) || 1))
   const safeBaseMp = safeBaseStat(baseMp)
-  const earlyGameFloor = 18
-  const baseContribution = safeBaseMp * 0.18
-  const levelGrowth = safeLevel * (0.35 + safeBaseMp / 320)
-  return Math.max(earlyGameFloor, Math.floor(18 + baseContribution + levelGrowth))
+  const earlyGameFloor = 24
+  const baseContribution = safeBaseMp * 0.24
+  const levelGrowth = safeLevel * (0.45 + safeBaseMp / 280)
+  return Math.max(earlyGameFloor, Math.floor(22 + baseContribution + levelGrowth))
 }
 
 export const calculateStatsForLevel = (baseStats, level) => ({

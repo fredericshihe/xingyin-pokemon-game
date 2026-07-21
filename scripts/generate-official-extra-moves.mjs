@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises'
 import { withViteAuditServer } from './load-vite-module.mjs'
+import {
+  POKEAPI_ROOT,
+  fetchJson,
+  getDefaultPokemonUrlForSpecies,
+  mapLimit,
+  resolveOfficialSpeciesByPokemonName,
+} from './official-pokemon-name-resolver.mjs'
 
-const POKEAPI_ROOT = 'https://pokeapi.co/api/v2'
 const OUTPUT_PATH = 'src/utils/officialExtraMoves.js'
 
 const MOVE_KEY_TO_API = {
@@ -182,36 +188,6 @@ const SKIPPED_COMPLEX_MOVES = new Set([
   'worry-seed',
 ])
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const fetchJson = async (url, attempt = 1) => {
-  try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
-    }
-    return response.json()
-  } catch (error) {
-    if (attempt >= 4) throw error
-    await wait(350 * attempt)
-    return fetchJson(url, attempt + 1)
-  }
-}
-
-const mapLimit = async (items, limit, mapper) => {
-  const results = new Array(items.length)
-  let nextIndex = 0
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (nextIndex < items.length) {
-      const index = nextIndex
-      nextIndex += 1
-      results[index] = await mapper(items[index], index)
-    }
-  })
-  await Promise.all(workers)
-  return results
-}
-
 const getMoveDetailsForGroup = (pokemonMove, versionGroup) => pokemonMove.version_group_details
   .filter((detail) => detail.version_group.name === versionGroup)
 
@@ -388,9 +364,16 @@ const renderValue = (value, indent = 0) => {
 
 await withViteAuditServer(async ({ loadModule }) => {
   const { MONSTERS } = await loadModule('/src/utils/gameData.js')
-  const pokemonRows = await mapLimit(MONSTERS, 12, async (monster) => ({
+  const { matched, unmatched, ambiguous } = await resolveOfficialSpeciesByPokemonName(MONSTERS)
+  if (unmatched.length > 0 || ambiguous.length > 0) {
+    console.error(JSON.stringify({ unmatched, ambiguous }, null, 2))
+    process.exitCode = 1
+    return
+  }
+
+  const pokemonRows = await mapLimit(matched, 12, async ({ monster, species }) => ({
     monster,
-    api: await fetchJson(`${POKEAPI_ROOT}/pokemon/${monster.dexNo}`),
+    api: await fetchJson(getDefaultPokemonUrlForSpecies(species)),
   }))
 
   const officialMoveNames = new Set()

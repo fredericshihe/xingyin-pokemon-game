@@ -560,7 +560,10 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
       const hasValidPrice = item.notForSale === true
         ? Number.isFinite(Number(item.price)) && Number(item.price) >= 0
         : isPositiveNumber(item.price)
-      if (!item.name || !hasValidPrice || !isPositiveNumber(item[requiredValueKey])) {
+      const hasValidItemEffect = itemType === 'potion' && item.fullRestore === true
+        ? true
+        : isPositiveNumber(item[requiredValueKey])
+      if (!item.name || !hasValidPrice || !hasValidItemEffect) {
         invalidItems.push({
           itemType,
           itemKey,

@@ -1,4 +1,5 @@
 import { MONSTERS } from '../../../utils/gameData.js'
+import { TYPES } from '../../../utils/constants.js'
 import { isLevelValidForSpecies } from '../../../utils/wildEncounterRules.js'
 import { getEvolutionFamilyKey, resolveSpeciesForLevelWithVariety } from '../../../utils/pokemonFamilyVariety.js'
 import {
@@ -8,9 +9,13 @@ import {
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
 import { getMapEventTile } from '../mapEventTypes.js'
 import { MAP_ASSET_CATALOG } from '../mapAssetCatalog.js'
+import { getEliteRouteStepAsideTile, isEliteRouteBlockerEvent } from '../../eliteRouteBlocker.js'
+import { LONG_TERM_PROGRESSION_FLAGS, getChampionTowerFloor, getEliteUnlockObjectiveEvents } from '../longTermProgression.js'
 
-const WIDTH = 40
-const HEIGHT = 32
+const DEFAULT_WIDTH = 40
+const DEFAULT_HEIGHT = 32
+let WIDTH = DEFAULT_WIDTH
+let HEIGHT = DEFAULT_HEIGHT
 
 const TILE = {
   grass: 0,
@@ -103,6 +108,98 @@ const MAP_VISUAL_PALETTES = {
     forestFloor: 0x9890a0,
     sandPatch: 0xd8d0d8,
     paleGrassPatch: 0xe0d8e8
+  },
+  GodotMapV2_FrostDojo: {
+    terrainTop: 0xc8e7ee,
+    terrainBase: 0x789eaa,
+    forestFloor: 0x577a88,
+    sandPatch: 0xe7f7fa,
+    paleGrassPatch: 0xadd7e2,
+    path: 0xdff7fb,
+    pathEdge: 0x6da9b8,
+    pathHighlight: 0xffffff,
+    water: 0x9fe7f2,
+    waterDeep: 0x398ba4,
+    waterBank: 0xc7edf3,
+    bridgeStyle: 'elite',
+    bridgeDeck: 0xbcecf4,
+    bridgeRail: 0x5ba9ba,
+    bridgeAccent: 0xf2fdff,
+    bridgeEmissive: 0x67d9ee,
+    bridgeMetalness: 0.26,
+    bridgeRoughness: 0.28
+  },
+  GodotMapV2_TideDojo: {
+    terrainTop: 0x2d777d,
+    terrainBase: 0x194f59,
+    forestFloor: 0x153f49,
+    sandPatch: 0x8fc8c0,
+    paleGrassPatch: 0x4fa49d,
+    path: 0x68c5bd,
+    pathEdge: 0x205e68,
+    pathHighlight: 0xb8fff6,
+    water: 0x2bb8c5,
+    waterDeep: 0x075985,
+    waterBank: 0x4f9f9a,
+    bridgeStyle: 'elite',
+    bridgeDeck: 0x328f91,
+    bridgeRail: 0x145b64,
+    bridgeAccent: 0x7de5dd,
+    bridgeEmissive: 0x0e8b94,
+    bridgeMetalness: 0.2,
+    bridgeRoughness: 0.4
+  },
+  GodotMapV2_IronDojo: {
+    terrainTop: 0x596168,
+    terrainBase: 0x30363b,
+    forestFloor: 0x292e33,
+    sandPatch: 0xc4a65d,
+    paleGrassPatch: 0x8c949a,
+    path: 0xb8bec2,
+    pathEdge: 0x30363b,
+    pathHighlight: 0xf6c453,
+    pathMetalness: 0.32
+  },
+  GodotMapV2_DragonDojo: {
+    terrainTop: 0x43354d,
+    terrainBase: 0x241b2b,
+    forestFloor: 0x201725,
+    sandPatch: 0xc9a84f,
+    paleGrassPatch: 0x8b6aa2,
+    path: 0xb797c9,
+    pathEdge: 0x392244,
+    pathHighlight: 0xf4d06f,
+    water: 0x3a2448,
+    waterDeep: 0x170c20,
+    waterBank: 0x76538a,
+    bridgeStyle: 'elite',
+    bridgeDeck: 0x72508c,
+    bridgeRail: 0x352040,
+    bridgeAccent: 0xe1bd57,
+    bridgeEmissive: 0x8b5cf6,
+    bridgeMetalness: 0.32,
+    bridgeRoughness: 0.34
+  },
+  GodotMapV2_ChampionTower: {
+    terrainTop: 0x252437,
+    terrainBase: 0x12121d,
+    forestFloor: 0x171622,
+    sandPatch: 0xd8ae4c,
+    paleGrassPatch: 0x55466f,
+    path: 0x4c455f,
+    pathEdge: 0x181522,
+    pathHighlight: 0xf6d365,
+    pathMetalness: 0.38,
+    water: 0x3d2b61,
+    waterDeep: 0x100b1c,
+    waterBank: 0x6d4f8e,
+    bridgeStyle: 'elite',
+    bridgeDeck: 0x383047,
+    bridgeRail: 0xc59737,
+    bridgeAccent: 0xf7d879,
+    bridgeEmissive: 0xe6b84f,
+    bridgeMetalness: 0.54,
+    bridgeRoughness: 0.26
   }
 }
 
@@ -930,6 +1027,17 @@ function clearEvents(grid, events) {
   })
 }
 
+function carveEliteRouteBlockerAlcoves(grid, events) {
+  events.forEach((mapEvent) => {
+    if (!isEliteRouteBlockerEvent(mapEvent)) return
+    const asideTile = getEliteRouteStepAsideTile(mapEvent)
+    if (!asideTile || !inBounds(asideTile.x, asideTile.y)) return
+    const currentTile = grid[asideTile.y]?.[asideTile.x]
+    if (currentTile === TILE.water || isRoadOrBridgeTile(currentTile)) return
+    grid[asideTile.y][asideTile.x] = TILE.paleGrass
+  })
+}
+
 function paintRuntimeEventTiles(grid, events) {
   events.forEach((event) => {
     const x = Math.trunc(Number(event.position?.x))
@@ -1014,20 +1122,40 @@ function event(type, id, x, y, extra = {}) {
   }
 }
 
-function warp(id, x, y, targetMapName, targetPosition, label) {
+function warp(id, x, y, targetMapName, targetPosition, label, properties = {}) {
   return event('warp', id, x, y, {
     target: { mapName: targetMapName, position: targetPosition },
-    properties: { label }
+    properties: { label, ...properties }
   })
 }
 
-function heal(id, x, y, label) {
+function heal(id, x, y, label, properties = {}) {
   return event('heal', id, x, y, {
     properties: {
       goldCost: 1,
       fullRestore: true,
       reusable: true,
-      label
+      label,
+      ...properties
+    }
+  })
+}
+
+function merchant(id, x, y, {
+  name = '回收商',
+  title = '道具回收商',
+  facing = 'down',
+  message = '用不上的补给，我可以回收。',
+  shopMode = 'sell_items'
+} = {}) {
+  return event('merchant', id, x, y, {
+    properties: {
+      role: 'merchant',
+      facing,
+      name,
+      title,
+      message,
+      shopMode
     }
   })
 }
@@ -1044,19 +1172,43 @@ function fastTravel(id, mapId, label) {
       placement: meta?.placement,
       landmark: meta?.landmark,
       routeTone: meta?.routeTone,
-      terrain: meta?.terrain
+      terrain: meta?.terrain,
+      eliteTheme: meta?.eliteTheme
     }
   })
 }
 
-function sign(id, x, y, message) {
+function sign(id, x, y, message, properties = {}) {
   return event('sign', id, x, y, {
-    properties: { message }
+    properties: { message, ...properties }
   })
 }
 
 const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
 const HIDDEN_ENCOUNTER_GATE_COST = 100
+const HIDDEN_ENCOUNTER_GATE_COST_BY_ZONE_ID = Object.freeze({
+  meadow_hidden_grove: 100,
+  lake_hidden_path: 200,
+  farm_windmill_top: 300,
+  shore_wreck_inner: 400,
+  grave_deep_forest: 500,
+  hex_sealed_chamber: 600,
+  peak_starwatch_path: 700
+})
+
+function resolveHiddenEncounterGateCost(hiddenZoneId, cost = null) {
+  const mappedCost = typeof hiddenZoneId === 'string' && hiddenZoneId.length > 0
+    ? HIDDEN_ENCOUNTER_GATE_COST_BY_ZONE_ID[hiddenZoneId]
+    : null
+  const fallbackCost = Number.isFinite(Number(mappedCost)) ? Number(mappedCost) : HIDDEN_ENCOUNTER_GATE_COST
+  return Math.max(1, Math.trunc(Number(cost ?? fallbackCost)) || fallbackCost)
+}
+
+function formatHiddenEncounterGateMessage(hiddenZoneName, hiddenZoneId, cost = null) {
+  const safeZoneName = hiddenZoneName || '隐藏遭遇区'
+  const safeCost = resolveHiddenEncounterGateCost(hiddenZoneId, cost)
+  return `${safeZoneName}入口：${safeCost}金币开启。`
+}
 
 function isHiddenEncounterGateEvent(evt) {
   return evt?.type === 'sign' && evt?.properties?.interactionKind === HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND
@@ -1070,12 +1222,14 @@ function hiddenEncounterGate(id, x, y, {
   gateTheme = 'meadow',
   pathAxis = 'vertical',
   treeType = 'nature_tree_oak',
-  cost = HIDDEN_ENCOUNTER_GATE_COST,
+  cost = null,
   openTile = TILE.road,
-  exclusiveRareCount = 3
+  exclusiveRareCount = 3,
+  requiresMapBossDefeated = false,
+  bossLockedReason = ''
 } = {}) {
   const safeZoneName = hiddenZoneName || '隐藏遭遇区'
-  const safeCost = Math.max(1, Math.trunc(Number(cost)) || HIDDEN_ENCOUNTER_GATE_COST)
+  const safeCost = resolveHiddenEncounterGateCost(hiddenZoneId, cost)
   const safeExclusiveRareCount = Math.max(1, Math.trunc(Number(exclusiveRareCount)) || 3)
   const safeInteractionObjectName = typeof interactionObjectName === 'string' && interactionObjectName.trim().length > 0
     ? interactionObjectName.trim()
@@ -1098,6 +1252,8 @@ function hiddenEncounterGate(id, x, y, {
       openTile,
       unlockTitle: `开启${safeZoneName}`,
       exclusiveRareCount: safeExclusiveRareCount,
+      requiresMapBossDefeated: requiresMapBossDefeated === true,
+      bossLockedReason: typeof bossLockedReason === 'string' ? bossLockedReason.trim() : '',
       unlockDescription: `调查${safeInteractionObjectName}并支付 ${safeCost} 金币，就能永久打开通往${safeZoneName}的路。里面有 ${safeExclusiveRareCount} 只专属强力稀有宝可梦，名字要进入后亲自发现。`,
       unlockSuccessText: `${safeZoneName}的隐秘通路已经打开。`,
       lockedReason: `${safeZoneName}还没有开启。调查${safeInteractionObjectName}，支付 ${safeCost} 金币开路；里面藏着 ${safeExclusiveRareCount} 只专属强力稀有宝可梦。`,
@@ -1612,7 +1768,8 @@ function roadSegmentBridgeRuns(definition, points, width = 3, pathIndex = -1) {
           activeEnd < end ||
           index < points.length - 2 ||
           hasRoadPathConnectionAt(definition, endPoint.x, endPoint.y, pathIndex, index)
-        if (activeEnd - activeStart >= 1 && hasStartConnection && hasEndConnection) {
+        const minimumBridgeSpan = definition.strictRouteCorridors === true ? 0 : 1
+        if (activeEnd - activeStart >= minimumBridgeSpan && hasStartConnection && hasEndConnection) {
           runs.push({
             horizontal,
             x: horizontal ? (activeStart + activeEnd) / 2 : ax,
@@ -2091,6 +2248,34 @@ const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
     stackLayers: 3,
     primaryScale: [1.18, 1.42],
     compactScale: [1.08, 1.28]
+  },
+  eliteFrost: {
+    primary: ['elite_frost_crystal', 'elite_frost_mirror'],
+    compact: ['elite_frost_crystal'],
+    stackLayers: 2,
+    primaryScale: [0.9, 1.12],
+    compactScale: [0.82, 1.0]
+  },
+  eliteTide: {
+    primary: ['elite_tide_pillar', 'elite_tide_gate'],
+    compact: ['elite_tide_pillar'],
+    stackLayers: 2,
+    primaryScale: [0.82, 1.04],
+    compactScale: [0.76, 0.94]
+  },
+  eliteIron: {
+    primary: ['elite_iron_bastion', 'elite_iron_beacon'],
+    compact: ['elite_iron_bastion'],
+    stackLayers: 2,
+    primaryScale: [0.86, 1.06],
+    compactScale: [0.8, 0.98]
+  },
+  eliteDragon: {
+    primary: ['elite_dragon_spire', 'elite_dragon_arch'],
+    compact: ['elite_dragon_spire'],
+    stackLayers: 2,
+    primaryScale: [0.92, 1.12],
+    compactScale: [0.84, 1.02]
   }
 }
 const BOUNDARY_FIXED_LANDMARK_CLEARANCE_RADIUS = {
@@ -2556,10 +2741,20 @@ function resolveBoundaryVisualBlockerProfile(mapId) {
   if (mapId === 'GodotMapV2_HexRuins') return BOUNDARY_VISUAL_BLOCKER_PROFILES.hexRuins
   if (mapId === 'GodotMapV2_SurvivalRidge') return BOUNDARY_VISUAL_BLOCKER_PROFILES.survivalRidge
   if (mapId === 'GodotMapV2_BossHighland') return BOUNDARY_VISUAL_BLOCKER_PROFILES.bossHighland
+  if (mapId === 'GodotMapV2_FrostDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteFrost
+  if (mapId === 'GodotMapV2_TideDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteTide
+  if (mapId === 'GodotMapV2_IronDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteIron
+  if (mapId === 'GodotMapV2_DragonDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteDragon
   return BOUNDARY_VISUAL_BLOCKER_PROFILES.default
 }
 
 const PIRATE_SHORE_MAP_ID = 'GodotMapV2_PirateShore'
+const ELITE_FOUR_DOJO_MAP_IDS = new Set([
+  'GodotMapV2_FrostDojo',
+  'GodotMapV2_TideDojo',
+  'GodotMapV2_IronDojo',
+  'GodotMapV2_DragonDojo'
+])
 
 function isPirateShoreMap(mapId) {
   return mapId === PIRATE_SHORE_MAP_ID
@@ -2567,6 +2762,10 @@ function isPirateShoreMap(mapId) {
 
 function shouldRenderInstancedForestWallTrees(mapId) {
   return isPirateShoreMap(mapId)
+}
+
+function shouldRenderForestWallUndergrowth(mapId) {
+  return !ELITE_FOUR_DOJO_MAP_IDS.has(mapId)
 }
 
 function resolveLegacyBoundaryVisualBlockerScale(type, [minFactor, maxFactor], x, y, salt = 0) {
@@ -3083,6 +3282,45 @@ function softenForestEdgeCollisions(grid) {
   })
 }
 
+function isInsideStrictRouteOpenClearing(definition, x, y) {
+  return (definition.clearings || []).some((clearing) => {
+    if (clearing.strictRouteOpen !== true) return false
+    if (clearing.shape === 'rect') {
+      return x >= clearing.x1 && x <= clearing.x2 && y >= clearing.y1 && y <= clearing.y2
+    }
+    const rx = Number(clearing.rx) || 0
+    const ry = Number(clearing.ry) || 0
+    if (rx <= 0 || ry <= 0) return false
+    const dx = (x - clearing.x) / rx
+    const dy = (y - clearing.y) / ry
+    return dx * dx + dy * dy <= 1
+  })
+}
+
+function enforceStrictEliteRouteCorridors(grid, definition, runtimeEvents) {
+  if (definition.strictRouteCorridors !== true) return
+  const asideTileKeys = new Set(
+    runtimeEvents
+      .filter((mapEvent) => isEliteRouteBlockerEvent(mapEvent))
+      .map((mapEvent) => getEliteRouteStepAsideTile(mapEvent))
+      .filter(Boolean)
+      .map((point) => `${point.x},${point.y}`)
+  )
+
+  for (let y = 1; y < HEIGHT - 1; y += 1) {
+    for (let x = 1; x < WIDTH - 1; x += 1) {
+      const tile = grid[y][x]
+      if (asideTileKeys.has(`${x},${y}`)) {
+        grid[y][x] = TILE.paleGrass
+        continue
+      }
+      if (isRoadOrBridgeTile(tile) || tile === TILE.water || tile === TILE.objectBlocker) continue
+      if (isInsideStrictRouteOpenClearing(definition, x, y)) continue
+      if (OPEN_GROUND_TILES.has(tile)) grid[y][x] = TILE.wall
+    }
+  }
+}
+
 function getEventAccessTarget(grid, event) {
   const x = Math.trunc(Number(event.position?.x))
   const y = Math.trunc(Number(event.position?.y))
@@ -3105,6 +3343,12 @@ function carveEventAccessCorridors(grid, runtimeEvents) {
   if (roadTiles.length === 0) return
 
   runtimeEvents.forEach((evt) => {
+    if (isEliteRouteBlockerEvent(evt)) {
+      const eventX = Math.trunc(Number(evt.position?.x))
+      const eventY = Math.trunc(Number(evt.position?.y))
+      const eventTile = grid[eventY]?.[eventX]
+      if (eventTile === TILE.road || eventTile === TILE.bridge) return
+    }
     const target = getEventAccessTarget(grid, evt)
     if (!target) return
     if (grid[target.y]?.[target.x] === TILE.road || grid[target.y]?.[target.x] === TILE.bridge) return
@@ -4575,97 +4819,706 @@ const REGION_GAMEPLAY_PROFILES = {
   }
 }
 
+function makeLieutenantRoster({
+  name,
+  speciesIds = [],
+  levels = [],
+  order = 1,
+  styleKey = 'pressure',
+  battleStyleLabel = '',
+  recommendedLevel = null,
+  ruleDescription = '',
+  beforeBattleText = '',
+  battleHintText = '',
+  defeatedText = '',
+  dailyDefeatedText = '',
+  facing
+} = {}) {
+  const safeOrder = Math.max(1, Math.trunc(Number(order)) || 1)
+  const safeStyleLabel = typeof battleStyleLabel === 'string' && battleStyleLabel.trim().length > 0
+    ? battleStyleLabel.trim()
+    : `第${safeOrder}部下`
+  return {
+    name,
+    speciesIds,
+    levels,
+    fixedTeam: true,
+    styleKey,
+    title: `第${safeOrder}部下 · ${safeStyleLabel}`,
+    difficultyLabel: `部下训练家 · 第${safeOrder}部下 · ${safeStyleLabel}`,
+    battleStyleLabel: safeStyleLabel,
+    recommendedLevel,
+    sequenceOrder: safeOrder,
+    ruleDescription,
+    beforeBattleText,
+    battleHintText,
+    defeatedText,
+    dailyDefeatedText,
+    ...(facing ? { facing } : {})
+  }
+}
+
+function makeBossRoster({
+  name,
+  speciesIds = [],
+  levels = [],
+  title = '',
+  difficultyLabel = '',
+  recommendedLevel = null,
+  battleStyleLabel = '',
+  ruleDescription = '',
+  beforeBattleText = '',
+  battleHintText = '',
+  defeatedText = '',
+  dailyDefeatedText = ''
+} = {}) {
+  return {
+    name,
+    speciesIds,
+    levels,
+    fixedTeam: true,
+    title,
+    difficultyLabel,
+    recommendedLevel,
+    battleStyleLabel,
+    ruleDescription,
+    beforeBattleText,
+    battleHintText,
+    defeatedText,
+    dailyDefeatedText
+  }
+}
+
+function fixedEliteTeam(speciesIds = [], levels = []) {
+  const fallbackLevel = clampLevel(levels[levels.length - 1] ?? 1)
+  return (Array.isArray(speciesIds) ? speciesIds : [])
+    .map((pokemonId, index) => {
+      const resolvedId = Math.trunc(Number(pokemonId))
+      if (!Number.isInteger(resolvedId)) return null
+      return {
+        pokemonId: resolvedId,
+        level: clampLevel(levels[index] ?? fallbackLevel)
+      }
+    })
+    .filter(Boolean)
+}
+
+function eliteRule({
+  id,
+  name,
+  description,
+  openingEnemyStatStages,
+  openingPlayerStatStages,
+  enemyPhysicalDamageTakenMultiplierTurns,
+  enemyDamageTakenMultiplier,
+  enemyTurnIntervalHeal,
+  playerSwitchEnemyDamageMultiplier,
+  enemyDamageBoostOnCriticalTaken,
+  enemyMoveTypeHitPlayerStatStage,
+  enemyHealOnPlayerFaint,
+  enemySpeedBoostOnPlayerFaint,
+  enemyDamageMultiplierAfterTurn,
+  enemyDamageMultiplierAgainstLowHp
+} = {}) {
+  return {
+    id,
+    name,
+    description,
+    ...(openingEnemyStatStages ? { openingEnemyStatStages } : {}),
+    ...(openingPlayerStatStages ? { openingPlayerStatStages } : {}),
+    ...(enemyPhysicalDamageTakenMultiplierTurns ? { enemyPhysicalDamageTakenMultiplierTurns } : {}),
+    ...(Number.isFinite(Number(enemyDamageTakenMultiplier)) ? { enemyDamageTakenMultiplier: Number(enemyDamageTakenMultiplier) } : {}),
+    ...(enemyTurnIntervalHeal ? { enemyTurnIntervalHeal } : {}),
+    ...(playerSwitchEnemyDamageMultiplier ? { playerSwitchEnemyDamageMultiplier } : {}),
+    ...(enemyDamageBoostOnCriticalTaken ? { enemyDamageBoostOnCriticalTaken } : {}),
+    ...(enemyMoveTypeHitPlayerStatStage ? { enemyMoveTypeHitPlayerStatStage } : {}),
+    ...(enemyHealOnPlayerFaint ? { enemyHealOnPlayerFaint } : {}),
+    ...(enemySpeedBoostOnPlayerFaint ? { enemySpeedBoostOnPlayerFaint } : {}),
+    ...(enemyDamageMultiplierAfterTurn ? { enemyDamageMultiplierAfterTurn } : {}),
+    ...(enemyDamageMultiplierAgainstLowHp ? { enemyDamageMultiplierAgainstLowHp } : {})
+  }
+}
+
+function eliteLieutenant(id, x, y, {
+  name,
+  order,
+  title,
+  styleLabel,
+  team,
+  requiredTrainerIds = [],
+  lockedText = '',
+  characterModel = '',
+  visualTheme = '',
+  facing = 'down',
+  stepAsideDirection = 'right',
+  stepAsideDistance = 1,
+  recommendedLevel,
+  rule,
+  beforeBattleText,
+  battleHintText = '',
+  defeatedText,
+  dailyDefeatedText
+} = {}) {
+  const requiredOrder = Math.max(1, Math.trunc(Number(order)) || 1)
+  return event('trainer', id, x, y, {
+    properties: {
+      role: 'lieutenant',
+      facing,
+      name,
+      title: title || `第${requiredOrder}部下 · ${styleLabel || rule?.name || '特殊试炼'}`,
+      difficultyLabel: `四天王部下 · 第${requiredOrder}部下`,
+      battleTier: 'lieutenant',
+      requiredForBoss: true,
+      battleStyle: rule?.id || 'elite_four',
+      battleStyleLabel: styleLabel || rule?.name || '',
+      sequenceOrder: requiredOrder,
+      recommendedLevel,
+      ruleDescription: rule?.description || '',
+      battleHintText,
+      specialBattleRule: rule || null,
+      statusChips: rule?.name ? [rule.name] : ['四天王部下'],
+      requiredTrainerIds,
+      lockedText: lockedText || (requiredTrainerIds.length > 0 ? `先通过上一层试炼，${name}才会接受挑战。` : ''),
+      characterModel,
+      visualTheme,
+      blocksRouteUntilDefeated: true,
+      stepAsideDirection,
+      stepAsideDistance,
+      team,
+      beforeBattleText,
+      defeatedText,
+      dailyDefeatedText
+    }
+  })
+}
+
+function eliteBoss(id, x, y, {
+  name,
+  title,
+  styleLabel,
+  team,
+  requiredTrainerIds = [],
+  characterModel = '',
+  visualTheme = '',
+  facing = 'down',
+  stepAsideDirection = 'right',
+  stepAsideDistance = 1,
+  recommendedLevel,
+  rule,
+  beforeBattleText,
+  battleHintText = '',
+  defeatedText,
+  dailyDefeatedText,
+  rewardItems = []
+} = {}) {
+  return event('boss', id, x, y, {
+    properties: {
+      role: 'boss',
+      facing,
+      name,
+      title,
+      difficultyLabel: '四天王 · 道馆主战',
+      battleTier: 'boss',
+      battleStyle: rule?.id || 'elite_four_boss',
+      battleStyleLabel: styleLabel || rule?.name || '',
+      recommendedLevel,
+      ruleDescription: rule?.description || '',
+      battleHintText,
+      specialBattleRule: rule || null,
+      statusChips: rule?.name ? [rule.name, '四天王'] : ['四天王'],
+      requiredTrainerIds,
+      lockedText: `先击败本馆 3 名特殊部下，${name}才会接受挑战。`,
+      characterModel,
+      visualTheme,
+      blocksRouteUntilDefeated: true,
+      stepAsideDirection,
+      stepAsideDistance,
+      team,
+      beforeBattleText,
+      defeatedText,
+      dailyDefeatedText,
+      rewardItems
+    }
+  })
+}
+
+const REGION_TRAINER_BATTLE_HINTS = Object.freeze({
+  '苔坡巡队长': '见快的先压，别让它连着动。',
+  '花径哨卫': '顶不住就换，硬扛最亏。',
+  '湖畔督导员': '带能破岩草的招，你会省力些。',
+  '星音首领': '前面别乱掉血，火龙留到最后收。',
+
+  '芦苇巡队长': '草电好用，可别被我拖住节奏。',
+  '湖湾守望员': '别只押草系，备个不怕电的。',
+  '深水督导员': '先掐掉冰系那只，后面就顺了。',
+  '雾湖首领': '草电先别早交，后半场更要靠它。',
+
+  '田垄巡队长': '水草格斗都能打，别跟我硬碰硬。',
+  '仓场守备员': '被磨了就换，别让一只站太久。',
+  '坡地监督员': '带点打草打岩的招，会轻松不少。',
+  '风车首领': '格斗地面留着，袋兽得有人收。',
+
+  '潮头巡队长': '有草电就先上，别让化石反咬。',
+  '礁岩守备员': '先打脆的，再拆硬的，别急。',
+  '船坞督导员': '草电给暴鲤龙留着，它倒了就散。',
+  '海岸首领': '先稳住海里那几只，后面再收火狗翼龙。',
+
+  '墓园巡队长': '超能地面好使，别陪我慢慢耗。',
+  '黑雾守备员': '手里没点狠招，可磨不过我。',
+  '夜巡督导员': '先掐住搅局的，别把节奏让出去。',
+  '月影首领': '先清最脏的那个，越拖越难受。',
+
+  '电枢巡队长': '地面能压我，可别忘了防补盲。',
+  '岩壁守望员': '水草格斗带够，别跟墙死磨。',
+  '中枢监理员': '多换两手，别让一只吃满克制。',
+  '遗迹首领': '想一只通关？这关可不认。',
+
+  '山脊巡队长': '先扛住头一波，后面才有得打。',
+  '钢壁守备员': '没地面格斗，就准备陪我耗吧。',
+  '峡谷监理员': '先放倒冲得快的，别等王牌上来。',
+  '铁木首领': '王牌别太早亮，后排才是真硬仗。',
+
+  '高地巡队长': '队伍带均衡点，别只靠一系。',
+  '星雾守备员': '看见重炮就换，硬吃准吃亏。',
+  '天穹监理员': '得有一口爆发，不然拖不过去。',
+  '星雾首领': '前排省着打，后两只才是真考卷。'
+})
+
 const REGION_TRAINER_ROSTERS = {
   GodotMapV2: {
     trainers: [
       { name: '草径露营客', speciesIds: [1, 13] },
       { name: '南坡飞羽客', speciesIds: [39, 98] },
-      { name: '花田采集员', speciesIds: [114, 119], dailyVariantSpeciesIds: [114, 119, 4], levels: [7, 7] },
+      { name: '花田采集员', speciesIds: [114, 119], dailyVariantSpeciesIds: [114, 119, 4], levels: [6, 7] },
       { name: '东岗电气迷', speciesIds: [4, 1] }
     ],
     lieutenants: [
-      { name: '苔坡巡队长', speciesIds: [98, 39, 119] },
-      { name: '花径哨卫', speciesIds: [114, 119, 13] },
-      { name: '湖畔督导员', speciesIds: [1, 4, 39], facing: 'down' }
-    ]
+      makeLieutenantRoster({
+        name: '苔坡巡队长',
+        speciesIds: [98, 39, 112],
+        levels: [12, 13, 17],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '侦察快打',
+        recommendedLevel: 17,
+        ruleDescription: '先手压血，逼你先处理快怪。',
+        beforeBattleText: '苔坡巡队长：先破我的快打，再去见首领。',
+        defeatedText: '苔坡巡队长：印记给你，去找第2位。',
+        dailyDefeatedText: '苔坡巡队长：第1枚印记已在你手上。'
+      }),
+      makeLieutenantRoster({
+        name: '花径哨卫',
+        speciesIds: [13, 119, 113],
+        levels: [13, 14, 18],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '黏人消耗',
+        recommendedLevel: 18,
+        ruleDescription: '不爆发，但会慢慢黏住你。',
+        beforeBattleText: '花径哨卫：先熬过我这关，再去见首领。',
+        defeatedText: '花径哨卫：印记拿好，去找第3位。',
+        dailyDefeatedText: '花径哨卫：第2枚印记你已经拿到了。'
+      }),
+      makeLieutenantRoster({
+        name: '湖畔督导员',
+        speciesIds: [120, 1, 116],
+        levels: [14, 15, 19],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '资格审查',
+        recommendedLevel: 19,
+        ruleDescription: '更硬更稳，是首图压轴。',
+        beforeBattleText: '湖畔督导员：过了我，你才配见首领。',
+        defeatedText: '湖畔督导员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '湖畔督导员：三枚印记你已凑齐。',
+        facing: 'down'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '星音首领',
+      speciesIds: [116, 120, 121, 83, 123, 2],
+      levels: [13, 14, 15, 17, 18, 19],
+      title: '综合总考 · 新手综合 Boss',
+      difficultyLabel: 'Boss训练家 · 新手综合总考',
+      recommendedLevel: 19,
+      battleStyleLabel: '综合总考',
+      ruleDescription: '前场拖节奏，后场小火龙收口。',
+      beforeBattleText: '星音首领：三枚印记都到手了？来交总答卷。',
+      defeatedText: '星音首领：不错，这片草径认可你了。',
+      dailyDefeatedText: '星音首领：这轮总考你已经通过了。'
+    })
   },
   GodotMapV2_MistLake: {
     trainers: [
-      { name: '雾岸观测员', speciesIds: [14, 16] },
-      { name: '潮滩潜水客', speciesIds: [77, 78] },
-      { name: '湖心占星者', speciesIds: [80, 13] },
-      { name: '苇湾垂钓者', speciesIds: [5, 14], levels: [14, 14] }
+      { name: '雾岸观测员', speciesIds: [14, 16], levels: [13, 14], dailyVariantLevelJitter: 0 },
+      { name: '潮滩潜水客', speciesIds: [77, 78], levels: [14, 15], dailyVariantLevelJitter: 0 },
+      { name: '湖心占星者', speciesIds: [80, 13], levels: [15, 16], dailyVariantLevelJitter: 0 },
+      { name: '苇湾垂钓者', speciesIds: [5, 14], levels: [16, 17], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '芦苇巡队长', speciesIds: [77, 78, 80] },
-      { name: '湖湾守望员', speciesIds: [5, 13, 14] },
-      { name: '深水督导员', speciesIds: [16, 77, 5] }
-    ]
+      makeLieutenantRoster({
+        name: '芦苇巡队长',
+        speciesIds: [77, 78, 5],
+        levels: [18, 19, 23],
+        order: 1,
+        styleKey: 'control',
+        battleStyleLabel: '泥水拖拽',
+        recommendedLevel: 23,
+        ruleDescription: '水图不只看克制，也要扛得住。',
+        beforeBattleText: '芦苇巡队长：先拖出节奏，再去见首领。',
+        defeatedText: '芦苇巡队长：第1枚印记给你了。',
+        dailyDefeatedText: '芦苇巡队长：第1枚印记已归你。'
+      }),
+      makeLieutenantRoster({
+        name: '湖湾守望员',
+        speciesIds: [90, 91, 73],
+        levels: [19, 20, 24],
+        order: 2,
+        styleKey: 'pressure',
+        battleStyleLabel: '反草反飞',
+        recommendedLevel: 24,
+        ruleDescription: '专治拿草系一路平推。',
+        beforeBattleText: '湖湾守望员：想靠草系平推？先过我再见首领。',
+        defeatedText: '湖湾守望员：第2枚印记拿好。',
+        dailyDefeatedText: '湖湾守望员：第2枚印记你已带走。'
+      }),
+      makeLieutenantRoster({
+        name: '深水督导员',
+        speciesIds: [75, 93, 5],
+        levels: [20, 21, 25],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '深水压轴',
+        recommendedLevel: 25,
+        ruleDescription: '冰水耐久补盲，明显强一档。',
+        beforeBattleText: '深水督导员：撑过深水压轴，再去见首领。',
+        defeatedText: '深水督导员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '深水督导员：三枚印记已经齐了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '雾湖首领',
+      speciesIds: [91, 93, 75, 152, 163, 128],
+      levels: [19, 20, 21, 23, 24, 25],
+      title: '综合总考 · 换挡 Boss',
+      difficultyLabel: 'Boss训练家 · 水域换挡总考',
+      recommendedLevel: 25,
+      battleStyleLabel: '换挡总考',
+      ruleDescription: '速度冰压水稳轮着换挡。',
+      beforeBattleText: '雾湖首领：看你能不能扛住整套换挡。',
+      defeatedText: '雾湖首领：很好，雾湖苇岸认可你了。',
+      dailyDefeatedText: '雾湖首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_FarmTown: {
     trainers: [
-      { name: '田埂园丁', speciesIds: [87, 88] },
-      { name: '谷仓跑腿员', speciesIds: [119, 106] },
-      { name: '牧栏学徒', speciesIds: [96, 102] },
-      { name: '风车巡看员', speciesIds: [22, 30] }
+      { name: '田埂园丁', speciesIds: [87, 88], levels: [19, 20], dailyVariantLevelJitter: 0 },
+      { name: '谷仓跑腿员', speciesIds: [119, 106], levels: [20, 21], dailyVariantLevelJitter: 0 },
+      { name: '牧栏学徒', speciesIds: [96, 102], levels: [21, 22], dailyVariantLevelJitter: 0 },
+      { name: '风车巡看员', speciesIds: [22, 30], levels: [22, 23], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '田垄巡队长', speciesIds: [96, 106, 22] },
-      { name: '仓场守备员', speciesIds: [119, 88, 96] },
-      { name: '坡地监督员', speciesIds: [87, 102, 96] }
-    ]
+      makeLieutenantRoster({
+        name: '田垄巡队长',
+        speciesIds: [22, 96, 85],
+        levels: [24, 25, 29],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '路障硬碰',
+        recommendedLevel: 29,
+        ruleDescription: '先用最直接的物理压制开题。',
+        beforeBattleText: '田垄巡队长：先吃住正面硬碰，再去见首领。',
+        defeatedText: '田垄巡队长：第1枚印记归你。',
+        dailyDefeatedText: '田垄巡队长：第1枚印记已经给你。'
+      }),
+      makeLieutenantRoster({
+        name: '仓场守备员',
+        speciesIds: [119, 88, 15],
+        levels: [25, 26, 30],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '仓场骚扰',
+        recommendedLevel: 30,
+        ruleDescription: '拖节奏磨血，专治单核平推。',
+        beforeBattleText: '仓场守备员：别想一路平推，先过我再见首领。',
+        defeatedText: '仓场守备员：第2枚印记拿好。',
+        dailyDefeatedText: '仓场守备员：第2枚印记你已拿走。'
+      }),
+      makeLieutenantRoster({
+        name: '坡地监督员',
+        speciesIds: [87, 48, 103],
+        levels: [26, 27, 31],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '混合执法',
+        recommendedLevel: 31,
+        ruleDescription: '磨血突破补盲都在这一队。',
+        beforeBattleText: '坡地监督员：过了混合执法，才配见首领。',
+        defeatedText: '坡地监督员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '坡地监督员：三枚印记你已集齐。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '风车首领',
+      speciesIds: [15, 48, 159, 161, 106, 53],
+      levels: [25, 26, 27, 29, 30, 31],
+      title: '综合总考 · 野路子 Boss',
+      difficultyLabel: 'Boss训练家 · 农庄综合总考',
+      recommendedLevel: 31,
+      battleStyleLabel: '野路子总考',
+      ruleDescription: '先缠你，再让袋兽正面收尾。',
+      beforeBattleText: '风车首领：来，把农庄这张总考卷做完。',
+      defeatedText: '风车首领：好，这片农庄服你了。',
+      dailyDefeatedText: '风车首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_PirateShore: {
     trainers: [
-      { name: '沙洲赶海客', speciesIds: [79, 80] },
-      { name: '礁湾潜水员', speciesIds: [77, 82] },
-      { name: '贝丘化石迷', speciesIds: [81, 5] },
-      { name: '沉船瞭望手', speciesIds: [44, 54] }
+      { name: '沙洲赶海客', speciesIds: [79, 80], levels: [25, 26], dailyVariantLevelJitter: 0 },
+      { name: '礁湾潜水员', speciesIds: [77, 82], levels: [26, 27], dailyVariantLevelJitter: 0 },
+      { name: '贝丘化石迷', speciesIds: [81, 5], levels: [27, 28], dailyVariantLevelJitter: 0 },
+      { name: '沉船瞭望手', speciesIds: [44, 54], levels: [28, 29], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '潮头巡队长', speciesIds: [80, 82, 54] },
-      { name: '礁岩守备员', speciesIds: [77, 81, 44] },
-      { name: '船坞督导员', speciesIds: [5, 80, 79] }
-    ]
+      makeLieutenantRoster({
+        name: '潮头巡队长',
+        speciesIds: [79, 80, 82, 81, 77],
+        levels: [29, 30, 31, 32, 35],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '潮水快打',
+        recommendedLevel: 35,
+        ruleDescription: '快节奏开题，但前排并不耐打。',
+        beforeBattleText: '潮头巡队长：先顶住潮水快打，再去见首领。',
+        defeatedText: '潮头巡队长：第1枚印记给你。',
+        dailyDefeatedText: '潮头巡队长：第1枚印记已在你手里。'
+      }),
+      makeLieutenantRoster({
+        name: '礁岩守备员',
+        speciesIds: [78, 79, 5, 31, 81],
+        levels: [30, 31, 32, 33, 38],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '礁岩反打',
+        recommendedLevel: 38,
+        ruleDescription: '更耐打，也更会反击。',
+        beforeBattleText: '礁岩守备员：想上岸？先过我再见首领。',
+        defeatedText: '礁岩守备员：第2枚印记拿稳。',
+        dailyDefeatedText: '礁岩守备员：第2枚印记你已拿到。'
+      }),
+      makeLieutenantRoster({
+        name: '船坞督导员',
+        speciesIds: [77, 5, 42, 44, 8],
+        levels: [31, 32, 33, 34, 40],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '沉船压轴',
+        recommendedLevel: 40,
+        ruleDescription: '暴鲤龙压场，终于像守关人了。',
+        beforeBattleText: '船坞督导员：扛住这波沉船压轴，再见首领。',
+        defeatedText: '船坞督导员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '船坞督导员：三枚印记你都拿到了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '海岸首领',
+      speciesIds: [31, 78, 44, 80, 7, 24],
+      levels: [31, 32, 33, 35, 38, 40],
+      title: '综合总考 · 海陆炮台 Boss',
+      difficultyLabel: 'Boss训练家 · 海陆综合总考',
+      recommendedLevel: 40,
+      battleStyleLabel: '海陆总考',
+      ruleDescription: '先稳住中盘，再用火狗和翼龙收尾。',
+      beforeBattleText: '海岸首领：来，看你能不能同时应付海和陆。',
+      defeatedText: '海岸首领：很好，这片海岸认你了。',
+      dailyDefeatedText: '海岸首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_Graveyard: {
     trainers: [
-      { name: '墓道夜巡者', speciesIds: [20, 100] },
-      { name: '梦魇占卜师', speciesIds: [20, 100], dailyVariantSpeciesIds: [20, 100, 43] },
-      { name: '毒雾拾荒者', speciesIds: [101, 21] },
-      { name: '灵灯看守人', speciesIds: [21, 101], dailyVariantSpeciesIds: [20, 21, 43, 101] }
+      { name: '墓道夜巡者', speciesIds: [20, 100], levels: [32, 33], dailyVariantLevelJitter: 0 },
+      { name: '梦魇占卜师', speciesIds: [20, 100], dailyVariantSpeciesIds: [20, 100, 43], levels: [33, 34], dailyVariantLevelJitter: 0 },
+      { name: '毒雾拾荒者', speciesIds: [101, 21], levels: [34, 35], dailyVariantLevelJitter: 0 },
+      { name: '灵灯看守人', speciesIds: [21, 101], dailyVariantSpeciesIds: [20, 21, 43, 101], levels: [35, 36], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '墓园巡队长', speciesIds: [21, 43, 100] },
-      { name: '黑雾守备员', speciesIds: [100, 101, 43] },
-      { name: '夜巡督导员', speciesIds: [6, 137, 100] }
-    ]
+      makeLieutenantRoster({
+        name: '墓园巡队长',
+        speciesIds: [159, 100, 21, 101, 43],
+        levels: [35, 36, 37, 38, 41],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '幽毒试探',
+        recommendedLevel: 41,
+        ruleDescription: '先把墓园的脏和毒立起来。',
+        beforeBattleText: '墓园巡队长：先习惯这股脏毒，再去见首领。',
+        defeatedText: '墓园巡队长：第1枚印记归你。',
+        dailyDefeatedText: '墓园巡队长：第1枚印记已经给你。'
+      }),
+      makeLieutenantRoster({
+        name: '黑雾守备员',
+        speciesIds: [43, 137, 164, 50, 173],
+        levels: [36, 37, 38, 39, 47],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '梦魇壁垒',
+        recommendedLevel: 47,
+        ruleDescription: '你打得动，但很难一口推穿。',
+        beforeBattleText: '黑雾守备员：推不穿我，就别急着见首领。',
+        defeatedText: '黑雾守备员：第2枚印记拿好。',
+        dailyDefeatedText: '黑雾守备员：第2枚印记你已带走。'
+      }),
+      makeLieutenantRoster({
+        name: '夜巡督导员',
+        speciesIds: [50, 173, 137, 6, 126],
+        levels: [37, 38, 39, 40, 52],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '月夜追猎',
+        recommendedLevel: 52,
+        ruleDescription: '真正的夜战骚扰从这场开始。',
+        beforeBattleText: '夜巡督导员：过了夜巡追猎，才配见首领。',
+        defeatedText: '夜巡督导员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '夜巡督导员：三枚印记已经齐了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '月影首领',
+      speciesIds: [50, 6, 180, 132, 30, 126],
+      levels: [37, 38, 39, 41, 47, 52],
+      title: '综合总考 · 诅咒混成 Boss',
+      difficultyLabel: 'Boss训练家 · 墓园综合总考',
+      recommendedLevel: 52,
+      battleStyleLabel: '诅咒总考',
+      ruleDescription: '前场脏，中场怪，后场狠。',
+      beforeBattleText: '月影首领：来，让我把前三关合成一关考你。',
+      defeatedText: '月影首领：很好，墓园的夜色认可你了。',
+      dailyDefeatedText: '月影首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_HexRuins: {
     trainers: [
-      { name: '线圈维护员', speciesIds: [90, 45] },
-      { name: '终端勘测员', speciesIds: [105, 135], dailyVariantSpeciesIds: [105, 135, 45], levels: [36, 36] },
-      { name: '岩层修复师', speciesIds: [45, 105], dailyVariantSpeciesIds: [45, 105, 135] },
-      { name: '幻象记录员', speciesIds: [135, 105], dailyVariantSpeciesIds: [135, 105, 45], levels: [38, 38] }
+      { name: '线圈维护员', speciesIds: [90, 45], levels: [37, 38], dailyVariantLevelJitter: 0 },
+      { name: '终端勘测员', speciesIds: [105, 135], dailyVariantSpeciesIds: [105, 135, 45], levels: [42, 43], dailyVariantLevelJitter: 0 },
+      { name: '岩层修复师', speciesIds: [45, 105], dailyVariantSpeciesIds: [45, 105, 135], levels: [39, 40], dailyVariantLevelJitter: 0 },
+      { name: '幻象记录员', speciesIds: [135, 105], dailyVariantSpeciesIds: [135, 105, 45], levels: [40, 41], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '电枢巡队长', speciesIds: [38, 45, 108] },
-      { name: '岩壁守望员', speciesIds: [103, 105, 135] },
-      { name: '中枢监理员', speciesIds: [110, 90, 135] }
-    ]
+      makeLieutenantRoster({
+        name: '电枢巡队长',
+        speciesIds: [45, 108, 135, 105, 138],
+        levels: [41, 42, 43, 44, 47],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '电能试探',
+        recommendedLevel: 47,
+        ruleDescription: '先让你感到遗迹系统在运作。',
+        beforeBattleText: '电枢巡队长：先摸清电枢节奏，再去见首领。',
+        defeatedText: '电枢巡队长：第1枚印记归你。',
+        dailyDefeatedText: '电枢巡队长：第1枚印记已经给你。'
+      }),
+      makeLieutenantRoster({
+        name: '岩壁守望员',
+        speciesIds: [139, 143, 57, 67, 147],
+        levels: [42, 43, 44, 45, 54],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '古墙反击',
+        recommendedLevel: 54,
+        ruleDescription: '更厚更硬，像遗迹外墙守军。',
+        beforeBattleText: '岩壁守望员：撞不开这道墙，就别急着见首领。',
+        defeatedText: '岩壁守望员：第2枚印记拿好。',
+        dailyDefeatedText: '岩壁守望员：第2枚印记你已拿走。'
+      }),
+      makeLieutenantRoster({
+        name: '中枢监理员',
+        speciesIds: [138, 62, 153, 109, 147],
+        levels: [43, 44, 45, 46, 61],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '系统调度',
+        recommendedLevel: 61,
+        ruleDescription: '高覆盖换挡，不给你舒服节奏。',
+        beforeBattleText: '中枢监理员：看懂系统换挡，才配见首领。',
+        defeatedText: '中枢监理员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '中枢监理员：三枚印记已经齐了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '遗迹首领',
+      speciesIds: [57, 62, 138, 67, 135, 147],
+      levels: [43, 44, 45, 47, 54, 61],
+      title: '综合总考 · 多核控制 Boss',
+      difficultyLabel: 'Boss训练家 · 遗迹综合总考',
+      recommendedLevel: 61,
+      battleStyleLabel: '多核总考',
+      ruleDescription: '很难找到一套万能解法。',
+      beforeBattleText: '遗迹首领：来，看你能不能解开整座中枢。',
+      defeatedText: '遗迹首领：很好，六角遗迹认可你了。',
+      dailyDefeatedText: '遗迹首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_SurvivalRidge: {
     trainers: [
-      { name: '峡口力士', speciesIds: [35, 51], dailyVariantSpeciesIds: [35, 51, 131], levels: [41, 42] },
-      { name: '岩壁猎手', speciesIds: [51, 131] },
-      { name: '营地技师', speciesIds: [131, 139], dailyVariantSpeciesIds: [131, 139, 104], levels: [43, 44] },
-      { name: '高坡驯兽员', speciesIds: [139, 35], dailyVariantSpeciesIds: [139, 35, 131], levels: [44, 45] }
+      { name: '峡口力士', speciesIds: [35, 51], dailyVariantSpeciesIds: [35, 51, 131], levels: [44, 45], dailyVariantLevelJitter: 0 },
+      { name: '岩壁猎手', speciesIds: [51, 131], levels: [47, 47], dailyVariantLevelJitter: 0 },
+      { name: '营地技师', speciesIds: [131, 139], dailyVariantSpeciesIds: [131, 139, 104], levels: [45, 46], dailyVariantLevelJitter: 0 },
+      { name: '高坡驯兽员', speciesIds: [139, 35], dailyVariantSpeciesIds: [139, 35, 131], levels: [47, 48], dailyVariantLevelJitter: 0 }
     ],
     lieutenants: [
-      { name: '山脊巡队长', speciesIds: [34, 51, 131] },
-      { name: '钢壁守备员', speciesIds: [139, 143, 35] },
-      { name: '峡谷监理员', speciesIds: [109, 104, 34] }
-    ]
+      makeLieutenantRoster({
+        name: '山脊巡队长',
+        speciesIds: [48, 34, 51, 35, 61],
+        levels: [56, 57, 58, 59, 62],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '碎岩前锋',
+        recommendedLevel: 62,
+        ruleDescription: '开门就咬人，正面对冲见真章。',
+        beforeBattleText: '山脊巡队长：先扛住正面对冲，再去见首领。',
+        defeatedText: '山脊巡队长：第1枚印记归你。',
+        dailyDefeatedText: '山脊巡队长：第1枚印记已经给你。'
+      }),
+      makeLieutenantRoster({
+        name: '钢壁守备员',
+        speciesIds: [145, 60, 61, 48, 34],
+        levels: [57, 58, 59, 60, 64],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '钢壁封路',
+        recommendedLevel: 64,
+        ruleDescription: '不比第一场快，但更难打穿。',
+        beforeBattleText: '钢壁守备员：打不穿这面钢墙，就别见首领。',
+        defeatedText: '钢壁守备员：第2枚印记拿好。',
+        dailyDefeatedText: '钢壁守备员：第2枚印记你已带走。'
+      }),
+      makeLieutenantRoster({
+        name: '峡谷监理员',
+        speciesIds: [24, 127, 139, 143, 140],
+        levels: [58, 59, 60, 61, 65],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '器械压轴',
+        recommendedLevel: 65,
+        ruleDescription: '技巧冲锋王牌三段压上来。',
+        beforeBattleText: '峡谷监理员：顶过器械压轴，才配见首领。',
+        defeatedText: '峡谷监理员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '峡谷监理员：三枚印记已经齐了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '铁木首领',
+      speciesIds: [47, 60, 61, 127, 139, 140],
+      levels: [58, 59, 60, 62, 64, 65],
+      title: '综合总考 · 重装统帅 Boss',
+      difficultyLabel: 'Boss训练家 · 营地综合总考',
+      recommendedLevel: 65,
+      battleStyleLabel: '重装总考',
+      ruleDescription: '前中后都完整，巨钳螳螂收官。',
+      beforeBattleText: '铁木首领：来，吃下整套重装推进。',
+      defeatedText: '铁木首领：好，铁木营地服你了。',
+      dailyDefeatedText: '铁木首领：这轮总考你已经过了。'
+    })
   },
   GodotMapV2_BossHighland: {
     trainers: [
@@ -4675,10 +5528,59 @@ const REGION_TRAINER_ROSTERS = {
       { name: '云海看守人', speciesIds: [143, 150], dailyVariantSpeciesIds: [143, 150, 63], levels: [52, 52] }
     ],
     lieutenants: [
-      { name: '高地巡队长', speciesIds: [122, 145, 104], levels: [54, 55, 56] },
-      { name: '星雾守备员', speciesIds: [122, 146, 104], levels: [55, 56, 57] },
-      { name: '天穹监理员', speciesIds: [10, 122, 104], levels: [55, 56, 57] }
-    ]
+      makeLieutenantRoster({
+        name: '高地巡队长',
+        speciesIds: [145, 72, 74, 136, 123],
+        levels: [59, 60, 61, 62, 65],
+        order: 1,
+        styleKey: 'pressure',
+        battleStyleLabel: '高地均衡压制',
+        recommendedLevel: 65,
+        ruleDescription: '这里不是单属性图，是综合战。',
+        beforeBattleText: '高地巡队长：先过均衡压制，再去见首领。',
+        defeatedText: '高地巡队长：第1枚印记归你。',
+        dailyDefeatedText: '高地巡队长：第1枚印记已经给你。'
+      }),
+      makeLieutenantRoster({
+        name: '星雾守备员',
+        speciesIds: [104, 12, 122, 134, 142],
+        levels: [60, 61, 62, 63, 68],
+        order: 2,
+        styleKey: 'control',
+        battleStyleLabel: '重炮换挡',
+        recommendedLevel: 68,
+        ruleDescription: '攻防换挡非常明显。',
+        beforeBattleText: '星雾守备员：看不懂换挡火力，就别见首领。',
+        defeatedText: '星雾守备员：第2枚印记拿好。',
+        dailyDefeatedText: '星雾守备员：第2枚印记你已带走。'
+      }),
+      makeLieutenantRoster({
+        name: '天穹监理员',
+        speciesIds: [10, 143, 117, 9, 142],
+        levels: [61, 62, 63, 64, 70],
+        order: 3,
+        styleKey: 'elite',
+        battleStyleLabel: '厚墙终考',
+        recommendedLevel: 70,
+        ruleDescription: '打不快也打不穿，是终考墙。',
+        beforeBattleText: '天穹监理员：打穿终考墙，才配见首领。',
+        defeatedText: '天穹监理员：最后的印记归你，去见首领。',
+        dailyDefeatedText: '天穹监理员：三枚印记已经齐了。'
+      })
+    ],
+    boss: makeBossRoster({
+      name: '星雾首领',
+      speciesIds: [117, 104, 146, 122, 142, 68],
+      levels: [61, 62, 63, 65, 68, 75],
+      title: '终局王座 · 综合总考',
+      difficultyLabel: 'Boss训练家 · 终局王座',
+      recommendedLevel: 75,
+      battleStyleLabel: '终局总考',
+      ruleDescription: '前两只吃资源，后两只强收尾。',
+      beforeBattleText: '星雾首领：来交终局总答卷。',
+      defeatedText: '星雾首领：很好，星雾高地认可你了。',
+      dailyDefeatedText: '星雾首领：终局总考你已经通过了。'
+    })
   }
 }
 
@@ -4718,7 +5620,7 @@ function formatRarePoolNames(pool, maxNames = 4) {
   const names = normalizeRarePoolEntries(pool)
     .map((entry) => MONSTERS.find((monster) => monster.id === entry.pokemonId)?.name)
     .filter(Boolean)
-  if (names.length === 0) return '隐藏稀有宝可梦'
+  if (names.length === 0) return '试炼稀有宝可梦'
   const shown = names.slice(0, maxNames).join('、')
   return names.length > maxNames ? `${shown}等 ${names.length} 种` : shown
 }
@@ -4819,6 +5721,21 @@ function makeBossTeam(speciesIds, levels, bossAceId, fallbackPool = speciesIds) 
   ]
 }
 
+function getBossTeamSizeForRegion(regionOrder) {
+  return 6
+}
+
+function limitBossTeamForRegion(team, regionOrder) {
+  const sourceTeam = Array.isArray(team) ? team.filter(Boolean) : []
+  const targetSize = getBossTeamSizeForRegion(regionOrder)
+  if (sourceTeam.length <= targetSize) return sourceTeam
+  const ace = sourceTeam[sourceTeam.length - 1]
+  return [
+    ...sourceTeam.slice(0, Math.max(0, targetSize - 1)),
+    ace
+  ]
+}
+
 const PICKUP_STAT_BOOST_KEYS = [
   'hp_stone',
   'attack_stone',
@@ -4845,21 +5762,33 @@ function getPickupStatBoostKey(regionOrder, index) {
 function makePickupReward(regionOrder, index) {
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
-  const isUpperMid = regionOrder >= 5
   const ballKey = isLate ? 'pokeball_ultra' : isMid ? 'pokeball_great' : 'pokeball_basic'
   const potionKey = isLate ? 'hyper_potion' : isMid ? 'super_potion' : 'potion'
-  const pickupExpKey = isLate ? 'exp_potion_large' : isUpperMid ? 'exp_potion_medium' : 'exp_potion_small'
-  const growthReward = { itemType: 'expPotion', itemKey: pickupExpKey, quantity: 1 }
+  const pickupExpKey = regionOrder >= 8
+    ? 'exp_potion_large'
+    : regionOrder >= 6
+      ? 'exp_potion_medium'
+      : 'exp_potion_small'
+  const growthQuantity = regionOrder >= 8 ? 2 : regionOrder >= 6 ? 2 : 1
+  const growthReward = { itemType: 'expPotion', itemKey: pickupExpKey, quantity: growthQuantity }
   const hiddenGrowthReward = { ...growthReward, hidden: true }
+  const hiddenFallbackReward = { itemType: 'potion', itemKey: potionKey, quantity: 1, hidden: true }
+  const bonusGrowthReward = regionOrder >= 3
+    ? growthReward
+    : regionOrder >= 2
+      ? { itemType: 'expPotion', itemKey: 'exp_potion_small', quantity: 1 }
+      : null
   const hiddenLateBoostReward = regionOrder >= 7
     ? { itemType: 'statBoost', itemKey: getPickupStatBoostKey(regionOrder, index), quantity: 1, hidden: true }
-    : hiddenGrowthReward
+    : regionOrder <= 6
+      ? hiddenGrowthReward
+      : hiddenFallbackReward
   const rewards = [
     { itemType: 'potion', itemKey: potionKey, quantity: 1 },
     { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
     growthReward,
     { itemType: 'potion', itemKey: potionKey, quantity: 2 },
-    isMid ? growthReward : { itemType: 'potion', itemKey: potionKey, quantity: 1 },
+    bonusGrowthReward || { itemType: 'potion', itemKey: potionKey, quantity: 1 },
     { itemType: 'pokeball', itemKey: ballKey, quantity: 1 },
     { itemType: 'potion', itemKey: potionKey, quantity: 1, hidden: true },
     hiddenLateBoostReward
@@ -4870,14 +5799,16 @@ function makePickupReward(regionOrder, index) {
 function makeBossReward(regionOrder) {
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
-  const rewardExpKey = isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small'
-  const bossExpReward = regionOrder <= 1
-    ? null
-    : {
-        itemType: 'expPotion',
-        itemKey: regionOrder === 3 ? 'exp_potion_small' : rewardExpKey,
-        quantity: 1
-      }
+  const rewardExpKey = regionOrder >= 8
+    ? 'exp_potion_large'
+    : regionOrder >= 6
+      ? 'exp_potion_medium'
+      : 'exp_potion_small'
+  const bossExpReward = {
+    itemType: 'expPotion',
+    itemKey: rewardExpKey,
+    quantity: regionOrder >= 8 ? 3 : regionOrder >= 6 ? 2 : regionOrder >= 3 ? 2 : 1
+  }
   return [
     {
       itemType: 'pokeball',
@@ -5084,7 +6015,7 @@ function pickChallengeTrialSpecies(challengeRarePool, levels, fallbackPool = [])
 function buildFixedChallengeBattleGroups(definition, challengeRarePool, fallbackPool = []) {
   const [minLevel, maxLevel] = definition.levelRange
   const order = Math.max(1, Math.trunc(Number(definition.regionOrder)) || 1)
-  const softCapBonus = order >= 7 ? 2 : order >= 5 ? 1 : 0
+  const softCapBonus = order >= 8 ? 0 : order >= 7 ? 2 : order >= 5 ? 1 : 0
   const levelCap = clampLevel(maxLevel + softCapBonus)
   const placeholderId = normalizeRarePoolEntries(challengeRarePool)[0]?.pokemonId || normalizeRarePoolEntries(fallbackPool)[0]?.pokemonId
   if (!Number.isInteger(placeholderId)) return []
@@ -5203,9 +6134,46 @@ function rotatePoolIds(poolIds, offset = 0) {
   return rotateEntries(normalizeIntegerPoolIds(poolIds), offset)
 }
 
-function pickLieutenantStyleTemplate(definition, index) {
+function findLieutenantStyleTemplate(styleKey = '') {
+  const normalizedKey = typeof styleKey === 'string' ? styleKey.trim().toLowerCase() : ''
+  return LIEUTENANT_STYLE_TEMPLATES.find((template) => template.key === normalizedKey) || null
+}
+
+function pickLieutenantStyleTemplate(definition, index, preferredStyleKey = '') {
+  const configuredTemplate = findLieutenantStyleTemplate(preferredStyleKey)
+  if (configuredTemplate) return configuredTemplate
   const rotation = Math.max(0, (Math.trunc(Number(definition?.regionOrder)) || 1) - 1 + index)
   return LIEUTENANT_STYLE_TEMPLATES[rotation % LIEUTENANT_STYLE_TEMPLATES.length]
+}
+
+function buildFixedBattleTeam(speciesIds = [], levels = [], sourceTags = []) {
+  const normalizedLevels = Array.isArray(levels) ? levels : []
+  const fallbackLevel = clampLevel(normalizedLevels[normalizedLevels.length - 1] ?? 1)
+  return (Array.isArray(speciesIds) ? speciesIds : [])
+    .map((pokemonId, index) => {
+      const resolvedId = Math.trunc(Number(pokemonId))
+      if (!Number.isInteger(resolvedId)) return null
+      const level = clampLevel(normalizedLevels[index] ?? fallbackLevel)
+      const sourceTag = sourceTags[index] === 'trial' ? 'trial' : 'wild'
+      return {
+        pokemonId: resolvedId,
+        level,
+        sourceTag
+      }
+    })
+    .filter(Boolean)
+}
+
+function resolveConfiguredBattleText(configValue, fallbackValue, ...args) {
+  if (typeof configValue === 'function') {
+    const resolved = configValue(...args)
+    return typeof resolved === 'string' && resolved.trim().length > 0
+      ? resolved.trim()
+      : fallbackValue
+  }
+  return typeof configValue === 'string' && configValue.trim().length > 0
+    ? configValue.trim()
+    : fallbackValue
 }
 
 function buildLieutenantBattleTeam({
@@ -5218,12 +6186,38 @@ function buildLieutenantBattleTeam({
   usedSpeciesIds = new Set(),
   usedFamilyKeys = new Set()
 } = {}) {
-  const styleTemplate = pickLieutenantStyleTemplate(definition, lieutenantIndex) || LIEUTENANT_STYLE_TEMPLATES[0]
+  const styleTemplate = pickLieutenantStyleTemplate(
+    definition,
+    lieutenantIndex,
+    lieutenantConfig.styleKey
+  ) || LIEUTENANT_STYLE_TEMPLATES[0]
   const [minLevel, maxLevel] = definition.levelRange
   const midLevel = clampLevel(Math.round((minLevel + maxLevel) / 2))
   const baseLevels = Array.isArray(lieutenantConfig.levels) && lieutenantConfig.levels.length > 0
     ? lieutenantConfig.levels
     : [midLevel, midLevel + 1, midLevel + 2]
+
+  if (lieutenantConfig.fixedTeam) {
+    const fixedTeam = buildFixedBattleTeam(
+      lieutenantConfig.speciesIds,
+      baseLevels,
+      Array.isArray(lieutenantConfig.sourceTags) && lieutenantConfig.sourceTags.length === baseLevels.length
+        ? lieutenantConfig.sourceTags
+        : styleTemplate.sourcePattern
+    )
+
+    fixedTeam.forEach((entry) => {
+      usedSpeciesIds.add(entry.pokemonId)
+      const familyKey = getEvolutionFamilyKey(entry.pokemonId)
+      if (familyKey.length > 0) usedFamilyKeys.add(familyKey)
+    })
+
+    return {
+      styleTemplate,
+      team: fixedTeam
+    }
+  }
+
   const manualSpeciesIds = normalizeIntegerPoolIds(lieutenantConfig.speciesIds)
   const wildPoolIds = rotatePoolIds(profile.speciesPool, lieutenantIndex)
   const trialPoolIds = rotatePoolIds(
@@ -5285,14 +6279,16 @@ function makeChallengeReward(regionOrder, chainLength = getChallengeChainLength(
   const isLate = regionOrder >= 6
   const isMid = regionOrder >= 3
   const isFinal = regionOrder >= 8
-  const rewardExpKey = isLate ? 'exp_potion_large' : isMid ? 'exp_potion_medium' : 'exp_potion_small'
-  const challengeExpReward = regionOrder <= 4
-    ? null
-    : {
-        itemType: 'expPotion',
-        itemKey: rewardExpKey,
-        quantity: length >= 6 ? 2 : 1
-      }
+  const rewardExpKey = regionOrder >= 8
+    ? 'exp_potion_large'
+    : regionOrder >= 6
+      ? 'exp_potion_medium'
+      : 'exp_potion_small'
+  const challengeExpReward = {
+    itemType: 'expPotion',
+    itemKey: rewardExpKey,
+    quantity: regionOrder >= 8 ? 3 : length >= 5 ? 2 : 1
+  }
   return [
     ...(challengeExpReward ? [challengeExpReward] : []),
     {
@@ -5398,6 +6394,7 @@ function buildRegionGameplayEvents(definition) {
   profile.positions.lieutenants.forEach(([x, y], index) => {
     const lieutenantConfig = rosterConfig.lieutenants?.[index] || {}
     const lieutenantName = lieutenantConfig.name || `区域部下 ${index + 1}`
+    const lieutenantSequenceOrder = Math.max(1, Math.trunc(Number(lieutenantConfig.sequenceOrder)) || index + 1)
     const lieutenantBattle = buildLieutenantBattleTeam({
       definition,
       profile,
@@ -5416,22 +6413,59 @@ function buildRegionGameplayEvents(definition) {
         role: 'lieutenant',
         facing,
         name: lieutenantName,
-        title: `${lieutenantName} · ${lieutenantStyle.titleSuffix}`,
-        difficultyLabel: lieutenantStyle.difficultyLabel,
+        title: lieutenantConfig.title || `第${lieutenantSequenceOrder}部下 · ${lieutenantConfig.battleStyleLabel || lieutenantStyle.titleSuffix}`,
+        difficultyLabel: lieutenantConfig.difficultyLabel || lieutenantStyle.difficultyLabel,
         battleTier: 'lieutenant',
         requiredForBoss: true,
-        battleStyle: lieutenantStyle.key,
-        battleStyleLabel: lieutenantStyle.label,
+        battleStyle: lieutenantConfig.styleKey || lieutenantStyle.key,
+        battleStyleLabel: lieutenantConfig.battleStyleLabel || lieutenantStyle.label,
+        sequenceOrder: lieutenantSequenceOrder,
+        recommendedLevel: Number.isInteger(Math.trunc(Number(lieutenantConfig.recommendedLevel)))
+          ? clampLevel(lieutenantConfig.recommendedLevel)
+          : undefined,
+        ruleDescription: typeof lieutenantConfig.ruleDescription === 'string'
+          ? lieutenantConfig.ruleDescription.trim()
+          : '',
+        battleHintText: resolveConfiguredBattleText(
+          lieutenantConfig.battleHintText,
+          REGION_TRAINER_BATTLE_HINTS[lieutenantName] || '',
+          lieutenantName,
+          profile.chapterTitle,
+          profile.bossName,
+          lieutenantSequenceOrder
+        ),
         teamSourceTags: lieutenantTeam.map((member) => member.sourceTag),
         teamSourceSummary: lieutenantTeam.map((member) => member.sourceTag).join('/'),
         team: lieutenantTeam.map(({ sourceTag, ...member }) => member),
-        beforeBattleText: lieutenantStyle.beforeBattleText(lieutenantName, profile.chapterTitle, profile.bossName),
-        defeatedText: lieutenantStyle.defeatedText(lieutenantName),
-        dailyDefeatedText: lieutenantStyle.dailyDefeatedText(lieutenantName, profile.bossName)
+        beforeBattleText: resolveConfiguredBattleText(
+          lieutenantConfig.beforeBattleText,
+          lieutenantStyle.beforeBattleText(lieutenantName, profile.chapterTitle, profile.bossName),
+          lieutenantName,
+          profile.chapterTitle,
+          profile.bossName,
+          lieutenantSequenceOrder
+        ),
+        defeatedText: resolveConfiguredBattleText(
+          lieutenantConfig.defeatedText,
+          lieutenantStyle.defeatedText(lieutenantName),
+          lieutenantName,
+          profile.chapterTitle,
+          profile.bossName,
+          lieutenantSequenceOrder
+        ),
+        dailyDefeatedText: resolveConfiguredBattleText(
+          lieutenantConfig.dailyDefeatedText,
+          lieutenantStyle.dailyDefeatedText(lieutenantName, profile.bossName),
+          lieutenantName,
+          profile.chapterTitle,
+          profile.bossName,
+          lieutenantSequenceOrder
+        )
       }
     }))
   })
 
+  const bossConfig = rosterConfig.boss || {}
   const bossRareName = bossRarePokemon
     ? (MONSTERS.find((monster) => monster.id === bossRarePokemon.pokemonId)?.name || '专属稀有宝可梦')
     : ''
@@ -5443,33 +6477,70 @@ function buildRegionGameplayEvents(definition) {
   )
   const bossTeamSourceIds = getChallengeFinalThreeRareEntries(challengeRarePool).map((entry) => entry.pokemonId)
   const bossFacing = inferEventFacing(definition, profile.positions.boss[0], profile.positions.boss[1], 'boss', 0)
-  events.push(event('boss', `${prefix}_boss`, profile.positions.boss[0], profile.positions.boss[1], {
-    properties: {
-      role: 'boss',
-      facing: bossFacing,
-      name: profile.bossName,
-      title: `Boss训练家 · ${profile.chapterTitle}`,
-      difficultyLabel: 'Boss训练家 · 区域首领',
-      battleTier: 'boss',
-      teamSource: 'challengeFinalThreeBatches',
-      challengeFinalThreeBatchPokemonIds: bossTeamSourceIds,
-      requiredTrainerIds: lieutenantIds,
-      team: Number.isInteger(bossRarePokemon?.pokemonId)
+  const bossFallbackLevels = [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3]
+  const rawBossTeam = bossConfig.fixedTeam && Array.isArray(bossConfig.speciesIds) && bossConfig.speciesIds.length > 0
+    ? buildFixedBattleTeam(bossConfig.speciesIds, bossConfig.levels, Array.from({ length: bossConfig.speciesIds.length }, () => 'wild'))
+      .map(({ sourceTag, ...member }) => member)
+    : (
+      Number.isInteger(bossRarePokemon?.pokemonId)
         ? makeBossTeam(
             bossTeamSpecies,
-            [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3],
+            bossFallbackLevels,
             bossRarePokemon.pokemonId,
             bossTeamSpecies
           )
         : makeTeam(
             bossTeamSpecies,
-            [maxLevel + 1, maxLevel + 1, maxLevel + 2, maxLevel + 2, maxLevel + 3, maxLevel + 3]
-          ),
+            bossFallbackLevels
+          )
+    )
+  const bossTeam = limitBossTeamForRegion(rawBossTeam, definition.regionOrder)
+  const bossName = bossConfig.name || profile.bossName
+  events.push(event('boss', `${prefix}_boss`, profile.positions.boss[0], profile.positions.boss[1], {
+    properties: {
+      role: 'boss',
+      facing: bossFacing,
+      name: bossName,
+      title: bossConfig.title || `Boss训练家 · ${profile.chapterTitle}`,
+      difficultyLabel: bossConfig.difficultyLabel || 'Boss训练家 · 区域首领',
+      battleTier: 'boss',
+      teamSource: bossConfig.fixedTeam ? 'fixedBossRoster' : 'challengeFinalThreeBatches',
+      challengeFinalThreeBatchPokemonIds: bossTeamSourceIds,
+      requiredTrainerIds: lieutenantIds,
+      recommendedLevel: Number.isInteger(Math.trunc(Number(bossConfig.recommendedLevel)))
+        ? clampLevel(bossConfig.recommendedLevel)
+        : undefined,
+      ruleDescription: typeof bossConfig.ruleDescription === 'string'
+        ? bossConfig.ruleDescription.trim()
+        : '',
+      battleHintText: resolveConfiguredBattleText(
+        bossConfig.battleHintText,
+        REGION_TRAINER_BATTLE_HINTS[bossName] || '',
+        bossName,
+        profile.chapterTitle
+      ),
+      team: bossTeam,
       lockedText: `这里有一股强大的气息。先击败${definition.displayName}里的 3 名部下训练师，${profile.bossName}才会接受挑战。`,
-      beforeBattleText: bossRarePokemon
-        ? `${profile.bossName}：印记齐了，让我看看你能不能撑到最后。`
-        : `${profile.bossName}：印记齐了，来接下这场最终试炼。`,
-      defeatedText: `${profile.bossName}：很好，这片区域认可你了。`,
+      beforeBattleText: resolveConfiguredBattleText(
+        bossConfig.beforeBattleText,
+        bossRarePokemon
+          ? `${bossName}：印记齐了，让我看看你能不能撑到最后。`
+          : `${bossName}：印记齐了，来接下这场最终试炼。`,
+        bossName,
+        profile.chapterTitle
+      ),
+      defeatedText: resolveConfiguredBattleText(
+        bossConfig.defeatedText,
+        `${bossName}：很好，这片区域认可你了。`,
+        bossName,
+        profile.chapterTitle
+      ),
+      dailyDefeatedText: resolveConfiguredBattleText(
+        bossConfig.dailyDefeatedText,
+        `${bossName}：这轮试炼你已经赢过了。`,
+        bossName,
+        profile.chapterTitle
+      ),
       rewardItems: makeBossReward(definition.regionOrder),
       bossRarePokemon,
       bossRareChance,
@@ -5481,7 +6552,7 @@ function buildRegionGameplayEvents(definition) {
 
   const challengeRareChance = Number(profile.challengeRareChance ?? DEFAULT_CHALLENGE_RARE_CHANCE)
   const challengeRareUnlockText = challengeRarePool.length > 0
-    ? `${definition.displayName}隐藏生态会逐批开启。`
+    ? `${definition.displayName}试炼稀有会逐批开启。`
     : ''
   const challengeLevelText = maxChallengeGroupLevelSafe > 0
     ? `Lv.${minChallengeGroupLevel}-${maxChallengeGroupLevelSafe}`
@@ -5492,7 +6563,7 @@ function buildRegionGameplayEvents(definition) {
       role: 'challenge',
       name: `${definition.displayName}区域试炼`,
       title: `区域试炼 · 3-${MAX_CHALLENGE_CHAIN_BATTLES} 连战`,
-      difficultyLabel: '试炼守护者 · 隐藏生态连战',
+      difficultyLabel: '试炼守护者 · 试炼稀有连战',
       battleTier: 'challenge',
       teamSource: 'challengeRarePool',
       maxChainBattles: MAX_CHALLENGE_CHAIN_BATTLES,
@@ -5508,7 +6579,7 @@ function buildRegionGameplayEvents(definition) {
       challengeRareChance,
       challengeRareUnlockText,
       challengeRarePreviewText: challengeRarePool.length > 0
-        ? '通关后会开启新的隐藏生态。'
+        ? '通关后会开启新的试炼稀有。'
         : '',
       dailyDefeatedText: `${definition.displayName}区域试炼可继续挑战。`,
       rewardItems: makeChallengeReward(definition.regionOrder, challengeChainLength)
@@ -5659,13 +6730,16 @@ function buildRuntimeSignDecorations(definition, runtimeEvents) {
       if (!Number.isFinite(x) || !Number.isFinite(y)) return []
       const isHiddenGate = isHiddenEncounterGateEvent(evt)
       if (isHiddenGate) return []
+      const visualModel = typeof evt.properties?.visualModel === 'string' && evt.properties.visualModel.length > 0
+        ? evt.properties.visualModel
+        : 'trail_sign'
       return [{
-        type: 'trail_sign',
+        type: visualModel,
         x,
         y,
         scale: Number(evt.properties?.scale) || signScale,
         rotation: resolveRoadsideSignRotation(definition, x, y),
-        preserveRoadPosition: true,
+        preserveRoadPosition: Boolean(evt.properties?.preserveRoadPosition),
         sourceId: `${evt.id}_${isHiddenGate ? 'gate_sign' : 'sign'}`,
         eventId: evt.id,
         eventType: evt.type
@@ -5684,14 +6758,40 @@ function buildManualRuntimeTrainerDecoration(evt, index = 0) {
       : 'normal'
   const isBoss = npcRole === 'boss'
   const isLieutenant = npcRole === 'lieutenant'
+  const configuredModel = typeof evt.properties?.characterModel === 'string'
+    ? evt.properties.characterModel.trim()
+    : ''
+  const blocksRouteUntilDefeated = isEliteRouteBlockerEvent(evt)
   return [{
-    type: REGION_TRAINER_CHARACTER_TYPES[(index + (isBoss ? 4 : isLieutenant ? 2 : 1)) % REGION_TRAINER_CHARACTER_TYPES.length],
+    type: configuredModel || REGION_TRAINER_CHARACTER_TYPES[(index + (isBoss ? 4 : isLieutenant ? 2 : 1)) % REGION_TRAINER_CHARACTER_TYPES.length],
     x,
     y,
     scale: isBoss ? scaleFromNpcBaseline(1.68) : isLieutenant ? scaleFromNpcBaseline(1.48) : PLAYER_MATCHED_NPC_SCALE,
     height: isBoss ? heightFromNpcBaseline(1.5) : isLieutenant ? heightFromNpcBaseline(1.38) : PLAYER_MATCHED_NPC_HEIGHT,
     rotation: getCharacterRotationFromFacing(evt.properties?.facing),
     npcRole,
+    visualTheme: evt.properties?.visualTheme || '',
+    preserveRoadPosition: blocksRouteUntilDefeated,
+    blocksRouteUntilDefeated,
+    stepAsideDirection: blocksRouteUntilDefeated ? evt.properties?.stepAsideDirection : null,
+    stepAsideDistance: blocksRouteUntilDefeated ? evt.properties?.stepAsideDistance : null,
+    sourceId: `${evt.id}_npc`,
+    eventId: evt.id,
+    eventType: evt.type
+  }]
+}
+
+function buildManualRuntimeMerchantDecoration(evt, index = 0) {
+  const { x, y } = evt.position || {}
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return []
+  return [{
+    type: REGION_TRAINER_CHARACTER_TYPES[(index + 3) % REGION_TRAINER_CHARACTER_TYPES.length],
+    x,
+    y,
+    scale: PLAYER_MATCHED_NPC_SCALE,
+    height: PLAYER_MATCHED_NPC_HEIGHT,
+    rotation: getCharacterRotationFromFacing(evt.properties?.facing),
+    npcRole: 'merchant',
     sourceId: `${evt.id}_npc`,
     eventId: evt.id,
     eventType: evt.type
@@ -5746,6 +6846,34 @@ function makeFixedSceneObject(evt, suffix, type, dx, dy, {
 }
 
 function buildFixedHealingSpringScene(evt) {
+  const eliteTheme = evt?.properties?.visualTheme
+  const eliteProfiles = {
+    frost: { center: 'elite_frost_mirror', accent: 'elite_frost_crystal', centerScale: 0.58, accentScale: 0.54 },
+    tide: { center: 'elite_tide_gate', accent: 'elite_tide_pillar', centerScale: 0.5, accentScale: 0.5 },
+    iron: { center: 'elite_iron_beacon', accent: 'elite_iron_bastion', centerScale: 0.62, accentScale: 0.46 },
+    dragon: { center: 'elite_dragon_arch', accent: 'elite_dragon_spire', centerScale: 0.54, accentScale: 0.52 },
+    champion: { center: 'elite_champion_portal', accent: 'champion_obelisk', centerScale: 0.58, accentScale: 0.42 }
+  }
+  const eliteProfile = eliteProfiles[eliteTheme]
+  if (eliteProfile) {
+    return [
+      makeFixedSceneObject(evt, 'elite_restore_core', eliteProfile.center, 0, 0, {
+        scale: eliteProfile.centerScale,
+        height: 0.18,
+        eventType: 'heal',
+        preserveRoadPosition: true
+      }),
+      makeFixedSceneObject(evt, 'elite_restore_left', eliteProfile.accent, -0.72, 0.24, {
+        scale: eliteProfile.accentScale,
+        rotation: -0.18
+      }),
+      makeFixedSceneObject(evt, 'elite_restore_right', eliteProfile.accent, 0.72, 0.24, {
+        scale: eliteProfile.accentScale,
+        rotation: 0.18
+      })
+    ]
+  }
+
   return [
     makeFixedSceneObject(evt, 'spring_fountain', 'town_fountain_round', 0, 0, {
       scale: 1.08,
@@ -5762,6 +6890,34 @@ function buildFixedHealingSpringScene(evt) {
 
 function buildFixedFastTravelStationScene(evt) {
   const terrain = evt?.properties?.terrain || 'meadow'
+  const eliteTheme = evt?.properties?.eliteTheme
+  const eliteProfiles = {
+    frost: { center: 'elite_frost_portal', accent: 'elite_frost_crystal', centerScale: 0.78, accentScale: 0.58 },
+    tide: { center: 'elite_tide_portal', accent: 'elite_tide_pillar', centerScale: 0.78, accentScale: 0.54 },
+    iron: { center: 'elite_iron_portal', accent: 'elite_iron_bastion', centerScale: 0.78, accentScale: 0.48 },
+    dragon: { center: 'elite_dragon_portal', accent: 'elite_dragon_spire', centerScale: 0.78, accentScale: 0.56 },
+    champion: { center: 'elite_champion_portal', accent: 'champion_obelisk', centerScale: 0.78, accentScale: 0.46 }
+  }
+  const eliteProfile = eliteProfiles[eliteTheme]
+  if (eliteProfile) {
+    return [
+      makeFixedSceneObject(evt, 'elite_portal_core', eliteProfile.center, 0, 0, {
+        scale: eliteProfile.centerScale,
+        height: 0.18,
+        eventType: FAST_TRAVEL_EVENT_TYPE,
+        preserveRoadPosition: true
+      }),
+      makeFixedSceneObject(evt, 'elite_portal_left', eliteProfile.accent, -0.82, -0.18, {
+        scale: eliteProfile.accentScale,
+        rotation: -0.2
+      }),
+      makeFixedSceneObject(evt, 'elite_portal_right', eliteProfile.accent, 0.82, -0.18, {
+        scale: eliteProfile.accentScale,
+        rotation: 0.2
+      })
+    ]
+  }
+
   const base = [
     makeFixedSceneObject(evt, 'signal_stone', 'nature_path_stone', 0, 0, {
       scale: 1.16,
@@ -5872,6 +7028,34 @@ function getWarpDestinationTheme(targetMapName = '') {
 
 function buildFixedWarpConnectionScene(evt) {
   const layout = getWarpApproachLayout(evt)
+  const eliteTheme = evt?.properties?.visualTheme
+  const eliteProfiles = {
+    frost: { center: 'elite_frost_portal', accent: 'elite_frost_crystal', centerScale: 0.82, accentScale: 0.5 },
+    tide: { center: 'elite_tide_portal', accent: 'elite_tide_pillar', centerScale: 0.82, accentScale: 0.48 },
+    iron: { center: 'elite_iron_portal', accent: 'elite_iron_beacon', centerScale: 0.82, accentScale: 0.56 },
+    dragon: { center: 'elite_dragon_portal', accent: 'elite_dragon_spire', centerScale: 0.82, accentScale: 0.5 },
+    champion: { center: 'elite_champion_portal', accent: 'champion_obelisk', centerScale: 0.82, accentScale: 0.44 }
+  }
+  const eliteProfile = eliteProfiles[eliteTheme]
+  if (eliteProfile) {
+    return [
+      makeFixedSceneObject(evt, 'elite_route_core', eliteProfile.center, 0, 0, {
+        scale: eliteProfile.centerScale,
+        height: 0.18,
+        rotation: layout.signRotation,
+        eventType: 'warp',
+        preserveRoadPosition: true
+      }),
+      makeFixedSceneObject(evt, 'elite_route_left', eliteProfile.accent, layout.px * 1.05, layout.py * 1.05, {
+        scale: eliteProfile.accentScale,
+        rotation: layout.signRotation - 0.16
+      }),
+      makeFixedSceneObject(evt, 'elite_route_right', eliteProfile.accent, -layout.px * 1.05, -layout.py * 1.05, {
+        scale: eliteProfile.accentScale,
+        rotation: layout.signRotation + 0.16
+      })
+    ]
+  }
   const theme = getWarpDestinationTheme(evt?.target?.mapName)
   const cx = 0
   const cy = 0
@@ -5934,6 +7118,7 @@ function buildFixedWarpConnectionScene(evt) {
 function buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, generatedEventIds = new Set()) {
   let pickupVisualIndex = 0
   let manualTrainerVisualIndex = 0
+  let manualMerchantVisualIndex = 0
   return (runtimeEvents || []).flatMap((evt) => {
     if (evt.type === 'warp') return buildFixedWarpConnectionScene(evt)
     if (evt.type === 'heal') return buildFixedHealingSpringScene(evt)
@@ -5943,6 +7128,11 @@ function buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, gener
     if ((evt.type === 'trainer' || evt.type === 'boss') && !generatedEventIds.has(evt.id)) {
       const decorations = buildManualRuntimeTrainerDecoration(evt, manualTrainerVisualIndex)
       manualTrainerVisualIndex += 1
+      return decorations
+    }
+    if (evt.type === 'merchant' && !generatedEventIds.has(evt.id)) {
+      const decorations = buildManualRuntimeMerchantDecoration(evt, manualMerchantVisualIndex)
+      manualMerchantVisualIndex += 1
       return decorations
     }
     if (evt.type === 'item' || evt.type === 'pickup') {
@@ -6001,33 +7191,38 @@ function isManualFixedSceneDuplicate(object, gameplayEvents) {
 const HIDDEN_ZONE_PERIMETER_PROFILES = {
   meadow: {
     types: ['town_hedge_large'],
-    scaleRange: [1.64, 1.64]
+    scaleRange: [1.64, 1.64],
+    overlapScale: 1.05
   },
   lake: {
     types: ['nature_fence_planks'],
-    scaleRange: [2.08, 2.08]
+    scaleRange: [2.08, 2.08],
+    overlapScale: 1.05
   },
   farm: {
     types: ['survival_fence'],
-    scaleRange: [2.06, 2.06]
+    scaleRange: [2.06, 2.06],
+    overlapScale: 1.05
   },
   shore: {
     types: ['pirate_structure_fence'],
-    scaleRange: [0.86, 0.86]
+    scaleRange: [0.86, 0.86],
+    overlapScale: 1.07
   },
   grave: {
     types: ['grave_iron_fence_border'],
-    scaleRange: [2.08, 2.08]
+    scaleRange: [2.08, 2.08],
+    overlapScale: 1.05
   },
   ruins: {
     types: ['grave_stone_wall_damaged'],
-    scaleRange: [2.02, 2.02]
+    scaleRange: [2.02, 2.02],
+    overlapScale: 1.05
   },
   peak: {
     types: ['platformer_fence_straight'],
     scaleRange: [2.04, 2.04],
-    cornerType: 'platformer_fence_straight',
-    cornerScale: 1.72
+    overlapScale: 1.05
   }
 }
 
@@ -6070,14 +7265,25 @@ function getHiddenZoneLinearPerimeterRotation(type, side) {
   return sideAlignedRotation + typeOffset
 }
 
+function getHiddenZoneCornerOutwardOffset(zone, candidate) {
+  return 0
+}
+
+function getHiddenZoneCornerScaleBoost(zone, candidate) {
+  return 1
+}
+
 function createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, index, outwardOffset = 0) {
-  const { dx, dy } = getHiddenZonePerimeterOutwardDelta(candidate.side)
-  const x = Number((candidate.x + dx * outwardOffset).toFixed(2))
-  const y = Number((candidate.y + dy * outwardOffset).toFixed(2))
   const type = profile.types[(candidate.x * 17 + candidate.y * 13 + index) % profile.types.length]
+  const cornerOffset = getHiddenZoneCornerOutwardOffset(zone, candidate)
+  const { dx, dy } = getHiddenZonePerimeterOutwardDelta(candidate.side)
+  const totalOutwardOffset = outwardOffset + cornerOffset
+  const x = Number((candidate.x + dx * totalOutwardOffset).toFixed(2))
+  const y = Number((candidate.y + dy * totalOutwardOffset).toFixed(2))
   const minScale = profile.scaleRange[0]
   const maxScale = profile.scaleRange[1]
-  const scale = minScale + seededRandom(candidate.x, candidate.y, 940 + index) * (maxScale - minScale)
+  const baseScale = minScale + seededRandom(candidate.x, candidate.y, 940 + index) * (maxScale - minScale)
+  const scale = baseScale * (Number(profile.overlapScale) || 1) * getHiddenZoneCornerScaleBoost(zone, candidate)
   const rotation = HIDDEN_ZONE_LINEAR_PERIMETER_TYPES.has(type)
     ? getHiddenZoneLinearPerimeterRotation(type, candidate.side)
     : seededRandom(candidate.x, candidate.y, 980 + index) * Math.PI * 2
@@ -6097,41 +7303,6 @@ function createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, in
     preserveBridgePosition: true,
     landmark: true
   })
-}
-
-function createHiddenZoneCornerDecoration(zone, profile, corner, index) {
-  if (!profile?.cornerType) return null
-  return themeLandmark(profile.cornerType, corner.x, corner.y, {
-    scale: Number((profile.cornerScale ?? profile.scaleRange?.[0] ?? 1).toFixed(2)),
-    rotation: Number(corner.rotation.toFixed(4)),
-    sourceId: `${zone.id}_corner_${corner.id}`,
-    hiddenZoneCorner: true,
-    hiddenZoneId: zone.id,
-    hiddenZoneSide: corner.id,
-    hiddenZoneCellX: corner.x,
-    hiddenZoneCellY: corner.y,
-    blocksPath: false,
-    forcePathBlocking: false,
-    preserveRoadPosition: true,
-    preserveBridgePosition: true,
-    landmark: true
-  })
-}
-
-function getHiddenZoneCornerDecorations(zone, profile) {
-  if (!profile?.cornerType) return []
-
-  const corners = [
-    { id: 'north_west', x: zone.x - 1, y: zone.y - 1, rotation: -Math.PI / 4 },
-    { id: 'north_east', x: zone.x + zone.width, y: zone.y - 1, rotation: Math.PI / 4 },
-    { id: 'south_west', x: zone.x - 1, y: zone.y + zone.height, rotation: -Math.PI * 3 / 4 },
-    { id: 'south_east', x: zone.x + zone.width, y: zone.y + zone.height, rotation: Math.PI * 3 / 4 }
-  ]
-
-  return corners
-    .filter((corner) => inBounds(corner.x, corner.y))
-    .map((corner, index) => createHiddenZoneCornerDecoration(zone, profile, corner, index))
-    .filter(Boolean)
 }
 
 function hiddenZonePerimeterCellKey(candidate) {
@@ -6494,17 +7665,6 @@ function ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, d
         existingKeys.add(hiddenZonePerimeterCellKey(candidate))
       })
 
-      const existingCornerKeys = new Set(
-        output
-          .filter((object) => object?.hiddenZoneCorner === true && object.hiddenZoneId === zone.id)
-          .map((object) => object.hiddenZoneSide || object.sourceId)
-      )
-      getHiddenZoneCornerDecorations(zone, profile).forEach((cornerObject) => {
-        const cornerKey = cornerObject.hiddenZoneSide || cornerObject.sourceId
-        if (existingCornerKeys.has(cornerKey)) return
-        output.push(cornerObject)
-        existingCornerKeys.add(cornerKey)
-      })
     })
 
   return output
@@ -6529,8 +7689,13 @@ function deriveRoadPathEndpoints(roadPaths) {
     .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
 }
 
-function deriveVisualPathsFromGrid(grid, roadPaths) {
+function deriveVisualPathsFromGrid(grid, roadPaths, runtimeEvents = []) {
   const visualPaths = []
+  const routeBlockerTiles = new Set(
+    runtimeEvents
+      .filter((mapEvent) => isEliteRouteBlockerEvent(mapEvent))
+      .map((mapEvent) => `${Math.trunc(Number(mapEvent.position?.x))},${Math.trunc(Number(mapEvent.position?.y))}`)
+  )
 
   ;(roadPaths || []).forEach((path) => {
     const points = Array.isArray(path.points) ? path.points : []
@@ -6551,7 +7716,11 @@ function deriveVisualPathsFromGrid(grid, roadPaths) {
       for (let cursor = start; cursor <= end; cursor += 1) {
         const x = horizontal ? cursor : ax
         const y = horizontal ? ay : cursor
-        const isRoad = grid[y]?.[x] === TILE.road || grid[y]?.[x] === TILE.exit
+        const isRoad = (
+          grid[y]?.[x] === TILE.road ||
+          grid[y]?.[x] === TILE.exit ||
+          routeBlockerTiles.has(`${x},${y}`)
+        )
 
         if (isRoad && runStart == null) runStart = cursor
         if ((!isRoad || cursor === end) && runStart != null) {
@@ -6575,6 +7744,8 @@ function deriveVisualPathsFromGrid(grid, roadPaths) {
 }
 
 export function buildGodotRegionMap(rawDefinition) {
+  WIDTH = Math.max(20, Math.min(DEFAULT_WIDTH, Math.round(Number(rawDefinition?.width) || DEFAULT_WIDTH)))
+  HEIGHT = Math.max(18, Math.min(DEFAULT_HEIGHT, Math.round(Number(rawDefinition?.height) || DEFAULT_HEIGHT)))
   const definition = {
     ...rawDefinition,
     roadPaths: resolveRegionRoadPaths(rawDefinition)
@@ -6626,6 +7797,7 @@ export function buildGodotRegionMap(rawDefinition) {
   paintDefinedBridges(grid, definition)
   normalizeWaterRoads(grid, definition)
   fillOpenGroundWithForestBlocks(grid, definition, runtimeEvents)
+  carveEliteRouteBlockerAlcoves(grid, runtimeEvents)
   carveEncounterZoneAccessCorridors(grid, definition)
   carveEventAccessCorridors(grid, runtimeEvents)
   paintDefinedBridges(grid, definition)
@@ -6695,7 +7867,7 @@ export function buildGodotRegionMap(rawDefinition) {
       .map((evt) => [`${evt.position.x},${evt.position.y}`, evt.properties.message])
   )
 
-  const terrainVisualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
+  const terrainVisualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths, runtimeEvents)
   const boundaryVisualBlockers = buildBoundaryVisualBlockers(
     definition.id,
     grid,
@@ -6717,9 +7889,10 @@ export function buildGodotRegionMap(rawDefinition) {
   visibleDecorations = ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, visibleDecorations, bridges)
   visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
   paintBlockingDecorationFootprints(grid, visibleDecorations, runtimeEvents)
+  enforceStrictEliteRouteCorridors(grid, definition, runtimeEvents)
   visibleDecorations = filterBlockedLowVegetationDecorations(visibleDecorations, grid)
   paintRuntimeEventTiles(grid, runtimeEvents)
-  const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths)
+  const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths, runtimeEvents)
   visibleDecorations = filterDuplicateInteractiveEventDecorations(visibleDecorations)
 
   return {
@@ -6732,9 +7905,11 @@ export function buildGodotRegionMap(rawDefinition) {
     theme: MAP_THEME,
     visualPalette: getRegionMapVisualPalette(definition.id),
     renderForestWallTrees: shouldRenderInstancedForestWallTrees(definition.id),
+    renderForestWallUndergrowth: shouldRenderForestWallUndergrowth(definition.id),
     roadRenderStyle: 'orthogonal',
     tallGrassRate: definition.tallGrassRate ?? 0.22,
     regionOrder: definition.regionOrder,
+    unlockLevel: definition.unlockLevel,
     recommendedLevel: definition.recommendedLevel,
     levelRange: definition.levelRange,
     startPosition: definition.startPosition,
@@ -6758,11 +7933,12 @@ export function buildGodotRegionMap(rawDefinition) {
   }
 }
 
-const REGIONS = [
+const ALL_REGIONS = [
   {
     id: 'GodotMapV2',
     displayName: '星音草径',
     regionOrder: 1,
+    unlockLevel: 6,
     recommendedLevel: 8,
     levelRange: [5, 12],
     startPosition: { x: 3, y: 16, direction: 'right' },
@@ -6807,7 +7983,7 @@ const REGIONS = [
       hiddenEncounterGate('hidden_gate_meadow_grove', 33, 10, {
         hiddenZoneId: 'meadow_hidden_grove',
         hiddenZoneName: '星音秘境',
-        message: '星音秘境入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('星音秘境', 'meadow_hidden_grove'),
         gateTheme: 'meadow',
         pathAxis: 'vertical',
         treeType: 'nature_tree_oak',
@@ -6859,7 +8035,8 @@ const REGIONS = [
     id: 'GodotMapV2_MistLake',
     displayName: '雾湖苇岸',
     regionOrder: 2,
-    recommendedLevel: 14,
+    unlockLevel: 11,
+    recommendedLevel: 16,
     levelRange: [11, 18],
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
@@ -6899,7 +8076,7 @@ const REGIONS = [
       hiddenEncounterGate('hidden_gate_lake_path', 25, 8, {
         hiddenZoneId: 'lake_hidden_path',
         hiddenZoneName: '环湖秘径',
-        message: '环湖秘径入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('环湖秘径', 'lake_hidden_path'),
         gateTheme: 'lake',
         pathAxis: 'horizontal',
         treeType: 'nature_tree_pine',
@@ -6941,7 +8118,8 @@ const REGIONS = [
     id: 'GodotMapV2_FarmTown',
     displayName: '风车农庄',
     regionOrder: 3,
-    recommendedLevel: 20,
+    unlockLevel: 17,
+    recommendedLevel: 21,
     levelRange: [17, 24],
     startPosition: { x: 20, y: 3, direction: 'down' },
     clearings: [
@@ -6976,7 +8154,7 @@ const REGIONS = [
       hiddenEncounterGate('hidden_gate_farm_top', 8, 11, {
         hiddenZoneId: 'farm_windmill_top',
         hiddenZoneName: '风车塔顶',
-        message: '风车塔顶入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('风车塔顶', 'farm_windmill_top'),
         gateTheme: 'farm',
         pathAxis: 'horizontal',
         treeType: 'nature_tree_default',
@@ -7016,7 +8194,8 @@ const REGIONS = [
     id: 'GodotMapV2_PirateShore',
     displayName: '贝壳海岸',
     regionOrder: 4,
-    recommendedLevel: 26,
+    unlockLevel: 23,
+    recommendedLevel: 27,
     levelRange: [23, 30],
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
@@ -7054,7 +8233,7 @@ const REGIONS = [
       hiddenEncounterGate('hidden_gate_shore_wreck', 36, 27, {
         hiddenZoneId: 'shore_wreck_inner',
         hiddenZoneName: '沉船内舱',
-        message: '沉船内舱入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('沉船内舱', 'shore_wreck_inner'),
         gateTheme: 'shore',
         pathAxis: 'vertical',
         treeType: 'pirate_flag_pennant',
@@ -7080,7 +8259,7 @@ const REGIONS = [
       { id: 'shore_dune_grass', name: '沙丘草丛', x: 4, y: 5, width: 10, height: 6, encounterTableId: 'region_shore_23_30', tallGrassRate: 0.22 },
       { id: 'shore_south_grass', name: '南岸潮草', x: 6, y: 23, width: 12, height: 6, encounterTableId: 'region_shore_south_23_30', tallGrassRate: 0.24 },
       { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 8, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 },
-      { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: [35, 37] }
+      { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: [35, 40] }
     ],
     decorativeObjects: [
       { type: 'pirate_ship_wreck', x: 33, y: 19, scale: 0.78, rotation: -0.2 },
@@ -7098,7 +8277,8 @@ const REGIONS = [
     id: 'GodotMapV2_Graveyard',
     displayName: '月影墓园',
     regionOrder: 5,
-    recommendedLevel: 32,
+    unlockLevel: 29,
+    recommendedLevel: 33,
     levelRange: [29, 36],
     corridorScatterCount: 168,
     corridorScatterLayers: 2,
@@ -7149,7 +8329,7 @@ const REGIONS = [
       hiddenEncounterGate('hidden_gate_grave_forest', 15, 27, {
         hiddenZoneId: 'grave_deep_forest',
         hiddenZoneName: '墓园深林',
-        message: '墓园深林入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('墓园深林', 'grave_deep_forest'),
         gateTheme: 'grave',
         pathAxis: 'horizontal',
         treeType: 'grave_lantern_glass',
@@ -7176,7 +8356,7 @@ const REGIONS = [
       { id: 'grave_north_thicket', name: '北墓草丛', x: 5, y: 5, width: 9, height: 6, encounterTableId: 'region_grave_29_36', tallGrassRate: 0.24 },
       { id: 'grave_south_thicket', name: '南墓荒草', x: 5, y: 24, width: 2, height: 2, encounterTableId: 'region_grave_south_29_36', tallGrassRate: 0.28 },
       { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 },
-      { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: [41, 43] }
+      { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: [41, 52] }
     ],
     decorativeObjects: [
       // 巨大陵墓 - 中央视觉焦点（偏心一点，避免“正中太死板”）
@@ -7204,7 +8384,8 @@ const REGIONS = [
     id: 'GodotMapV2_HexRuins',
     displayName: '六角遗迹',
     regionOrder: 6,
-    recommendedLevel: 38,
+    unlockLevel: 35,
+    recommendedLevel: 39,
     levelRange: [35, 42],
     corridorScatterCount: 180,
     corridorScatterLayers: 2,
@@ -7253,10 +8434,16 @@ const REGIONS = [
       warp('warp_hex_to_ridge', 38, 16, 'GodotMapV2_SurvivalRidge', { x: 3, y: 16, direction: 'right' }, '前往铁木营地'),
       heal('heal_hex_spring', 26, 12, '遗迹泉水'),
       sign('sign_hex_ruin', 2, 14, '六角遗迹 Lv.35-42：东营地，北海岸。'),
+      merchant('npc_hex_relic_buyer', 18, 14, {
+        name: '遗迹回收商',
+        title: '遗迹回收商 · 出售道具',
+        facing: 'down',
+        message: '用不上的补给，我可以回收。'
+      }),
       hiddenEncounterGate('hidden_gate_hex_sealed_chamber', 33, 12, {
         hiddenZoneId: 'hex_sealed_chamber',
         hiddenZoneName: '封印密室',
-        message: '封印密室入口：100金币开启。',
+        message: formatHiddenEncounterGateMessage('封印密室', 'hex_sealed_chamber'),
         gateTheme: 'ruins',
         pathAxis: 'horizontal',
         treeType: 'hex_stone_hill',
@@ -7281,7 +8468,7 @@ const REGIONS = [
       { id: 'hex_north_ruins', name: '北遗迹草丛', x: 5, y: 5, width: 10, height: 6, encounterTableId: 'region_ruin_35_42', tallGrassRate: 0.24 },
       { id: 'hex_west_ruins', name: '西遗迹草丛', x: 5, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_west_35_42', tallGrassRate: 0.26 },
       { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 },
-      { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [47, 49] }
+      { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [47, 61] }
     ],
     decorativeObjects: [
       // 中央神殿废墟 - 主视觉焦点
@@ -7309,7 +8496,8 @@ const REGIONS = [
     id: 'GodotMapV2_SurvivalRidge',
     displayName: '铁木营地',
     regionOrder: 7,
-    recommendedLevel: 44,
+    unlockLevel: 41,
+    recommendedLevel: 45,
     levelRange: [41, 47],
     startPosition: { x: 3, y: 16, direction: 'right' },
     clearings: [
@@ -7384,7 +8572,7 @@ const REGIONS = [
         ],
         beforeBattleText: '铁木教官：先上完这节体能课，成长药水就是你的。',
         defeatedText: '铁木教官：成长药水拿好，补满状态再往东走。',
-        rewardItems: [{ itemType: 'expPotion', itemKey: 'exp_potion_large', quantity: 1 }]
+        rewardItems: [{ itemType: 'expPotion', itemKey: 'exp_potion_medium', quantity: 1 }]
       })
     ],
     encounterZones: [
@@ -7421,6 +8609,7 @@ const REGIONS = [
     id: 'GodotMapV2_BossHighland',
     displayName: '星雾高地',
     regionOrder: 8,
+    unlockLevel: 51,
     recommendedLevel: 56,
     levelRange: [52, 60],
     normalTrainerMinLevel: 51,
@@ -7460,16 +8649,19 @@ const REGIONS = [
     waterBodies: [{ type: 'pond', x: 15.1, y: 12.1, rx: 1.82, ry: 1.3, rotation: 0.04, salt: 820 }],
     runtimeEvents: [
       warp('warp_peak_to_ridge', 1, 16, 'GodotMapV2_SurvivalRidge', { x: 36, y: 16, direction: 'left' }, '返回铁木营地'),
+      warp('warp_peak_to_frost_dojo', 38, 16, 'GodotMapV2_FrostDojo', { x: 14, y: 20, direction: 'up' }, '前往霜镜道馆'),
       heal('heal_peak_spring', 19, 12, '星雾泉水'),
       sign('sign_peak_final', 1, 14, '星雾高地 Lv.52-60：清图补强，再挑战北Boss。'),
       hiddenEncounterGate('hidden_gate_peak_starwatch', 7, 11, {
         hiddenZoneId: 'peak_starwatch_path',
         hiddenZoneName: '观星秘径',
-        message: '观星秘径入口：100金币开启。',
+        message: '观星秘径入口：击败星雾首领后，可支付 700 金币开启。',
         gateTheme: 'peak',
         pathAxis: 'vertical',
         treeType: 'platformer_flag',
-        openTile: TILE.road
+        openTile: TILE.road,
+        requiresMapBossDefeated: true,
+        bossLockedReason: '先击败星雾首领，才能开启观星秘径。'
       }),
       { id: 'treasure_highland_secret', type: 'item', position: { x: 37, y: 9 }, properties: { itemType: 'pokeball', itemKey: 'pokeball_master', quantity: 1, text: '星雾高地终极秘宝' } },
       { id: 'treasure_peak_starwatch', type: 'item', position: { x: 4, y: 10 }, properties: { itemType: 'statBoost', itemKey: 'rare_candy', quantity: 1, text: '观星秘径奖励箱' } },
@@ -7491,7 +8683,7 @@ const REGIONS = [
       { id: 'peak_west_grass', name: '西高地草丛', x: 12, y: 5, width: 5, height: 6, encounterTableId: 'region_peak_52_60', tallGrassRate: 0.27 },
       { id: 'peak_south_grass', name: '南高地草丛', x: 5, y: 23, width: 12, height: 7, encounterTableId: 'region_peak_south_52_60', tallGrassRate: 0.28 },
       { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 },
-      { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: [65, 70] }
+      { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, exclusivePokemonIds: [207, 208, 209], levelRange: [65, 70] }
     ],
     decorativeObjects: [
       // 主记忆点：高地石阵 + 悬台旗帜
@@ -7517,8 +8709,685 @@ const REGIONS = [
     expansionSlots: [
       { direction: 'east', recommendedLevel: 65, note: 'Reserved for post-60 expansion.' }
     ]
+  },
+  {
+    id: 'GodotMapV2_FrostDojo',
+    displayName: '霜镜道馆',
+    width: 28,
+    height: 24,
+    regionOrder: 9,
+    unlockLevel: 65,
+    recommendedLevel: 70,
+    levelRange: [65, 75],
+    normalTrainerMinLevel: 65,
+    tallGrassRate: 0,
+    corridorScatterCount: 0,
+    corridorScatterLayers: 1,
+    strictRouteCorridors: true,
+    startPosition: { x: 14, y: 20, direction: 'up' },
+    clearings: [
+      { shape: 'rect', x1: 9, y1: 20, x2: 19, y2: 22, tile: TILE.paleGrass, strictRouteOpen: true },
+      { shape: 'ellipse', x: 14, y: 4, rx: 3, ry: 2, tile: TILE.sand }
+    ],
+    roadPaths: [
+      { points: [[14, 22], [14, 20], [7, 20], [7, 17], [14, 17], [14, 14], [21, 14], [21, 11], [14, 11], [14, 8], [10, 8], [10, 5], [14, 5], [14, 1]], width: 1.6 },
+      { points: [[10, 21], [18, 21]], width: 1.2 }
+    ],
+    roadJunctions: [
+      { x: 7, y: 17, rx: 0.72, ry: 0.72 },
+      { x: 14, y: 14, rx: 0.72, ry: 0.72 },
+      { x: 21, y: 11, rx: 0.72, ry: 0.72 },
+      { x: 10, y: 8, rx: 0.72, ry: 0.72 },
+      { x: 10, y: 5, rx: 0.72, ry: 0.72 },
+      { x: 14, y: 4, rx: 1.25, ry: 1.1 }
+    ],
+    waterTiles: [
+      { x: 12.2, y: 16.1, rx: 2.1, ry: 0.8, rotation: -0.08 },
+      { x: 17.2, y: 11.9, rx: 2.1, ry: 0.8, rotation: 0.08 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 12.2, y: 16.1, rx: 2.3, ry: 0.95, rotation: -0.08, salt: 901 },
+      { type: 'pond', x: 17.2, y: 11.9, rx: 2.3, ry: 0.95, rotation: 0.08, salt: 902 }
+    ],
+    runtimeEvents: [
+      warp('warp_frost_to_peak', 14, 22, 'GodotMapV2_BossHighland', { x: 36, y: 16, direction: 'left' }, '返回星雾高地', { visualTheme: 'frost' }),
+      warp('warp_frost_to_tide', 14, 1, 'GodotMapV2_TideDojo', { x: 14, y: 20, direction: 'up' }, '进入第二馆·深潮', { visualTheme: 'frost' }),
+      fastTravel('fast_travel_frost_dojo', 'GodotMapV2_FrostDojo', '霜镜门前传送台'),
+      heal('heal_frost_mirror', 10, 21, '霜镜恢复台', { visualTheme: 'frost' }),
+      sign('sign_frost_gate', 9, 19, '霜镜道馆：霜纹哨兵、镜湖术士、白雾守卫和霜镜天王依次封锁折镜通路，只有击败当前守关者才会让路。', { visualModel: 'elite_frost_mirror', scale: 0.5 }),
+      eliteLieutenant('elite_frost_lieutenant_1', 7, 18, {
+        name: '霜纹哨兵',
+        order: 1,
+        styleLabel: '冰霜护甲',
+        characterModel: 'elite_frost_sentinel',
+        visualTheme: 'frost',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 68,
+        team: fixedEliteTeam([134, 33, 147], [66, 67, 68]),
+        rule: eliteRule({
+          id: 'frost_armor',
+          name: '冰霜护甲',
+          description: '开场 3 个敌方回合内，敌方受到的物理伤害降低 20%。',
+          enemyPhysicalDamageTakenMultiplierTurns: 3,
+          enemyDamageTakenMultiplier: 0.8
+        }),
+        beforeBattleText: '霜纹哨兵：冰面会先挡住急躁的人。',
+        battleHintText: '前 3 回合优先用特殊招式或强化；蚊香泳士会截住只靠火、岩速推的队伍。',
+        defeatedText: '霜纹哨兵：第一面霜镜碎了。',
+        dailyDefeatedText: '霜纹哨兵：第一面霜镜已经让路。'
+      }),
+      eliteLieutenant('elite_frost_lieutenant_2', 18, 14, {
+        name: '镜湖术士',
+        order: 2,
+        styleLabel: '低温催眠',
+        requiredTrainerIds: ['elite_frost_lieutenant_1'],
+        characterModel: 'elite_frost_mystic',
+        visualTheme: 'frost',
+        facing: 'left',
+        stepAsideDirection: 'up',
+        recommendedLevel: 70,
+        team: fixedEliteTeam([26, 42, 199], [68, 69, 70]),
+        rule: eliteRule({
+          id: 'frost_hypnosis',
+          name: '低温催眠',
+          description: '开场低温压迫，玩家首发速度降低 1 级。',
+          openingPlayerStatStages: { spd: -1 }
+        }),
+        beforeBattleText: '镜湖术士：看清倒影前，你会先慢下来。',
+        battleHintText: '选择耐打的首发，岩石招式能压制冰系，但巨沼怪会接住并用地面反击。',
+        defeatedText: '镜湖术士：第二面霜镜碎了。',
+        dailyDefeatedText: '镜湖术士：第二面霜镜已经让路。'
+      }),
+      eliteLieutenant('elite_frost_lieutenant_3', 14, 10, {
+        name: '白雾守卫',
+        order: 3,
+        styleLabel: '白雾轮换',
+        requiredTrainerIds: ['elite_frost_lieutenant_1', 'elite_frost_lieutenant_2'],
+        characterModel: 'elite_frost_warden',
+        visualTheme: 'frost',
+        facing: 'down',
+        stepAsideDirection: 'left',
+        recommendedLevel: 73,
+        team: fixedEliteTeam([147, 26, 33, 199], [70, 71, 72, 73]),
+        rule: eliteRule({
+          id: 'frost_mist_shift',
+          name: '白雾轮换',
+          description: '玩家宝可梦倒下时，敌方当前宝可梦回复 15% 体力。',
+          enemyHealOnPlayerFaint: { ratio: 0.15 }
+        }),
+        beforeBattleText: '白雾守卫：白雾会把失误变成我的补给。',
+        battleHintText: '不要让残血成员白白倒下；火、岩主攻也要准备应对蚊香泳士和巨沼怪。',
+        defeatedText: '白雾守卫：第三面霜镜碎了，天王在等你。',
+        dailyDefeatedText: '白雾守卫：第三面霜镜已经让路。'
+      }),
+      eliteBoss('elite_frost_boss', 12, 5, {
+        name: '霜镜天王',
+        title: '四大天王之一 · 霜镜',
+        styleLabel: '霜镜控速',
+        characterModel: 'elite_frost_master',
+        visualTheme: 'frost',
+        facing: 'left',
+        stepAsideDirection: 'down',
+        recommendedLevel: 75,
+        requiredTrainerIds: ['elite_frost_lieutenant_1', 'elite_frost_lieutenant_2', 'elite_frost_lieutenant_3'],
+        team: fixedEliteTeam([134, 76, 199, 9, 26], [68, 69, 71, 73, 75]),
+        rule: eliteRule({
+          id: 'frost_elite_pressure',
+          name: '霜镜控速',
+          description: '开场玩家首发速度降低 1 级，敌方冰系节奏更容易先手。',
+          openingPlayerStatStages: { spd: -1 }
+        }),
+        beforeBattleText: '霜镜天王：别急，真正的终局从冷静开始。',
+        battleHintText: '别只带火、岩或电单核；水箭龟和巨沼怪会截断速推，准备第二套突破手段。',
+        defeatedText: '霜镜天王：你通过了第一馆，去听下一片海潮。',
+        dailyDefeatedText: '霜镜天王：霜镜已经认可你。'
+      })
+    ],
+    encounterZones: [],
+    decorativeObjects: [
+      themeLandmark('elite_frost_mirror', 12, 18.2, { scale: 0.72, rotation: -0.08 }),
+      themeLandmark('elite_frost_crystal', 16, 18.2, { scale: 0.82, rotation: 0.1 }),
+      themeLandmark('elite_frost_mirror', 5.2, 18, { scale: 0.9, rotation: -0.18 }),
+      themeLandmark('elite_frost_crystal', 9.1, 18, { scale: 1.08, rotation: 0.12 }),
+      themeLandmark('elite_frost_mirror', 16, 14.1, { scale: 0.92, rotation: 0.2 }),
+      themeLandmark('elite_frost_crystal', 19.2, 13.3, { scale: 1.04, rotation: -0.08 }),
+      themeLandmark('elite_frost_crystal', 11.1, 4.2, { scale: 1.18, rotation: -0.12 }),
+      themeLandmark('elite_frost_crystal', 16.9, 4.2, { scale: 1.18, rotation: 0.12 })
+    ],
+    scatter: [
+      { idPrefix: 'frost_crystal_edges', types: ['elite_frost_crystal', 'elite_frost_mirror'], count: 14, allowedTiles: [TILE.wall], salt: 910, scale: [0.78, 1.02], height: 0.18, minRoadDistance: 1.2, minEventDistance: 1.8 }
+    ]
+  },
+  {
+    id: 'GodotMapV2_TideDojo',
+    displayName: '深潮道馆',
+    width: 28,
+    height: 24,
+    regionOrder: 10,
+    unlockLevel: 75,
+    recommendedLevel: 82,
+    levelRange: [75, 85],
+    normalTrainerMinLevel: 75,
+    tallGrassRate: 0,
+    corridorScatterCount: 0,
+    corridorScatterLayers: 1,
+    strictRouteCorridors: true,
+    startPosition: { x: 14, y: 20, direction: 'up' },
+    clearings: [
+      { shape: 'rect', x1: 9, y1: 20, x2: 19, y2: 22, tile: TILE.paleGrass, strictRouteOpen: true }
+    ],
+    roadPaths: [
+      { points: [[14, 22], [14, 20], [4, 20], [4, 6], [23, 6], [23, 18], [8, 18]], width: 1.6 },
+      { points: [[10, 21], [18, 21]], width: 1.2 }
+    ],
+    roadJunctions: [
+      { x: 4, y: 20, rx: 0.72, ry: 0.72 },
+      { x: 4, y: 6, rx: 0.72, ry: 0.72 },
+      { x: 23, y: 6, rx: 0.72, ry: 0.72 },
+      { x: 23, y: 18, rx: 0.72, ry: 0.72 },
+      { x: 8, y: 18, rx: 1.25, ry: 1.1 }
+    ],
+    waterTiles: [
+      { x: 14, y: 12, rx: 6.2, ry: 4.1, rotation: 0.02 },
+      { x: 14, y: 12, rx: 3.4, ry: 1.1, rotation: -0.04 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 14, y: 12, rx: 6.45, ry: 4.35, rotation: 0.02, salt: 1001 },
+      { type: 'pond', x: 14, y: 12, rx: 3.65, ry: 1.25, rotation: -0.04, salt: 1002 }
+    ],
+    runtimeEvents: [
+      warp('warp_tide_to_frost', 14, 22, 'GodotMapV2_FrostDojo', { x: 14, y: 2, direction: 'down' }, '返回霜镜道馆', { visualTheme: 'tide' }),
+      warp('warp_tide_to_iron', 8, 18, 'GodotMapV2_IronDojo', { x: 14, y: 20, direction: 'up' }, '进入第三馆·铁壁', {
+        visualTheme: 'tide',
+        returnLanding: { x: 9, y: 18, direction: 'left' }
+      }),
+      fastTravel('fast_travel_tide_dojo', 'GodotMapV2_TideDojo', '深潮门前传送台'),
+      heal('heal_tide_pool', 10, 21, '深潮恢复台', { visualTheme: 'tide' }),
+      sign('sign_tide_gate', 9, 19, '深潮道馆：潮汐潜员、深海猎手、漩涡祭司和深潮天王依次封锁环池回廊，只有击败当前守关者才会让路。', { visualModel: 'elite_tide_pillar', scale: 0.5 }),
+      ...(LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 ? getEliteUnlockObjectiveEvents('GodotMapV2_TideDojo') : []),
+      eliteLieutenant('elite_tide_lieutenant_1', 4, 17, {
+        name: '潮汐潜员',
+        order: 1,
+        styleLabel: '潮汐回复',
+        characterModel: 'elite_tide_diver',
+        visualTheme: 'tide',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 78,
+        team: fixedEliteTeam([192, 182, 199], [76, 77, 78]),
+        rule: eliteRule({
+          id: 'tide_recovery',
+          name: '潮汐回复',
+          description: '每 4 个敌方回合，敌方当前宝可梦回复 10% 体力。',
+          enemyTurnIntervalHeal: { interval: 4, ratio: 0.1 }
+        }),
+        beforeBattleText: '潮汐潜员：拖进潮汐节奏后，体力会回到我这边。',
+        battleHintText: '尽量在第 4 个敌方回合前完成击倒；巨沼怪免疫电击，别只准备电系输出。',
+        defeatedText: '潮汐潜员：第一道潮汐退了。',
+        dailyDefeatedText: '潮汐潜员：第一道潮汐已经退去。'
+      }),
+      eliteLieutenant('elite_tide_lieutenant_2', 12, 6, {
+        name: '深海猎手',
+        order: 2,
+        styleLabel: '猎潮追击',
+        requiredTrainerIds: ['elite_tide_lieutenant_1'],
+        characterModel: 'elite_tide_hunter',
+        visualTheme: 'tide',
+        facing: 'left',
+        stepAsideDirection: 'down',
+        recommendedLevel: 80,
+        team: fixedEliteTeam([200, 198, 86], [78, 79, 80]),
+        rule: eliteRule({
+          id: 'tide_pursuit',
+          name: '猎潮追击',
+          description: '玩家主动换宝可梦后，敌方下一次造成伤害提高 20%。',
+          playerSwitchEnemyDamageMultiplier: { multiplier: 1.2, turns: 1 }
+        }),
+        beforeBattleText: '深海猎手：你换得越急，破绽越明显。',
+        battleHintText: '主动换人前先确认新上场成员能承受一次强化追击。',
+        defeatedText: '深海猎手：第二道潮汐退了。',
+        dailyDefeatedText: '深海猎手：第二道潮汐已经退去。'
+      }),
+      eliteLieutenant('elite_tide_lieutenant_3', 23, 12, {
+        name: '漩涡祭司',
+        order: 3,
+        styleLabel: '漩涡压制',
+        requiredTrainerIds: ['elite_tide_lieutenant_1', 'elite_tide_lieutenant_2'],
+        characterModel: 'elite_tide_priest',
+        visualTheme: 'tide',
+        facing: 'up',
+        stepAsideDirection: 'left',
+        recommendedLevel: 83,
+        team: fixedEliteTeam([193, 199, 194, 192], [80, 81, 82, 83]),
+        rule: eliteRule({
+          id: 'tide_vortex',
+          name: '漩涡压制',
+          description: '玩家当前宝可梦低于 40% 体力时，敌方水系技能伤害提高 15%。',
+          enemyDamageMultiplierAgainstLowHp: { hpRatio: 0.4, multiplier: 1.15, moveTypes: [TYPES.WATER] }
+        }),
+        beforeBattleText: '漩涡祭司：血线一低，海潮就会收紧。',
+        battleHintText: '把主力维持在 40% 体力以上，必要时提前回复或轮换。',
+        defeatedText: '漩涡祭司：第三道潮汐退了，天王在等你。',
+        dailyDefeatedText: '漩涡祭司：第三道潮汐已经退去。'
+      }),
+      eliteBoss('elite_tide_boss', 12, 18, {
+        name: '深潮天王',
+        title: '四大天王之二 · 深潮',
+        styleLabel: '深潮续航',
+        characterModel: 'elite_tide_master',
+        visualTheme: 'tide',
+        facing: 'right',
+        stepAsideDirection: 'up',
+        recommendedLevel: 85,
+        requiredTrainerIds: ['elite_tide_lieutenant_1', 'elite_tide_lieutenant_2', 'elite_tide_lieutenant_3'],
+        team: fixedEliteTeam([192, 182, 199, 86, 193], [78, 79, 81, 83, 85]),
+        rule: eliteRule({
+          id: 'tide_elite_surge',
+          name: '深潮续航',
+          description: '每 4 个敌方回合回复 10% 体力，低血线会被水系技能压制。',
+          enemyTurnIntervalHeal: { interval: 4, ratio: 0.1 },
+          enemyDamageMultiplierAgainstLowHp: { hpRatio: 0.4, multiplier: 1.12, moveTypes: [TYPES.WATER] }
+        }),
+        beforeBattleText: '深潮天王：你要赢的不是一击，是整片潮汐。',
+        battleHintText: '用稳定爆发压缩战斗长度，同时守住低血线，避免回复与增伤同时生效。',
+        defeatedText: '深潮天王：海潮让路了，去敲开铁壁。',
+        dailyDefeatedText: '深潮天王：深潮已经认可你。'
+      })
+    ],
+    encounterZones: [],
+    decorativeObjects: [
+      themeLandmark('elite_tide_pillar', 4.3, 17.2, { scale: 0.76, rotation: -0.12 }),
+      themeLandmark('elite_tide_gate', 9.2, 5.1, { scale: 0.58, rotation: 0.08 }),
+      themeLandmark('elite_tide_pillar', 18.7, 5.1, { scale: 0.78, rotation: 0.12 }),
+      themeLandmark('elite_tide_pillar', 23.8, 10.5, { scale: 0.8, rotation: -0.08 }),
+      themeLandmark('elite_tide_gate', 15.6, 15.8, { scale: 0.56, rotation: 0 }),
+      themeLandmark('elite_tide_pillar', 11.2, 9.2, { scale: 0.84, rotation: 0.08 })
+    ],
+    scatter: [
+      { idPrefix: 'tide_sanctum_edges', types: ['elite_tide_pillar', 'elite_tide_gate'], count: 10, allowedTiles: [TILE.wall], salt: 1011, scale: [0.66, 0.88], height: 0.18, minRoadDistance: 1.2, minEventDistance: 1.8, respectSampledScale: true }
+    ]
+  },
+  {
+    id: 'GodotMapV2_IronDojo',
+    displayName: '铁壁道馆',
+    width: 28,
+    height: 24,
+    regionOrder: 11,
+    unlockLevel: 85,
+    recommendedLevel: 91,
+    levelRange: [85, 95],
+    normalTrainerMinLevel: 85,
+    tallGrassRate: 0,
+    corridorScatterCount: 0,
+    corridorScatterLayers: 1,
+    strictRouteCorridors: true,
+    startPosition: { x: 14, y: 20, direction: 'up' },
+    clearings: [
+      { shape: 'rect', x1: 9, y1: 20, x2: 19, y2: 22, tile: TILE.paleGrass, strictRouteOpen: true },
+      { shape: 'ellipse', x: 17, y: 5, rx: 4, ry: 2, tile: TILE.sand }
+    ],
+    roadPaths: [
+      { points: [[14, 22], [14, 20], [5, 20], [5, 16], [22, 16], [22, 12], [7, 12], [7, 8], [20, 8], [20, 4], [14, 4], [14, 1]], width: 1.6 },
+      { points: [[10, 21], [18, 21]], width: 1.2 }
+    ],
+    roadJunctions: [
+      { x: 5, y: 20, rx: 0.72, ry: 0.72 },
+      { x: 5, y: 16, rx: 0.72, ry: 0.72 },
+      { x: 22, y: 16, rx: 0.72, ry: 0.72 },
+      { x: 22, y: 12, rx: 0.72, ry: 0.72 },
+      { x: 7, y: 12, rx: 0.72, ry: 0.72 },
+      { x: 7, y: 8, rx: 0.72, ry: 0.72 },
+      { x: 20, y: 8, rx: 0.72, ry: 0.72 },
+      { x: 17, y: 4, rx: 1.35, ry: 1.0 }
+    ],
+    runtimeEvents: [
+      warp('warp_iron_to_tide', 14, 22, 'GodotMapV2_TideDojo', { x: 9, y: 18, direction: 'left' }, '返回深潮道馆', { visualTheme: 'iron' }),
+      warp('warp_iron_to_dragon', 14, 1, 'GodotMapV2_DragonDojo', { x: 14, y: 20, direction: 'up' }, '进入最终馆·龙穹', { visualTheme: 'iron' }),
+      fastTravel('fast_travel_iron_dojo', 'GodotMapV2_IronDojo', '铁壁门前传送台'),
+      heal('heal_iron_core', 10, 21, '铁壁恢复台', { visualTheme: 'iron' }),
+      sign('sign_iron_gate', 9, 19, '铁壁道馆：铸盾工匠、磁轨技师、王座禁卫和铁壁天王依次封锁多层城墙，只有击败当前守关者才会让路。', { visualModel: 'elite_iron_beacon', scale: 0.62 }),
+      ...(LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 ? getEliteUnlockObjectiveEvents('GodotMapV2_IronDojo') : []),
+      eliteLieutenant('elite_iron_lieutenant_1', 5, 18, {
+        name: '铸盾工匠',
+        order: 1,
+        styleLabel: '铁壁展开',
+        characterModel: 'elite_iron_smith',
+        visualTheme: 'iron',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 88,
+        team: fixedEliteTeam([139, 76, 143], [86, 87, 88]),
+        rule: eliteRule({
+          id: 'iron_wall',
+          name: '铁壁展开',
+          description: '开场敌方全队防御提高 1 级。',
+          openingEnemyStatStages: { def: 1 }
+        }),
+        beforeBattleText: '铸盾工匠：先撞上铁壁，再谈进攻。',
+        battleHintText: '优先使用特殊伤害或降低防御；水箭龟会接住只靠火、地面或格斗的强攻。',
+        defeatedText: '铸盾工匠：第一层铁壁打开。',
+        dailyDefeatedText: '铸盾工匠：第一层铁壁已经打开。'
+      }),
+      eliteLieutenant('elite_iron_lieutenant_2', 22, 14, {
+        name: '磁轨技师',
+        order: 2,
+        styleLabel: '磁轨锁定',
+        requiredTrainerIds: ['elite_iron_lieutenant_1'],
+        characterModel: 'elite_iron_engineer',
+        visualTheme: 'iron',
+        facing: 'down',
+        stepAsideDirection: 'left',
+        recommendedLevel: 90,
+        team: fixedEliteTeam([143, 204, 27], [88, 89, 90]),
+        rule: eliteRule({
+          id: 'iron_magnetic_lock',
+          name: '磁轨锁定',
+          description: '敌方电/钢技能命中后，玩家速度降低 1 级，最多触发 2 次。',
+          enemyMoveTypeHitPlayerStatStage: { moveTypes: [TYPES.ELECTRIC, TYPES.STEEL], stat: 'spd', stages: -1, maxTriggers: 2 }
+        }),
+        beforeBattleText: '磁轨技师：速度会被轨道锁住。',
+        battleHintText: '用耐久较高且不依赖速度的核心；闪电鸟免疫地面，单一地面手无法通吃。',
+        defeatedText: '磁轨技师：第二层铁壁打开。',
+        dailyDefeatedText: '磁轨技师：第二层铁壁已经打开。'
+      }),
+      eliteLieutenant('elite_iron_lieutenant_3', 7, 10, {
+        name: '王座禁卫',
+        order: 3,
+        styleLabel: '反击装甲',
+        requiredTrainerIds: ['elite_iron_lieutenant_1', 'elite_iron_lieutenant_2'],
+        characterModel: 'elite_iron_royal_guard',
+        visualTheme: 'iron',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 93,
+        team: fixedEliteTeam([206, 205, 74, 204], [90, 91, 92, 93]),
+        rule: eliteRule({
+          id: 'iron_counter_armor',
+          name: '反击装甲',
+          description: '敌方受到暴击后，下一次造成伤害提高 25%。',
+          enemyDamageBoostOnCriticalTaken: { multiplier: 1.25, turns: 1 }
+        }),
+        beforeBattleText: '王座禁卫：打穿装甲的人，要承受反击。',
+        battleHintText: '打出暴击后先转入防守；喷火龙会接住火系强攻，准备岩石或水系补位。',
+        defeatedText: '王座禁卫：第三层铁壁打开，天王在等你。',
+        dailyDefeatedText: '王座禁卫：第三层铁壁已经打开。'
+      }),
+      eliteBoss('elite_iron_boss', 17, 4, {
+        name: '铁壁天王',
+        title: '四大天王之三 · 铁壁',
+        styleLabel: '铁壁核心',
+        characterModel: 'elite_iron_master',
+        visualTheme: 'iron',
+        facing: 'right',
+        stepAsideDirection: 'down',
+        recommendedLevel: 95,
+        requiredTrainerIds: ['elite_iron_lieutenant_1', 'elite_iron_lieutenant_2', 'elite_iron_lieutenant_3'],
+        team: fixedEliteTeam([139, 76, 74, 206, 204], [88, 89, 91, 93, 95]),
+        rule: eliteRule({
+          id: 'iron_elite_core',
+          name: '铁壁核心',
+          description: '开场敌方防御提高 1 级；敌方受到暴击后，下一次造成伤害提高 20%。',
+          openingEnemyStatStages: { def: 1 },
+          enemyDamageBoostOnCriticalTaken: { multiplier: 1.2, turns: 1 }
+        }),
+        beforeBattleText: '铁壁天王：能击碎防线，才算真正进入终局。',
+        battleHintText: '火或地面单核会被水箭龟、喷火龙截断；用两种突破属性分段攻破核心。',
+        defeatedText: '铁壁天王：铁壁开门，最后只剩龙穹。',
+        dailyDefeatedText: '铁壁天王：铁壁已经认可你。'
+      })
+    ],
+    encounterZones: [],
+    decorativeObjects: [
+      themeLandmark('elite_iron_gate', 13, 16, { scale: 0.82, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_iron_gate', 14, 12, { scale: 0.82, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_iron_gate', 13, 8, { scale: 0.84, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_iron_gate', 15.5, 4, { scale: 0.86, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_iron_bastion', 3.3, 17.8, { scale: 0.72, rotation: -0.08 }),
+      themeLandmark('elite_iron_beacon', 9.2, 17.8, { scale: 0.76, rotation: 0.12 }),
+      themeLandmark('elite_iron_bastion', 23.9, 13.9, { scale: 0.74, rotation: 0.1 }),
+      themeLandmark('elite_iron_beacon', 18.1, 13.9, { scale: 0.78, rotation: -0.12 }),
+      themeLandmark('elite_iron_bastion', 5.1, 9.8, { scale: 0.74, rotation: -0.1 }),
+      themeLandmark('elite_iron_beacon', 11.2, 9.8, { scale: 0.78, rotation: 0.12 }),
+      themeLandmark('elite_iron_bastion', 17, 2.8, { scale: 0.82, rotation: 0.04 })
+    ],
+    scatter: [
+      { idPrefix: 'iron_fortress_edges', types: ['elite_iron_bastion', 'elite_iron_beacon'], count: 12, allowedTiles: [TILE.wall], salt: 1111, scale: [0.66, 0.88], height: 0.2, minRoadDistance: 1.2, minEventDistance: 1.8, respectSampledScale: true }
+    ]
+  },
+  {
+    id: 'GodotMapV2_DragonDojo',
+    displayName: '龙穹道馆',
+    width: 28,
+    height: 24,
+    regionOrder: 12,
+    unlockLevel: 95,
+    recommendedLevel: 98,
+    levelRange: [95, 100],
+    normalTrainerMinLevel: 95,
+    tallGrassRate: 0,
+    corridorScatterCount: 0,
+    corridorScatterLayers: 1,
+    strictRouteCorridors: true,
+    startPosition: { x: 14, y: 20, direction: 'up' },
+    clearings: [
+      { shape: 'rect', x1: 9, y1: 20, x2: 21, y2: 22, tile: TILE.paleGrass, strictRouteOpen: true },
+      { shape: 'ellipse', x: 14, y: 5, rx: 3, ry: 2, tile: TILE.sand }
+    ],
+    roadPaths: [
+      { points: [[14, 22], [14, 20]], width: 3 },
+      { points: [[14, 20], [14, 1]], width: 1.6 },
+      { points: [[10, 21], [20, 21]], width: 1.2 }
+    ],
+    roadJunctions: [
+      { x: 14, y: 19, rx: 0.9, ry: 0.72 },
+      { x: 14, y: 15, rx: 0.9, ry: 0.72 },
+      { x: 14, y: 11, rx: 0.9, ry: 0.72 },
+      { x: 14, y: 4, rx: 1.3, ry: 1.05 }
+    ],
+    waterTiles: [
+      { x: 13.5, y: 17, rx: 12.8, ry: 0.72, rotation: 0 },
+      { x: 13.5, y: 13, rx: 12.8, ry: 0.72, rotation: 0 },
+      { x: 13.5, y: 9, rx: 12.8, ry: 0.72, rotation: 0 }
+    ],
+    waterBodies: [
+      { type: 'pond', x: 13.5, y: 17, rx: 13, ry: 0.86, rotation: 0, salt: 1221 },
+      { type: 'pond', x: 13.5, y: 13, rx: 13, ry: 0.86, rotation: 0, salt: 1222 },
+      { type: 'pond', x: 13.5, y: 9, rx: 13, ry: 0.86, rotation: 0, salt: 1223 }
+    ],
+    runtimeEvents: [
+      warp('warp_dragon_to_iron', 14, 22, 'GodotMapV2_IronDojo', { x: 14, y: 2, direction: 'down' }, '返回铁壁道馆', { visualTheme: 'dragon' }),
+      ...(LONG_TERM_PROGRESSION_FLAGS.championTowerV1
+        ? [warp('warp_dragon_to_champion_tower', 14, 1, 'GodotMapV2_ChampionTower', { x: 14, y: 23, direction: 'up' }, '进入冠军挑战塔', { visualTheme: 'champion' })]
+        : []),
+      fastTravel('fast_travel_dragon_dojo', 'GodotMapV2_DragonDojo', '龙穹门前传送台'),
+      heal('heal_dragon_starlight', 10, 21, '龙穹恢复台', { visualTheme: 'dragon' }),
+      sign('sign_dragon_gate', 13, 20, '龙穹道馆：龙牙试炼官、天穹追猎者、终焉守门人和龙穹天王依次封锁四段天桥，只有击败当前守关者才会让路。', { visualModel: 'elite_dragon_spire', scale: 0.5 }),
+      ...(LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 ? getEliteUnlockObjectiveEvents('GodotMapV2_DragonDojo') : []),
+      eliteLieutenant('elite_dragon_lieutenant_1', 14, 19, {
+        name: '龙牙试炼官',
+        order: 1,
+        styleLabel: '龙牙威压',
+        characterModel: 'elite_dragon_examiner',
+        visualTheme: 'dragon',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 96,
+        team: fixedEliteTeam([12, 207, 204], [95, 96, 96]),
+        rule: eliteRule({
+          id: 'dragon_intimidation',
+          name: '龙牙威压',
+          description: '开场玩家首发攻击降低 1 级。',
+          openingPlayerStatStages: { atk: -1 }
+        }),
+        beforeBattleText: '龙牙试炼官：先承受龙牙威压。',
+        battleHintText: '用特殊攻击手首发；巨金怪会抵抗冰、龙和妖精，单属性无法直接扫队。',
+        defeatedText: '龙牙试炼官：第一枚龙印归你。',
+        dailyDefeatedText: '龙牙试炼官：第一枚龙印已经给你。'
+      }),
+      eliteLieutenant('elite_dragon_lieutenant_2', 14, 15, {
+        name: '天穹追猎者',
+        order: 2,
+        styleLabel: '追猎本能',
+        requiredTrainerIds: ['elite_dragon_lieutenant_1'],
+        characterModel: 'elite_dragon_hunter',
+        visualTheme: 'dragon',
+        facing: 'down',
+        stepAsideDirection: 'left',
+        recommendedLevel: 98,
+        team: fixedEliteTeam([208, 209, 206], [96, 97, 98]),
+        rule: eliteRule({
+          id: 'dragon_hunt',
+          name: '追猎本能',
+          description: '玩家宝可梦倒下时，敌方当前宝可梦速度提高 1 级。',
+          enemySpeedBoostOnPlayerFaint: { stages: 1 }
+        }),
+        beforeBattleText: '天穹追猎者：倒下的瞬间，就是追猎加速的瞬间。',
+        battleHintText: '避免连续阵亡；坚盾剑怪会挡住冰、龙和妖精速推，保留能处理钢系的招式。',
+        defeatedText: '天穹追猎者：第二枚龙印归你。',
+        dailyDefeatedText: '天穹追猎者：第二枚龙印已经给你。'
+      }),
+      eliteLieutenant('elite_dragon_lieutenant_3', 14, 11, {
+        name: '终焉守门人',
+        order: 3,
+        styleLabel: '终焉压迫',
+        requiredTrainerIds: ['elite_dragon_lieutenant_1', 'elite_dragon_lieutenant_2'],
+        characterModel: 'elite_dragon_gatekeeper',
+        visualTheme: 'dragon',
+        facing: 'down',
+        stepAsideDirection: 'right',
+        recommendedLevel: 99,
+        team: fixedEliteTeam([205, 12, 208, 209], [97, 98, 99, 99]),
+        rule: eliteRule({
+          id: 'dragon_end_pressure',
+          name: '终焉压迫',
+          description: '第 5 个敌方回合后，敌方造成伤害提高 10%。',
+          enemyDamageMultiplierAfterTurn: { turn: 5, multiplier: 1.1 }
+        }),
+        beforeBattleText: '终焉守门人：拖到后面，龙穹会越来越重。',
+        battleHintText: '把关键爆发留在前 5 个敌方回合内；路卡利欧会反制单一冰、龙或妖精攻势。',
+        defeatedText: '终焉守门人：第三枚龙印归你，天王在等你。',
+        dailyDefeatedText: '终焉守门人：第三枚龙印已经给你。'
+      }),
+      eliteBoss('elite_dragon_boss', 14, 5, {
+        name: '龙穹天王',
+        title: '四大天王之四 · 龙穹',
+        styleLabel: '龙穹终局',
+        characterModel: 'elite_dragon_master',
+        visualTheme: 'dragon',
+        facing: 'down',
+        stepAsideDirection: 'left',
+        recommendedLevel: 100,
+        requiredTrainerIds: ['elite_dragon_lieutenant_1', 'elite_dragon_lieutenant_2', 'elite_dragon_lieutenant_3'],
+        team: fixedEliteTeam([12, 86, 204, 208, 209, 69], [96, 97, 98, 99, 100, 100]),
+        rule: eliteRule({
+          id: 'dragon_elite_final',
+          name: '龙穹终局',
+          description: '开场玩家首发攻击降低 1 级；第 5 个敌方回合后，敌方造成伤害提高 10%。',
+          openingPlayerStatStages: { atk: -1 },
+          enemyDamageMultiplierAfterTurn: { turn: 5, multiplier: 1.1 }
+        }),
+        beforeBattleText: '龙穹天王：这里不是终点，是你队伍真正成型后的答卷。',
+        battleHintText: '特殊攻击手负责开局；巨金怪和梦幻会拆掉单一冰、龙或妖精速推，准备完整轮换。',
+        defeatedText: '龙穹天王：四馆已破，你拥有继续扩展终局内容的资格。',
+        dailyDefeatedText: '龙穹天王：龙穹已经认可你。'
+      })
+    ],
+    encounterZones: [],
+    decorativeObjects: [
+      themeLandmark('elite_dragon_gate', 14, 16, { scale: 0.72, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_dragon_gate', 15, 13, { scale: 0.74, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_dragon_gate', 14, 10, { scale: 0.76, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_dragon_gate', 15, 7, { scale: 0.78, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_dragon_gate', 10.5, 4, { scale: 0.82, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('elite_dragon_spire', 8, 19, { scale: 0.72, rotation: -0.1 }),
+      themeLandmark('elite_dragon_spire', 20, 19, { scale: 0.74, rotation: 0.1 }),
+      themeLandmark('elite_dragon_spire', 2.5, 18.2, { scale: 0.78, rotation: -0.12 }),
+      themeLandmark('elite_dragon_spire', 24.8, 14.5, { scale: 0.8, rotation: 0.1 }),
+      themeLandmark('elite_dragon_spire', 4.5, 11.5, { scale: 0.82, rotation: -0.1 }),
+      themeLandmark('elite_dragon_spire', 22.5, 8.5, { scale: 0.84, rotation: 0.12 }),
+      themeLandmark('elite_dragon_spire', 7.5, 5.5, { scale: 0.86, rotation: -0.08 }),
+      themeLandmark('elite_dragon_spire', 16.2, 2.8, { scale: 0.9, rotation: 0.08 })
+    ],
+    scatter: [
+      { idPrefix: 'dragon_summit_edges', types: ['elite_dragon_spire', 'elite_dragon_arch'], count: 12, allowedTiles: [TILE.wall], salt: 1210, scale: [0.7, 0.92], minRoadDistance: 1.25, minEventDistance: 1.8, height: 0.22, respectSampledScale: true }
+    ]
+  },
+  {
+    id: 'GodotMapV2_ChampionTower',
+    displayName: '冠军挑战塔',
+    width: 28,
+    height: 26,
+    regionOrder: 13,
+    unlockLevel: 96,
+    recommendedLevel: 98,
+    levelRange: [96, 100],
+    normalTrainerMinLevel: 96,
+    tallGrassRate: 0,
+    corridorScatterCount: 0,
+    corridorScatterLayers: 1,
+    strictRouteCorridors: true,
+    startPosition: { x: 14, y: 23, direction: 'up' },
+    clearings: [
+      { shape: 'rect', x1: 7, y1: 21, x2: 21, y2: 25, tile: TILE.paleGrass, strictRouteOpen: true },
+      { shape: 'ellipse', x: 14, y: 7, rx: 5.5, ry: 3.4, tile: TILE.sand },
+      { shape: 'ellipse', x: 14, y: 3, rx: 4.2, ry: 2.2, tile: TILE.paleGrass }
+    ],
+    roadPaths: [
+      { points: [[14, 25], [14, 21], [7, 21], [7, 17], [21, 17], [21, 13], [7, 13], [7, 9], [14, 9], [14, 6]], width: 1.8 },
+      { points: [[9, 23], [20, 23]], width: 1.4 },
+      { points: [[10, 7], [18, 7]], width: 1.4 }
+    ],
+    roadJunctions: [
+      { x: 14, y: 21, rx: 1.15, ry: 0.9 },
+      { x: 7, y: 17, rx: 0.95, ry: 0.95 },
+      { x: 21, y: 13, rx: 0.95, ry: 0.95 },
+      { x: 7, y: 9, rx: 0.95, ry: 0.95 },
+      { x: 14, y: 7, rx: 2.4, ry: 1.8 }
+    ],
+    runtimeEvents: [
+      warp('warp_champion_tower_to_dragon', 14, 25, 'GodotMapV2_DragonDojo', { x: 14, y: 2, direction: 'down' }, '返回龙穹道馆', { visualTheme: 'champion' }),
+      fastTravel('fast_travel_champion_tower', 'GodotMapV2_ChampionTower', '冠军塔大厅传送台'),
+      heal('heal_champion_tower_lobby', 9, 23, '星冠整备台', { visualTheme: 'champion' }),
+      sign('sign_champion_tower_lobby', 12, 22, '冠军挑战塔：首次挑战需从第 1 层逐层登顶；首次通关后，每周重置挑战进度，失败不会使已完成楼层倒退。', { visualModel: 'champion_obelisk', scale: 0.62 }),
+      event('challenge', 'champion_tower_trial', 14, 7, {
+        properties: {
+          role: 'challenge',
+          towerChallenge: true,
+          name: getChampionTowerFloor(1).name,
+          title: getChampionTowerFloor(1).title,
+          difficultyLabel: '冠军挑战 · 十层登顶',
+          battleTier: 'champion',
+          sceneClass: 'battle-scene-champion-tower',
+          team: getChampionTowerFloor(1).team.map((member) => ({ ...member })),
+          beforeBattleText: '星冠升降台开始运转，下一层守塔者的投影正在实体化。',
+          battleHintText: '每层阵容会逐步扩张；失败不降层，可在大厅重新整备后继续挑战。',
+          defeatedText: '星冠升降台记录了本层胜利，通往下一层的光轨已经点亮。',
+          dailyDefeatedText: '冠军挑战塔可继续挑战；升降台会从下一层继续记录攀登进度。'
+        }
+      })
+    ],
+    encounterZones: [],
+    decorativeObjects: [
+      themeLandmark('champion_gate', 14, 19, { scale: 0.8, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('champion_gate', 14, 11, { scale: 0.78, rotation: Math.PI / 2, preserveRoadPosition: true, blocksPath: false }),
+      themeLandmark('champion_tower', 14, 2.5, { scale: 0.7, rotation: Math.PI, blocksPath: true }),
+      themeLandmark('champion_obelisk', 5.2, 19.3, { scale: 0.8, rotation: -0.1 }),
+      themeLandmark('champion_obelisk', 22.8, 19.3, { scale: 0.8, rotation: 0.1 }),
+      themeLandmark('champion_obelisk', 5.2, 14.7, { scale: 0.84, rotation: -0.08 }),
+      themeLandmark('champion_obelisk', 22.8, 10.8, { scale: 0.84, rotation: 0.08 }),
+      themeLandmark('champion_obelisk', 9.4, 5.2, { scale: 0.88, rotation: -0.06 }),
+      themeLandmark('champion_obelisk', 18.6, 5.2, { scale: 0.88, rotation: 0.06 })
+    ],
+    scatter: [
+      { idPrefix: 'champion_obelisk_edges', types: ['champion_obelisk'], count: 10, allowedTiles: [TILE.wall], salt: 1414, scale: [0.68, 0.84], minRoadDistance: 1.45, minEventDistance: 2, height: 0.2, respectSampledScale: true }
+    ]
   }
 ]
+
+const REGIONS = ALL_REGIONS.filter((definition) => (
+  LONG_TERM_PROGRESSION_FLAGS.championTowerV1 || definition.id !== 'GodotMapV2_ChampionTower'
+))
 
 export const GODOT_REGION_MAPS = Object.fromEntries(
   REGIONS.map((definition) => [definition.id, buildGodotRegionMap(definition)])
@@ -7531,8 +9400,9 @@ export const GODOT_REGION_MAP_CONFIGS = Object.fromEntries(
     definition.id,
     {
       displayName: definition.displayName,
-      description: `分区地图链第 ${definition.regionOrder} 区，推荐 Lv.${definition.recommendedLevel}，野生宝可梦约 Lv.${definition.levelRange[0]}-${definition.levelRange[1]}。`,
+      description: `分区地图链第 ${definition.regionOrder} 区，${definition.regionOrder === 1 ? '新手山谷平均 Lv.6 后可达' : '击败前置区域首领后可达'}，推荐 Lv.${definition.recommendedLevel}，野生宝可梦约 Lv.${definition.levelRange[0]}-${definition.levelRange[1]}。`,
       difficulty: definition.regionOrder + 1,
+      unlockLevel: definition.unlockLevel,
       recommendedLevel: definition.recommendedLevel,
       minLevel: definition.levelRange[0],
       normalTrainerMinLevel: definition.normalTrainerMinLevel,

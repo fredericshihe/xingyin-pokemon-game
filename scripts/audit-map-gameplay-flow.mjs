@@ -32,6 +32,25 @@ const FIXED_LANDMARK_CLEARANCE_RADIUS = {
   challenge: 2.25
 }
 const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
+const ELITE_DOJO_MAP_IDS = new Set([
+  'GodotMapV2_FrostDojo',
+  'GodotMapV2_TideDojo',
+  'GodotMapV2_IronDojo',
+  'GodotMapV2_DragonDojo'
+])
+const CHAMPION_TOWER_MAP_ID = 'GodotMapV2_ChampionTower'
+const REQUIRED_ADVENTURE_MAP_IDS = [
+  'GodotMap',
+  'GodotMapV2',
+  'GodotMapV2_MistLake',
+  'GodotMapV2_FarmTown',
+  'GodotMapV2_PirateShore',
+  'GodotMapV2_Graveyard',
+  'GodotMapV2_HexRuins',
+  'GodotMapV2_SurvivalRidge',
+  'GodotMapV2_BossHighland',
+  ...ELITE_DOJO_MAP_IDS
+]
 const LEGACY_DECORATIVE_ASSET_ALIASES = {
   'grass-small': 'nature_grass_small',
   'grass-large': 'nature_grass_large',
@@ -1423,8 +1442,12 @@ await withViteAuditServer(async ({ loadModule }) => {
   const rows = []
   const mapSet = new Set(ADVENTURE_MAP_CHAIN)
 
-  if (ADVENTURE_MAP_CHAIN.length !== 9) {
-    add(errors, `当前冒险地图数量应为 9（新手山谷 + 8 张分区），实际 ${ADVENTURE_MAP_CHAIN.length}`)
+  REQUIRED_ADVENTURE_MAP_IDS.forEach((mapId) => {
+    if (!mapSet.has(mapId)) add(errors, `冒险地图链缺少必需地图 ${mapId}`)
+  })
+  const expectedMapCount = REQUIRED_ADVENTURE_MAP_IDS.length + (mapSet.has(CHAMPION_TOWER_MAP_ID) ? 1 : 0)
+  if (ADVENTURE_MAP_CHAIN.length !== expectedMapCount) {
+    add(errors, `冒险地图数量应为 ${expectedMapCount}（主线、四馆${mapSet.has(CHAMPION_TOWER_MAP_ID) ? '与冠军塔' : ''}），实际 ${ADVENTURE_MAP_CHAIN.length}`)
   }
   if (ADVENTURE_MAP_CHAIN[0] !== 'GodotMap') {
     add(errors, `第一张地图必须是新手山谷 GodotMap，当前 ${ADVENTURE_MAP_CHAIN[0]}`)
@@ -1436,7 +1459,10 @@ await withViteAuditServer(async ({ loadModule }) => {
     const config = getMapConfig(mapId)
     const events = Array.isArray(map.runtimeEvents) ? map.runtimeEvents : []
     const reachable = reachableTerrain(reachabilityMap)
-    const isRegion = mapId.startsWith('GodotMapV2')
+    const isEliteDojo = ELITE_DOJO_MAP_IDS.has(mapId)
+    const isChampionTower = mapId === CHAMPION_TOWER_MAP_ID
+    const isSpecialChallengeMap = isEliteDojo || isChampionTower
+    const isRegion = mapId.startsWith('GodotMapV2') && !isSpecialChallengeMap
     const eventIds = new Set()
     const warps = events.filter((event) => event.type === 'warp')
     const fastTravelEvents = events.filter((event) => event.type === 'fast_travel')
@@ -1474,7 +1500,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       }
 
       const tile = map.mapGrid[y]?.[x]
-      if (NPC_EVENT_TYPES.has(event.type)) {
+      if (NPC_EVENT_TYPES.has(event.type) && !isSpecialChallengeMap) {
         const roadDistance = distanceToVisualRoads(map, x, y)
         if (roadDistance <= ROAD_CENTERLINE_BLOCK_DISTANCE) {
           add(errors, `${mapId}/${event.id} NPC 不能站在道路上: (${x},${y}) 距道路中心线 ${roadDistance.toFixed(2)}`)
@@ -1537,8 +1563,10 @@ await withViteAuditServer(async ({ loadModule }) => {
       }
     })
 
-    validateStaticSigns({ errors, mapId, map, reachable, events })
-    validateRoadEndpointDestinations({ errors, mapId, map, events })
+    if (!isSpecialChallengeMap) {
+      validateStaticSigns({ errors, mapId, map, reachable, events })
+      validateRoadEndpointDestinations({ errors, mapId, map, events })
+    }
     validatePairSpacing({ errors, mapId, events: signEvents, minDistance: SIGN_MIN_DISTANCE, label: '路牌距离' })
     validatePairSpacing({ errors, mapId, events: items, minDistance: ITEM_MIN_DISTANCE, label: '补给距离' })
     validateItemNpcSpacing({ errors, mapId, items, npcs: npcEvents })
@@ -1548,7 +1576,9 @@ await withViteAuditServer(async ({ loadModule }) => {
       items,
       landmarks: [...healPoints, challenge, ...fastTravelEvents].filter(Boolean)
     })
-    validateSignCopyDiversity({ errors, warnings, mapId, map, signs: signEvents, isRegion })
+    if (!isSpecialChallengeMap) {
+      validateSignCopyDiversity({ errors, warnings, mapId, map, signs: signEvents, isRegion })
+    }
 
     let unreachableTallGrass = 0
     let roadOverWater = 0
@@ -1581,7 +1611,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
     validateDecorationPathClearance({ errors, mapId, map, events, catalog: MAP_ASSET_CATALOG })
 
-    ;(map.bridges || []).forEach((bridge, index) => {
+    ;(isSpecialChallengeMap ? [] : (map.bridges || [])).forEach((bridge, index) => {
       if (!rotationIsCardinal(bridge.rotation)) {
         add(errors, `${mapId} 第 ${index + 1} 座桥不是 0/90/180 度摆放`)
       }
@@ -1627,14 +1657,40 @@ await withViteAuditServer(async ({ loadModule }) => {
       })
     })
 
-    if ((map.encounterZones || []).length < (isRegion ? 3 : 5)) {
+    if (!isSpecialChallengeMap && (map.encounterZones || []).length < (isRegion ? 3 : 5)) {
       add(errors, `${mapId} 遇敌区域过少，当前 ${(map.encounterZones || []).length}`)
     }
-    if (signCount < (isRegion ? 4 : 6)) {
+    if (!isSpecialChallengeMap && signCount < (isRegion ? 4 : 6)) {
       add(warnings, `${mapId} 路牌/提示偏少，当前 ${signCount}`)
     }
 
-    if (mapId === 'GodotMap') {
+    if (isEliteDojo) {
+      if (normalTrainers.length > 0) add(errors, `${mapId} 道馆不应混入普通训练师，当前 ${normalTrainers.length}`)
+      if (lieutenants.length !== 3) add(errors, `${mapId} 道馆部下必须正好 3 个，当前 ${lieutenants.length}`)
+      if (!boss) add(errors, `${mapId} 道馆缺少天王 Boss`)
+      if (challenge) add(errors, `${mapId} 道馆不应使用普通区域试炼事件`)
+      if ((map.encounterZones || []).length > 0) add(errors, `${mapId} 道馆不应出现野生遇敌区域`)
+      if (healPoints.length !== 1) add(errors, `${mapId} 道馆整备点必须正好 1 个，当前 ${healPoints.length}`)
+      if (fastTravelEvents.length !== 1) add(errors, `${mapId} 道馆快速传送台必须正好 1 个，当前 ${fastTravelEvents.length}`)
+      if (signCount < 1) add(errors, `${mapId} 道馆至少需要 1 个路线/规则提示`)
+      ;[...lieutenants, boss].filter(Boolean).forEach((event) => {
+        validateEventTeam({ errors, warnings, mapId, event, monsters: MONSTERS, isLevelValidForSpecies })
+      })
+    } else if (isChampionTower) {
+      if (normalTrainers.length > 0 || lieutenants.length > 0 || boss) {
+        add(errors, `${mapId} 应由动态楼层挑战驱动，不应写入固定训练师或 Boss`)
+      }
+      if (!challenge || eventProps(challenge).towerChallenge !== true) {
+        add(errors, `${mapId} 缺少动态冠军塔挑战事件`)
+      }
+      if ((map.encounterZones || []).length > 0) add(errors, `${mapId} 不应出现野生遇敌区域`)
+      if (healPoints.length !== 1) add(errors, `${mapId} 大厅整备点必须正好 1 个，当前 ${healPoints.length}`)
+      if (fastTravelEvents.length !== 1) add(errors, `${mapId} 大厅快速传送台必须正好 1 个，当前 ${fastTravelEvents.length}`)
+      if (signCount < 1) add(errors, `${mapId} 至少需要 1 个挑战规则提示`)
+      if (challenge) {
+        validateEventTeam({ errors, warnings, mapId, event: challenge, monsters: MONSTERS, isLevelValidForSpecies })
+      }
+    } else if (mapId === 'GodotMap') {
       healPoints.forEach((event) => {
         validateFixedLandmarkSpacing({ errors, warnings, map, mapId, event, npcs: [], events })
       })
@@ -1667,8 +1723,8 @@ await withViteAuditServer(async ({ loadModule }) => {
         if (requiredAverageLevel < 6) {
           add(errors, `新手山谷进入星音草径的传送点门槛过低，requiredAverageLevel=${requiredAverageLevel}`)
         }
-        if (!requiredTrainerIds.includes('valley_trainer_camp_path')) {
-          add(errors, '新手山谷进入星音草径前必须要求完成营地练习生训练')
+        if (requiredTrainerIds.length > 0) {
+          add(errors, `新手山谷进入星音草径应只保留等级门槛，不应再要求训练师前置，当前 ${requiredTrainerIds.length} 个`)
         }
       }
       if ((config.maxLevel || 0) < 8) add(errors, '新手山谷最高野生等级应覆盖到 Lv.8，保证去下一张图前可练级')

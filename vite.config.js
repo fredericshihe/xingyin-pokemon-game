@@ -96,16 +96,17 @@ export default defineConfig({
         // 不预缓存 index.html，避免旧 SW 长期返回过期入口并引用已删除的 JS hash
         globPatterns: [
           '**/*.{js,css,wasm,svg}',
-          'assets/characters/**/*.{png,svg,webp}',
-          'assets/items/official-artwork/*.{png,webp}',
-          'assets/tiles/*.{png,webp}',
           'draco/**/*'
         ],
         globIgnores: [
           '**/index.html',
           '**/assets/pokemon/official-artwork/**',
           '**/assets/3d/**',
-          '**/assets/maps/**'
+          '**/assets/audio/**',
+          '**/assets/characters/**',
+          '**/assets/items/**',
+          '**/assets/maps/**',
+          '**/assets/tiles/**'
         ],
         runtimeCaching: [
           {
@@ -132,12 +133,23 @@ export default defineConfig({
             }
           },
           {
+            urlPattern: ({ url }) => /\/assets\/(characters|items\/official-artwork|tiles|maps)\/.+\.(png|webp|svg)$/i.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'game-static-art',
+              expiration: {
+                maxEntries: 260,
+                maxAgeSeconds: 60 * 60 * 24 * 180
+              }
+            }
+          },
+          {
             urlPattern: ({ url }) => /\/assets\/audio\/.+\.(ogg|wav|mp3|webm)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
               cacheName: 'game-audio',
               expiration: {
-                maxEntries: 160,
+                maxEntries: 220,
                 maxAgeSeconds: 60 * 60 * 24 * 180
               }
             }
@@ -148,20 +160,19 @@ export default defineConfig({
             options: {
               cacheName: 'game-pokemon-art',
               expiration: {
-                maxEntries: 520,
+                maxEntries: 900,
                 maxAgeSeconds: 60 * 60 * 24 * 180
               }
             }
           },
           {
             urlPattern: ({ url }) => url.pathname.includes('/assets/'),
-            handler: 'NetworkFirst',
+            handler: 'CacheFirst',
             options: {
               cacheName: `game-static-${appBuildId}`,
-              networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 800,
-                maxAgeSeconds: 60 * 60 * 24 * 14
+                maxAgeSeconds: 60 * 60 * 24 * 60
               }
             }
           }

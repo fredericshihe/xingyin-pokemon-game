@@ -121,15 +121,6 @@ export default function UnifiedBootScreen({
             <p className="text-xs text-slate-500">
               {showSlowHint ? slowHint : idleHint}
             </p>
-            {onSecondaryAction && secondaryActionLabel ? (
-              <button
-                type="button"
-                className="w-full py-2 text-sm font-semibold rounded-xl border border-sky-300 bg-white text-sky-700"
-                onClick={onSecondaryAction}
-              >
-                {secondaryActionLabel}
-              </button>
-            ) : null}
           </>
         ) : null}
 
@@ -142,6 +133,16 @@ export default function UnifiedBootScreen({
               </button>
             ) : null}
           </>
+        ) : null}
+
+        {onSecondaryAction && secondaryActionLabel ? (
+          <button
+            type="button"
+            className="w-full py-2 text-sm font-semibold rounded-xl border border-sky-300 bg-white text-sky-700"
+            onClick={onSecondaryAction}
+          >
+            {secondaryActionLabel}
+          </button>
         ) : null}
       </div>
     </div>

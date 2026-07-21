@@ -30,14 +30,21 @@ if (typeof window !== 'undefined' && appBase !== '/' && appBase !== './') {
 
 async function bootstrap() {
   dismissUpdateOverlay()
-  await ensureClientMatchesBuild()
-  initPwaUpdates()
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />
     </StrictMode>,
   )
+
+  ensureClientMatchesBuild()
+    .catch((error) => {
+      console.warn('[update] 启动更新检查失败，已跳过。', error)
+      return false
+    })
+    .finally(() => {
+      initPwaUpdates()
+    })
 
   window.addEventListener('load', dismissUpdateOverlay, { once: true })
 }

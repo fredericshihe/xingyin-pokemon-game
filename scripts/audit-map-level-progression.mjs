@@ -51,7 +51,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     { MAP_CHAIN, getMapConfigData, getMapInfo },
     { EXP_POTIONS, MONSTERS, getBalancedMovesForLevel },
     { calculateStatsForLevel },
-    { calculateBattleRewards, getPlayerAverageLevel, MAP_UNDERLEVEL_MARGIN },
+    { calculateBattleRewards, getPlayerAverageLevel },
     { getOfficialExpToNextLevel },
     { simulateMonsterExpGain },
     { resolveTrainerBattleTeamConfig },
@@ -66,6 +66,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   ])
 
   const monsterById = new Map(MONSTERS.map((monster) => [Number(monster.id), monster]))
+  const mapOrderById = new Map(MAP_CHAIN.map((mapId, index) => [mapId, index]))
   const getBaseMonsterDefinition = (monsterId) => monsterById.get(Number(monsterId)) || null
   const getBaseStats = (monster = {}) => (
     monster.stats
@@ -148,8 +149,21 @@ await withViteAuditServer(async ({ loadModule }) => {
       ...(scenario.includeNormalTrainers ? normalTrainers : []),
       ...lieutenants,
       ...(scenario.includeChallenge && challenge ? [challenge] : []),
-      ...(boss ? [boss] : []),
     ]
+    if (boss) {
+      const selectedIds = new Set(selected.map((event) => event.id))
+      const requiredIds = Array.isArray(getProps(boss).requiredTrainerIds)
+        ? getProps(boss).requiredTrainerIds.filter((id) => typeof id === 'string' && id.length > 0)
+        : []
+      requiredIds.forEach((id) => {
+        if (selectedIds.has(id)) return
+        const prerequisiteEvent = events.find((event) => event.id === id)
+        if (!prerequisiteEvent) return
+        selected.push(prerequisiteEvent)
+        selectedIds.add(id)
+      })
+      selected.push(boss)
+    }
     return selected.map((event) => {
       const props = getProps(event)
       const role = event.type === 'boss' ? 'boss' : (props.role || event.type || 'normal')
@@ -225,6 +239,48 @@ await withViteAuditServer(async ({ loadModule }) => {
       .reduce((sum, event) => sum + getExpPotionAmount(getProps(event)), 0)
   }
 
+  const getMapEntryFloorLevel = (mapId) => {
+    const targetOrder = mapOrderById.get(mapId)
+    if (!Number.isInteger(targetOrder) || targetOrder <= 0) return 0
+
+    const candidateFloors = MAP_CHAIN
+      .slice(0, targetOrder)
+      .flatMap((sourceMapId) => {
+        const events = Array.isArray(getMapInfo(sourceMapId).runtimeEvents) ? getMapInfo(sourceMapId).runtimeEvents : []
+        return events
+          .filter((event) => event.type === 'warp' && event?.target?.mapName === mapId)
+          .map((event) => Math.max(0, Math.trunc(Number(getProps(event).requiredAverageLevel) || 0)))
+          .filter((level) => level > 0)
+      })
+
+    return candidateFloors.length > 0 ? Math.min(...candidateFloors) : 0
+  }
+
+  const clampPlayerTeamToEntryFloor = ({ playerTeam, requiredLevel }) => {
+    const floorLevel = Math.max(0, Math.trunc(Number(requiredLevel) || 0))
+    const activeMon = playerTeam[0]
+    const activeLevel = Math.max(1, Math.trunc(Number(activeMon?.level) || 1))
+    if (floorLevel <= 0 || activeLevel >= floorLevel) {
+      return {
+        playerTeam,
+        entryFloorLevel: floorLevel,
+        entryFloorAppliedLevels: 0
+      }
+    }
+
+    const rebuilt = makeMonster(
+      Math.trunc(Number(activeMon?.baseId ?? activeMon?.id)),
+      floorLevel,
+      activeMon?.id || `starter_floor_${floorLevel}`
+    )
+
+    return {
+      playerTeam: rebuilt ? [rebuilt] : playerTeam,
+      entryFloorLevel: floorLevel,
+      entryFloorAppliedLevels: rebuilt ? floorLevel - activeLevel : 0
+    }
+  }
+
   const runScenarioForStarter = ({ scenario, starterId }) => {
     let playerTeam = [makeMonster(starterId, 5, `starter_${starterId}`)]
     const worldCounts = new Map()
@@ -232,7 +288,6 @@ await withViteAuditServer(async ({ loadModule }) => {
     for (const mapId of MAP_CHAIN) {
       const mapConfig = getMapConfigData(mapId)
       const recommendedLevel = Math.max(1, Math.trunc(Number(mapConfig.recommendedLevel)) || 1)
-      const gateLevel = Math.max(1, recommendedLevel - MAP_UNDERLEVEL_MARGIN)
       const mapInfo = getMapInfo(mapId)
       const events = Array.isArray(mapInfo.runtimeEvents) ? mapInfo.runtimeEvents : []
       const boss = events.find((event) => event.type === 'boss')
@@ -240,13 +295,15 @@ await withViteAuditServer(async ({ loadModule }) => {
         .map(getLevel)
         .filter(Number.isFinite)
       const bossMaxLevel = bossLevels.length > 0 ? Math.max(...bossLevels) : null
+      const entryFloorLevel = getMapEntryFloorLevel(mapId)
+      const entryFloorResult = clampPlayerTeamToEntryFloor({ playerTeam, requiredLevel: entryFloorLevel })
+      playerTeam = entryFloorResult.playerTeam
       const activeBefore = playerTeam[0]?.level || 1
       const pickupExp = scenario.usePickupExpPotions ? getMapPickupExp(mapId) : 0
       const pickupResult = applyDirectExp({ playerTeam, expAmount: pickupExp })
       playerTeam = pickupResult.playerTeam
       const activeAfterPickup = playerTeam[0]?.level || activeBefore
       const entryDelta = activeBefore - recommendedLevel
-      const entryGateDelta = activeBefore - gateLevel
       const fights = buildFightsForMap({ mapId, scenario, worldCounts })
       let gainedExp = 0
       let gainedLevels = 0
@@ -276,13 +333,13 @@ await withViteAuditServer(async ({ loadModule }) => {
         mapId,
         displayName: mapConfig.displayName || mapId,
         recommendedLevel,
-        gateLevel,
         levelRange: `Lv.${mapConfig.minLevel}-${mapConfig.maxLevel}`,
         activeBefore,
+        entryFloorLevel,
+        entryFloorAppliedLevels: entryFloorResult.entryFloorAppliedLevels,
         activeAfterPickup,
         activeAfter: playerTeam[0]?.level || activeBefore,
         entryDelta,
-        entryGateDelta,
         gainedLevels,
         gainedExp,
         itemExp,
@@ -319,7 +376,6 @@ await withViteAuditServer(async ({ loadModule }) => {
         mapId,
         displayName: first.displayName,
         recommendedLevel: first.recommendedLevel,
-        gateLevel: first.gateLevel,
         levelRange: first.levelRange,
         beforeRange: `${Math.min(...beforeLevels)}-${Math.max(...beforeLevels)}`,
         afterRange: `${Math.min(...afterLevels)}-${Math.max(...afterLevels)}`,
@@ -338,7 +394,6 @@ await withViteAuditServer(async ({ loadModule }) => {
       const values = String(row.bossDeltaRange || '').match(/-?\d+/g)?.map(Number) || []
       return values.length > 0 && Math.max(...values) < 0
     })
-    const underGateRows = rows.filter((row) => Number(row.beforeRange.split('-')[0]) < row.gateLevel)
     return {
       key: scenario.key,
       label: scenario.label,
@@ -351,7 +406,6 @@ await withViteAuditServer(async ({ loadModule }) => {
         mapCount: rows.length,
         overRecommendedBy4PlusCount: riskRows.length,
         bossBelowEntryCount: bossBelowEntryRows.length,
-        underGateCount: underGateRows.length,
         maxEntryDelta: Math.max(...rows.map((row) => row.maxEntryDelta)),
       },
     }
@@ -360,11 +414,10 @@ await withViteAuditServer(async ({ loadModule }) => {
   const report = {
     generatedAt: new Date().toISOString(),
     assumptions: [
-      '入口等级使用当前代码的队伍平均等级门槛：recommendedLevel - MAP_UNDERLEVEL_MARGIN。',
+      '地图进入条件按当前规则处理：新手山谷前往星音草径需要平均 Lv.6，之后的主线地图按 Boss 通关链解锁；带硬性等级门槛的入口会先按最低可进入等级做一次入图校正。',
       '模拟只保留一只初始宝可梦，并假设它始终作为首发参与，得到最容易出现“主力等级过高”的上界。',
-      '只打部下+Boss场景包含每张图的部下训练师和 Boss；清完普通+试炼首通场景额外包含普通训练师与试炼首通，不包含野外刷级和每日重复试炼。',
+      '只打部下+Boss场景会自动补入 Boss 的必需前置训练师；清完普通+试炼首通场景额外包含普通训练师与试炼首通，不包含野外刷级和每日重复试炼。',
     ],
-    mapUnderlevelMargin: MAP_UNDERLEVEL_MARGIN,
     scenarios: scenarioReports,
   }
 

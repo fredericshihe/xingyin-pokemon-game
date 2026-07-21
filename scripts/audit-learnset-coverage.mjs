@@ -3,7 +3,7 @@ import { withViteAuditServer } from './load-vite-module.mjs'
 
 const AUDIT_LEVELS = Array.from({ length: 100 }, (_, index) => index + 1)
 const sample = (items, limit = 20) => items.slice(0, limit)
-const INTENTIONAL_SPARSE_SPECIES_IDS = new Set([16]) // 鲤鱼王保留少招的官方感
+const INTENTIONAL_SPARSE_SPECIES_IDS = new Set([16, 188]) // 鲤鱼王、百变怪保留少招的官方感
 
 const getDesignMinimumMoveCount = (level) => {
   if (level >= 24) return 4
@@ -22,9 +22,10 @@ await withViteAuditServer(async ({ loadModule }) => {
   } = await loadModule('/src/utils/gameData.js')
 
   const emptyGeneratedMoves = []
-  const unavailableGeneratedMoves = []
+  const tooEarlyGeneratedMoves = []
   const sparseByOfficialLevel = []
   const officialLearnsetEmpty = []
+  const earlyQuickAttackGeneratedMoves = []
 
   for (const monster of MONSTERS) {
     const officialLearnset = getOfficialLearnLevelByMove(monster)
@@ -39,6 +40,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     for (const level of AUDIT_LEVELS) {
       const generatedMoves = getBalancedMovesForLevel(monster, level)
       const availableMoveKeys = new Set(getMoveKeysAvailableForMonsterLevel(monster, level))
+      const quickAttackUnlockLevel = Math.max(1, Math.trunc(Number(MOVES.quickattack?.unlockLevel) || 1))
 
       if (generatedMoves.length === 0) {
         emptyGeneratedMoves.push({
@@ -51,7 +53,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
       for (const moveKey of generatedMoves) {
         if (!availableMoveKeys.has(moveKey)) {
-          unavailableGeneratedMoves.push({
+          tooEarlyGeneratedMoves.push({
             id: monster.id,
             dexNo: monster.dexNo,
             name: monster.name,
@@ -60,6 +62,25 @@ await withViteAuditServer(async ({ loadModule }) => {
             moves: generatedMoves,
           })
         }
+      }
+
+      if (
+        level < quickAttackUnlockLevel &&
+        generatedMoves.includes('quickattack') &&
+        generatedMoves.includes('tackle')
+      ) {
+        earlyQuickAttackGeneratedMoves.push({
+          id: monster.id,
+          dexNo: monster.dexNo,
+          name: monster.name,
+          level,
+          unlockLevel: quickAttackUnlockLevel,
+          hasTackle: generatedMoves.includes('tackle'),
+          moves: generatedMoves.map((moveKey) => ({
+            moveKey,
+            name: MOVES[moveKey]?.name || moveKey,
+          })),
+        })
       }
 
       const designMinimum = getDesignMinimumMoveCount(level)
@@ -108,7 +129,8 @@ await withViteAuditServer(async ({ loadModule }) => {
       moveCount: Object.keys(MOVES).length,
       auditedLevelCount: AUDIT_LEVELS.length,
       emptyGeneratedMoveCount: emptyGeneratedMoves.length,
-      unavailableGeneratedMoveCount: unavailableGeneratedMoves.length,
+      tooEarlyGeneratedMoveCount: tooEarlyGeneratedMoves.length,
+      earlyQuickAttackGeneratedMoveCount: earlyQuickAttackGeneratedMoves.length,
       officialLearnsetEmptyCount: officialLearnsetEmpty.length,
       sparseByOfficialLevelCount: sparseByOfficialLevel.length,
       sparseSpeciesCount: sparseSpecies.size,
@@ -116,7 +138,8 @@ await withViteAuditServer(async ({ loadModule }) => {
     },
     samples: {
       emptyGeneratedMoves: sample(emptyGeneratedMoves),
-      unavailableGeneratedMoves: sample(unavailableGeneratedMoves),
+      tooEarlyGeneratedMoves: sample(tooEarlyGeneratedMoves),
+      earlyQuickAttackGeneratedMoves: sample(earlyQuickAttackGeneratedMoves),
       officialLearnsetEmpty: sample(officialLearnsetEmpty),
       sparseSpecies: sample([...sparseSpecies.values()]),
       intentionalSparseSpecies: sample([...intentionalSparseSpecies.values()]),
@@ -125,7 +148,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   console.log(JSON.stringify(report, null, 2))
 
-  if (emptyGeneratedMoves.length > 0 || unavailableGeneratedMoves.length > 0) {
+  if (emptyGeneratedMoves.length > 0 || tooEarlyGeneratedMoves.length > 0 || earlyQuickAttackGeneratedMoves.length > 0) {
     process.exitCode = 1
   }
 })

@@ -89,7 +89,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       officialHp: 'floor(((2*base + IV + floor(EV/4))*level)/100) + level + 10',
       officialOtherStats: 'floor((floor(((2*base + IV + floor(EV/4))*level)/100) + 5) * nature)',
       auditAssumptions: { iv: 0, ev: 0, nature: 1 },
-      customMp: 'max(18, floor(18 + baseMp*0.18 + level*(0.35 + baseMp/320)))',
+      customMp: 'max(24, floor(22 + baseMp*0.24 + level*(0.45 + baseMp/280)))',
     },
     summary: {
       monsterCount: MONSTERS.length,

@@ -40,6 +40,7 @@ const requiredSceneClasses = [
   'battle-scene-hex-ruins',
   'battle-scene-survival-ridge',
   'battle-scene-star-peak',
+  'battle-scene-champion-tower',
   'battle-scene-training-ground'
 ]
 

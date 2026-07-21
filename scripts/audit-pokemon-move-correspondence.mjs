@@ -10,6 +10,9 @@ await withViteAuditServer(async ({ loadModule }) => {
       MONSTERS,
       MOVES,
       getBalancedMovesForLevel,
+      getEmergencyFallbackMoveForPokemonLevel,
+      getEvolutionCarryoverMovesForPokemonLevel,
+      getHiddenExclusiveZeroCostFallbackMove,
       getMoveKeysAvailableForMonsterLevel,
       getOfficialLearnLevelByMove,
       normalizeMovesForPokemonLevel,
@@ -26,7 +29,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const normalizedKnownMoveMismatches = []
   const missingRuntimeMovePools = []
 
-  const getAllowedMoveKeys = (monster) => {
+  const getAllowedMoveKeys = (monster, level = 1) => {
     const officialLearnset = getOfficialLearnLevelByMove(monster)
     const supplementalLearnset = getSupplementalLearnLevelByMove(monster)
     const hasOfficialLearnset = Object.keys(officialLearnset).length > 0
@@ -47,13 +50,16 @@ await withViteAuditServer(async ({ loadModule }) => {
         ...Object.keys(officialLearnset),
         ...Object.keys(supplementalLearnset),
         ...Object.keys(localLearnset),
-      ]),
+        ...getEvolutionCarryoverMovesForPokemonLevel(monster, level),
+        getEmergencyFallbackMoveForPokemonLevel(monster, level),
+        getHiddenExclusiveZeroCostFallbackMove(monster),
+      ].filter(Boolean)),
     }
   }
 
   for (const monster of MONSTERS) {
-    const { hasOfficialLearnset, allowedMoveKeys } = getAllowedMoveKeys(monster)
-    if (!hasOfficialLearnset && allowedMoveKeys.size === 0) {
+    const { hasOfficialLearnset, allowedMoveKeys: baseAllowedMoveKeys } = getAllowedMoveKeys(monster)
+    if (!hasOfficialLearnset && baseAllowedMoveKeys.size === 0) {
       missingRuntimeMovePools.push({
         id: monster.id,
         dexNo: monster.dexNo,
@@ -64,6 +70,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
 
     for (const level of AUDIT_LEVELS) {
+      const { allowedMoveKeys } = getAllowedMoveKeys(monster, level)
       const runtimeMoves = new Set([
         ...getBalancedMovesForLevel(monster, level),
         ...getMoveKeysAvailableForMonsterLevel(monster, level),

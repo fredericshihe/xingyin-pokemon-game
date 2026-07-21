@@ -11,7 +11,12 @@ export const MAP_AMBIENT_TRACKS = Object.freeze({
   GodotMapV2_Graveyard: 'maps/graveyard.ogg',
   GodotMapV2_HexRuins: 'maps/hex-ruins.ogg',
   GodotMapV2_SurvivalRidge: 'maps/survival-ridge.ogg',
-  GodotMapV2_BossHighland: 'maps/boss-highland.ogg'
+  GodotMapV2_BossHighland: 'maps/boss-highland.ogg',
+  GodotMapV2_FrostDojo: 'maps/mist-lake.ogg',
+  GodotMapV2_TideDojo: 'maps/pirate-shore.ogg',
+  GodotMapV2_IronDojo: 'maps/hex-ruins.ogg',
+  GodotMapV2_DragonDojo: 'maps/boss-highland.ogg',
+  GodotMapV2_ChampionTower: 'maps/boss-highland.ogg'
 })
 
 export const BATTLE_BGM_TRACKS = Object.freeze({
@@ -23,8 +28,21 @@ export const BATTLE_BGM_TRACKS = Object.freeze({
 })
 
 export const AUDIO_TRACK_FALLBACKS = Object.freeze({
+  'maps/godot-map.ogg': 'maps/godot-map.wav',
+  'maps/godot-map-v2.ogg': 'maps/godot-map-v2.wav',
+  'maps/mist-lake.ogg': 'maps/mist-lake.wav',
+  'maps/farm-town.ogg': 'maps/farm-town.wav',
+  'maps/pirate-shore.ogg': 'maps/pirate-shore.wav',
+  'maps/graveyard.ogg': 'maps/graveyard.wav',
+  'maps/hex-ruins.ogg': 'maps/hex-ruins.wav',
   'maps/survival-ridge.ogg': 'maps/survival-ridge.wav',
-  'maps/boss-highland.ogg': 'maps/boss-highland.wav'
+  'maps/boss-highland.ogg': 'maps/boss-highland.wav',
+  'battle/wild.ogg': 'battle/wild.wav',
+  'battle/trainer-chiptune.ogg': 'battle/trainer.wav',
+  'battle/trainer.ogg': 'battle/trainer.wav',
+  'battle/lieutenant.ogg': 'battle/lieutenant.wav',
+  'battle/boss.ogg': 'battle/boss.wav',
+  'battle/challenge.ogg': 'battle/challenge.wav'
 })
 
 const DEFAULT_MAP_ID = 'GodotMap'
@@ -60,8 +78,9 @@ export function getBattleBgmTrackRelativePath(options = {}) {
   return BATTLE_BGM_TRACKS[trackId] || BATTLE_BGM_TRACKS.trainer
 }
 
-export function getBattleBgmTrackId({ battleKind, eventRole, eventType } = {}) {
+export function getBattleBgmTrackId({ battleKind, eventRole, eventType, championTowerFloor } = {}) {
   if (battleKind === 'wild') return 'wild'
+  if (Math.trunc(Number(championTowerFloor)) === 10) return 'boss'
   const role = normalizeTrainerRole(eventRole || eventType || 'normal')
   if (role === 'boss') return 'boss'
   if (role === 'lieutenant') return 'lieutenant'
@@ -96,13 +115,22 @@ export function getGameAudioPreloadEntries({ mapName, includeAllMaps = false, in
     entries.push({ primary, alternateUrls })
   }
 
+  if (mapName) {
+    pushRelativePath(getMapAmbientTrackRelativePath(mapName))
+  }
+
   if (includeBattleTracks) {
-    Object.values(BATTLE_BGM_TRACKS).forEach((relativePath) => pushRelativePath(relativePath))
+    const battleTrackOrder = [
+      BATTLE_BGM_TRACKS.trainer,
+      BATTLE_BGM_TRACKS.wild,
+      BATTLE_BGM_TRACKS.lieutenant,
+      BATTLE_BGM_TRACKS.boss,
+      BATTLE_BGM_TRACKS.challenge
+    ]
+    battleTrackOrder.forEach((relativePath) => pushRelativePath(relativePath))
   }
   if (includeAllMaps) {
     MAP_CHAIN.forEach((entryMapName) => pushRelativePath(getMapAmbientTrackRelativePath(entryMapName)))
-  } else if (mapName) {
-    pushRelativePath(getMapAmbientTrackRelativePath(mapName))
   }
 
   return entries

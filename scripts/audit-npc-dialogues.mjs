@@ -94,6 +94,31 @@ await withViteAuditServer(async ({ loadModule }) => {
         addWarning(`${eventLabel} 建议保留一句简短 ruleDescription 作为低保底说明`)
       }
 
+      if (role === 'lieutenant') {
+        const order = Math.trunc(Number(props.sequenceOrder))
+        if (!Number.isInteger(order) || order <= 0) {
+          addError(`${eventLabel} 部下必须配置 sequenceOrder`)
+        }
+        if (Number.isInteger(order) && order > 0 && !cleanText(props.title).includes(`第${order}部下`)) {
+          addError(`${eventLabel} 部下标题必须明确第${order}部下`)
+        }
+        if (!cleanText(props.ruleDescription)) {
+          addError(`${eventLabel} 部下必须配置一句战斗特点`)
+        }
+        if (!cleanText(props.battleHintText)) {
+          addError(`${eventLabel} 部下必须配置一句临战建议`)
+        }
+      }
+
+      if (role === 'boss') {
+        if (!cleanText(props.ruleDescription)) {
+          addError(`${eventLabel} Boss 必须配置一句战斗特点`)
+        }
+        if (!cleanText(props.battleHintText)) {
+          addError(`${eventLabel} Boss 必须配置一句临战建议`)
+        }
+      }
+
       if (role === 'challenge' && Array.isArray(props.challengeRarePool) && props.challengeRarePool.length > 0) {
         if (!cleanText(props.challengeRareUnlockText)) {
           addError(`${eventLabel} 缺少 challengeRareUnlockText`)

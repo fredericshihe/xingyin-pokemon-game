@@ -940,7 +940,7 @@ world.championTower
 | 第 3 期：阶段奖励 | staging 功能回归已完成 | 2026-07-21 | 原子奖励 RPC 已在 staging 实际领取周奖励和 25% 阶段奖励；刷新后领取事实保持，临时账号和密钥已清理 |
 | 第 4 期：第 11–13 章解锁任务 | 本地已完成（v2 小游戏重制） | 2026-07-20 | 12 任务/29 个稳定步骤 ID 不变；9 个部下任务已重制为 9 类小游戏，Boss 誓约保留为仪式收束；原子刻印、旧记录豁免、道路净空与安全预览验收完成 |
 | 第 5 期：冠军挑战塔 | 本地已完成 | 2026-07-20 | 第 14 图、10 层首次挑战、每周固定种子轮换、逐层保存、周奖励、奖杯纪录、战斗/入场/胜利演出及三类音乐状态完成 |
-| 第 6 期：灰度与正式发布 | 数据库门禁通过，待双浏览器 | 2026-07-21 | staging 全库 `plpgsql_check` 已达 0 error，生产备份副本迁移前后存档摘要一致；当前环境仍只有一种浏览器引擎，尚未满足“双浏览器”硬门禁 |
+| 第 6 期：灰度与正式发布 | 数据库门禁通过，待浏览器/发布渠道 | 2026-07-21 | staging 全库 `plpgsql_check` 已达 0 error，生产备份副本迁移前后存档摘要一致；仍缺第二浏览器，GitHub 自动部署还被账户计费锁定阻断 |
 
 ### 审核后的记录模板
 
@@ -1060,6 +1060,17 @@ world.championTower
 - 生产备份副本验证：在隔离 PostgreSQL 17 中恢复生产备份并依次执行 `202607200002`、`202607210001`、`202607210002`。迁移前后均为 34 个用户、25 份存档，存档摘要始终为 `b42865bb31d42b1e3b6cecde3e9e1e73`；奖励集成审计回滚后摘要仍一致
 - 自动验证：`npm run build:check`、`npm run audit:cloud`（0 违规、云保存队列 3/3、游玩时长保护 28/28）和 `npm run audit:long-term-progression`（18 项）全部通过
 - 当前决定：生产数据库、前端和开关继续不变。下一步必须在第二种真实浏览器引擎中复跑登录、永久图鉴、冒险完成度、周奖励、阶段奖励及刷新后持久化；通过后才进入“五开关全关”的静默部署
+
+### 2026-07-21 · 生产静默部署只读预检
+
+- 状态：未部署；数据库门禁已通过，发布仍被“第二浏览器缺失”和“GitHub 自动部署账户锁定”双重阻断
+- 实际托管链路：生产域名为 `https://pokemongame.site/`，GitHub Pages 使用 legacy 模式从 `gh-pages` 分支根目录发布；`main` 分支上的 `.github/workflows/deploy-pages.yml` 负责构建并把 `dist` 推送到 `gh-pages`
+- 自动部署阻断：最近多次 `Deploy to GitHub Pages` 工作流均在任何 step 启动前失败。GitHub check annotation 明确返回 `The job was not started because your account is locked due to a billing issue.`；这是账户级问题，不是本次代码或构建错误
+- 当前生产基线：Pages 状态为 `built`，最近成功部署时间为 2026-07-20；线上 `version.json` 为 `buildId = 8c3721c`、`entryHash = Cvn-o9c4`，域名、首页入口、入口 JS、Service Worker、预缓存入口和构建缓存名相互一致
+- 开关审计：Actions 仅配置 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_ANON_KEY` 两个 secret，没有 Actions variables，也没有五个长期玩法开关。生产构建中 `import.meta.env.DEV = false` 且开关未配置时，五项功能均解析为关闭；`.env.example` 同样全部为 `false`
+- 发布前构建要求：当前本地 `dist` 是旧产物，虽然 `buildId` 同为 `8c3721c`，但入口 hash 与线上不同；真正发布前必须从最终 release commit 重新执行显式五开关全关的干净构建，并以新的本地 `dist/version.json` 对比线上结果，不复用当前 `dist`
+- 推荐修复顺序：先在 GitHub 账户侧解除 billing lock，并重新运行自动部署工作流验证 runner 可启动；若无法及时解除，只能在用户明确批准后采用本地干净构建并直接更新 `gh-pages` 的受控手动发布，同时保留当前 `gh-pages` 提交 `f2186e558951d1b2f01b7c199c5f6b30846194b0` 作为回滚点
+- 当前决定：不修改工作流、不推送 `main` 或 `gh-pages`、不执行生产迁移。完成第二浏览器回归且发布渠道恢复/获批后，才重新生成备份并进入五开关全关的静默部署
 
 ---
 

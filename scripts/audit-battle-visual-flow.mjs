@@ -22,8 +22,11 @@ const readCssWithImports = (file, seen = new Set()) => {
 }
 
 const originalGame = read('src/components/Game/OriginalGame.jsx')
+const battleMoveEffect = read('src/components/Game/BattleMoveEffect.jsx')
+const battleVisualSource = `${originalGame}\n${battleMoveEffect}`
 const battlePacing = read('src/utils/battlePacing.js')
 const css = readCssWithImports('src/index.css')
+const battleSwitchSendCss = css.split('@keyframes battleSwitchSend')[1]?.split('@keyframes battleSwitchBeam')[0] || ''
 
 const checks = [
   {
@@ -36,8 +39,8 @@ const checks = [
   },
   {
     name: 'secondary_visual_uses_result_only_class',
-    passed: /const isSecondaryResult = effect\.phase === 'secondary'/.test(originalGame) &&
-      /isSecondaryResult \? 'secondary-result'/.test(originalGame),
+    passed: /const isSecondaryResult = effect\.phase === 'secondary'/.test(battleVisualSource) &&
+      /isSecondaryResult \? 'secondary-result'/.test(battleVisualSource),
   },
   {
     name: 'secondary_visual_does_not_move_actor',
@@ -88,6 +91,27 @@ const checks = [
     name: 'trainer_intro_party_balls_are_styled',
     passed: /\.battle-party-balls--intro \.battle-party-ball/.test(css) &&
       /@keyframes battleIntroPartyBallIn/.test(css),
+  },
+  {
+    name: 'switch_send_keeps_beam_without_brightening_pokemon_sprite',
+    passed: battleSwitchSendCss.length > 0 &&
+      !/brightness\(/.test(battleSwitchSendCss) &&
+      /\.battle-switch-motion::after[\s\S]*?battleSwitchBeam/.test(css) &&
+      /100%[\s\S]*?filter:\s*drop-shadow\(0 18px 24px/.test(battleSwitchSendCss),
+  },
+  {
+    name: 'surrender_button_requires_explicit_failure_confirmation',
+    passed: /className="battle-surrender-button"[\s\S]*?>[\s\S]*?认输/.test(originalGame) &&
+      /const BattleSurrenderConfirm =/.test(originalGame) &&
+      /role="dialog"[\s\S]*?aria-modal="true"[\s\S]*?确认认输/.test(originalGame) &&
+      /不会获得经验、金币或通关记录/.test(originalGame) &&
+      /已经消耗的冒险能量不会退还/.test(originalGame),
+  },
+  {
+    name: 'surrender_control_has_dedicated_responsive_styling',
+    passed: /\.battle-command-footer\s*\{/.test(css) &&
+      /\.battle-surrender-button\s*\{/.test(css) &&
+      /\.battle-surrender-confirm-card\s*\{/.test(css),
   },
 ]
 

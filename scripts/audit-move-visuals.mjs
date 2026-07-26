@@ -7,7 +7,7 @@ const MIN_VISUAL_COUNT = 30
 const MIN_HIT_REACTION_COUNT = 12
 const MIN_VARIANT_COUNT = 12
 const MIN_SEMANTIC_TAG_COUNT = 60
-const MIN_SIGNATURE_COUNT = 70
+const MIN_SIGNATURE_COUNT = 280
 
 await withViteAuditServer(async ({ rootDir, loadModule }) => {
   const { MOVES, MONSTERS } = await loadModule('/src/utils/gameData.js')
@@ -67,6 +67,15 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     issues.push({ issue: 'move_signature_diversity_too_low', actual: audit.signatureCount, expectedAtLeast: MIN_SIGNATURE_COUNT })
   }
 
+  if (audit.renderSignatureCount !== audit.moveCount || audit.duplicateRenderSignatures.length > 0) {
+    issues.push({
+      issue: 'every_move_must_have_unique_render_signature',
+      moveCount: audit.moveCount,
+      renderSignatureCount: audit.renderSignatureCount,
+      duplicateGroups: audit.duplicateRenderSignatures,
+    })
+  }
+
   for (const [moveKey, move] of Object.entries(MOVES)) {
     const config = getMoveEffectConfig(moveKey, move)
     if (!['self', 'foe'].includes(config.target)) {
@@ -80,6 +89,18 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     }
     if (!Array.isArray(config.semanticTags) || config.semanticTags.length === 0) {
       issues.push({ issue: 'missing_move_semantic_tags', moveKey, name: move.name, semanticTags: config.semanticTags })
+    }
+    const signatureStyle = config.signatureStyle || {}
+    if (!signatureStyle.id || !signatureStyle.renderFingerprint || !Number.isInteger(signatureStyle.seed)) {
+      issues.push({ issue: 'missing_stable_move_render_signature', moveKey, name: move.name, signatureStyle })
+    }
+    if (!(signatureStyle.pattern >= 0 && signatureStyle.pattern < 12)
+      || !(signatureStyle.rhythm >= 0 && signatureStyle.rhythm < 8)
+      || !(signatureStyle.impactPattern >= 0 && signatureStyle.impactPattern < 8)
+      || !(signatureStyle.trailPattern >= 0 && signatureStyle.trailPattern < 6)
+      || !Array.isArray(signatureStyle.lobes)
+      || signatureStyle.lobes.length !== 3) {
+      issues.push({ issue: 'invalid_move_render_signature_dimensions', moveKey, name: move.name, signatureStyle })
     }
 
     const sampleMeta = getMoveEffectivenessMeta(move, MONSTERS[0])
@@ -188,6 +209,8 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
   }
 
   const originalGameSource = fs.readFileSync(path.join(rootDir, 'src/components/Game/OriginalGame.jsx'), 'utf8')
+  const battleMoveEffectSource = fs.readFileSync(path.join(rootDir, 'src/components/Game/BattleMoveEffect.jsx'), 'utf8')
+  const battleVisualRenderSource = `${originalGameSource}\n${battleMoveEffectSource}`
   const battleDamageSource = fs.readFileSync(path.join(rootDir, 'src/utils/battleDamage.js'), 'utf8')
   const cssSource = [
     fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8'),
@@ -215,24 +238,34 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     })
   }
 
-  if (!/battle-move-effect--variant-\$\{visualVariant\}/.test(originalGameSource)) {
+  if (!/battle-move-effect--variant-\$\{visualVariant\}/.test(battleVisualRenderSource)) {
     issues.push({
       issue: 'move_visual_variant_class_not_rendered',
       file: 'src/components/Game/OriginalGame.jsx',
     })
   }
 
-  if (!/battle-move-effect--tag-\$\{tag\}/.test(originalGameSource) || !/battle-vfx-icon/.test(originalGameSource)) {
+  if (!/battle-move-effect--tag-\$\{tag\}/.test(battleVisualRenderSource) || !/battle-vfx-icon/.test(battleVisualRenderSource)) {
     issues.push({
       issue: 'move_semantic_tag_or_icon_not_rendered',
       file: 'src/components/Game/OriginalGame.jsx',
     })
   }
 
-  if (!/battle-move-effect__projectile/.test(originalGameSource) || !/--effect-source-x/.test(originalGameSource)) {
+  if (!/battle-move-effect__projectile/.test(battleVisualRenderSource) || !/--effect-source-x/.test(battleVisualRenderSource)) {
     issues.push({
       issue: 'move_projectile_layer_not_rendered',
       file: 'src/components/Game/OriginalGame.jsx',
+    })
+  }
+
+  if (!/data-move-signature=\{signatureStyle\.id/.test(battleMoveEffectSource)
+    || !/battle-move-effect--signature-pattern-\$\{signaturePattern\}/.test(battleMoveEffectSource)
+    || !/className="battle-vfx-signature"/.test(battleMoveEffectSource)
+    || !/--signature-delay/.test(battleMoveEffectSource)) {
+    issues.push({
+      issue: 'unique_move_render_signature_not_wired_to_effect_layers',
+      file: 'src/components/Game/BattleMoveEffect.jsx',
     })
   }
 
@@ -266,6 +299,7 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     variantCount: audit.variantCount,
     semanticTagCount: audit.semanticTagCount,
     signatureCount: audit.signatureCount,
+    renderSignatureCount: audit.renderSignatureCount,
     effectivenessPairCount,
     issueCount: issues.length,
     warningCount: warnings.length,

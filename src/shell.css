@@ -1267,6 +1267,13 @@ body {
   line-height: 1;
 }
 
+.challenge-confirm-card__chip--danger {
+  border-color: rgba(225, 29, 72, 0.24);
+  background: rgba(255, 241, 242, 0.96);
+  color: #be123c;
+  box-shadow: 0 0 14px rgba(225, 29, 72, 0.08);
+}
+
 .challenge-confirm-card__panel {
   display: flex;
   flex-direction: column;

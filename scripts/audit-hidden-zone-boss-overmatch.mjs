@@ -169,8 +169,10 @@ await withViteAuditServer(async ({ loadModule }) => {
       order: Number.isFinite(Number(map?.regionOrder)) ? Number(map.regionOrder) : index
     }))
     .sort((left, right) => left.order - right.order)
+  const regionalCampaignLastOrder = orderedMaps.find(({ mapId }) => mapId === FINAL_BOSS_MAP_ID)?.order ?? Infinity
+  const regionalCampaignMaps = orderedMaps.filter(({ order }) => order <= regionalCampaignLastOrder)
 
-  orderedMaps.forEach(({ mapId, map }, index) => {
+  regionalCampaignMaps.forEach(({ mapId, map }, index) => {
     const events = Array.isArray(map?.runtimeEvents) ? map.runtimeEvents : []
     const lieutenants = events
       .filter((event) => event?.type === 'trainer' && getProps(event).role === 'lieutenant')
@@ -181,7 +183,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     const boss = events.find((event) => event?.type === 'boss')
     if (lieutenants.length === 0 && !boss) return
 
-    const equivalent = resolveEquivalentRange(orderedMaps, index)
+    const equivalent = resolveEquivalentRange(regionalCampaignMaps, index)
     if (!equivalent) {
       errors.push(`${mapId}: cannot resolve hidden-equivalent level range`)
       return
@@ -295,7 +297,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   console.log(JSON.stringify({
     generatedAt: new Date().toISOString(),
-    rule: 'Lieutenants must carry one hidden-equivalent core; bosses must carry three hidden-equivalent cores. Maps without a hidden zone use the natural progression range between neighboring hidden zones. The final Boss ace may exceed the hidden range and must clearly lead the first five.',
+    rule: 'Regional-campaign lieutenants must carry one hidden-equivalent core; regional bosses must carry three. Maps without a hidden zone use the natural progression range between neighboring hidden zones. Elite Four maps are covered by their dedicated battle audits. The regional final Boss ace may exceed the hidden range and must clearly lead the first five.',
     summary: {
       mapCount: rows.length,
       lieutenantHiddenCoreCount: LIEUTENANT_HIDDEN_CORE_COUNT,

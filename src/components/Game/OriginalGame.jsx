@@ -114,7 +114,13 @@ import {
   sortInventorySlots,
 } from "../../utils/inventoryItems"
 import { getMoveEffectConfig } from "../../utils/moveVisuals"
-import { BATTLE_EFFECT_FALLBACK_ANCHORS, measureBattleEffectAnchors } from "../../utils/battleEffectAnchors"
+import {
+  buildBattleImpactFeedback,
+  getBattleCinematicProfile,
+  getBattleStatusVisualClasses,
+  resolveBattleVfxQuality
+} from "../../utils/battleCinematics"
+import { measureBattleEffectAnchors } from "../../utils/battleEffectAnchors"
 import {
   appendLevelUpCelebrationsToQueue,
   buildLevelUpCelebrationPayload,
@@ -133,6 +139,7 @@ import { gameAudio, getBgmSettings, getSfxSettings, normalizeAudioSettings, read
 import { gameBgm } from "../../utils/gameBgm"
 import { getMapAmbientTrackLoadUrls } from "../../utils/gameBgmCatalog"
 import { CollectionCard, CollectionGrid, TypeBadge } from "./gameUiPrimitives"
+import BattleMoveEffect, { BattleImpactFeedback, BattleStatusAura } from "./BattleMoveEffect"
 import EliteFourCeremonyOverlay from "./EliteFourCeremonyOverlay"
 import { assetUrl } from "../../utils/assetUrl"
 import {
@@ -1729,8 +1736,12 @@ const getBattleWeaknessHudHint = (mon, perspective = 'enemy') => {
 };
 
 const getBattleLevelUpMessage = (name) => `${name} 升级了！`;
-const INSUFFICIENT_BATTLE_ENERGY_LOG = '能量不足，至少需要 1 点能量才能开始战斗。';
-const INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION = '能量不足，无法开始战斗。';
+const getInsufficientBattleEnergyLog = (energyCost = 1) => (
+  `能量不足，至少需要 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 点能量才能开始战斗。`
+);
+const getInsufficientBattleEnergyNotification = (energyCost = 1) => (
+  `能量不足，本次挑战需要 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 点能量。`
+);
 const ENERGY_DEPLETED_MAP_LOG = '能量已经用完，暂时无法继续在地图上行动。';
 const ENERGY_DEPLETED_MAP_NOTIFICATION = '能量已用完，请等待恢复或联系老师补充。';
 const DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES = 30;
@@ -3432,6 +3443,8 @@ const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) 
   const rawCurrent = Number.isFinite(current) ? current : 0;
   const safeCurrent = Math.max(0, Math.min(safeMax, rawCurrent));
   const percent = Math.max(0, Math.min(100, safeCurrent / safeMax * 100));
+  const previousPercentRef = useRef(percent);
+  const [chipPercent, setChipPercent] = useState(percent);
   const variantClass = {
     hp: 'battle-meter-fill-hp',
     mp: 'battle-meter-fill-mp',
@@ -3444,6 +3457,18 @@ const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) 
     '--battle-meter-from': tone.from,
     '--battle-meter-to': tone.to
   };
+
+  useEffect(() => {
+    const previousPercent = previousPercentRef.current;
+    previousPercentRef.current = percent;
+    if (variant !== 'hp' || percent >= previousPercent) {
+      setChipPercent(percent);
+      return undefined;
+    }
+    setChipPercent(previousPercent);
+    const timer = window.setTimeout(() => setChipPercent(percent), 110);
+    return () => window.clearTimeout(timer);
+  }, [percent, variant]);
 
   return (
     <div className={`battle-meter-row battle-meter-row-${variant}`}>
@@ -3459,6 +3484,9 @@ const BattleMeter = ({ label, current, max, variant = 'hp', showValue = true }) 
         aria-valuemax={safeMax}
         aria-valuenow={safeCurrent}
       >
+        {variant === 'hp' && (
+          <div className="battle-meter-damage-chip" style={{ width: `${chipPercent}%` }} aria-hidden="true" />
+        )}
         <div
           className={`battle-meter-fill ${variantClass} ${tone.className} ${percent <= 0 ? 'battle-meter-fill-empty' : ''}`}
           style={fillStyle}
@@ -4235,86 +4263,6 @@ const LaunchDepartureOverlay = ({ transition }) => {
       </div>
     </div>
   );
-};
-
-const AttackEffect = ({ effect, onDone }) => {
-  if (!effect) return null;
-
-  const move = effect.move || (effect.moveKey ? MOVES[effect.moveKey] : null);
-  const moveConfig = getMoveEffectConfig(effect.moveKey, move || effect);
-  const isSecondaryResult = effect.phase === 'secondary';
-  const visual = isSecondaryResult ? 'secondary-result' : (moveConfig.visual || 'impact');
-  const moveClass = String(isSecondaryResult ? 'secondary-result' : (effect.moveKey || 'unknown')).replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-  const visualVariant = String(moveConfig.variant || 'physical').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-  const hitReactionClass = String(moveConfig.hitReaction || 'bump').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-  const semanticTags = Array.isArray(moveConfig.semanticTags)
-    ? moveConfig.semanticTags
-      .map((tag) => String(tag || '').replace(/[^a-z0-9_-]/gi, '-').toLowerCase())
-      .filter(Boolean)
-    : [];
-  const semanticTagClasses = semanticTags.map((tag) => `battle-move-effect--tag-${tag}`).join(' ');
-  const iconClass = String(moveConfig.icon || 'fa-solid fa-star');
-  const accent = moveConfig.accent || '#ffffff';
-  const core = moveConfig.core || '#64748b';
-  const glow = moveConfig.glow || 'rgba(255,255,255,0.7)';
-  const actorSide = effect.attackerSide === 'enemy' ? 'enemy' : 'player';
-  const targetSide = effect.target === 'player' ? 'player' : 'enemy';
-  const anchors = effect.anchors || BATTLE_EFFECT_FALLBACK_ANCHORS;
-  const source = anchors[actorSide] || BATTLE_EFFECT_FALLBACK_ANCHORS[actorSide];
-  const target = anchors[targetSide] || BATTLE_EFFECT_FALLBACK_ANCHORS[targetSide];
-  const targetMode = moveConfig.target === 'self' ? 'self' : 'foe';
-  const particleCount = Math.max(6, Math.min(18, Number(moveConfig.particleCount) || (visual === 'blizzard' || visual === 'hurricane' || visual === 'rock-slide' || visual === 'fire-blast' ? 14 : 10)));
-  const shardCount = Math.max(6, Math.min(16, Number(moveConfig.shardCount) || (visual === 'rock-slide' || visual === 'blizzard' || visual === 'quake' ? 12 : 8)));
-  const effectDuration = Math.max(520, Number(effect.durationMs) || getBattleMovePhaseDuration(effect.phase));
-  const effectScale = Math.max(0.72, Math.min(1.28, Number(moveConfig.scale) || 1));
-
-  return (
-    <div
-      key={effect.id}
-      className={`battle-move-effect battle-move-effect--${visual} battle-move-effect--move-${moveClass} battle-move-effect--variant-${visualVariant} battle-move-effect--reaction-${hitReactionClass} ${semanticTagClasses} battle-move-effect--type-${move?.type || effect.type || 'normal'} battle-move-effect--from-${actorSide} battle-move-effect--to-${targetSide} battle-move-effect--target-${targetMode} battle-move-effect--phase-${effect.phase || 'hit'}`}
-      style={{
-        '--move-accent': accent,
-        '--move-core': core,
-        '--move-glow': glow,
-        '--move-effect-duration': `${effectDuration}ms`,
-        '--effect-source-x': source.x,
-        '--effect-source-y': source.y,
-        '--effect-target-x': target.x,
-        '--effect-target-y': target.y,
-        '--move-effect-scale': effectScale,
-      }}
-      aria-hidden="true"
-      onAnimationEnd={(event) => {
-        if (event.currentTarget === event.target) onDone?.();
-      }}
-    >
-      <div className="battle-move-effect__projectile">
-        <div className="battle-vfx-projectile-tail" />
-        <div className="battle-vfx-projectile-core" />
-        <div className="battle-vfx-projectile-spark" />
-      </div>
-      <div className="battle-move-effect__target">
-        <div className="battle-vfx-ring" />
-        <div className="battle-vfx-burst" />
-        <div className="battle-vfx-symbol" />
-        <i className={`battle-vfx-icon ${iconClass}`} />
-        <div className="battle-vfx-beam" />
-        <div className="battle-vfx-shock" />
-        <div className="battle-vfx-slashes">
-          {Array.from({ length: 4 }, (_, index) => <span key={index} style={{ '--i': index }} />)}
-        </div>
-        <div className="battle-vfx-shards">
-          {Array.from({ length: shardCount }, (_, index) => <span key={index} style={{ '--i': index }} />)}
-        </div>
-        <div className="battle-vfx-waves">
-          {Array.from({ length: 4 }, (_, index) => <span key={index} style={{ '--i': index }} />)}
-        </div>
-        <div className="battle-vfx-particles">
-          {Array.from({ length: particleCount }, (_, index) => <span key={index} style={{ '--i': index }} />)}
-        </div>
-      </div>
-    </div>);
-
 };
 
 /**
@@ -5588,6 +5536,42 @@ const BattleDefeatOverlay = ({ onContinue, goldPenalty = 0 }) => {
   );
 };
 
+const BattleSurrenderConfirm = ({ onCancel, onConfirm, busy = false, goldPenalty = 0 }) => (
+  <div
+    className="reset-confirm-overlay game-local-confirm-overlay battle-surrender-confirm-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="battle-surrender-confirm-title"
+  >
+    <div className="reset-confirm-card game-local-confirm-card battle-surrender-confirm-card">
+      <div className="reset-confirm-card__icon battle-surrender-confirm-card__icon" aria-hidden="true">
+        <i className="fa-solid fa-flag"></i>
+      </div>
+      <div className="reset-confirm-card__body">
+        <p className="reset-confirm-card__eyebrow">结束本场挑战</p>
+        <h2 id="battle-surrender-confirm-title">确认认输？</h2>
+        <p>
+          本场会立即判定为挑战失败，不会获得经验、金币或通关记录；已经消耗的冒险能量不会退还，队伍会安全恢复。
+          {goldPenalty > 0 ? ` 本次将按战败规则损失 ${goldPenalty} 金币。` : ''}
+        </p>
+      </div>
+      <div className="reset-confirm-card__actions">
+        <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
+          继续战斗
+        </button>
+        <button
+          type="button"
+          className="game-primary-button battle-surrender-confirm-card__confirm"
+          onClick={onConfirm}
+          disabled={busy}
+        >
+          {busy ? '正在结算…' : '确认认输'}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // ── 逃跑画面（自动消失）────────────────────────────────────────────
 const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = false, phaseData = null }) => {
   React.useEffect(() => {
@@ -5632,7 +5616,7 @@ const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = fals
 
 const BattleScene = ({
   playerMon, enemyMon, logs, onMove, onSwitch, turn, onNavigate, playerGold,
-  isThrowingPokeball, captureSequenceData = null, onGoToLaunchScreen, onRun, escapeRule = null,
+  isThrowingPokeball, captureSequenceData = null, onGoToLaunchScreen, onRun, onSurrender, surrenderGoldPenalty = 0, escapeRule = null,
   // New props for modal screens
   playerTeam, enemyTeam = [], activeEnemyId = null, playerInventory, onUseItem, onUsePotion, onUseExpPotion, onUseStatBoostItem, addLog,
   canUsePokeballs = true,
@@ -5652,6 +5636,8 @@ const BattleScene = ({
   const [playerAnim, setPlayerAnim] = useState('');
   const [enemyAnim, setEnemyAnim] = useState('');
   const [attackEffect, setAttackEffect] = useState(null);
+  const [battleCinematic, setBattleCinematic] = useState(null);
+  const [battleImpactFeedback, setBattleImpactFeedback] = useState(null);
   const [playerSwitchOverride, setPlayerSwitchOverride] = useState(null);
   const [enemySwitchOverride, setEnemySwitchOverride] = useState(null);
   const battleStageRef = useRef(null);
@@ -5661,6 +5647,7 @@ const BattleScene = ({
   // New states for modal screens
   const [showBag, setShowBag] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
+  const [showSurrenderConfirm, setShowSurrenderConfirm] = useState(false);
   const [showControls, setShowControls] = useState('main'); // 'main' or 'moves'
   const [isBusy, setIsBusy] = useState(false);
   const [typedLog, setTypedLog] = useState('');
@@ -5674,11 +5661,12 @@ const BattleScene = ({
   const battleCommandLockRef = useRef(false);
   const battlePlayerMon = useMemo(() => withBattleRuntimeDefaults(playerMon), [playerMon]);
   const battleEnemyMon = useMemo(() => withBattleRuntimeDefaults(enemyMon), [enemyMon]);
+  const battleVfxQuality = useMemo(() => resolveBattleVfxQuality(), []);
   const activeSwitchRequest = useMemo(() => normalizePendingBattleSwitch(pendingBattleSwitch), [pendingBattleSwitch]);
 
   useEffect(() => {
-    onModalScreenChange?.(showBag || showTeam);
-  }, [onModalScreenChange, showBag, showTeam]);
+    onModalScreenChange?.(showBag || showTeam || showSurrenderConfirm);
+  }, [onModalScreenChange, showBag, showSurrenderConfirm, showTeam]);
 
   useEffect(() => {
     isBattleSceneMountedRef.current = true;
@@ -5718,6 +5706,8 @@ const BattleScene = ({
       clearTimeout(battleEffectCleanupTimerRef.current);
       battleEffectCleanupTimerRef.current = null;
     }
+    setBattleCinematic(null);
+    setBattleImpactFeedback(null);
   }, []);
 
   const resolveBattleEffectAnchors = useCallback(() => (
@@ -5737,22 +5727,38 @@ const BattleScene = ({
     const move = event?.move || MOVES[moveKey];
     if (!move || isThrowingPokeball) return;
     const moveConfig = getMoveEffectConfig(moveKey, move);
+    const profile = event?.profile || getBattleCinematicProfile(moveKey, move, moveConfig, {
+      phase,
+      hitCount: event?.feedback?.hitCount,
+      hitIndex: event?.feedback?.hitIndex,
+      durationMs,
+    });
     const isEnemyAttack = attackerSide === 'enemy';
     const isSecondaryResultPhase = phase === 'secondary';
     const isActorFocusedPhase = ['charge', 'start', 'copy', 'fizzle'].includes(phase);
-    const shouldMoveActor = !isSecondaryResultPhase && !event?.suppressActorMotion && ['start', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
-    const shouldShowTargetEffect = ['hit', 'status', 'secondary', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
-    const shouldApplyTargetReaction = Boolean(event?.forceTargetReaction) || ['hit', 'status', 'heal', 'drain'].includes(phase);
+    const shouldMoveActor = !isSecondaryResultPhase && !event?.suppressActorMotion && ['start', 'charge', 'copy', 'hit', 'status', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
+    const shouldShowTargetEffect = ['start', 'charge', 'copy', 'hit', 'status', 'secondary', 'heal', 'drain', 'miss', 'fizzle'].includes(phase);
+    const shouldApplyTargetReaction = Boolean(event?.forceTargetReaction) || ['charge', 'hit', 'status', 'heal', 'drain'].includes(phase);
     const explicitTargetSide = ['player', 'enemy'].includes(event?.targetSide) ? event.targetSide : null;
     const effectTarget = explicitTargetSide || (isActorFocusedPhase || moveConfig.target === 'self' || move.effect === 'heal'
       ? (isEnemyAttack ? 'enemy' : 'player')
       : (isEnemyAttack ? 'player' : 'enemy'));
-    const actorAnim = `battle-actor-motion battle-actor-motion--${moveConfig.motion || 'lunge'}`;
+    const signatureRhythm = Number(moveConfig.signatureStyle?.rhythm) || 0;
+    const signatureImpact = Number(moveConfig.signatureStyle?.impactPattern) || 0;
+    const actorAnim = `battle-actor-motion battle-actor-motion--${moveConfig.motion || 'lunge'} battle-move-signature-rhythm-${signatureRhythm}`;
     const resolvedReactionClass = event?.reactionClass || (isSecondaryResultPhase ? 'ripple' : phase === 'charge' ? 'charge' : moveConfig.hitReaction || 'bump');
-    const targetAnim = `battle-hit-reaction battle-hit-reaction--${resolvedReactionClass}`;
+    const targetAnim = `battle-hit-reaction battle-hit-reaction--${resolvedReactionClass} battle-move-signature-impact-${signatureImpact}`;
 
     clearBattleVisualTimers();
     setAttackEffect(null);
+    setBattleCinematic({
+      id: event?.id || `${moveKey}-${phase}-${Date.now()}`,
+      ...profile,
+      type: move.type || 'normal',
+      phase,
+      impact: false,
+      hitStop: false,
+    });
     if (shouldMoveActor) {
       if (isEnemyAttack) {
         setEnemyAnim(actorAnim);
@@ -5763,6 +5769,13 @@ const BattleScene = ({
 
     battleVisualTimerRef.current.push(setTimeout(() => {
       if (!isBattleSceneMountedRef.current) return;
+      const anchors = resolveBattleEffectAnchors();
+      const reducedMotion = typeof window !== 'undefined'
+        && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      setBattleCinematic((current) => current ? { ...current, impact: true, hitStop: !reducedMotion && profile.hitStopMs > 0 } : current);
+      if (event?.feedback) {
+        setBattleImpactFeedback({ ...event.feedback, anchors });
+      }
       if (shouldMoveActor && shouldShowTargetEffect) {
         if (isEnemyAttack) setEnemyAnim('');
         else setPlayerAnim('');
@@ -5782,8 +5795,26 @@ const BattleScene = ({
           move,
           phase,
           durationMs: Math.max(520, durationMs - impactDelayMs),
-          anchors: resolveBattleEffectAnchors(),
+          anchors,
+          feedback: event?.feedback || null,
+          profile,
         });
+      }
+      if (profile.hitStopMs > 0) {
+        battleVisualTimerRef.current.push(setTimeout(() => {
+          if (!isBattleSceneMountedRef.current) return;
+          setBattleCinematic((current) => current ? { ...current, hitStop: false } : current);
+        }, reducedMotion ? 0 : profile.hitStopMs));
+      }
+      battleVisualTimerRef.current.push(setTimeout(() => {
+        if (!isBattleSceneMountedRef.current) return;
+        setBattleCinematic((current) => current ? { ...current, impact: false } : current);
+      }, reducedMotion ? 80 : 230));
+      if (event?.feedback) {
+        battleVisualTimerRef.current.push(setTimeout(() => {
+          if (!isBattleSceneMountedRef.current) return;
+          setBattleImpactFeedback((current) => current?.id === event.feedback.id ? null : current);
+        }, 920));
       }
     }, impactDelayMs));
 
@@ -5792,6 +5823,7 @@ const BattleScene = ({
       setPlayerAnim('');
       setEnemyAnim('');
       setAttackEffect(null);
+      setBattleCinematic(null);
     }, durationMs));
   }, [clearBattleVisualTimers, isThrowingPokeball, resolveBattleEffectAnchors]);
 
@@ -5845,6 +5877,8 @@ const BattleScene = ({
     setPlayerAnim('');
     setEnemyAnim('');
     setAttackEffect(null);
+    setBattleCinematic(null);
+    setBattleImpactFeedback(null);
   }, [battlePhase, clearBattleVisualTimers, openingIntro, openingSendOut]);
 
   useEffect(() => {
@@ -5977,6 +6011,7 @@ const BattleScene = ({
   const basePlayerCommandDisabled = isBattleInputLocked || turn !== 'player' || isBusy || isThrowingPokeball;
   const activePlayerActionDisabled = basePlayerCommandDisabled || activePlayerFainted;
   const teamCommandDisabled = basePlayerCommandDisabled || (!!playerChargingMoveKey && !forcedSwitchRequired);
+  const surrenderCommandDisabled = basePlayerCommandDisabled;
   const noMpTeamSwitchDisabled = teamCommandDisabled || !getAliveBattleBench(playerTeam, battlePlayerMon?.id).length;
   const playerAffordableMoveKeys = getAffordableBattleMoveKeys(battlePlayerMon);
   const playerHasBattleRecoveryPath = hasBattleRecoveryPath({
@@ -6072,6 +6107,37 @@ const BattleScene = ({
       }
     }
   }, [activePlayerFainted, addLog, isBattleInputLocked, isBusy, isThrowingPokeball, onRun, playerChargingMoveKey, resolvedEscapeRule.canRun, turn]);
+
+  const handleSurrenderPress = useCallback(() => {
+    if (battleCommandLockRef.current || surrenderCommandDisabled) return;
+    gameAudio.playUiSelect();
+    setShowControls('main');
+    setShowSurrenderConfirm(true);
+  }, [surrenderCommandDisabled]);
+
+  const handleSurrenderCancel = useCallback(() => {
+    if (isBusy) return;
+    gameAudio.playUiSelect();
+    setShowSurrenderConfirm(false);
+  }, [isBusy]);
+
+  const handleSurrenderConfirm = useCallback(async () => {
+    if (battleCommandLockRef.current || surrenderCommandDisabled || isBusy) return;
+    battleCommandLockRef.current = true;
+    gameAudio.playUiConfirm();
+    setIsBusy(true);
+    try {
+      const surrendered = await onSurrender?.();
+      if (surrendered !== false && isBattleSceneMountedRef.current) {
+        setShowSurrenderConfirm(false);
+      }
+    } finally {
+      if (isBattleSceneMountedRef.current) {
+        battleCommandLockRef.current = false;
+        setIsBusy(false);
+      }
+    }
+  }, [isBusy, onSurrender, surrenderCommandDisabled]);
 
   useEffect(() => {
     if (!battleFeedbackCue) return;
@@ -6200,6 +6266,11 @@ const BattleScene = ({
   // --- End Modal Rendering ---
 
   const playerBattleSpriteSize = BATTLE_SPRITE_CONTAINER_BASE_UNIT * BATTLE_PLAYER_SPRITE_MULTIPLIER;
+  const battleCinematicClasses = battleCinematic
+    ? `battle-cinematic battle-cinematic--${battleCinematic.intensity} battle-cinematic--type-${battleCinematic.type} battle-cinematic--scene-${battleCinematic.sceneFx} battle-cinematic--camera-${battleCinematic.cameraStrength} battle-cinematic--signature-camera-${Number(battleCinematic.signatureStyle?.impactPattern) || 0}${battleCinematic.impact ? ' is-impact' : ''}${battleCinematic.hitStop ? ' is-hit-stop' : ''}`
+    : '';
+  const playerStatusVisualClasses = getBattleStatusVisualClasses(displayPlayerMon);
+  const enemyStatusVisualClasses = getBattleStatusVisualClasses(displayEnemyMon);
 
   if (openingIntro) {
     return (
@@ -6223,7 +6294,7 @@ const BattleScene = ({
       }}
     >
       {/* ══ 战斗场景：吃掉剩余高度，底部面板不再挤出黑色空区 ══ */}
-      <div ref={battleStageRef} className={`anime-battle-bg ${battleSceneClass} ${battleSceneRoleClass} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
+      <div ref={battleStageRef} className={`anime-battle-bg ${battleSceneClass} ${battleSceneRoleClass} battle-vfx-quality--${battleVfxQuality} ${battleCinematicClasses} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
         <div className="battle-environment-props" aria-hidden="true">
           <span className="battle-env-prop battle-env-prop--horizon" />
           <span className="battle-env-prop battle-env-prop--left" />
@@ -6231,7 +6302,9 @@ const BattleScene = ({
           <span className="battle-env-prop battle-env-prop--foreground" />
           <span className="battle-env-prop battle-env-prop--particles" />
         </div>
-        <AttackEffect effect={attackEffect} onDone={() => setAttackEffect(null)} />
+        <BattleMoveEffect effect={attackEffect} onDone={() => setAttackEffect(null)} />
+        <div className="battle-cinematic-overlay" aria-hidden="true"><i /><i /><i /></div>
+        <BattleImpactFeedback feedback={battleImpactFeedback} anchors={battleImpactFeedback?.anchors} />
         <div className="battle-atmosphere" />
         {battleFeedbackCue && (
           <div className={`battle-lock-feedback battle-lock-feedback--${battleFeedbackCue.kind || 'trainer'}`} role="status" aria-live="polite">
@@ -6271,18 +6344,20 @@ const BattleScene = ({
         <div className="absolute inset-0 z-10">
           {/* 敌方精灵：右上 */}
           <div
-            className={`battle-sprite-slot battle-sprite-enemy ${enemySpriteClass} ${enemyFainting ? 'battle-sprite-slot--fainted' : ''} ${hideEnemySpriteForCapture ? 'battle-sprite-slot--capturing' : ''} ${battleFeedbackKind ? `battle-sprite-slot--feedback battle-sprite-slot--feedback-${battleFeedbackKind}` : ''}`}
+            className={`battle-sprite-slot battle-sprite-enemy ${enemySpriteClass} ${enemyStatusVisualClasses} ${enemyFainting ? 'battle-sprite-slot--fainted' : ''} ${hideEnemySpriteForCapture ? 'battle-sprite-slot--capturing' : ''} ${battleFeedbackKind ? `battle-sprite-slot--feedback battle-sprite-slot--feedback-${battleFeedbackKind}` : ''}`}
             aria-hidden={hideEnemySpriteForCapture ? 'true' : undefined}
           >
             <div ref={enemySpriteAnchorRef} className={openingIntro ? 'battle-intro-enemy-stage' : 'battle-sprite-float'}>
               <MonsterSprite monster={displayEnemyMon} isBattleContext={true} sizeMultiplier={BATTLE_ENEMY_SPRITE_MULTIPLIER} />
             </div>
+            <BattleStatusAura />
           </div>
           {/* 我方精灵：左下（背面）*/}
-          <div className={`battle-sprite-slot battle-sprite-player ${playerSpriteClass} ${playerFainting ? 'battle-sprite-slot--fainted' : ''}`}>
+          <div className={`battle-sprite-slot battle-sprite-player ${playerSpriteClass} ${playerStatusVisualClasses} ${playerFainting ? 'battle-sprite-slot--fainted' : ''}`}>
             <div ref={playerSpriteAnchorRef} className={openingSendOut ? 'battle-opening-send-stage' : 'battle-sprite-float battle-sprite-float-delayed'}>
               <MonsterSprite monster={displayPlayerMon} isBack={true} isBattleContext={true} sizeMultiplier={BATTLE_PLAYER_SPRITE_MULTIPLIER} />
             </div>
+            <BattleStatusAura />
           </div>
         </div>
 
@@ -6379,9 +6454,21 @@ const BattleScene = ({
                   disabled={activePlayerActionDisabled || !!playerChargingMoveKey}
                 />
               </div>
-              <div className={`battle-command-tip battle-command-tip--${resolvedEscapeRule.canRun ? 'wild' : (resolvedEscapeRule.kind || 'trainer')}`}>
-                <i className={`fa-solid ${resolvedEscapeRule.canRun ? 'fa-person-running' : 'fa-lock'}`}></i>
-                <span>{runHintText}</span>
+              <div className="battle-command-footer">
+                <div className={`battle-command-tip battle-command-tip--${resolvedEscapeRule.canRun ? 'wild' : (resolvedEscapeRule.kind || 'trainer')}`}>
+                  <i className={`fa-solid ${resolvedEscapeRule.canRun ? 'fa-person-running' : 'fa-lock'}`}></i>
+                  <span>{runHintText}</span>
+                </div>
+                <button
+                  type="button"
+                  className="battle-surrender-button"
+                  onClick={handleSurrenderPress}
+                  disabled={surrenderCommandDisabled}
+                  title="结束本场战斗并按挑战失败结算"
+                >
+                  <i className="fa-solid fa-flag"></i>
+                  <span>认输</span>
+                </button>
               </div>
             </>
           ) : (
@@ -6509,6 +6596,14 @@ const BattleScene = ({
           )}
         </div>
       </div>
+      {showSurrenderConfirm && (
+        <BattleSurrenderConfirm
+          busy={isBusy}
+          goldPenalty={surrenderGoldPenalty}
+          onCancel={handleSurrenderCancel}
+          onConfirm={handleSurrenderConfirm}
+        />
+      )}
     </div>);
 
 };
@@ -11296,6 +11391,7 @@ const buildNpcDialogueInfoChips = ({
   teamSize = 1,
   levelRangeText = '',
   energyCost = 1,
+  defeatGoldPenalty = 0,
   statusChips = []
 } = {}) => {
   const chips = [];
@@ -11312,6 +11408,9 @@ const buildNpcDialogueInfoChips = ({
     pushChip(levelRangeText.trim());
   }
   pushChip(`消耗 ${Math.max(1, Math.trunc(Number(energyCost)) || 1)} 能量`);
+  if (Number(defeatGoldPenalty) > 0) {
+    pushChip(`战败损失 ${Math.max(0, Math.trunc(Number(defeatGoldPenalty)) || 0)} 金币`);
+  }
   (Array.isArray(statusChips) ? statusChips : []).forEach((chip) => {
     pushChip(chip);
   });
@@ -11389,7 +11488,7 @@ const getNpcDialogueRuleCards = (eventRole = 'normal') => {
   return [
     { icon: 'fa-dice-six', label: '对手队伍', value: '6只宝可梦' },
     { icon: 'fa-arrow-trend-up', label: '难度变化', value: '连胜变强' },
-    { icon: 'fa-mountain', label: '最高强度', value: '最高 Lv.80' },
+    { icon: 'fa-mountain', label: '最高强度', value: '最高 Lv.100' },
     { icon: 'fa-coins', label: '奖励变化', value: '金币提升' }
   ];
 };
@@ -11458,6 +11557,7 @@ const ChallengeBattleConfirmModal = ({
   eventName = '区域试炼',
   eventTitle = '连战挑战',
   energyCost = 1,
+  defeatGoldPenalty = 0,
   teamSize = 3,
   levelRangeText = '',
   rewardItems = [],
@@ -11544,6 +11644,9 @@ const ChallengeBattleConfirmModal = ({
             <span className="challenge-confirm-card__chip">{levelRangeText}</span>
           ) : null}
           <span className="challenge-confirm-card__chip">消耗 {energyCost} 点能量</span>
+          {defeatGoldPenalty > 0 ? (
+            <span className="challenge-confirm-card__chip challenge-confirm-card__chip--danger">高风险 · 战败损失 {defeatGoldPenalty} 金币</span>
+          ) : null}
         </div>
 
         {fallbackRewardItems.length > 0 ? (
@@ -11636,6 +11739,7 @@ const NpcBattleDialogueConfirmModal = ({
   ruleDescription = '',
   battleHintText = '',
   energyCost = 1,
+  defeatGoldPenalty = 0,
   teamSize = 1,
   levelRangeText = '',
   expectedGold = 0,
@@ -11658,6 +11762,7 @@ const NpcBattleDialogueConfirmModal = ({
     teamSize,
     levelRangeText,
     energyCost,
+    defeatGoldPenalty,
     statusChips
   });
   const rewardPreviewItems = buildNpcDialogueRewardItems({
@@ -13969,17 +14074,28 @@ export default function OriginalGame({ user, onLogout }) {
   const waitForBattleMoveVisual = useCallback(async (moveKey, attackerSide, phase = 'hit', {
     targetSide = null,
     onImpact = null,
-    durationMs = getBattleMovePhaseDuration(phase),
+    durationMs = null,
     effectMove = null,
     effectMoveKey = moveKey,
     suppressActorMotion = false,
     forceTargetReaction = false,
     reactionClass = null,
+    feedback = null,
+    hitCount = feedback?.hitCount || 1,
+    hitIndex = feedback?.hitIndex || 0,
   } = {}) => {
     const resolvedMove = effectMove || MOVES[moveKey];
     const resolvedMoveKey = effectMoveKey || moveKey;
     if (!resolvedMove) return;
-    const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
+    const moveConfig = getMoveEffectConfig(resolvedMoveKey, resolvedMove);
+    const profile = getBattleCinematicProfile(resolvedMoveKey, resolvedMove, moveConfig, {
+      phase,
+      hitCount,
+      hitIndex,
+      durationMs,
+    });
+    const resolvedDurationMs = profile.durationMs || getBattleMovePhaseDuration(phase);
+    const impactDelayMs = getBattleMoveImpactDelay(phase, resolvedDurationMs);
     const visualId = `${moveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setMoveVisualEvent({
       id: visualId,
@@ -13988,19 +14104,21 @@ export default function OriginalGame({ user, onLogout }) {
       attackerSide,
       targetSide,
       phase,
-      durationMs,
+      durationMs: resolvedDurationMs,
       suppressActorMotion,
       forceTargetReaction,
       reactionClass,
+      feedback,
+      profile,
     });
     try {
       if (typeof onImpact === 'function') {
         await wait(impactDelayMs);
         onImpact();
-        await wait(Math.max(0, durationMs - impactDelayMs));
+        await wait(Math.max(0, resolvedDurationMs - impactDelayMs));
         return;
       }
-      await wait(durationMs);
+      await wait(resolvedDurationMs);
     } finally {
       setMoveVisualEvent((prev) => prev?.id === visualId ? null : prev);
     }
@@ -17923,7 +18041,7 @@ export default function OriginalGame({ user, onLogout }) {
 		  }
 
 	  // 使用函数声明避免 Hook 依赖数组读取 const 回调时触发暂时性死区。
-	  async function handleRecoverFromDefeat({ extraLogs = [] } = {}) {
+	  async function handleRecoverFromDefeat({ extraLogs = [], reason = 'knockout' } = {}) {
 	    if (!user?.id || !hasLoadedCloudSave) {
 	      addNotification('云端未就绪，暂不能结算失败。', 'error');
 	      return false;
@@ -17942,6 +18060,7 @@ export default function OriginalGame({ user, onLogout }) {
             isThrowingPokeball: false,
             captureSequenceData: null,
             pendingBattleSwitch: null,
+            battleEnergyRefundEligible: false,
             logs: normalizedExtraLogs.length > 0
               ? appendSnapshotLogs(baseSnapshot, normalizedExtraLogs)
               : baseSnapshot.logs
@@ -17957,10 +18076,12 @@ export default function OriginalGame({ user, onLogout }) {
         setIsThrowingPokeball(false);
         setCaptureSequenceData(null);
         setPendingBattleSwitch(null);
+        setBattleEnergyRefundEligible(false);
         recordGameLog('battle_defeat', {
           title: '战斗失败',
           summary: extraLogs.find((message) => typeof message === 'string' && message.trim()) || '队伍已无法继续战斗。',
           details: {
+            reason,
             battleKind,
             activeEnemyName: activeEnemyMon?.name || '',
             activeEnemyLevel: activeEnemyMon?.level || null
@@ -18050,6 +18171,11 @@ export default function OriginalGame({ user, onLogout }) {
     const defenderSide = attackerSide === 'player' ? 'enemy' : 'player';
     const attackerName = attackerSide === 'enemy' ? `敌方 ${attacker.name}` : attacker.name;
     const defenderName = defenderSide === 'enemy' ? `敌方 ${defender.name}` : defender.name;
+    const moveConfig = getMoveEffectConfig(moveKey, move);
+    const getMoveProfile = (phase, options = {}) => getBattleCinematicProfile(moveKey, move, moveConfig, {
+      phase,
+      ...options,
+    });
     const playMovePhase = (phase, options = {}) => waitForBattleMoveVisual(moveKey, attackerSide, phase, options);
     const addResultLog = async (message) => {
       if (message) await addBattleLogAndWait(addLog, message);
@@ -18061,28 +18187,55 @@ export default function OriginalGame({ user, onLogout }) {
     const playMovePhaseWithResult = async (phase, message, {
       targetSide = null,
       onImpact = null,
-      durationMs = getBattleMovePhaseDuration(phase),
+      durationMs = null,
       minMs = 860,
       maxMs = 2300,
       extraMs = 130,
       crit = false,
+      damageAmount = 0,
+      healingAmount = 0,
+      hitCount = 1,
+      hitIndex = 0,
+      suppressActorMotion = false,
+      targetFainted = false,
     } = {}) => {
-      const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
+      const profile = getMoveProfile(phase, { hitCount, hitIndex, durationMs });
+      const resolvedDurationMs = profile.durationMs || getBattleMovePhaseDuration(phase);
+      const impactDelayMs = getBattleMoveImpactDelay(phase, resolvedDurationMs);
       let loggedAtImpact = false;
+      const feedback = (damageAmount > 0 || healingAmount > 0 || (['hit', 'fizzle'].includes(phase) && effectiveness <= 0))
+        ? buildBattleImpactFeedback({
+          damage: damageAmount,
+          healing: healingAmount,
+          effectiveness,
+          crit,
+          hitCount,
+          hitIndex,
+          targetSide: targetSide || defenderSide,
+          moveType: move.type,
+          intensity: profile.intensity,
+        })
+        : null;
 
       await playMovePhase(phase, {
         targetSide,
-        durationMs,
+        durationMs: resolvedDurationMs,
+        hitCount,
+        hitIndex,
+        feedback,
+        suppressActorMotion,
         // 会心一击时叠加更强的命中反应，让受击精灵抖动更明显。
         reactionClass: crit && phase === 'hit' ? 'crit' : null,
         onImpact: () => {
           onImpact?.();
-          if (phase === 'heal' || phase === 'drain') {
+          if (phase === 'heal' || phase === 'drain' || healingAmount > 0) {
             gameAudio.playBattleStatus('heal', 'recover');
+          } else if (damageAmount > 0 && phase === 'secondary') {
+            gameAudio.playBattleImpact({ effectiveness: 1, didHit: true, outcome: 'hit', targetFainted, crit: false, intensity: profile.intensity });
           } else if (phase === 'secondary' || phase === 'status') {
             gameAudio.playBattleStatus(move?.status || move?.volatileStatus || (move?.category === 'status' ? 'buff' : 'status'));
           } else if (phase === 'hit') {
-            gameAudio.playBattleImpact({ effectiveness, didHit: true, outcome: 'hit', targetFainted: updatedDefender?.currentHp <= 0, crit });
+            gameAudio.playBattleImpact({ effectiveness, didHit: true, outcome: 'hit', targetFainted, crit, intensity: profile.intensity, hitIndex, hitCount });
           } else if (phase === 'fizzle') {
             gameAudio.playBattleImpact({ effectiveness, didHit: effectiveness > 0, outcome: 'fizzle', targetFainted: false });
           } else if (phase === 'miss') {
@@ -18101,7 +18254,7 @@ export default function OriginalGame({ user, onLogout }) {
         return;
       }
 
-      const visualReadOverlapMs = Math.max(0, durationMs - impactDelayMs);
+      const visualReadOverlapMs = Math.max(0, resolvedDurationMs - impactDelayMs);
       const readDelayMs = getBattleLogReadDelay(message, { minMs, maxMs, extraMs });
       await wait(Math.max(220, readDelayMs - visualReadOverlapMs));
     };
@@ -18130,7 +18283,8 @@ export default function OriginalGame({ user, onLogout }) {
     };
 
     if (move.charge && !attacker.volatileStatuses?.chargingMove) {
-      gameAudio.playBattleMove(move);
+      const chargeProfile = getMoveProfile('charge');
+      gameAudio.playBattleMove(move, { ...chargeProfile, moveKey, phase: 'charge', semanticTags: moveConfig.semanticTags });
       const chargingAttacker = {
         ...withBattleRuntimeDefaults(attacker),
         volatileStatuses: {
@@ -18145,7 +18299,9 @@ export default function OriginalGame({ user, onLogout }) {
         setEnemyTeam,
         updater: () => chargingAttacker
       });
-      await addBattleLogAndWait(addLog, `${attackerName} 正在蓄力，准备使出 ${move.name}！`, {
+      await playMovePhaseWithResult('charge', `${attackerName} 正在蓄力，准备使出 ${move.name}！`, {
+        targetSide: attackerSide,
+        durationMs: chargeProfile.durationMs,
         minMs: 820,
         maxMs: 1300,
         extraMs: 80,
@@ -18160,7 +18316,8 @@ export default function OriginalGame({ user, onLogout }) {
     const attackerAfterCharge = attacker.volatileStatuses?.chargingMove === moveKey
       ? { ...attacker, volatileStatuses: { ...(attacker.volatileStatuses || {}), chargingMove: null } }
       : attacker;
-    gameAudio.playBattleMove(move);
+    const releaseProfile = getMoveProfile('hit');
+    gameAudio.playBattleMove(move, { ...releaseProfile, moveKey, phase: 'release', semanticTags: moveConfig.semanticTags });
     if (attacker.volatileStatuses?.chargingMove === moveKey) {
       updateBattleMonBySide({
         side: attackerSide,
@@ -18340,6 +18497,7 @@ export default function OriginalGame({ user, onLogout }) {
 
     if (move.category !== 'status' && getDynamicBattleMovePower(moveKey, move, updatedAttacker, updatedDefender) > 0) {
       const hitCount = getBattleMoveHitCount(move);
+      const hitSteps = [];
       let capped = false;
       let critHit = false;
       let resolvedHitCount = 0;
@@ -18366,6 +18524,12 @@ export default function OriginalGame({ user, onLogout }) {
         critHit = critHit || Boolean(result.crit);
         resolvedHitCount += 1;
         updatedDefender = { ...updatedDefender, currentHp: Math.max(0, updatedDefender.currentHp - hitDamage) };
+        hitSteps.push({
+          damage: hitDamage,
+          crit: Boolean(result.crit),
+          effectiveness: result.effectiveness,
+          defender: updatedDefender,
+        });
         if (result.effectiveness === 0) break;
       }
       if (damage > 0) {
@@ -18375,6 +18539,9 @@ export default function OriginalGame({ user, onLogout }) {
           (Number(defenderVolatileStatuses.rageFistHits) || 0) + resolvedHitCount
         );
         updatedDefender = { ...updatedDefender, volatileStatuses: defenderVolatileStatuses };
+        if (hitSteps.length > 0) {
+          hitSteps[hitSteps.length - 1] = { ...hitSteps[hitSteps.length - 1], defender: updatedDefender };
+        }
       }
       if (
         attackerSide === 'player' &&
@@ -18407,23 +18574,34 @@ export default function OriginalGame({ user, onLogout }) {
       }
       const damageMessage = damageMessages.join(' ') || `${defenderName} 没有受到伤害。`;
       if (effectiveness > 0 && damage > 0) {
-        await playMovePhaseWithResult('hit', damageMessage, {
-          targetSide: defenderSide,
-          crit: critHit,
-          onImpact: () => {
-            updateBattleMonBySide({
-              side: defenderSide,
-              monId: defender.id,
-              setPlayerTeam,
-              setEnemyTeam,
-              updater: (mon) => ({
-                ...mon,
-                currentHp: updatedDefender.currentHp,
-                volatileStatuses: updatedDefender.volatileStatuses
-              })
-            });
-          }
-        });
+        for (let hitIndex = 0; hitIndex < hitSteps.length; hitIndex += 1) {
+          const hitStep = hitSteps[hitIndex];
+          const isFinalHit = hitIndex === hitSteps.length - 1;
+          await playMovePhaseWithResult('hit', isFinalHit ? damageMessage : '', {
+            targetSide: defenderSide,
+            crit: hitStep.crit,
+            damageAmount: hitStep.damage,
+            hitCount: hitSteps.length,
+            hitIndex,
+            suppressActorMotion: hitIndex > 0,
+            targetFainted: hitStep.defender.currentHp <= 0,
+            onImpact: () => {
+              updateBattleMonBySide({
+                side: defenderSide,
+                monId: defender.id,
+                setPlayerTeam,
+                setEnemyTeam,
+                updater: (mon) => ({
+                  ...mon,
+                  currentHp: hitStep.defender.currentHp,
+                  volatileStatuses: isFinalHit
+                    ? updatedDefender.volatileStatuses
+                    : hitStep.defender.volatileStatuses
+                })
+              });
+            }
+          });
+        }
       } else {
         await playMovePhaseWithResult('fizzle', damageMessage, {
           targetSide: defenderSide,
@@ -18483,10 +18661,12 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     if (move.effect === 'heal') {
+      const previousHp = updatedAttacker.currentHp;
       const nextHp = Math.min(updatedAttacker.maxHp, updatedAttacker.currentHp + Math.max(1, Math.floor(updatedAttacker.maxHp / 2)));
       updatedAttacker = { ...updatedAttacker, currentHp: nextHp };
       await playMovePhaseWithResult('heal', `${attackerName} 恢复了体力！`, {
         targetSide: attackerSide,
+        healingAmount: Math.max(0, nextHp - previousHp),
         onImpact: () => {
           updateBattleMonBySide({
             side: attackerSide,
@@ -18500,10 +18680,12 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     if (move.effect === 'drain' && damage > 0) {
+      const previousHp = updatedAttacker.currentHp;
       const nextHp = Math.min(updatedAttacker.maxHp, updatedAttacker.currentHp + Math.max(1, Math.floor(damage / 2)));
       updatedAttacker = { ...updatedAttacker, currentHp: nextHp };
       await playMovePhaseWithResult('secondary', `${attackerName} 吸取了体力！`, {
         targetSide: attackerSide,
+        healingAmount: Math.max(0, nextHp - previousHp),
         onImpact: () => {
           updateBattleMonBySide({
             side: attackerSide,
@@ -18521,6 +18703,7 @@ export default function OriginalGame({ user, onLogout }) {
       updatedAttacker = { ...updatedAttacker, currentHp: Math.max(0, updatedAttacker.currentHp - recoilDamage) };
       await playMovePhaseWithResult('secondary', `${attackerName} 受到了反作用力伤害！`, {
         targetSide: attackerSide,
+        damageAmount: recoilDamage,
         onImpact: () => {
           updateBattleMonBySide({
             side: attackerSide,
@@ -18534,9 +18717,11 @@ export default function OriginalGame({ user, onLogout }) {
     }
 
     if (move.selfDestruct) {
+      const selfDamage = updatedAttacker.currentHp;
       updatedAttacker = { ...updatedAttacker, currentHp: 0 };
       await playMovePhaseWithResult('secondary', `${attackerName} 用尽了全部体力！`, {
         targetSide: attackerSide,
+        damageAmount: selfDamage,
         onImpact: () => {
           updateBattleMonBySide({
             side: attackerSide,
@@ -19824,11 +20009,15 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       rareEncounter?.pokemonId ?? basePokemonId ?? getRandomWildPokemon(currentMapName)
     const newEnemyLevel = rareEncounter?.level ?? baseLevel ?? getRandomWildLevel(currentMapName)
 
-    const energyCost = getBattleEnergyCost({ battleKind: 'wild', mapLevel });
+    const energyCost = getBattleEnergyCost({
+      battleKind: 'wild',
+      mapName: currentMapName,
+      mapLevel
+    });
     const resources = await refreshPlayerResources();
     if (resources.energy < energyCost) {
-      addLog(INSUFFICIENT_BATTLE_ENERGY_LOG);
-      addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+      addLog(getInsufficientBattleEnergyLog(energyCost));
+      addNotification(getInsufficientBattleEnergyNotification(energyCost), 'error');
       gameAudio.playError();
       return;
     }
@@ -19949,7 +20138,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
     addLog(atomicResult.message || '战斗开始失败。');
     if (atomicResult.message?.includes('能量')) {
-      addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+      addNotification(getInsufficientBattleEnergyNotification(energyCost), 'error');
       gameAudio.playError();
     } else {
       addNotification(atomicResult.message || '战斗开始失败，请重新读取。', atomicResult.requiresReload ? 'error' : 'warning');
@@ -20215,12 +20404,18 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(commitResult.message || '挑战印记未能保存，解题结果仍保留。', commitResult.notificationType || 'warning');
         return false;
       }
-      const taskTitle = completionResult?.task?.title || activeTrial.task?.title || '部下试炼';
-      addNotification(`「${taskTitle}」完成，对应部下挑战已开放！`, 'success');
-      addLog(`试炼印记完成：${taskTitle}。`);
+      const isBossTrial = typeof activeTrial.task?.targetEventId === 'string' && activeTrial.task.targetEventId.endsWith('_boss');
+      const taskTitle = completionResult?.task?.title || activeTrial.task?.title || (isBossTrial ? '王座谜题' : '部下试炼');
+      addNotification(
+        isBossTrial
+          ? `「${taskTitle}」完成，天王挑战已开放！`
+          : `「${taskTitle}」完成，对应部下挑战已开放！`,
+        'success'
+      );
+      addLog(`${isBossTrial ? '王座谜题' : '试炼印记'}完成：${taskTitle}。`);
       recordGameLog('elite_unlock_minigame_completed', {
-        title: '部下小游戏完成',
-        summary: `完成「${taskTitle}」，云端挑战印记已确认。`,
+        title: isBossTrial ? '天王王座谜题完成' : '部下小游戏完成',
+        summary: `完成「${taskTitle}」，云端${isBossTrial ? '天王挑战资格' : '挑战印记'}已确认。`,
         position: activeTrial.playerPos,
         details: {
           mapName: activeTrial.mapId,
@@ -20230,6 +20425,9 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           taskCompleted: true
         }
       });
+      setActiveEliteMinigame((current) => (
+        current?.task?.id === taskId ? { ...current, completed: true } : current
+      ));
       return true;
     } finally {
       setEliteMinigameCommitBusy(false);
@@ -20309,6 +20507,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           task: minigameTask,
           mapId: currentMapName,
           sourceEventId: eventId,
+          sourceKind: 'objective',
           playerPos: eventPlayerPos
         });
         return false;
@@ -20956,6 +21155,35 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         ? getEliteUnlockTargetGate(interactionWorld, currentMapName, battleEventId)
         : null;
       if (unlockTaskGate && !unlockTaskGate.completed) {
+        const canStartEliteBossPuzzle = Boolean(
+          !context.skipBattleConfirm &&
+          isEliteFourBossEvent(currentMapName, battleEventId) &&
+          unlockTaskGate.available &&
+          unlockTaskGate.task?.minigame
+        );
+        if (canStartEliteBossPuzzle) {
+          gameAudio.playMapTouch({ kind: 'trial' });
+          setActiveEliteMinigame({
+            task: unlockTaskGate.task,
+            mapId: currentMapName,
+            sourceEventId: battleEventId,
+            sourceKind: 'boss',
+            playerPos: eventPlayerPos,
+            resumeBattle: {
+              type,
+              amount,
+              context: {
+                ...context,
+                tileX,
+                tileY,
+                mapEvent: battleMapEvent || mapEvent,
+                playerPos: eventPlayerPos,
+                encounterCooldownSteps: eventCooldown
+              }
+            }
+          });
+          return false;
+        }
         const nextStepName = unlockTaskGate.nextStep?.name || '对应机关';
         addNotification(
           unlockTaskGate.available
@@ -20997,7 +21225,20 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           bossLevelCap,
           playerLevel: playerPressureLevel
         });
-      const energyCost = getBattleEnergyCost({ battleKind: 'trainer', mapLevel });
+      const energyCost = getBattleEnergyCost({
+        battleKind: 'trainer',
+        mapName: currentMapName,
+        mapLevel,
+        eventType: battleEventType,
+        eventRole: battleEventRole
+      });
+      const defeatGoldPenalty = getPayableDefeatGoldPenalty(getDefeatGoldPenalty({
+        battleKind: 'trainer',
+        mapName: currentMapName,
+        mapLevel,
+        eventType: battleEventType,
+        eventRole: battleEventRole
+      }), playerGold);
       const shouldStartBattleImmediately = Boolean(context.skipBattleConfirm);
       let battleEventStartLockHeld = false;
       const releaseBattleEventStartLock = () => {
@@ -21017,8 +21258,8 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       const resources = await refreshPlayerResources();
       if (resources.energy < energyCost) {
         releaseBattleEventStartLock();
-        addLog(INSUFFICIENT_BATTLE_ENERGY_LOG);
-        addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+        addLog(getInsufficientBattleEnergyLog(energyCost));
+        addNotification(getInsufficientBattleEnergyNotification(energyCost), 'error');
         return false;
       }
       if (battleEventType === 'challenge' && championTowerFloorDefinition && !context.skipBattleConfirm) {
@@ -21030,6 +21271,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           eventName,
           eventTitle: championTowerFloorDefinition.title,
           energyCost,
+          defeatGoldPenalty,
           teamSize: resolvedTowerTeamSize,
           levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
           rewardItems: [],
@@ -21086,6 +21328,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
           eventName,
           eventTitle: resolvedChallengeTitle,
           energyCost,
+          defeatGoldPenalty,
           teamSize: resolvedChallengeTeamSize,
           levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
           rewardItems: challengeDisplayRewardItems,
@@ -21181,6 +21424,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
             ? battleEventProps.battleHintText
             : '',
           energyCost,
+          defeatGoldPenalty,
           teamSize: resolvedNpcTeamSize,
           levelRangeText: getConfiguredBattleLevelRangeText(resolvedTeamConfig),
           expectedGold: npcRewardPreview.gold,
@@ -21332,7 +21576,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       releaseBattleEventStartLock();
       addLog(atomicResult.message || '训练家对战开始失败。');
       if (atomicResult.message?.includes('能量')) {
-        addNotification(INSUFFICIENT_BATTLE_ENERGY_NOTIFICATION, 'error');
+        addNotification(getInsufficientBattleEnergyNotification(energyCost), 'error');
       } else {
         addNotification(atomicResult.message || '训练家对战开始失败，请重新读取。', atomicResult.requiresReload ? 'error' : 'warning');
       }
@@ -21341,6 +21585,17 @@ const handleEncounter = useCallback(async (encounterPayload) => {
 
     return false;
   }, [addLog, addNotification, commitCloudSnapshot, commitCloudSnapshotWithResources, currentMapName, encounterCooldownSteps, fastTravelBusy, handleNavigateView, hasLoadedCloudSave, hiddenEncounterUnlockBusy, mapLevel, markCompletedBattleEventLocally, pendingFastTravel, pendingHiddenEncounterUnlock, pendingSpringRestoreConfirm, playerGold, playerPos, playerTeam, recordGameLog, refreshPlayerResources, scheduleDeferredPickupUiSync, springRestoreBusy, user?.id, world]);
+
+  const handleCloseEliteMinigame = useCallback(() => {
+    if (eliteMinigameCommitBusy) return;
+    const closedTrial = activeEliteMinigame;
+    setActiveEliteMinigame(null);
+    if (closedTrial?.sourceKind !== 'boss' || !closedTrial.completed || !closedTrial.resumeBattle) return;
+    const { type, amount, context } = closedTrial.resumeBattle;
+    window.setTimeout(() => {
+      handleCollect(type, amount, context);
+    }, 0);
+  }, [activeEliteMinigame, eliteMinigameCommitBusy, handleCollect]);
 
   const handleCancelBattleEventConfirm = useCallback(() => {
     if (battleEventConfirmBusy) return;
@@ -22500,6 +22755,21 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     }
   }, [activeEnemyMon, activePlayerMon, addLog, addNotification, battleEnergyRefundEligible, battleEscapeRule, commitCloudSnapshot, getEscapeChance, hasLoadedCloudSave, resolveTrackedActiveBattleEnergyCost, turn, user?.id]);
 
+  const handleSurrender = useCallback(async () => {
+    if (view !== 'battle' || battlePhase !== 'active' || turn !== 'player' || gameOver) return false;
+    if (!user?.id || !hasLoadedCloudSave) {
+      addNotification('云端未就绪，暂不能认输结算。', 'error');
+      return false;
+    }
+
+    setMoveVisualEvent(null);
+    setSwitchVisualEvent(null);
+    return handleRecoverFromDefeat({
+      reason: 'surrender',
+      extraLogs: ['你选择了认输。', '挑战失败。']
+    });
+  }, [addNotification, battlePhase, gameOver, hasLoadedCloudSave, turn, user?.id, view]);
+
   const handleUsePotion = useCallback(async (monsterId, potionKey) => {
     const potion = POTIONS[potionKey];
     if (!potion) {
@@ -23143,7 +23413,13 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   // 失败结算实际执行（由过场 onContinue 调用）
   const handleDefeatContinue = useCallback(async () => {
-    const rawPenalty = getDefeatGoldPenalty({ battleKind, mapLevel });
+    const rawPenalty = getDefeatGoldPenalty({
+      battleKind,
+      mapName: battleEnvironment?.mapName || currentMapName,
+      mapLevel,
+      eventType: battleEnvironment?.eventType,
+      eventRole: battleEnvironment?.eventRole
+    });
     const payablePenalty = getPayableDefeatGoldPenalty(rawPenalty, playerGold);
     const defeatSummary = createDefeatSummary(payablePenalty, rawPenalty);
     const createBuildDefeatExitSnapshot = (summaryMessage) => (baseSnapshot) => buildExitedBattleSnapshot(baseSnapshot, {
@@ -23222,10 +23498,12 @@ const handleReorderTeam = useCallback((newTeam) => {
   }, [
     addLog,
     addNotification,
+    battleEnvironment,
     battleKind,
     commitCloudSnapshot,
     commitCloudSnapshotWithResources,
     hasLoadedCloudSave,
+    currentMapName,
     mapLevel,
     playerGold,
     refreshPlayerResources,
@@ -24865,7 +25143,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 	            />
           </div>
         )}
-        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} onUseStatBoostItem={handleUseStatBoostItem} addLog={addLog} isThrowingPokeball={isThrowingPokeball} captureSequenceData={captureSequenceData} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
+        {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} onSurrender={handleSurrender} surrenderGoldPenalty={getPayableDefeatGoldPenalty(getDefeatGoldPenalty({ battleKind, mapName: battleEnvironment?.mapName || currentMapName, mapLevel, eventType: battleEnvironment?.eventType, eventRole: battleEnvironment?.eventRole }), playerGold)} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} onUseStatBoostItem={handleUseStatBoostItem} addLog={addLog} isThrowingPokeball={isThrowingPokeball} captureSequenceData={captureSequenceData} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
 
         {/* ── 战斗过场 Overlay ────────────────────────────────────── */}
         {view === 'battle' && (
@@ -24887,7 +25165,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 	        )}
         {view === 'battle' && battlePhase === 'defeat' && (
           <BattleDefeatOverlay
-            goldPenalty={getPayableDefeatGoldPenalty(getDefeatGoldPenalty({ battleKind, mapLevel }), playerGold)}
+            goldPenalty={getPayableDefeatGoldPenalty(getDefeatGoldPenalty({ battleKind, mapName: battleEnvironment?.mapName || currentMapName, mapLevel, eventType: battleEnvironment?.eventType, eventRole: battleEnvironment?.eventRole }), playerGold)}
             onContinue={handleDefeatContinue}
           />
         )}
@@ -25042,6 +25320,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           eventName={pendingBattleEventConfirm?.eventName}
           eventTitle={pendingBattleEventConfirm?.eventTitle}
           energyCost={pendingBattleEventConfirm?.energyCost}
+          defeatGoldPenalty={pendingBattleEventConfirm?.defeatGoldPenalty}
           teamSize={pendingBattleEventConfirm?.teamSize}
           levelRangeText={pendingBattleEventConfirm?.levelRangeText}
           rewardItems={pendingBattleEventConfirm?.rewardItems}
@@ -25065,6 +25344,7 @@ const handleReorderTeam = useCallback((newTeam) => {
           ruleDescription={pendingNpcBattleConfirm?.ruleDescription}
           battleHintText={pendingNpcBattleConfirm?.battleHintText}
           energyCost={pendingNpcBattleConfirm?.energyCost}
+          defeatGoldPenalty={pendingNpcBattleConfirm?.defeatGoldPenalty}
           teamSize={pendingNpcBattleConfirm?.teamSize}
           levelRangeText={pendingNpcBattleConfirm?.levelRangeText}
           expectedGold={pendingNpcBattleConfirm?.expectedGold}
@@ -25120,9 +25400,7 @@ const handleReorderTeam = useCallback((newTeam) => {
               task={activeEliteMinigame.task}
               busy={eliteMinigameCommitBusy}
               onCommit={handleCommitEliteMinigame}
-              onClose={() => {
-                if (!eliteMinigameCommitBusy) setActiveEliteMinigame(null);
-              }}
+              onClose={handleCloseEliteMinigame}
             />
           </Suspense>
         )}

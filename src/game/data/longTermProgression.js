@@ -1,7 +1,7 @@
 export const LONG_TERM_PROGRESS_SCHEMA_VERSION = 1
 export const MAP_COMPLETION_CATALOG_VERSION = 1
 export const PERMANENT_DEX_VERSION = 1
-export const ELITE_UNLOCK_TASK_VERSION = 2
+export const ELITE_UNLOCK_TASK_VERSION = 3
 export const CHAMPION_TOWER_VERSION = 1
 
 export const CHAMPION_TOWER_MAP_ID = 'GodotMapV2_ChampionTower'
@@ -120,6 +120,21 @@ const task = ({ id, mapId, targetEventId, title, description, theme, order, prer
 
 export const ELITE_UNLOCK_TASKS = Object.freeze([
   task({
+    id: 'frost_mirror_crown', mapId: 'GodotMapV2_FrostDojo', targetEventId: 'elite_frost_boss',
+    title: '霜镜翻格阵', description: '像经典翻灯谜题一样，每次点击会同时翻转自己和上下左右的霜镜，让 16 面镜子全部亮起。', theme: 'frost', order: 4,
+    prerequisiteTrainerIds: ['elite_frost_lieutenant_1', 'elite_frost_lieutenant_2', 'elite_frost_lieutenant_3'],
+    minigame: {
+      kind: 'lights_out', label: '点亮 16 面霜镜', skill: '逻辑 · 翻格 · 规划',
+      guide: { goal: '让 4×4 的霜镜全部变成发光状态。', action: '点一面镜子，它和上下左右会一起变亮或变暗。' },
+      size: 4,
+      start: [false, true, true, false, true, false, false, true, true, false, false, true, false, true, true, false],
+      target: true,
+      maxMoves: 14
+    },
+    steps: [step('frost_mirror_crown', 'altar', '王座霜镜盘', 12, 7, 'frost_mirror')]
+  }),
+
+  task({
     id: 'tide_dual_pressure', mapId: 'GodotMapV2_TideDojo', targetEventId: 'elite_tide_lieutenant_1',
     title: '潮压控制台', description: '先看下一轮水流变化，再用三个按钮让数字进入绿色区，并连续保持 3 次。', theme: 'tide', order: 1,
     minigame: {
@@ -165,8 +180,15 @@ export const ELITE_UNLOCK_TASKS = Object.freeze([
   }),
   task({
     id: 'tide_oath', mapId: 'GodotMapV2_TideDojo', targetEventId: 'elite_tide_boss',
-    title: '深潮誓约', description: '让三枚潮印化作水流汇入中央祭坛，唤醒深潮天王。', theme: 'tide', order: 4,
+    title: '深潮分流瓶', description: '像经典水管分色谜题一样，把上层颜色倒入空瓶或同色瓶，最后让每种潮流各归一瓶。', theme: 'tide', order: 4,
     prerequisiteTaskIds: ['tide_vortex_stability'], prerequisiteTrainerIds: ['elite_tide_lieutenant_1', 'elite_tide_lieutenant_2', 'elite_tide_lieutenant_3'],
+    minigame: {
+      kind: 'water_sort', label: '将三种潮流完成分色', skill: '分类 · 顺序 · 规划',
+      guide: { goal: '让每个非空瓶只有一种颜色，并且刚好装满。', action: '先点要倒出的瓶子，再点空瓶或顶部同色的瓶子。' },
+      capacity: 3,
+      tubes: [['aqua', 'violet', 'aqua'], ['violet', 'gold', 'violet'], ['gold', 'aqua', 'gold'], [], []],
+      maxMoves: 30
+    },
     steps: [step('tide_oath', 'altar', '中央潮汐祭坛', 17, 17, 'tide_altar')]
   }),
 
@@ -216,8 +238,16 @@ export const ELITE_UNLOCK_TASKS = Object.freeze([
   }),
   task({
     id: 'iron_crown_core', mapId: 'GodotMapV2_IronDojo', targetEventId: 'elite_iron_boss',
-    title: '王冠核心', description: '将三枚铁印送入王座核心，驱动最后一道机械锁。', theme: 'iron', order: 4,
+    title: '王冠数字滑块', description: '像经典数字华容道一样，把与空格相邻的铁片滑进去，将 1–8 按顺序排好。', theme: 'iron', order: 4,
     prerequisiteTaskIds: ['iron_wall_reinforcement'], prerequisiteTrainerIds: ['elite_iron_lieutenant_1', 'elite_iron_lieutenant_2', 'elite_iron_lieutenant_3'],
+    minigame: {
+      kind: 'sliding_tiles', label: '排好 1–8 号王冠铁片', skill: '空间 · 步骤 · 规划',
+      guide: { goal: '把数字排成 1、2、3 / 4、5、6 / 7、8、空格。', action: '只能点击空格上下左右相邻的数字，它会滑入空格。' },
+      size: 3,
+      start: [4, 6, 1, 7, 0, 3, 5, 2, 8],
+      target: [1, 2, 3, 4, 5, 6, 7, 8, 0],
+      maxMoves: 40
+    },
     steps: [step('iron_crown_core', 'console', '王座核心控制台', 19, 6, 'iron_core')]
   }),
 
@@ -271,8 +301,14 @@ export const ELITE_UNLOCK_TASKS = Object.freeze([
   }),
   task({
     id: 'dragon_oath', mapId: 'GodotMapV2_DragonDojo', targetEventId: 'elite_dragon_boss',
-    title: '龙穹誓约', description: '让三枚龙印在穹顶祭坛拼成完整龙形星座。', theme: 'dragon', order: 4,
+    title: '龙印移塔', description: '像经典汉诺塔一样，一次只移动顶部的一枚龙印，把四层印塔完整移到右侧王座。', theme: 'dragon', order: 4,
     prerequisiteTaskIds: ['dragon_final_seal'], prerequisiteTrainerIds: ['elite_dragon_lieutenant_1', 'elite_dragon_lieutenant_2', 'elite_dragon_lieutenant_3'],
+    minigame: {
+      kind: 'tower_hanoi', label: '将四层龙印塔移到右侧', skill: '分步 · 顺序 · 规划',
+      guide: { goal: '让 4 枚龙印全部移到右侧王座，且从大到小叠放。', action: '先点一根柱子拿起顶部龙印，再点目标柱；大印不能压在小印上。' },
+      discs: 4,
+      maxMoves: 24
+    },
     steps: [step('dragon_oath', 'altar', '穹顶龙印祭坛', 15, 8, 'dragon_altar')]
   })
 ])

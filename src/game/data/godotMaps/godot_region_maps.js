@@ -7146,13 +7146,18 @@ function buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, gener
 }
 
 function filterDuplicateInteractiveEventDecorations(decorations) {
-  const seen = new Set()
+  const seenSourceIds = new Set()
+  const seenEvents = new Set()
   return (decorations || []).filter((object) => {
+    if (typeof object?.sourceId === 'string' && object.sourceId.length > 0) {
+      if (seenSourceIds.has(object.sourceId)) return false
+      seenSourceIds.add(object.sourceId)
+    }
     if (object?.hiddenGateMarker || object?.hiddenGateEntranceBlocker) return true
     if (typeof object?.eventId !== 'string' || typeof object?.eventType !== 'string') return true
     const key = `${object.eventType}:${object.eventId}`
-    if (seen.has(key)) return false
-    seen.add(key)
+    if (seenEvents.has(key)) return false
+    seenEvents.add(key)
     return true
   })
 }
@@ -7351,12 +7356,23 @@ function isHiddenEncounterGatePublicSurfaceTile(tile) {
   return HIDDEN_ENCOUNTER_GATE_PUBLIC_SURFACE_TILES.has(tile)
 }
 
+function isGridPositionInBounds(grid, x, y) {
+  return (
+    Number.isInteger(x) &&
+    Number.isInteger(y) &&
+    y >= 0 &&
+    y < (Array.isArray(grid) ? grid.length : 0) &&
+    x >= 0 &&
+    x < (Array.isArray(grid?.[y]) ? grid[y].length : 0)
+  )
+}
+
 function collectHiddenEncounterPerimeterCandidates(zone, grid, runtimeEvents = []) {
   if (!zone || !Array.isArray(grid) || grid.length === 0) return []
 
   const candidates = []
   const maybeAddCandidate = (x, y, side) => {
-    if (!inBounds(x, y)) return
+    if (!isGridPositionInBounds(grid, x, y)) return
     candidates.push({ x, y, side })
   }
 
@@ -7400,7 +7416,7 @@ function collectHiddenEncounterVisualPerimeterCandidates(zone, grid, runtimeEven
   const seen = new Set()
 
   const maybeAddCandidate = (x, y, side) => {
-    if (!inBounds(x, y)) return
+    if (!isGridPositionInBounds(grid, x, y)) return
     if (eventTileKeys.has(`${x},${y}`)) return
     if (hasGatePosition && Math.abs(x - gateX) + Math.abs(y - gateY) <= HIDDEN_ZONE_PERIMETER_ENTRY_CLEARANCE) return
     const key = `${x},${y}:${side}`
@@ -8556,7 +8572,7 @@ const ALL_REGIONS = [
           { pokemonId: 51, level: 45 }
         ],
         beforeBattleText: '铁木计时员：准备好就开始计时挑战。',
-        ruleDescription: '连胜越多，对手越强。',
+        ruleDescription: '连胜越多，对手越强，最高会成长到 Lv.100。',
         defeatedText: '铁木计时员：打得好，下一轮我会更认真。'
       }),
       { id: 'treasure_ridge_camp', type: 'item', position: { x: 4, y: 5 }, properties: { itemType: 'statBoost', itemKey: 'attack_stone', quantity: 1, text: '训练林深处宝箱' } },
@@ -8755,6 +8771,7 @@ const ALL_REGIONS = [
       fastTravel('fast_travel_frost_dojo', 'GodotMapV2_FrostDojo', '霜镜门前传送台'),
       heal('heal_frost_mirror', 10, 21, '霜镜恢复台', { visualTheme: 'frost' }),
       sign('sign_frost_gate', 9, 19, '霜镜道馆：霜纹哨兵、镜湖术士、白雾守卫和霜镜天王依次封锁折镜通路，只有击败当前守关者才会让路。', { visualModel: 'elite_frost_mirror', scale: 0.5 }),
+      ...(LONG_TERM_PROGRESSION_FLAGS.eliteUnlockTasksV1 ? getEliteUnlockObjectiveEvents('GodotMapV2_FrostDojo') : []),
       eliteLieutenant('elite_frost_lieutenant_1', 7, 18, {
         name: '霜纹哨兵',
         order: 1,

@@ -4,7 +4,7 @@ import { MAP_ASSET_CATALOG } from '../src/game/data/mapAssetCatalog.js'
 import { GODOT_REGION_MAPS } from '../src/game/data/godotMaps/godot_region_maps.js'
 import { ELITE_UNLOCK_TASKS, getEliteUnlockObjectiveEvents } from '../src/game/data/longTermProgression.js'
 
-const MAP_IDS = ['GodotMapV2_TideDojo', 'GodotMapV2_IronDojo', 'GodotMapV2_DragonDojo']
+const MAP_IDS = ['GodotMapV2_FrostDojo', 'GodotMapV2_TideDojo', 'GodotMapV2_IronDojo', 'GodotMapV2_DragonDojo']
 const OBJECTIVE_RADIUS = 0.58
 const OBJECTIVE_PAIR_CLEARANCE = 1.6
 // 角色和机关的可见半径之和约 1.16 格；1.4 格额外保留了镜头角度净空。

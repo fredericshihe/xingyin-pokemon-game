@@ -232,7 +232,7 @@ await withViteAuditServer(async ({ loadModule }) => {
           return
         }
         if (props.role === 'minigame') {
-          lines.push(`- 循环挑战 ${props.name || event.id}：运行时从全图鉴非终局Boss专属池随机派出 6 只；胜场越高等级越高，最高 Lv.80；对手使用 Boss 级 AI，最多 3 次伤药。`)
+          lines.push(`- 循环挑战 ${props.name || event.id}：运行时从全图鉴非终局Boss专属池随机派出 6 只；胜场越高等级越高，最高 Lv.100；对手使用 Boss 级 AI，最多 3 次伤药。`)
           return
         }
         lines.push(`- ${groupName} ${props.name || event.id}：${formatTeam(props.team, monsterById)}。`)

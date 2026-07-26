@@ -115,7 +115,7 @@ const SOURCE_CONTRACTS = [
   {
     file: 'src/components/Game/OriginalGame.jsx',
     label: '同回合后续行动使用上一动作返回的最新双方状态',
-    pattern: /latestPlayer = playerResult\.attacker \|\| latestPlayer;[\s\S]*?latestEnemy = playerResult\.defender \|\| latestEnemy;[\s\S]*?latestEnemy = enemyResult\.attacker \|\| latestEnemy;[\s\S]*?latestPlayer = enemyResult\.defender \|\| latestPlayer/,
+    pattern: /const playerFaints = resolveBattleActionFaintFlags\(playerResult, latestPlayer, latestEnemy\);[\s\S]*?latestPlayer = playerFaints\.actorMon \|\| latestPlayer;[\s\S]*?latestEnemy = playerFaints\.targetMon \|\| latestEnemy;[\s\S]*?const enemyFaints = resolveBattleActionFaintFlags\(enemyResult, latestEnemy, latestPlayer\);[\s\S]*?latestEnemy = enemyFaints\.actorMon \|\| latestEnemy;[\s\S]*?latestPlayer = enemyFaints\.targetMon \|\| latestPlayer/,
   },
   {
     file: 'src/components/Game/OriginalGame.jsx',

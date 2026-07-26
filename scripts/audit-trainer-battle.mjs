@@ -233,7 +233,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       let hasPostUnlockChallengeRotation = false
       let maxVariantTeamSize = 0
 
-      for (const victoryCount of [0, 1, 2, 3, 4, 8, 16, 80]) {
+      for (const victoryCount of [0, 1, 2, 3, 4, 8, 16, 80, 120]) {
         const daySignatures = new Set()
         for (const dailyRefreshKey of ['2026-05-21', '2026-05-22', '2026-05-23']) {
           const variantTeam = resolveTrainerBattleTeamConfig(team, {
@@ -292,8 +292,8 @@ await withViteAuditServer(async ({ loadModule }) => {
             if (variantTeam.length !== 6) {
               addError(`${map.id}/${event.id} 循环小游戏必须固定 6 只宝可梦，当前 ${variantTeam.length}`)
             }
-            if (victoryCount >= 80 && variantLevels.some((level) => level !== 80)) {
-              addError(`${map.id}/${event.id} 循环小游戏最高胜场应稳定到 Lv.80，当前 ${variantLevels.join('/')}`)
+            if (victoryCount >= 120 && variantLevels.some((level) => level !== 100)) {
+              addError(`${map.id}/${event.id} 循环小游戏最高胜场应稳定到 Lv.100，当前 ${variantLevels.join('/')}`)
             }
           }
           if (event.type === 'challenge' && bossCap > 0 && variantLevels.some((level) => level > bossCap)) {

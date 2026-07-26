@@ -19,6 +19,7 @@ const SYMBOLS = {
 }
 
 const THEME_META = {
+  frost: { icon: 'fa-snowflake', eyebrow: '霜镜试炼', accent: '霜镜游戏台' },
   tide: { icon: 'fa-water', eyebrow: '深潮试炼', accent: '潮汐机关台' },
   iron: { icon: 'fa-gears', eyebrow: '铁壁试炼', accent: '机械游戏台' },
   dragon: { icon: 'fa-dragon', eyebrow: '龙穹试炼', accent: '星穹机关台' }
@@ -31,6 +32,14 @@ const TURN_DIRECTIONS = ['↑ 上', '→ 右', '↓ 下', '← 左']
 function initialSession(task) {
   const game = task.minigame
   switch (game.kind) {
+    case 'lights_out':
+      return { lit: [...game.start], moves: 0, message: '点击一面霜镜，先观察它会影响哪些相邻镜子。' }
+    case 'water_sort':
+      return { tubes: game.tubes.map((tube) => [...tube]), selected: null, moves: 0, message: '先选一个非空瓶，再选要倒入的瓶子。' }
+    case 'sliding_tiles':
+      return { tiles: [...game.start], moves: 0, message: '点击空格旁边的数字，将它滑进空格。' }
+    case 'tower_hanoi':
+      return { towers: [Array.from({ length: game.discs }, (_, index) => game.discs - index), [], []], selected: null, moves: 0, message: '先点柱子拿起顶部龙印，再点目标柱放下。' }
     case 'pressure_balance':
       return { pressure: game.start, moves: 0, hold: 0, message: '先看下一轮变化，再选一个按钮。' }
     case 'sonar_memory':
@@ -146,6 +155,120 @@ export default function EliteUnlockMinigameOverlay({ task, busy = false, onCommi
     gameAudio.playMapTouch({ kind: 'trial' })
     if (nextHold >= game.holdRounds) markSolved('水压连续 3 次停在绿色区域，成功！')
     else if (outOfRange || nextMoves >= game.maxMoves) markFailed(outOfRange ? '指针碰到边界了，点击重新挑战再试一次。' : '本轮按钮次数用完了，换一种顺序再试。')
+  }
+
+  const toggleLight = (index) => {
+    if (solved || failed) return
+    const x = index % game.size
+    const y = Math.floor(index / game.size)
+    const affected = new Set([[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]
+      .map(([dx, dy]) => [x + dx, y + dy])
+      .filter(([nextX, nextY]) => nextX >= 0 && nextX < game.size && nextY >= 0 && nextY < game.size)
+      .map(([nextX, nextY]) => nextY * game.size + nextX))
+    const lit = session.lit.map((value, lightIndex) => affected.has(lightIndex) ? !value : value)
+    const moves = session.moves + 1
+    const litCount = lit.filter((value) => value === game.target).length
+    setSession({ lit, moves, message: `已点亮 ${litCount}/${lit.length} 面霜镜。` })
+    gameAudio.playMapTouch({ kind: 'trial' })
+    if (litCount === lit.length) markSolved(`16 面霜镜全部点亮，王座寒门已打开！`)
+    else if (moves >= game.maxMoves) markFailed('本轮步数用完了，点击重新挑战再换一种顺序。')
+  }
+
+  const pourTube = (index) => {
+    if (solved || failed) return
+    if (session.selected === null) {
+      if (session.tubes[index].length === 0) {
+        setSession((current) => ({ ...current, message: '空瓶不能先倒出，请先选择有颜色的瓶子。' }))
+        gameAudio.playError()
+        return
+      }
+      setSession((current) => ({ ...current, selected: index, message: `已选中第 ${index + 1} 瓶，再点要倒入的瓶子。` }))
+      gameAudio.playUiSelect()
+      return
+    }
+    if (session.selected === index) {
+      setSession((current) => ({ ...current, selected: null, message: '已取消选择。' }))
+      gameAudio.playUiSelect()
+      return
+    }
+    const sourceIndex = session.selected
+    const source = session.tubes[sourceIndex]
+    const target = session.tubes[index]
+    const color = source.at(-1)
+    if (target.length >= game.capacity || (target.length > 0 && target.at(-1) !== color)) {
+      setSession((current) => ({ ...current, message: '只能倒入空瓶，或顶部颜色相同且还有空位的瓶子。' }))
+      gameAudio.playError()
+      return
+    }
+    let sameColorCount = 1
+    while (sameColorCount < source.length && source[source.length - 1 - sameColorCount] === color) sameColorCount += 1
+    const pourCount = Math.min(sameColorCount, game.capacity - target.length)
+    const tubes = session.tubes.map((tube) => [...tube])
+    tubes[index].push(...tubes[sourceIndex].splice(tubes[sourceIndex].length - pourCount, pourCount))
+    const moves = session.moves + 1
+    const completed = tubes.every((tube) => tube.length === 0 || (tube.length === game.capacity && tube.every((value) => value === tube[0])))
+    setSession({ tubes, selected: null, moves, message: completed ? '三种潮流已完成分色。' : `倒水 ${moves}/${game.maxMoves} 次，继续把同色放到一起。` })
+    gameAudio.playMapTouch({ kind: 'trial' })
+    if (completed) markSolved('所有潮流各归一瓶，深潮王座已开启！')
+    else if (moves >= game.maxMoves) markFailed('本轮倒水次数用完了，点击重新挑战再试。')
+  }
+
+  const slideTile = (index) => {
+    if (solved || failed || session.tiles[index] === 0) return
+    const emptyIndex = session.tiles.indexOf(0)
+    const tileX = index % game.size
+    const tileY = Math.floor(index / game.size)
+    const emptyX = emptyIndex % game.size
+    const emptyY = Math.floor(emptyIndex / game.size)
+    if (Math.abs(tileX - emptyX) + Math.abs(tileY - emptyY) !== 1) {
+      setSession((current) => ({ ...current, message: '这块铁片不在空格旁边，请选择上下左右相邻的数字。' }))
+      gameAudio.playError()
+      return
+    }
+    const tiles = [...session.tiles]
+    ;[tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]]
+    const moves = session.moves + 1
+    const completed = arrayEquals(tiles, game.target)
+    setSession({ tiles, moves, message: completed ? '数字铁片已全部归位。' : `已滑动 ${moves}/${game.maxMoves} 次。` })
+    gameAudio.playUiSelect()
+    if (completed) markSolved('数字华容道完成，王冠核心已接通！')
+    else if (moves >= game.maxMoves) markFailed('本轮滑动次数用完了，点击重新挑战再排一次。')
+  }
+
+  const moveHanoiDisc = (towerIndex) => {
+    if (solved || failed) return
+    if (session.selected === null) {
+      if (session.towers[towerIndex].length === 0) {
+        setSession((current) => ({ ...current, message: '这根柱子还没有龙印。' }))
+        gameAudio.playError()
+        return
+      }
+      setSession((current) => ({ ...current, selected: towerIndex, message: `已拿起第 ${towerIndex + 1} 根柱子顶部的龙印。` }))
+      gameAudio.playUiSelect()
+      return
+    }
+    if (session.selected === towerIndex) {
+      setSession((current) => ({ ...current, selected: null, message: '已把龙印放回原位。' }))
+      gameAudio.playUiSelect()
+      return
+    }
+    const sourceIndex = session.selected
+    const source = session.towers[sourceIndex]
+    const target = session.towers[towerIndex]
+    const disc = source.at(-1)
+    if (target.length > 0 && target.at(-1) < disc) {
+      setSession((current) => ({ ...current, message: '大龙印不能压在小龙印上，请换一根柱子。' }))
+      gameAudio.playError()
+      return
+    }
+    const towers = session.towers.map((tower) => [...tower])
+    towers[towerIndex].push(towers[sourceIndex].pop())
+    const moves = session.moves + 1
+    const completed = towers[2].length === game.discs
+    setSession({ towers, selected: null, moves, message: completed ? '四层龙印已完整移到王座。' : `已移动 ${moves}/${game.maxMoves} 次。` })
+    gameAudio.playMapTouch({ kind: 'trial' })
+    if (completed) markSolved('龙印塔完整转移，龙穹王座已苏醒！')
+    else if (moves >= game.maxMoves) markFailed('本轮移动次数用完了，点击重新挑战再规划一次。')
   }
 
   const playSonar = () => {
@@ -285,6 +408,19 @@ export default function EliteUnlockMinigameOverlay({ task, busy = false, onCommi
 
   const board = useMemo(() => {
     if (!game) return null
+    if (game.kind === 'lights_out') {
+      return <div className="elite-lights-board"><div className="elite-lights-grid" style={{ '--lights-size': game.size }}>{session.lit.map((lit, index) => <button type="button" className={lit === game.target ? 'is-lit' : ''} aria-label={`第 ${index + 1} 面霜镜，目前${lit ? '已点亮' : '未点亮'}`} onClick={() => toggleLight(index)} disabled={solved || failed} key={index}><i className="fa-solid fa-snowflake" /><span>{lit ? '亮' : '暗'}</span></button>)}</div><div className="elite-board-counter">点亮 {session.lit.filter((value) => value === game.target).length}/{session.lit.length} · 翻格 {session.moves}/{game.maxMoves}</div></div>
+    }
+    if (game.kind === 'water_sort') {
+      const colorNames = { aqua: '青潮', violet: '紫潮', gold: '金潮' }
+      return <div className="elite-water-sort-board"><div className="elite-water-tubes">{session.tubes.map((tube, index) => <button type="button" className={`${session.selected === index ? 'is-selected' : ''}${tube.length === game.capacity && tube.every((value) => value === tube[0]) ? ' is-complete' : ''}`} aria-label={`第 ${index + 1} 瓶，${tube.length === 0 ? '空瓶' : tube.map((color) => colorNames[color]).join('、')}`} onClick={() => pourTube(index)} disabled={solved || failed} key={index}><span className="elite-water-tube__neck" /><span className="elite-water-tube__fill">{tube.map((color, layerIndex) => <i className={`is-${color}`} title={colorNames[color]} key={`${color}-${layerIndex}`} />)}</span><small>{session.selected === index ? '倒出中' : `${tube.length}/${game.capacity}`}</small></button>)}</div><div className="elite-board-counter">倒水 {session.moves}/{game.maxMoves} · 点同一瓶可取消</div></div>
+    }
+    if (game.kind === 'sliding_tiles') {
+      return <div className="elite-sliding-board"><div className="elite-sliding-grid" style={{ '--sliding-size': game.size }}>{session.tiles.map((value, index) => <button type="button" className={value === 0 ? 'is-empty' : value === game.target[index] ? 'is-correct' : ''} aria-label={value === 0 ? '空格' : `${value} 号铁片`} onClick={() => slideTile(index)} disabled={solved || failed || value === 0} key={`${value}-${index}`}>{value === 0 ? <i className="fa-solid fa-arrows-up-down-left-right" /> : <><strong>{value}</strong><small>{value === game.target[index] ? '已归位' : '可滑动'}</small></>}</button>)}</div><div className="elite-board-counter">滑动 {session.moves}/{game.maxMoves} · 目标 1–8 顺序排列</div></div>
+    }
+    if (game.kind === 'tower_hanoi') {
+      return <div className="elite-hanoi-board"><div className="elite-hanoi-towers">{session.towers.map((tower, towerIndex) => <button type="button" className={`${session.selected === towerIndex ? 'is-selected' : ''}${towerIndex === 2 ? ' is-goal' : ''}`} aria-label={`第 ${towerIndex + 1} 根柱子，有 ${tower.length} 枚龙印`} onClick={() => moveHanoiDisc(towerIndex)} disabled={solved || failed} key={towerIndex}><span className="elite-hanoi-rod" /><span className="elite-hanoi-stack">{tower.map((disc) => <i key={disc} style={{ '--disc-width': `${34 + (disc / game.discs) * 58}%` }}><b>{disc}</b></i>)}</span><small>{towerIndex === 2 ? '王座目标' : `柱 ${towerIndex + 1}`}</small></button>)}</div><div className="elite-board-counter">移动 {session.moves}/{game.maxMoves} · 大龙印不能压小龙印</div></div>
+    }
     if (game.kind === 'pressure_balance') {
       const drift = game.drift[session.moves % game.drift.length]
       const previewPressure = (delta) => clamp(session.pressure + delta + drift, 0, 100)
@@ -348,9 +484,10 @@ export default function EliteUnlockMinigameOverlay({ task, busy = false, onCommi
   }, [failed, game, session, solved])
 
   if (!task || !game) return null
+  const isBossTrial = typeof task.targetEventId === 'string' && task.targetEventId.endsWith('_boss')
   return (
     <div
-      className={`elite-minigame-overlay theme-${theme}${confirmed ? ' is-confirmed' : ''}`}
+      className={`elite-minigame-overlay theme-${theme}${isBossTrial ? ' is-boss-trial' : ''}${confirmed ? ' is-confirmed' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="elite-minigame-title"
@@ -363,10 +500,10 @@ export default function EliteUnlockMinigameOverlay({ task, busy = false, onCommi
       <section className="elite-minigame-panel">
         <header className="elite-minigame-header">
           <div className="elite-minigame-sigil"><i className={`fa-solid ${themeMeta.icon}`} /></div>
-          <div><span className="elite-minigame-eyebrow">{themeMeta.eyebrow} · {themeMeta.accent}</span><h2 id="elite-minigame-title">{task.title}</h2><p>{task.description}</p></div>
+          <div><span className="elite-minigame-eyebrow">{isBossTrial ? '天王挑战 · 王座谜题' : `${themeMeta.eyebrow} · ${themeMeta.accent}`}</span><h2 id="elite-minigame-title">{task.title}</h2><p>{task.description}</p></div>
           <button type="button" className="elite-minigame-close" onClick={onClose} disabled={busy} aria-label="关闭试炼"><i className="fa-solid fa-xmark" /></button>
         </header>
-        <div className="elite-minigame-missionbar"><span><i className="fa-solid fa-gamepad" />{game.label}</span><span><i className="fa-solid fa-brain" />{game.skill}</span><span><i className="fa-solid fa-shield-halved" />失败不扣除任何资源</span></div>
+        <div className="elite-minigame-missionbar"><span><i className="fa-solid fa-gamepad" />{game.label}</span><span><i className="fa-solid fa-brain" />{game.skill}</span><span><i className="fa-solid fa-shield-halved" />{isBossTrial ? '解开后才能与天王对战' : '失败不扣除任何资源'}</span></div>
         <main className="elite-minigame-board">
           <div className="elite-minigame-guide">
             <span><b>目标</b>{game.guide?.goal}</span>
@@ -374,11 +511,11 @@ export default function EliteUnlockMinigameOverlay({ task, busy = false, onCommi
           </div>
           {board}
         </main>
-        <MiniStatus solved={solved} failed={failed} message={confirmed ? '解锁结果已安全保存，现在可以挑战对应部下。' : session.message} />
+        <MiniStatus solved={solved} failed={failed} message={confirmed ? (isBossTrial ? '王座谜题已记录，现在可以正式挑战这位天王。' : '解锁结果已安全保存，现在可以挑战对应部下。') : session.message} />
         {commitError && <div className="elite-minigame-commit-error"><i className="fa-solid fa-cloud-arrow-up" />{commitError}</div>}
         <footer className="elite-minigame-footer">
           <button type="button" className="elite-minigame-secondary" onClick={restart} disabled={busy}>{confirmed ? '再玩一次' : '重新开始'}</button>
-          {confirmed ? <button type="button" className="elite-minigame-primary is-confirmed" onClick={onClose}><i className="fa-solid fa-khanda" />前往挑战</button> : solved ? <button type="button" className="elite-minigame-primary" onClick={commit} disabled={busy}><i className={`fa-solid ${busy ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'}`} />{busy ? '正在保存…' : '保存并解锁'}</button> : failed ? <button type="button" className="elite-minigame-primary" onClick={restart}><i className="fa-solid fa-rotate-right" />重新挑战</button> : <span className="elite-minigame-hint"><i className="fa-solid fa-circle-info" />完成小游戏后才能解锁部下</span>}
+          {confirmed ? <button type="button" className="elite-minigame-primary is-confirmed" onClick={onClose}><i className="fa-solid fa-khanda" />{isBossTrial ? '进入对战确认' : '前往挑战'}</button> : solved ? <button type="button" className="elite-minigame-primary" onClick={commit} disabled={busy}><i className={`fa-solid ${busy ? 'fa-circle-notch fa-spin' : 'fa-cloud-arrow-up'}`} />{busy ? '正在保存…' : isBossTrial ? '记录并开启挑战' : '保存并解锁'}</button> : failed ? <button type="button" className="elite-minigame-primary" onClick={restart}><i className="fa-solid fa-rotate-right" />重新挑战</button> : <span className="elite-minigame-hint"><i className="fa-solid fa-circle-info" />{isBossTrial ? '完成王座谜题后才能挑战天王' : '完成小游戏后才能解锁部下'}</span>}
         </footer>
       </section>
     </div>

@@ -31,7 +31,7 @@ const ROLE_VARIANT_RULES = {
   minigame: {
     mapCapBonus: 36,
     bossCapMargin: 2,
-    maxLevelCap: 80,
+    maxLevelCap: 100,
     victoryStepEvery: 1,
     levelJitter: 0,
     speciesSwapChance: 1,

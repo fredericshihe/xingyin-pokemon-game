@@ -70,7 +70,7 @@ check('all completion reward definitions use fixed thresholds and valid quantiti
 })
 
 check('elite objective ids and positions are unique per map', () => {
-  assert.equal(ELITE_UNLOCK_TASKS.length, 12)
+  assert.equal(ELITE_UNLOCK_TASKS.length, 13)
   const taskIds = new Set()
   const stepIds = new Set()
   const eventIds = new Set()
@@ -96,10 +96,11 @@ check('elite objective ids and positions are unique per map', () => {
   })
 })
 
-check('all nine lieutenant gates use distinct, bounded and solvable mini-game rules', () => {
+check('all lieutenant and Elite Four boss gates use distinct, bounded and solvable mini-game rules', () => {
   const lieutenantTasks = ELITE_UNLOCK_TASKS.filter((task) => task.targetEventId.includes('_lieutenant_'))
   const bossTasks = ELITE_UNLOCK_TASKS.filter((task) => task.targetEventId.includes('_boss'))
   assert.equal(lieutenantTasks.length, 9)
+  assert.equal(bossTasks.length, 4)
   assert.equal(new Set(lieutenantTasks.map((task) => task.minigame?.kind)).size, 9)
   lieutenantTasks.forEach((task) => {
     assert.ok(task.minigame?.kind, `${task.id} missing mini-game kind`)
@@ -110,7 +111,16 @@ check('all nine lieutenant gates use distinct, bounded and solvable mini-game ru
     const childCopy = `${task.description} ${task.minigame.guide.goal} ${task.minigame.guide.action}`
     assert.doesNotMatch(childCopy, /(?:惯性|复现|谐振|演绎|推演|校准)/, `${task.id} contains unexplained jargon`)
   })
-  bossTasks.forEach((task) => assert.equal(task.minigame, null))
+  assert.equal(new Set(bossTasks.map((task) => task.minigame?.kind)).size, 4)
+  const lieutenantKinds = new Set(lieutenantTasks.map((task) => task.minigame.kind))
+  bossTasks.forEach((task) => {
+    assert.ok(task.minigame?.kind, `${task.id} missing boss puzzle kind`)
+    assert.ok(task.minigame?.label, `${task.id} missing boss puzzle label`)
+    assert.ok(task.minigame?.skill, `${task.id} missing boss puzzle skill description`)
+    assert.ok(task.minigame?.guide?.goal, `${task.id} missing boss puzzle goal`)
+    assert.ok(task.minigame?.guide?.action, `${task.id} missing boss puzzle action guide`)
+    assert.equal(lieutenantKinds.has(task.minigame.kind), false, `${task.id} reuses a lieutenant puzzle kind`)
+  })
 
   const pressure = lieutenantTasks.find((task) => task.minigame.kind === 'pressure_balance').minigame
   let states = [{ pressure: pressure.start, hold: 0 }]
@@ -170,6 +180,100 @@ check('all nine lieutenant gates use distinct, bounded and solvable mini-game ru
   assert.equal(new Set(rune.target).size, rune.target.length)
   assert.ok(rune.runes.length > rune.target.length)
   assert.ok(rune.maxAttempts >= 6)
+
+  const lights = bossTasks.find((task) => task.minigame.kind === 'lights_out').minigame
+  const lightsTarget = Array(lights.start.length).fill(lights.target)
+  const lightQueue = [[lights.start, 0]]
+  const lightSeen = new Set([lights.start.map(Number).join('')])
+  let lightMinimumMoves = null
+  for (let cursor = 0; cursor < lightQueue.length && lightMinimumMoves === null; cursor += 1) {
+    const [state, moves] = lightQueue[cursor]
+    if (state.every((value, index) => value === lightsTarget[index])) {
+      lightMinimumMoves = moves
+      break
+    }
+    if (moves >= lights.maxMoves) continue
+    state.forEach((_, index) => {
+      const x = index % lights.size
+      const y = Math.floor(index / lights.size)
+      const affected = new Set([[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]
+        .map(([dx, dy]) => [x + dx, y + dy])
+        .filter(([nextX, nextY]) => nextX >= 0 && nextX < lights.size && nextY >= 0 && nextY < lights.size)
+        .map(([nextX, nextY]) => nextY * lights.size + nextX))
+      const next = state.map((value, lightIndex) => affected.has(lightIndex) ? !value : value)
+      const key = next.map(Number).join('')
+      if (!lightSeen.has(key)) {
+        lightSeen.add(key)
+        lightQueue.push([next, moves + 1])
+      }
+    })
+  }
+  assert.ok(lightMinimumMoves !== null && lightMinimumMoves <= lights.maxMoves, 'lights-out boss puzzle must be solvable within its move limit')
+
+  const water = bossTasks.find((task) => task.minigame.kind === 'water_sort').minigame
+  const waterKey = (tubes) => tubes.map((tube) => tube.join(',')).join('|')
+  const waterQueue = [[water.tubes.map((tube) => [...tube]), 0]]
+  const waterSeen = new Set([waterKey(water.tubes)])
+  let waterMinimumMoves = null
+  for (let cursor = 0; cursor < waterQueue.length && waterMinimumMoves === null; cursor += 1) {
+    const [tubes, moves] = waterQueue[cursor]
+    if (tubes.every((tube) => tube.length === 0 || (tube.length === water.capacity && tube.every((value) => value === tube[0])))) {
+      waterMinimumMoves = moves
+      break
+    }
+    if (moves >= water.maxMoves) continue
+    tubes.forEach((source, sourceIndex) => {
+      if (source.length === 0) return
+      const color = source.at(-1)
+      let sameColorCount = 1
+      while (sameColorCount < source.length && source[source.length - 1 - sameColorCount] === color) sameColorCount += 1
+      tubes.forEach((target, targetIndex) => {
+        if (sourceIndex === targetIndex || target.length >= water.capacity || (target.length > 0 && target.at(-1) !== color)) return
+        const next = tubes.map((tube) => [...tube])
+        const amount = Math.min(sameColorCount, water.capacity - target.length)
+        next[targetIndex].push(...next[sourceIndex].splice(next[sourceIndex].length - amount, amount))
+        const key = waterKey(next)
+        if (!waterSeen.has(key)) {
+          waterSeen.add(key)
+          waterQueue.push([next, moves + 1])
+        }
+      })
+    })
+  }
+  assert.ok(waterMinimumMoves !== null && waterMinimumMoves <= water.maxMoves, 'water-sort boss puzzle must be solvable within its move limit')
+
+  const sliding = bossTasks.find((task) => task.minigame.kind === 'sliding_tiles').minigame
+  const slideQueue = [[sliding.start, 0]]
+  const slideSeen = new Set([sliding.start.join(',')])
+  let slideMinimumMoves = null
+  for (let cursor = 0; cursor < slideQueue.length && slideMinimumMoves === null; cursor += 1) {
+    const [tiles, moves] = slideQueue[cursor]
+    if (tiles.every((value, index) => value === sliding.target[index])) {
+      slideMinimumMoves = moves
+      break
+    }
+    if (moves >= sliding.maxMoves) continue
+    const empty = tiles.indexOf(0)
+    const emptyX = empty % sliding.size
+    const emptyY = Math.floor(empty / sliding.size)
+    ;[[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+      const x = emptyX + dx
+      const y = emptyY + dy
+      if (x < 0 || x >= sliding.size || y < 0 || y >= sliding.size) return
+      const index = y * sliding.size + x
+      const next = [...tiles]
+      ;[next[empty], next[index]] = [next[index], next[empty]]
+      const key = next.join(',')
+      if (!slideSeen.has(key)) {
+        slideSeen.add(key)
+        slideQueue.push([next, moves + 1])
+      }
+    })
+  }
+  assert.ok(slideMinimumMoves !== null && slideMinimumMoves <= sliding.maxMoves, 'sliding-tile boss puzzle must be solvable within its move limit')
+
+  const hanoi = bossTasks.find((task) => task.minigame.kind === 'tower_hanoi').minigame
+  assert.ok((2 ** hanoi.discs) - 1 <= hanoi.maxMoves, 'tower-of-hanoi boss puzzle must allow the optimal solution')
 })
 
 check('permanent dex registration is monotonic and distinguishes wild capture', () => {

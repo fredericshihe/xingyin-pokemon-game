@@ -11,6 +11,14 @@ const enemyTrainerSwitchSource = originalGame.slice(
   originalGame.indexOf('const runEnemyTrainerSwitch = useCallback'),
   originalGame.indexOf('const runEnemyItem = useCallback')
 )
+const surrenderSource = originalGame.slice(
+  originalGame.indexOf('const handleSurrender = useCallback'),
+  originalGame.indexOf('const handleUsePotion = useCallback')
+)
+const defeatRecoverySource = originalGame.slice(
+  originalGame.indexOf('async function handleRecoverFromDefeat'),
+  originalGame.indexOf('const handlePlayerDefeatCheck = useCallback')
+)
 
 const checks = [
   {
@@ -65,9 +73,22 @@ const checks = [
   {
     name: 'potion_animation_owns_enemy_turn_handoff',
     scenario: '伤药提交为 enemy 后，背包和治疗动画关闭前不得启动敌方行动',
-    passed: /onModalScreenChange\?\.\(showBag \|\| showTeam\)/.test(originalGame) &&
+    passed: /onModalScreenChange\?\.\(showBag \|\| showTeam \|\| showSurrenderConfirm\)/.test(originalGame) &&
       /if \(turn !== 'enemy' \|\| isThrowingPokeball \|\| battleModalScreenOpen \|\| cloudBlocked \|\| playtimeExpired\) return undefined;/.test(originalGame) &&
       /onBattleItemConsumed=\{\(\{ itemType \}\) => \{[\s\S]*?setShowBag\(false\);[\s\S]*?setIsBusy\(true\);/.test(originalGame),
+  },
+  {
+    name: 'surrender_uses_defeat_settlement_without_escape_rewards',
+    scenario: '玩家确认认输后直接进入挑战失败，不走逃跑、胜利或奖励链路',
+    passed: /handleRecoverFromDefeat\(\{[\s\S]*?reason:\s*'surrender'[\s\S]*?你选择了认输。[\s\S]*?挑战失败。/.test(surrenderSource) &&
+      !/handleRun|battlePhase:\s*'escape'|grantBattleRewards|finishEnemyDefeat/.test(surrenderSource),
+  },
+  {
+    name: 'surrender_defeat_disables_energy_refund_before_exit',
+    scenario: '认输失败结算不能被刷新或旧状态误判为可退还能量',
+    passed: /battlePhase:\s*'defeat'/.test(defeatRecoverySource) &&
+      /battleEnergyRefundEligible:\s*false/.test(defeatRecoverySource) &&
+      /setBattleEnergyRefundEligible\(false\)/.test(defeatRecoverySource),
   },
   {
     name: 'post_action_faint_flags_use_actual_hp_fallback',

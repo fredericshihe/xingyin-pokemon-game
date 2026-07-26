@@ -382,6 +382,104 @@ const hashMoveKey = (moveKey = '') => (
   String(moveKey).split('').reduce((hash, char) => ((hash * 33) + char.charCodeAt(0)) >>> 0, 5381)
 );
 
+const roundSignatureValue = (value, digits = 3) => Number(value.toFixed(digits));
+
+const mixSignatureSeed = (seed, salt = 0) => {
+  let mixed = (seed ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0;
+  mixed = Math.imul(mixed ^ (mixed >>> 16), 0x7feb352d) >>> 0;
+  mixed = Math.imul(mixed ^ (mixed >>> 15), 0x846ca68b) >>> 0;
+  return (mixed ^ (mixed >>> 16)) >>> 0;
+};
+
+export const getMoveSignatureStyle = (moveKey, move = {}) => {
+  const normalizedMoveKey = String(moveKey || 'unknown');
+  const seed = hashMoveKey(`${normalizedMoveKey}:battle-signature`);
+  const phaseDeg = roundSignatureValue((seed / 0xffffffff) * 360, 4);
+  const pattern = seed % 12;
+  const rhythm = (seed >>> 4) % 8;
+  const impactPattern = (seed >>> 7) % 8;
+  const trailPattern = (seed >>> 10) % 6;
+  const angleOffsetDeg = -180 + ((seed >>> 2) % 360);
+  const angleStepDeg = 27 + ((seed >>> 9) % 20);
+  const particleDistancePx = 54 + ((seed >>> 14) % 37);
+  const particleDelayMs = 6 + ((seed >>> 20) % 13);
+  const ringTiltDeg = -20 + ((seed >>> 6) % 41);
+  const ringScaleX = roundSignatureValue(0.82 + (((seed >>> 11) % 37) / 100));
+  const ringScaleY = roundSignatureValue(0.78 + (((seed >>> 16) % 39) / 100));
+  const sceneXPercent = 28 + ((seed >>> 3) % 45);
+  const sceneYPercent = 26 + ((seed >>> 12) % 49);
+  const pathBend = -12 + ((seed >>> 18) % 25);
+  const pathBias = -7 + ((seed >>> 23) % 15);
+  const dashA = 7 + ((seed >>> 5) % 13);
+  const dashB = 4 + ((seed >>> 15) % 11);
+  const signatureOpacity = roundSignatureValue(0.24 + (((seed >>> 21) % 16) / 100));
+  const lobeStepDeg = 103 + ((seed >>> 8) % 31);
+  const lobes = Array.from({ length: 3 }, (_, index) => {
+    const lobeSeed = mixSignatureSeed(hashMoveKey(`${normalizedMoveKey}:battle-signature-lobes`), index);
+    const lobeAngleDeg = phaseDeg + (index * lobeStepDeg) + ((lobeSeed >>> 27) % 13) - 6;
+    const lobeAngle = (lobeAngleDeg * Math.PI) / 180;
+    const lobeRadius = 17 + ((lobeSeed >>> 4) % 17);
+    return {
+      xPercent: roundSignatureValue(50 + (Math.cos(lobeAngle) * lobeRadius), 2),
+      yPercent: roundSignatureValue(50 + (Math.sin(lobeAngle) * lobeRadius * 0.82), 2),
+      widthPercent: 19 + ((lobeSeed >>> 15) % 24),
+      heightPercent: 13 + ((lobeSeed >>> 20) % 25),
+      rotationDeg: -70 + ((lobeSeed >>> 7) % 141),
+      delayMs: index * (18 + ((lobeSeed >>> 24) % 23)),
+    };
+  });
+  const renderFingerprint = [
+    seed,
+    pattern,
+    rhythm,
+    impactPattern,
+    trailPattern,
+    phaseDeg,
+    angleOffsetDeg,
+    angleStepDeg,
+    particleDistancePx,
+    particleDelayMs,
+    ringTiltDeg,
+    ringScaleX,
+    ringScaleY,
+    sceneXPercent,
+    sceneYPercent,
+    pathBend,
+    pathBias,
+    dashA,
+    dashB,
+    signatureOpacity,
+    ...lobes.flatMap((lobe) => Object.values(lobe)),
+  ].join(':');
+
+  return {
+    id: `${normalizedMoveKey}-${seed.toString(36)}`,
+    seed,
+    pattern,
+    rhythm,
+    impactPattern,
+    trailPattern,
+    phaseDeg,
+    angleOffsetDeg,
+    angleStepDeg,
+    particleDistancePx,
+    particleDelayMs,
+    ringTiltDeg,
+    ringScaleX,
+    ringScaleY,
+    sceneXPercent,
+    sceneYPercent,
+    pathBend,
+    pathBias,
+    dashA,
+    dashB,
+    signatureOpacity,
+    lobes,
+    renderFingerprint,
+    moveName: String(move?.name || normalizedMoveKey),
+  };
+};
+
 const pickByMoveKey = (items = [], moveKey = '', salt = 0) => {
   const list = items.filter((item) => SUPPORTED_MOVE_VISUAL_SET.has(item));
   if (list.length === 0) return 'impact';
@@ -1014,6 +1112,7 @@ const getGeneratedMoveEffectConfig = (moveKey, move = {}) => {
   const scale = power >= 120 || move.selfDestruct ? 1.12 : power <= 40 && power > 0 ? 0.92 : 1;
   const semanticTags = getMoveSemanticTags(normalizedMoveKey, move, { category, power, visual, variant, statChanges });
   const icon = getSemanticIcon(semanticTags, type, base.icon);
+  const signatureStyle = getMoveSignatureStyle(normalizedMoveKey, move);
 
   return {
     ...base,
@@ -1027,6 +1126,7 @@ const getGeneratedMoveEffectConfig = (moveKey, move = {}) => {
     particleCount,
     shardCount,
     scale,
+    signatureStyle,
     signature: `${type}:${category}:${variant}:${visual}:${motion}:${hitReaction}:${semanticTags.join('+')}`
   };
 };
@@ -1043,6 +1143,7 @@ export const getMoveEffectConfig = (moveKey, move = {}) => {
     particleCount: explicitConfig.particleCount || generatedConfig.particleCount,
     shardCount: explicitConfig.shardCount || generatedConfig.shardCount,
     scale: explicitConfig.scale || generatedConfig.scale,
+    signatureStyle: explicitConfig.signatureStyle || generatedConfig.signatureStyle,
   };
   return {
     ...finalConfig,
@@ -1051,7 +1152,7 @@ export const getMoveEffectConfig = (moveKey, move = {}) => {
 };
 
 export const getMoveVisualAudit = (moves = {}) => {
-  const requiredFields = ['icon', 'visual', 'motion', 'hitReaction', 'target', 'accent', 'core', 'glow', 'variant', 'semanticTags'];
+  const requiredFields = ['icon', 'visual', 'motion', 'hitReaction', 'target', 'accent', 'core', 'glow', 'variant', 'semanticTags', 'signatureStyle'];
   const moveEntries = Object.entries(moves);
   const configKeys = Object.keys(MOVE_EFFECT_CONFIG);
   const configs = moveEntries.map(([moveKey, move]) => [moveKey, move, getMoveEffectConfig(moveKey, move)]);
@@ -1080,6 +1181,13 @@ export const getMoveVisualAudit = (moves = {}) => {
         : [{ moveKey, name: move?.name, field: 'semanticTags', value: config.semanticTags }]),
     ].filter(Boolean)));
   const signatures = new Set(configs.map(([, , config]) => config.signature || `${config.visual}:${config.motion}:${config.hitReaction}:${config.variant}`));
+  const renderSignatures = new Set(configs.map(([, , config]) => config.signatureStyle?.renderFingerprint));
+  const renderSignatureGroups = configs.reduce((groups, [moveKey, move, config]) => {
+    const fingerprint = config.signatureStyle?.renderFingerprint || 'missing';
+    if (!groups[fingerprint]) groups[fingerprint] = [];
+    groups[fingerprint].push({ moveKey, name: move?.name });
+    return groups;
+  }, {});
   const semanticTagUsage = configs.reduce((counts, [, , config]) => {
     (Array.isArray(config.semanticTags) ? config.semanticTags : []).forEach((tag) => {
       counts[tag] = (counts[tag] || 0) + 1;
@@ -1097,6 +1205,10 @@ export const getMoveVisualAudit = (moves = {}) => {
     variantCount: Object.keys(countValues('variant')).length,
     semanticTagCount: Object.keys(semanticTagUsage).length,
     signatureCount: signatures.size,
+    renderSignatureCount: renderSignatures.size,
+    duplicateRenderSignatures: Object.entries(renderSignatureGroups)
+      .filter(([, entries]) => entries.length > 1)
+      .map(([fingerprint, entries]) => ({ fingerprint, entries })),
     missingVisuals,
     unsupportedVisuals,
     orphanVisuals: configKeys.filter((key) => !moves[key]),

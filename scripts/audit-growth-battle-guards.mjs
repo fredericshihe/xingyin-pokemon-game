@@ -62,7 +62,7 @@ if (originalGameSource.includes("mon.moves.unshift('tackle');")) {
 }
 
 const noMpHintExists = originalGameSource.includes('battle-no-mp-overlay') &&
-  originalGameSource.includes('getNoMpOverlayBody()') &&
+  originalGameSource.includes('getNoMpOverlayBody(playerNoMpHardLock)') &&
   originalGameSource.includes('getNoMpBattleHint(battlePlayerMon)')
 if (!noMpHintExists) {
   failures.push('Battle UI no longer exposes a persistent no-MP overlay near the move grid.')

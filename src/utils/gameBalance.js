@@ -19,6 +19,40 @@ export const ENERGY_BALANCE = {
   maxCapWarning: 50
 }
 
+export const HIGH_RISK_BATTLE_START_MAP_ID = 'GodotMapV2_SurvivalRidge'
+export const HIGH_RISK_BATTLE_START_LEVEL = 45
+
+export const HIGH_RISK_BATTLE_MAP_TIERS = Object.freeze({
+  GodotMapV2_SurvivalRidge: 1,
+  GodotMapV2_BossHighland: 2,
+  GodotMapV2_FrostDojo: 3,
+  GodotMapV2_TideDojo: 3,
+  GodotMapV2_IronDojo: 4,
+  GodotMapV2_DragonDojo: 4,
+  GodotMapV2_ChampionTower: 5,
+})
+
+export const getHighRiskBattleTier = ({ mapName = '', mapLevel = 1 } = {}) => {
+  const explicitTier = HIGH_RISK_BATTLE_MAP_TIERS[String(mapName || '')]
+  if (explicitTier) return explicitTier
+
+  const level = Math.max(1, Math.trunc(Number(mapLevel) || 1))
+  if (level < HIGH_RISK_BATTLE_START_LEVEL) return 0
+  if (level >= 90) return 5
+  if (level >= 80) return 4
+  if (level >= 65) return 3
+  if (level >= 52) return 2
+  return 1
+}
+
+const isMajorHighRiskChallenge = ({ battleKind = 'wild', eventType = '', eventRole = '' } = {}) => {
+  if (battleKind !== 'trainer') return false
+  const normalizedType = String(eventType || '').trim().toLowerCase()
+  const normalizedRole = normalizeTrainerRole(eventRole)
+  return ['boss', 'challenge'].includes(normalizedType)
+    || ['boss', 'challenge', 'minigame'].includes(normalizedRole)
+}
+
 export const BATTLE_REWARD_BALANCE = {
   baseExpYield: 54,
   trainerMultiplier: 1.12,
@@ -261,7 +295,9 @@ export const getExpToNextLevelOfficial = (level, pokemon = null) => {
   return getOfficialExpToNextLevel(safeLevel, pokemon)
 }
 
-export const getBattleEnergyCost = ({ battleKind = 'wild', mapLevel = 1 } = {}) => {
+export const getBattleEnergyCost = ({
+  battleKind = 'wild',
+} = {}) => {
   return battleKind === 'trainer'
     ? ENERGY_BALANCE.trainerBattleCost
     : ENERGY_BALANCE.wildBattleCost
@@ -294,22 +330,43 @@ export const DEFEAT_GOLD_PENALTY_BALANCE = {
   maxTrainer: 45,
   mapLevelBonusEvery: 5,
   mapLevelBonusAmount: 2,
+  highRiskMultiplierByTier: [1, 1.5, 1.75, 2, 2.25, 2.5],
+  majorChallengeMultiplier: 1.18,
+  maxHighRiskWild: 70,
+  maxHighRiskTrainer: 120,
 }
 
-export const getDefeatGoldPenalty = ({ battleKind = 'wild', mapLevel = 1 } = {}) => {
+export const getDefeatGoldPenalty = ({
+  battleKind = 'wild',
+  mapName = '',
+  mapLevel = 1,
+  eventType = '',
+  eventRole = '',
+} = {}) => {
   const level = Math.max(1, Number(mapLevel) || 1)
   const mapBonus = Math.floor((level - 1) / DEFEAT_GOLD_PENALTY_BALANCE.mapLevelBonusEvery)
     * DEFEAT_GOLD_PENALTY_BALANCE.mapLevelBonusAmount
-  if (battleKind === 'trainer') {
-    return Math.min(
+  const basePenalty = battleKind === 'trainer'
+    ? Math.min(
       DEFEAT_GOLD_PENALTY_BALANCE.maxTrainer,
       DEFEAT_GOLD_PENALTY_BALANCE.trainerBase + mapBonus
     )
-  }
-  return Math.min(
-    DEFEAT_GOLD_PENALTY_BALANCE.maxWild,
-    DEFEAT_GOLD_PENALTY_BALANCE.wildBase + mapBonus
-  )
+    : Math.min(
+      DEFEAT_GOLD_PENALTY_BALANCE.maxWild,
+      DEFEAT_GOLD_PENALTY_BALANCE.wildBase + mapBonus
+    )
+  const riskTier = getHighRiskBattleTier({ mapName, mapLevel })
+  if (riskTier <= 0) return basePenalty
+
+  const tierMultiplier = DEFEAT_GOLD_PENALTY_BALANCE.highRiskMultiplierByTier[riskTier]
+    || DEFEAT_GOLD_PENALTY_BALANCE.highRiskMultiplierByTier.at(-1)
+  const challengeMultiplier = isMajorHighRiskChallenge({ battleKind, eventType, eventRole })
+    ? DEFEAT_GOLD_PENALTY_BALANCE.majorChallengeMultiplier
+    : 1
+  const highRiskCap = battleKind === 'trainer'
+    ? DEFEAT_GOLD_PENALTY_BALANCE.maxHighRiskTrainer
+    : DEFEAT_GOLD_PENALTY_BALANCE.maxHighRiskWild
+  return Math.min(highRiskCap, Math.round(basePenalty * tierMultiplier * challengeMultiplier))
 }
 
 export const calculateBattleRewards = ({

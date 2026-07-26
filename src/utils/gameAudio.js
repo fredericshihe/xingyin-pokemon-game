@@ -718,10 +718,13 @@ class GameAudioController {
     })
   }
 
-  playBattleMove(move = null) {
+  playBattleMove(move = null, options = {}) {
     this.withReadyContext((context) => {
     const moveType = move?.type || TYPES.NORMAL
     const isStatusMove = move?.category === 'status'
+    const semanticTags = Array.isArray(options?.semanticTags) ? options.semanticTags : []
+    const intensity = options?.intensity || 'medium'
+    const intensityGain = ({ subtle: 0.78, light: 0.9, medium: 1, heavy: 1.12, ultimate: 1.22 }[intensity] || 1)
     const style = AUDIO_TYPE_STYLE[moveType] || {
       waveform: isStatusMove ? 'triangle' : 'square',
       from: isStatusMove ? 523.25 : 392,
@@ -735,7 +738,7 @@ class GameAudioController {
       frequency: style.from,
       toFrequency: style.to,
       duration: style.duration,
-      gain: isStatusMove ? 0.03 : 0.042,
+      gain: (isStatusMove ? 0.03 : 0.042) * intensityGain,
       waveform: style.waveform,
       filterType: style.waveform === 'sawtooth' ? 'lowpass' : null,
       filterFrequency: 2400,
@@ -772,12 +775,67 @@ class GameAudioController {
         lowpass: style.metallic ? 5200 : (style.thump ? 900 : 4200),
       })
     }
+
+    if (semanticTags.some((tag) => ['punch', 'kick', 'fang', 'claw', 'blade', 'head', 'tail'].includes(tag))) {
+      this.scheduleNoise({
+        start: start + 0.018,
+        duration: intensity === 'ultimate' ? 0.1 : 0.055,
+        gain: 0.02 * intensityGain,
+        highpass: semanticTags.includes('blade') || semanticTags.includes('claw') ? 1800 : 260,
+        lowpass: semanticTags.includes('blade') || semanticTags.includes('claw') ? 6200 : 1500,
+      })
+    }
+
+    if (semanticTags.some((tag) => ['beam', 'cannon'].includes(tag))) {
+      this.scheduleTone({
+        start: start + 0.025,
+        frequency: Math.max(110, style.from * 0.5),
+        toFrequency: Math.max(440, style.to * 1.8),
+        duration: intensity === 'ultimate' ? 0.32 : 0.2,
+        gain: 0.025 * intensityGain,
+        waveform: 'sawtooth',
+        filterType: 'lowpass',
+        filterFrequency: intensity === 'ultimate' ? 3600 : 2600,
+      })
+    }
+
+    if (semanticTags.some((tag) => ['sound', 'roar'].includes(tag))) {
+      ;[0, 0.055, 0.11].forEach((offset, index) => {
+        this.scheduleTone({
+          start: start + offset,
+          frequency: 196 * (index + 1),
+          toFrequency: 174.61 * (index + 1),
+          duration: 0.12,
+          gain: 0.014 * intensityGain,
+          waveform: index === 0 ? 'sawtooth' : 'triangle',
+        })
+      })
+    }
+
+    if (options?.phase === 'charge') {
+      ;[0.08, 0.2, 0.34].forEach((offset, index) => {
+        this.scheduleTone({
+          start: start + offset,
+          frequency: style.from * (0.72 + index * 0.2),
+          toFrequency: style.to * (0.9 + index * 0.25),
+          duration: 0.16,
+          gain: (0.014 + index * 0.004) * intensityGain,
+          waveform: index === 2 ? 'sine' : style.waveform,
+        })
+      })
+    }
+
+    if (move?.selfDestruct || semanticTags.includes('self-destruct') || intensity === 'ultimate') {
+      this.scheduleTone({ start, frequency: 130.81, toFrequency: 55, duration: 0.3, gain: 0.034 * intensityGain, waveform: 'sawtooth', filterType: 'lowpass', filterFrequency: 900 })
+      this.scheduleNoise({ start: start + 0.03, duration: 0.16, gain: 0.028 * intensityGain, highpass: 90, lowpass: 1400 })
+    }
     })
   }
 
-  playBattleImpact({ effectiveness = 1, didHit = true, outcome = 'hit', targetFainted = false, crit = false } = {}) {
+  playBattleImpact({ effectiveness = 1, didHit = true, outcome = 'hit', targetFainted = false, crit = false, intensity = 'medium', hitIndex = 0, hitCount = 1 } = {}) {
     this.withReadyContext((context) => {
     const start = context.currentTime + 0.01
+    const intensityGain = ({ subtle: 0.75, light: 0.88, medium: 1, heavy: 1.14, ultimate: 1.28 }[intensity] || 1)
 
     if (!didHit || outcome === 'miss') {
       this.scheduleTone({ start, frequency: 740, toFrequency: 392, duration: 0.08, gain: 0.028, waveform: 'triangle' })
@@ -789,10 +847,14 @@ class GameAudioController {
       return
     }
 
-    const hitGain = effectiveness > 1 ? 0.044 : effectiveness < 1 ? 0.03 : 0.036
-    const hitDuration = effectiveness > 1 ? 0.11 : 0.09
-    this.scheduleNoise({ start, duration: hitDuration, gain: effectiveness > 1 ? 0.032 : 0.024, highpass: 700, lowpass: effectiveness > 1 ? 2600 : 1900 })
-    this.scheduleTone({ start, frequency: effectiveness > 1 ? 293.66 : 246.94, toFrequency: effectiveness > 1 ? 146.83 : 174.61, duration: hitDuration, gain: hitGain, waveform: 'square' })
+    const hitGain = (effectiveness > 1 ? 0.044 : effectiveness < 1 ? 0.03 : 0.036) * intensityGain
+    const hitDuration = (effectiveness > 1 ? 0.11 : 0.09) * (intensity === 'ultimate' ? 1.35 : intensity === 'heavy' ? 1.16 : 1)
+    this.scheduleNoise({ start, duration: hitDuration, gain: (effectiveness > 1 ? 0.032 : 0.024) * intensityGain, highpass: 700, lowpass: effectiveness > 1 ? 2600 : 1900 })
+    this.scheduleTone({ start, frequency: (effectiveness > 1 ? 293.66 : 246.94) * (1 + Math.min(4, hitIndex) * 0.04), toFrequency: effectiveness > 1 ? 146.83 : 174.61, duration: hitDuration, gain: hitGain, waveform: 'square' })
+
+    if (hitCount > 1 && hitIndex === hitCount - 1) {
+      this.scheduleTone({ start: start + 0.025, frequency: 523.25, toFrequency: 261.63, duration: 0.11, gain: 0.02 * intensityGain, waveform: 'triangle' })
+    }
 
     if (crit) {
       // 会心一击：更亮更锐的高频叠加 + 一段额外噪音，强调"击中要害"的爆发感。

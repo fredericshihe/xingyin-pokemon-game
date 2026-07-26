@@ -16,6 +16,7 @@ const Login = lazyWithRetry(() => import('./components/Auth/Login'))
 const Register = lazyWithRetry(() => import('./components/Auth/Register'))
 const TeacherDashboard = lazyWithRetry(() => import('./components/Teacher/Dashboard'))
 const MapRuntimePreview = lazyWithRetry(() => import('./game/MapRuntimePreview'))
+const BattleVfxLab = lazyWithRetry(() => import('./game/BattleVfxLab'))
 
 const AUTH_LOCAL_IMAGE_ASSETS = [
   POKEMON_PLACEHOLDER_URL,
@@ -190,6 +191,19 @@ function App() {
     return (
       <Suspense fallback={<UnifiedBootScreen phase="正在打开地图预览..." showProgressBar={false} />}>
         <MapRuntimePreview />
+      </Suspense>
+    )
+  }
+
+  const battleVfxLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_BATTLE_VFX_LAB === 'true'
+  const isBattleVfxLabPath = typeof window !== 'undefined' && (
+    window.location.pathname === '/battle-vfx-lab' ||
+    window.location.pathname.endsWith('/battle-vfx-lab')
+  )
+  if (battleVfxLabEnabled && isBattleVfxLabPath) {
+    return (
+      <Suspense fallback={<UnifiedBootScreen phase="正在打开战斗特效实验室..." showProgressBar={false} />}>
+        <BattleVfxLab />
       </Suspense>
     )
   }

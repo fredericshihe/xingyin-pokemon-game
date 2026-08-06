@@ -11319,6 +11319,9 @@ const ResetProgressConfirmModal = ({ open, busy = false, onCancel, onConfirm }) 
           <p>
             队伍、背包、地图、战斗、金币和当前存档都会清空，之后会回到重新选择初始宝可梦的阶段。
           </p>
+          <p>
+            今天已经消耗的能量和游玩时长不会恢复，重置后仍按当天剩余额度继续。
+          </p>
         </div>
         <div className="reset-confirm-card__actions">
           <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
@@ -17538,12 +17541,16 @@ export default function OriginalGame({ user, onLogout }) {
       const resetGold = Number.isFinite(Number(resetResult?.goldAfter ?? resetResult?.gold_after))
         ? Number(resetResult?.goldAfter ?? resetResult?.gold_after)
         : DEFAULT_STARTING_GOLD;
+      // 重置不返还能量：后端返回的是重置前后不变的当前值。万一响应缺字段，也只能退回
+      // 本地已知的当前能量，绝不能退回新账号初始值，否则重置又会变成能量来源。
+      const knownEnergy = Number(userRef.current?.energy);
+      const knownMaxEnergy = Number(userRef.current?.max_energy);
       const resetEnergy = Number.isFinite(Number(resetResult?.energyAfter ?? resetResult?.energy_after))
         ? Number(resetResult?.energyAfter ?? resetResult?.energy_after)
-        : DEFAULT_STARTING_ENERGY;
+        : (Number.isFinite(knownEnergy) ? knownEnergy : DEFAULT_STARTING_ENERGY);
       const resetMaxEnergy = Number.isFinite(Number(resetResult?.maxEnergyAfter ?? resetResult?.max_energy_after))
         ? Number(resetResult?.maxEnergyAfter ?? resetResult?.max_energy_after)
-        : DEFAULT_MAX_ENERGY;
+        : (Number.isFinite(knownMaxEnergy) ? knownMaxEnergy : DEFAULT_MAX_ENERGY);
       const resetResources = {
         gold: resetGold,
         energy: resetEnergy,

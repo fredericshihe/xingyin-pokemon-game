@@ -24,6 +24,15 @@ const expiryMigration = fs.readFileSync(
   path.join(rootDir, 'supabase/migrations/202607180003_return_expired_playtime_status.sql'),
   'utf8',
 )
+const resetMigration = fs.readFileSync(
+  path.join(rootDir, 'supabase/migrations/202608060001_reset_preserves_daily_energy_and_playtime.sql'),
+  'utf8',
+)
+
+const resetFunctionSource = resetMigration.slice(
+  resetMigration.indexOf('CREATE OR REPLACE FUNCTION clear_cloud_game_save_unchecked('),
+  resetMigration.indexOf('REVOKE ALL ON FUNCTION clear_cloud_game_save_unchecked('),
+)
 
 const overlaySource = originalGame.slice(
   originalGame.indexOf('const PlaytimeExpiredOverlay ='),
@@ -182,6 +191,18 @@ const checks = [
       /REVOKE ALL ON FUNCTION consume_energy\(UUID, INT, TEXT\) FROM PUBLIC, anon, authenticated/.test(lifecycleMigration) &&
       /RENAME TO clear_cloud_game_save_unchecked/.test(lifecycleMigration) &&
       /clear_cloud_game_save[\s\S]*?settle_student_playtime_session\(p_user_id, NULL, 'check'\)[\s\S]*?student_playtime_lease_is_valid/.test(leaseMigration),
+  },
+  {
+    name: 'reset_wipes_save_but_never_writes_energy_or_playtime',
+    passed: /DELETE FROM game_saves\s*\n\s*WHERE user_id = p_user_id;/.test(resetFunctionSource) &&
+      /UPDATE users u\s*\n\s*SET gold = v_starting_gold\s*\n\s*WHERE u\.id = p_user_id/.test(resetFunctionSource) &&
+      !/\b(energy|max_energy|last_energy_refilled_on)\s*=/.test(resetFunctionSource) &&
+      !/student_playtime/.test(resetFunctionSource),
+  },
+  {
+    name: 'reset_client_falls_back_to_current_energy_not_starting_energy',
+    passed: /const knownEnergy = Number\(userRef\.current\?\.energy\)[\s\S]*?Number\.isFinite\(knownEnergy\) \? knownEnergy : DEFAULT_STARTING_ENERGY/.test(originalGame) &&
+      /Number\.isFinite\(knownMaxEnergy\) \? knownMaxEnergy : DEFAULT_MAX_ENERGY/.test(originalGame),
   },
   {
     name: 'reward_reservation_is_blocked_after_expiry',

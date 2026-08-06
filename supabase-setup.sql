@@ -857,6 +857,8 @@ END;
 $$;
 
 -- 函数0-3: 清空当前登录学生的云端游戏进度。
+-- 进度整份删除（等同全新开局），但能量、能量上限和每日游玩时长属于账号级当日额度，
+-- 重置一律不返还，否则重置会变成每日能量的刷新按钮。
 CREATE OR REPLACE FUNCTION clear_cloud_game_save(
   p_user_id UUID
 )
@@ -865,28 +867,41 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_gold INT := 500;
-  v_energy INT := 6;
-  v_max_energy INT := 10;
+  v_starting_gold CONSTANT INT := 500;
+  v_gold_before INT;
+  v_gold INT;
+  v_energy INT;
+  v_max_energy INT;
+  v_gold_delta INT;
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM users
-    WHERE id = p_user_id
-    AND role = 'student'
-  ) THEN
+  SELECT COALESCE(u.gold, 0)
+  INTO v_gold_before
+  FROM users u
+  WHERE u.id = p_user_id
+    AND u.role = 'student'
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'Student not found';
   END IF;
 
   DELETE FROM game_saves
   WHERE user_id = p_user_id;
 
-  UPDATE users
-  SET gold = 500,
-      energy = 6,
-      max_energy = 10
-  WHERE id = p_user_id
-  RETURNING gold, energy, max_energy
+  UPDATE users u
+  SET gold = v_starting_gold
+  WHERE u.id = p_user_id
+  RETURNING
+    u.gold,
+    GREATEST(COALESCE(u.energy, 0), 0),
+    GREATEST(COALESCE(u.max_energy, 10), COALESCE(u.energy, 0), 0)
   INTO v_gold, v_energy, v_max_energy;
+
+  v_gold_delta := v_gold - v_gold_before;
+  IF v_gold_delta <> 0 THEN
+    INSERT INTO gold_logs (student_id, amount, reason, balance_after)
+    VALUES (p_user_id, v_gold_delta, '重新开始游戏（清空进度）', v_gold);
+  END IF;
 
   RETURN json_build_object(
     'success', true,

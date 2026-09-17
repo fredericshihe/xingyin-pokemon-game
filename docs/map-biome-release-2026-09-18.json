@@ -1,11 +1,11 @@
 {
   "baseSourceCommit": "6950e2387bcf57c1a5cc3419fa98c17ae9a28098",
   "preservedLiveRelease": {
-    "buildId": "battle-natural-20260918-v4",
-    "entryHash": "CsFOU48j",
-    "builtAt": "2026-09-17T17:10:40.636Z"
+    "buildId": "map-loading-9ed92f5-20260918",
+    "entryHash": "BXN5Sf7j",
+    "builtAt": "2026-09-17T22:53:28.347Z"
   },
-  "preservedLiveDeployment": "3871080a942cfa315508be2b8ceae507a82a7d94",
+  "preservedLiveDeployment": "b4fe592c0570a7971cc7852ec5af3f79100950f0",
   "preservedPublishedBattleFiles": {
     "src/components/Game/BattleMoveEffect.jsx": "694505738feb4371404785c2175fc654610a31d6c19418a53c155c3a775d5af0",
     "src/components/Game/battleMoveCanvas.css": "dc9fb1647580e5947934b51f4d8288f3c6221ab0e7234514850064233ed40e86",
@@ -15,7 +15,7 @@
     "src/game/BattleVfxLab.jsx": "4a1cd5889403b4d1d339f4c7e16c60b749bbccc34099f95d4299b20cae61089c",
     "scripts/review-battle-contact-vfx.mjs": "45bcfd2845a25e851331c8c51dfd62354aa9b32173f097002385e41c4f5b91ea",
     "scripts/audit-battle-playback-clock.mjs": "f0e66a93a68d8d17880fba9bd1e0af4d6ef304fe299f5b65f92357cd9260d741",
-    "src/components/Game/OriginalGame.jsx": "41fbd4f756b13942d154f7b2d70ea9fc716e3787b93e2738f70d21560599c1a0",
+    "src/components/Game/OriginalGame.jsx": "d6e9d55f55fd8337d73b7356c106c5964b59b48b8c32e79e6a0c73011583f182",
     "src/assets/battle-vfx-atlas.png": "f1e55c2bd38f45d6e33e101a6e997a662e8b8bf2253b946aa51737c58899add4",
     "src/utils/battleVfxAtlas.generated.js": "d0c15ae333654fadfa9fe2151bda4730f0ab1cc8557db892cfa4116dcffdfb23",
     "scripts/generate-battle-vfx-atlas.mjs": "00bfb96b207f54c4f382e2ba0feedafe7f9a68995b3ccb927b365310ee0cef94",
@@ -38,5 +38,43 @@
   "sceneAdditions": 190,
   "enlargedOriginals": 67,
   "sceneryCollisionCells": 163,
-  "unpublishedWorkspaceChangesIncluded": false
+  "unpublishedWorkspaceChangesIncluded": false,
+  "preservedMapLoadingSourceCommit": "9ed92f54795cf8422bd3501116e44303a374d3a5",
+  "sourceNote": "V4 battle files preserved; OriginalGame also includes the newly published map loading commit. Map renderer merges scenery corrections with that loading commit.",
+  "performance": [
+    {
+      "runs": 14,
+      "device": "ipad_mini",
+      "quality": "lite",
+      "fpsRange": [
+        60.0,
+        60.0
+      ],
+      "readySecondsRange": [
+        6.24,
+        6.64
+      ],
+      "longTasks": 1,
+      "framesOver50ms": 0,
+      "failures": 0,
+      "browserOrAssetErrors": 0
+    },
+    {
+      "runs": 4,
+      "device": "iphone_14",
+      "quality": "high",
+      "fpsRange": [
+        59.41,
+        60.0
+      ],
+      "readySecondsRange": [
+        8.61,
+        8.9
+      ],
+      "longTasks": 1,
+      "framesOver50ms": 1,
+      "failures": 0,
+      "browserOrAssetErrors": 0
+    }
+  ]
 }

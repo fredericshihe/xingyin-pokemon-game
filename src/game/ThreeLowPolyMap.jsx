@@ -9,6 +9,7 @@ import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { createEnvironmentGroundPatches } from './environmentGroundPatches'
 import { findEnvironmentSpawn, isEnvironmentTileBlocked } from './environmentNavigation.js'
 import { PLAYER_CHARACTER_KEY, isCharacterModelKey } from './data/characterAssets.js'
+import { NPC_WANDER_RADIUS, buildNpcWanderArea, createNpcWanderer, isNpcWanderEnabled } from './npcWander.js'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
@@ -3598,6 +3599,7 @@ function ThreeLowPolyMap({
         posZ,
         rotationY,
         scale,
+        npcRole,
         routeBlockerEvent = null
       }) => {
         if (!NPC_INTERACTION_EVENT_TYPES.has(eventType) || typeof eventId !== 'string' || eventId.length === 0) return null
@@ -3608,9 +3610,43 @@ function ThreeLowPolyMap({
         const stepAsideOffset = getEliteRouteStepAsideOffset(routeBlockerEvent)
         const asideOffsetX = stepAsideOffset.x * stepAsideOffset.distance * CELL
         const asideOffsetZ = stepAsideOffset.y * stepAsideOffset.distance * CELL
+        const wanderEnabled = stepAsideOffset.distance <= 0 && isNpcWanderEnabled({
+          mapId: currentMapName, event: routeBlockerEvent, npcRole
+        })
+        const homeZoneId = getEncounterZoneAt(currentMapName, tileX, tileY)?.id ?? null
+        const wanderArea = wanderEnabled ? buildNpcWanderArea({
+          home: { x: tileX, y: tileY },
+          canVisit: (x, y) => (
+            [0, 8, 13, 16, 17].includes(mapGrid[y]?.[x]) &&
+            !npcReservedEventTiles.has(`${x},${y}`) &&
+            !isEnvironmentTileBlocked(mapInfo, x, y) &&
+            (getEncounterZoneAt(currentMapName, x, y)?.id ?? null) === homeZoneId &&
+            !npcSolidDecorations.some((object) => isInsideDecorationFootprint(object, x, y, 0.12))
+          )
+        }) : null
+        const initialDirection = Object.keys(DIRS).reduce((best, direction) => (
+          Math.abs(Math.atan2(Math.sin(DIRS[direction].rot - baseRotation), Math.cos(DIRS[direction].rot - baseRotation))) <
+          Math.abs(Math.atan2(Math.sin(DIRS[best].rot - baseRotation), Math.cos(DIRS[best].rot - baseRotation))) ? direction : best
+        ), 'down')
+        const wanderer = wanderEnabled ? createNpcWanderer({
+          home: { x: tileX, y: tileY }, area: wanderArea, direction: initialDirection
+        }) : null
+        const homeChunk = chunks[chunkIdFromWorld(posX, posZ)]
+        if (wanderEnabled && homeChunk) {
+          const padding = (NPC_WANDER_RADIUS + 1) * CELL
+          homeChunk.boundingBox.expandByPoint(new THREE.Vector3(posX - padding, -2.5, posZ - padding))
+          homeChunk.boundingBox.expandByPoint(new THREE.Vector3(posX + padding, 9, posZ + padding))
+        }
         const controller = {
           eventType,
           eventId,
+          npcRole,
+          wanderer,
+          wanderArea,
+          wanderPaused: true,
+          walkBob: 0,
+          walkRoll: 0,
+          lastUpdateAt: 0,
           tileX,
           tileY,
           interactionTileX: tileX,
@@ -3635,6 +3671,11 @@ function ThreeLowPolyMap({
           routeBlockerEvent,
           routeBlockerYielded: false,
           companions: [],
+          occupiesTile(x, y) {
+            return this.wanderer
+              ? this.wanderer.state.occupiedTiles.some((tile) => tile.x === x && tile.y === y)
+              : this.interactionTileX === x && this.interactionTileY === y
+          },
           addCompanions(objects = []) {
             this.companions = objects
               .filter(Boolean)
@@ -3646,8 +3687,8 @@ function ThreeLowPolyMap({
             this.applyTransform(this.currentRotation)
           },
           applyTransform(rotationValue = this.currentRotation) {
-            _instTmpPos.set(this.currentPosX, this.posY, this.currentPosZ)
-            _instTmpEuler.set(0, rotationValue, 0)
+            _instTmpPos.set(this.currentPosX, this.posY + this.walkBob, this.currentPosZ)
+            _instTmpEuler.set(0, rotationValue, this.walkRoll)
             _instTmpQuat.setFromEuler(_instTmpEuler)
             _instTmpScale.setScalar(this.scale)
             _instTmpComposed.compose(_instTmpPos, _instTmpQuat, _instTmpScale)
@@ -3700,8 +3741,11 @@ function ThreeLowPolyMap({
             return true
           },
           facePlayer(playerTileX, playerTileY) {
-            if (!isCardinalAdjacentTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)) return false
-            const direction = getDirectionTowardTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)
+            const adjacentTile = this.wanderer?.state.occupiedTiles.find((tile) => (
+              isCardinalAdjacentTile(tile.x, tile.y, playerTileX, playerTileY)
+            )) || { x: this.interactionTileX, y: this.interactionTileY }
+            if (!isCardinalAdjacentTile(adjacentTile.x, adjacentTile.y, playerTileX, playerTileY)) return false
+            const direction = getDirectionTowardTile(adjacentTile.x, adjacentTile.y, playerTileX, playerTileY)
             const nextRotation = DIRS[direction]?.rot
             if (!Number.isFinite(nextRotation)) return false
             this.targetRotation = nextRotation
@@ -3709,18 +3753,60 @@ function ThreeLowPolyMap({
             return true
           },
           restoreDefault() {
-            if (!this.active && Math.abs(this.currentRotation - this.baseRotation) < 0.001) return false
-            this.targetRotation = this.baseRotation
+            const restingRotation = this.wanderer ? DIRS[this.wanderer.state.direction].rot : this.baseRotation
+            if (!this.active && Math.abs(this.currentRotation - restingRotation) < 0.001) return false
+            this.targetRotation = restingRotation
             this.active = false
             return true
           },
           syncWithPlayerTile(playerTileX, playerTileY) {
             if (!this.active) return false
+            if (this.wanderer?.state.occupiedTiles.some((tile) => isCardinalAdjacentTile(tile.x, tile.y, playerTileX, playerTileY))) return false
             if (isCardinalAdjacentTile(this.interactionTileX, this.interactionTileY, playerTileX, playerTileY)) return false
             return this.restoreDefault()
           },
           update(now = (typeof performance !== 'undefined' ? performance.now() : Date.now())) {
             let transformChanged = false
+            const elapsed = this.lastUpdateAt ? clamp(now - this.lastUpdateAt, 0, 100) : 0
+            this.lastUpdateAt = now
+            if (this.wanderer) {
+              const liveState = stateRef.current
+              const playerTile = liveState?.pointer
+              const distance = Math.max(
+                Math.abs(this.wanderer.state.x - playerTile.tileX),
+                Math.abs(this.wanderer.state.y - playerTile.tileY)
+              )
+              this.wanderPaused = !liveState.worldReady || liveState.cloudBlocked || liveState.encounterPending ||
+                !liveState.mapActive || this.active || distance > 12 || homeChunk?.group.visible === false
+              const previousX = this.currentPosX
+              const previousZ = this.currentPosZ
+              const previousBob = this.walkBob
+              const previousRoll = this.walkRoll
+              const walk = this.wanderer.update(elapsed, {
+                paused: this.wanderPaused,
+                nearPlayer: distance <= 2,
+                canOccupy: (x, y) => {
+                  if (playerTile.tileX === x && playerTile.tileY === y) return false
+                  const from = playerTile.moving && playerTile.target?.from
+                  if (from && Math.round(from.x / CELL + width / 2 - 0.5) === x &&
+                    Math.round(from.z / CELL + height / 2 - 0.5) === y) return false
+                  return isWalkable(liveState.mapGrid, x, y) &&
+                    !isEnvironmentTileBlocked(liveState.mapInfo, x, y) &&
+                    !getLockedEncounterZoneAt(liveState, x, y) &&
+                    !npcFacingControllers.some((other) => other !== this && other.occupiesTile(x, y))
+                }
+              })
+              this.currentPosX = this.posX + (walk.x - this.tileX) * CELL
+              this.currentPosZ = this.posZ + (walk.y - this.tileY) * CELL
+              this.interactionTileX = Math.round(walk.x)
+              this.interactionTileY = Math.round(walk.y)
+              this.walkBob = walk.moving ? Math.abs(Math.sin(walk.stepProgress * Math.PI * 2)) * 0.045 : 0
+              this.walkRoll = walk.moving ? Math.sin(walk.stepProgress * Math.PI * 2) * 0.025 : 0
+              if (!this.active) this.targetRotation = DIRS[walk.direction].rot
+              transformChanged = previousX !== this.currentPosX || previousZ !== this.currentPosZ ||
+                previousBob !== this.walkBob || previousRoll !== this.walkRoll
+              if (this.wanderPaused && !this.active) return false
+            }
             if (this.moveStartedAt) {
               const progress = clamp((now - this.moveStartedAt) / this.moveDurationMs, 0, 1)
               const eased = 1 - Math.pow(1 - progress, 3)
@@ -3746,11 +3832,12 @@ function ThreeLowPolyMap({
             return true
           },
           isAnimating() {
+            if (this.wanderer && this.wanderPaused && !this.active) return false
             const delta = Math.atan2(
               Math.sin(this.targetRotation - this.currentRotation),
               Math.cos(this.targetRotation - this.currentRotation)
             )
-            return this.moveStartedAt > 0 || Math.abs(delta) >= 0.002
+            return this.moveStartedAt > 0 || (this.wanderer?.state.moving && !this.wanderPaused) || Math.abs(delta) >= 0.002
           }
         }
         return controller
@@ -4407,6 +4494,10 @@ function ThreeLowPolyMap({
           .filter((event) => typeof event?.id === 'string')
           .map((event) => [event.id, event])
       )
+      const npcReservedEventTiles = new Set([...runtimeEventById.values()].map((event) => `${event.position?.x},${event.position?.y}`))
+      const npcSolidDecorations = (mapInfo?.decorativeObjects || []).filter((object) => (
+        !object.npcRole && (object.forcePathBlocking || getDecorativeAsset(object.type)?.defaultBlocking)
+      ))
       const decorationStats = mapDebugEnabled
         ? { total: 0, rendered: 0, skippedNoSpec: 0, skippedNoModel: 0, skippedBlocked: 0, skippedRoad: 0, treasures: 0, skippedCollected: 0, skippedDuplicateTreasures: 0 }
         : null
@@ -4564,6 +4655,7 @@ function ThreeLowPolyMap({
             posZ: pos.z + (object.offsetZ ?? 0),
             rotationY: decorationRotationY,
             scale: modelScale,
+            npcRole: object.npcRole,
             routeBlockerEvent: runtimeEventById.get(object.eventId) || null
           })
           if (npcFacingController) {
@@ -5016,7 +5108,11 @@ function ThreeLowPolyMap({
     }
 
     function resolveInteractionFromEvent(tileX, tileY, fallbackInteraction) {
-      const safeFallbackInteraction = ['fast_travel', 'item', 'pickup'].includes(fallbackInteraction) ? null : fallbackInteraction
+      const npcControllers = stateRef.current?.npcFacingControllers || []
+      const wanderingOccupant = npcControllers.find((controller) => controller.wanderer && controller.occupiesTile(tileX, tileY))
+      const wanderingHome = npcControllers.some((controller) => controller.wanderer && controller.tileX === tileX && controller.tileY === tileY)
+      const safeFallbackInteraction = ['fast_travel', 'item', 'pickup'].includes(fallbackInteraction) ||
+        (wanderingHome && fallbackInteraction === 'trainer') ? null : fallbackInteraction
       const activeVisualState = stateRef.current?.mapEventVisualState || normalizedMapEventVisualState
       const activeBossCompleted = Boolean(stateRef.current?.currentMapBossCompleted ?? currentMapBossCompleted)
       const activeMapEvents = Array.isArray(stateRef.current?.mapInfo?.runtimeEvents)
@@ -5027,7 +5123,10 @@ function ThreeLowPolyMap({
         const interactionTile = getEliteRouteBlockerInteractionTile(event, visualState, activeBossCompleted)
         return interactionTile?.x === tileX && interactionTile?.y === tileY
       }) || null
-      const mapEvent = relocatedRouteBlocker || getMapEventAt(currentMapName, tileX, tileY)
+      // Keep the authored event intact: identity, progress and battle scenery use it.
+      const authoredEvent = getMapEventAt(currentMapName, tileX, tileY)
+      const authoredWanderer = stateRef.current?.npcFacingControllersByEventId?.get(authoredEvent?.id)?.wanderer
+      const mapEvent = wanderingOccupant?.routeBlockerEvent || relocatedRouteBlocker || (authoredWanderer ? null : authoredEvent)
       if (!mapEvent && getMapSignMessage(currentMapName, tileX, tileY)) {
         return { interaction: 'info', mapEvent: null }
       }
@@ -5536,6 +5635,23 @@ function ThreeLowPolyMap({
             worldReady: state.worldReady === true,
             playerModel: state.player?.userData?.kind,
             characterModelKeys: state.characterModelKeys || [],
+            npcs: (state.npcFacingControllers || []).map((controller) => ({
+              eventId: controller.eventId,
+              type: controller.eventType,
+              role: controller.npcRole,
+              home: { x: controller.tileX, y: controller.tileY },
+              x: controller.wanderer?.state.x ?? controller.interactionTileX,
+              y: controller.wanderer?.state.y ?? controller.interactionTileY,
+              interactionTile: { x: controller.interactionTileX, y: controller.interactionTileY },
+              rotation: controller.currentRotation,
+              direction: controller.wanderer?.state.direction ?? null,
+              wanderEnabled: Boolean(controller.wanderer),
+              moving: controller.wanderer?.state.moving ?? false,
+              paused: controller.wanderer ? controller.wanderPaused : true,
+              occupiedTiles: controller.wanderer?.state.occupiedTiles.map((tile) => ({ ...tile })) ??
+                [{ x: controller.interactionTileX, y: controller.interactionTileY }],
+              area: controller.wanderArea ? [...controller.wanderArea] : []
+            })),
             mapName: currentMapName,
             mapVisualQuality: readMapVisualQualityPref(),
             isMobile,

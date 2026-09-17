@@ -198,7 +198,7 @@ export default function MapRuntimePreview() {
   }, [mapName, pushLog])
 
   const handlePreviewCollect = useCallback((type, quantity, ctx) => {
-    pushLog('event', `${type} at ${ctx?.tileX ?? '-'},${ctx?.tileY ?? '-'}`)
+    pushLog('event', `${type}${ctx?.mapEvent?.id ? ` ${ctx.mapEvent.id}` : ''} at ${ctx?.tileX ?? '-'},${ctx?.tileY ?? '-'}`)
   }, [pushLog])
 
   return (

@@ -7,6 +7,7 @@ import { getMapEventAt, getMapEvents } from './data/mapEvents'
 import { getMapEventTile } from './data/mapEventTypes'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { createEnvironmentGroundPatches } from './environmentGroundPatches'
+import { findEnvironmentSpawn, isEnvironmentTileBlocked } from './environmentNavigation.js'
 import { PLAYER_CHARACTER_KEY, isCharacterModelKey } from './data/characterAssets.js'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
@@ -2637,6 +2638,7 @@ function collectRuntimeModelKeys(mapInfo, mapGrid) {
   }
 
   ;(Array.isArray(mapInfo?.decorativeObjects) ? mapInfo.decorativeObjects : []).forEach((object) => {
+    if (object.environmentHiddenBoundary) return
     const spec = getDecorativeModel(object?.type, object)
     if (spec?.key) keys.add(spec.key)
   })
@@ -2978,9 +2980,11 @@ function ThreeLowPolyMap({
     scene.add(root)
     const grassObjects = new Map()
     const pathObjects = []
+    const scenerySpawn = findEnvironmentSpawn(mapInfo, playerPos || mapInfo.startPosition, mapGrid)
+    let pendingScenerySpawn = scenerySpawn !== (playerPos || mapInfo.startPosition) ? scenerySpawn : null
     const pointer = {
-      tileX: playerPos?.x ?? mapInfo?.startPosition?.x ?? 1,
-      tileY: playerPos?.y ?? mapInfo?.startPosition?.y ?? 1,
+      tileX: scenerySpawn.x,
+      tileY: scenerySpawn.y,
       direction: playerPos?.direction ?? 'down',
       moving: false,
       target: null,
@@ -3868,6 +3872,7 @@ function ThreeLowPolyMap({
       }
 
       const placeForestModel = (key, pos, scale, rotation, offsetX, offsetZ) => {
+        if (mapInfo.environmentBoundaryTheme && (key === 'stone' || key === 'rock')) return
         const base = .025 - (getModelVisualBounds(models[key])?.minY ?? 0) * scale
         return addInstance(key, pos.x + offsetX, base, pos.z + offsetZ, rotation, scale)
       }
@@ -4299,7 +4304,7 @@ function ThreeLowPolyMap({
               placeSmallDecoration('flowerRed', pos, 0.88, rotation, offsetX, offsetZ)
             } else if (detailRoll > 0.91) {
               placeSmallDecoration('bush', pos, 0.72, rotation, offsetX, offsetZ)
-            } else if (detailRoll > 0.89) {
+            } else if (detailRoll > 0.89 && !mapInfo.environmentBoundaryTheme) {
               placeSmallDecoration('stone', pos, 0.56, rotation, offsetX, offsetZ)
             } else if (detailRoll > 0.87) {
               placeSmallDecoration('mushroom', pos, 0.72, rotation, offsetX, offsetZ)
@@ -4406,6 +4411,7 @@ function ThreeLowPolyMap({
         }
       }
       mapInfo?.decorativeObjects?.forEach((object) => {
+        if (object.environmentHiddenBoundary) return
         trackDecorationStat('total')
 
         // 过滤已拾取的宝箱
@@ -4459,7 +4465,7 @@ function ThreeLowPolyMap({
           }
           renderedPickupEventIds.add(object.eventId)
         }
-        if (!object.eventType && !object.environmentComposition && shouldHideBlockedLowVegetation(object, mapGrid)) {
+        if (!object.eventType && !object.environmentComposition && !object.environmentBoundary && shouldHideBlockedLowVegetation(object, mapGrid)) {
           trackDecorationStat('skippedBlocked')
           return
         }
@@ -4476,7 +4482,7 @@ function ThreeLowPolyMap({
         const dynamicTileVisibleTiles = Array.isArray(object.dynamicTileVisibleTiles)
           ? object.dynamicTileVisibleTiles.map((tile) => Math.trunc(Number(tile))).filter(Number.isSafeInteger)
           : null
-        const baseModelScale = resolveThemeLandmarkRenderScale(object.type, object.scale ?? spec.scale)
+        const baseModelScale = resolveThemeLandmarkRenderScale(object.type, object.environmentRenderScale ?? object.scale ?? spec.scale)
         const lockedModelScale = object.hiddenGateEntranceBlocker === true && Number.isFinite(Number(object.hiddenGateLockedScale))
           ? resolveThemeLandmarkRenderScale(object.type, object.hiddenGateLockedScale)
           : baseModelScale
@@ -4827,7 +4833,7 @@ function ThreeLowPolyMap({
       const lockedEncounterZone = getLockedEncounterZoneAt(state, nextX, nextY)
       const blockedByInteraction = isBlockingInteraction(interaction)
 
-      if (lockedEncounterZone || !isWalkable(state.mapGrid, nextX, nextY) || blockedByInteraction) {
+      if (lockedEncounterZone || !isWalkable(state.mapGrid, nextX, nextY) || isEnvironmentTileBlocked(state.mapInfo, nextX, nextY) || blockedByInteraction) {
         setFacing(direction, { notify: true })
         state.onBlockedMove?.({
           tileX: pointerState.tileX,
@@ -4909,7 +4915,7 @@ function ThreeLowPolyMap({
       const nextY = state.pointer.tileY + vec.y
       const legacyTile = getLegacyTile(state.mapGrid, nextX, nextY)
       const { interaction } = resolveInteractionFromEvent(nextX, nextY, INTERACTION_LEGACY_TILES[legacyTile])
-      if (getLockedEncounterZoneAt(state, nextX, nextY) || !isWalkable(state.mapGrid, nextX, nextY) || isBlockingInteraction(interaction)) {
+      if (getLockedEncounterZoneAt(state, nextX, nextY) || !isWalkable(state.mapGrid, nextX, nextY) || isEnvironmentTileBlocked(state.mapInfo, nextX, nextY) || isBlockingInteraction(interaction)) {
         requestMove(direction)
         return
       }
@@ -5505,6 +5511,10 @@ function ThreeLowPolyMap({
         // Download completion alone is insufficient: wait for a complete rendered frame.
         if (state.worldBuilt && !state.worldReady && !browserContextLost && !rendererRestartPending) {
           reportSceneReady(true)
+          if (pendingScenerySpawn) {
+            state.onPlayerMove?.(pendingScenerySpawn)
+            pendingScenerySpawn = null
+          }
           state.frameCount = 0
         }
       }
@@ -5764,26 +5774,28 @@ function ThreeLowPolyMap({
 
   useEffect(() => {
     if (!stateRef.current?.player || !playerPos || stateRef.current.pointer.moving) return
+    const safePosition = findEnvironmentSpawn(mapInfo, playerPos, mapGrid)
+    if (safePosition !== playerPos) stateRef.current.onPlayerMove?.(safePosition)
     if (
-      stateRef.current.pointer.tileX === playerPos.x &&
-      stateRef.current.pointer.tileY === playerPos.y
+      stateRef.current.pointer.tileX === safePosition.x &&
+      stateRef.current.pointer.tileY === safePosition.y
     ) {
       return
     }
     const width = mapGrid?.[0]?.length
     const height = mapGrid?.length
     if (!width || !height) return
-    const pos = worldFromTile(playerPos.x, playerPos.y, width, height)
-    stateRef.current.pointer.tileX = playerPos.x
-    stateRef.current.pointer.tileY = playerPos.y
+    const pos = worldFromTile(safePosition.x, safePosition.y, width, height)
+    stateRef.current.pointer.tileX = safePosition.x
+    stateRef.current.pointer.tileY = safePosition.y
     if (playerPos.direction && DIRS[playerPos.direction]) {
       stateRef.current.pointer.direction = playerPos.direction
       stateRef.current.player.rotation.y = DIRS[playerPos.direction].rot
     }
     stateRef.current.player.position.set(pos.x, PLAYER_BASE_Y, pos.z)
-    stateRef.current.syncCameraTargetToTile?.(playerPos.x, playerPos.y, true)
+    stateRef.current.syncCameraTargetToTile?.(safePosition.x, safePosition.y, true)
     stateRef.current.npcFacingControllers?.forEach((controller) => {
-      controller?.syncWithPlayerTile?.(playerPos.x, playerPos.y)
+      controller?.syncWithPlayerTile?.(safePosition.x, safePosition.y)
     })
     stateRef.current.kickAnimation?.()
   }, [playerPos?.x, playerPos?.y, playerPos?.direction, currentMapName])

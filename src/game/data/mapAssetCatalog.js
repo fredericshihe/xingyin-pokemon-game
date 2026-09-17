@@ -1,3 +1,4 @@
+import { MAP_BOUNDARY_ASSETS } from './mapBoundaryAssets.generated.js'
 import { ENVIRONMENT_BIOME_ASSETS } from './environmentBiomeAssets.js'
 import { MAP_EXCLUSIVE_ASSETS } from './mapExclusiveAssets.generated.js'
 import { CHARACTER_MODEL_KEYS, characterAssetPath } from './characterAssets.js'
@@ -615,6 +616,8 @@ ENVIRONMENT_BIOME_ASSETS.forEach(asset => {
 MAP_EXCLUSIVE_ASSETS.forEach(asset => {
   MAP_ASSET_CATALOG[asset.id] = makeAsset(asset)
 })
+
+MAP_BOUNDARY_ASSETS.forEach(asset => { MAP_ASSET_CATALOG[asset.id] = makeAsset(asset) })
 
 export const MAP_ASSET_IDS = Object.keys(MAP_ASSET_CATALOG)
 

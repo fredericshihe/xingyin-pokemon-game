@@ -55,6 +55,7 @@ const getDecorativeModelKey = (type) => {
 const getRequiredModelKeys = (mapInfo) => {
   const keys = new Set(CORE_MODEL_KEYS)
   mapInfo?.decorativeObjects?.forEach((object) => {
+    if (object.environmentHiddenBoundary) return
     const key = resolveCharacterModelKey(getDecorativeModelKey(object.type), object)
     if (key) keys.add(key)
   })

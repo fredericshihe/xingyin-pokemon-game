@@ -112,7 +112,9 @@
     "audit:core": "npm run build:check && npm run audit:data && npm run audit:pokemon-art && npm run audit:entry-preload && npm run audit:learnsets && npm run audit:pokemon-moves && npm run audit:growth && npm run audit:difficulty && npm run audit:cloud && npm run map:verify",
     "preview": "vite preview",
     "map:audit-composition": "node scripts/audit-map-environment-composition.mjs",
-    "map:audit-exclusive-assets": "node scripts/audit-map-exclusive-assets.mjs"
+    "map:audit-exclusive-assets": "node scripts/audit-map-exclusive-assets.mjs",
+    "map:audit-boundaries": "node scripts/audit-map-boundary-assets.mjs",
+    "map:audit-environment-navigation": "node scripts/audit-environment-navigation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

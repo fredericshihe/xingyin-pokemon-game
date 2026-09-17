@@ -29,6 +29,7 @@ function normalize(value) {
   return value
 }
 const same = (actual, expected, label) => check(canonical(actual) === canonical(expected), `${label}: changed`)
+const withoutRenderScale = object => { const { environmentRenderScale, environmentHiddenBoundary, ...original } = object; return original }
 const clone = value => JSON.parse(JSON.stringify(value))
 const originalSignatures = JSON.parse(await fs.readFile(new URL('./fixtures/map-original-decorations.json', import.meta.url), 'utf8'))
 const overlap = (a, b) => a.x1 < b.x2 - EPSILON && a.x2 > b.x1 + EPSILON && a.y1 < b.y2 - EPSILON && a.y2 > b.y1 + EPSILON
@@ -86,7 +87,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   }
   const checkOriginals = (id, reference, current, label) => {
     const signatures = new Map()
-    for (const object of current) signatures.set(canonical(object), (signatures.get(canonical(object)) || 0) + 1)
+    for (const object of current) { const key = canonical(withoutRenderScale(object)); signatures.set(key, (signatures.get(key) || 0) + 1) }
     for (const object of reference) {
       const key = canonical(object), remaining = signatures.get(key) || 0
       check(remaining > 0, `${id}: ${label} original object changed/removed: ${object.sourceId || object.eventId || `${object.type}@${object.x},${object.y}`}`)
@@ -120,9 +121,9 @@ await withViteAuditServer(async ({ loadModule }) => {
   for (const [id, { mapInfo: map }] of Object.entries(MAP_CATALOG)) {
     const raw = rawMaps[id], objects = map.decorativeObjects || []
     const added = objects.filter(object => object.environmentComposition === true)
-    const retained = objects.filter(object => !object.environmentComposition)
+    const retained = objects.filter(object => !object.environmentComposition && !object.environmentBoundary)
     same(retained.length, originalSignatures[id]?.count, `${id}: immutable original count`)
-    same(crypto.createHash('sha256').update(canonical(retained)).digest('hex'), originalSignatures[id]?.sha256, `${id}: immutable original appearance and placements`)
+    same(crypto.createHash('sha256').update(canonical(retained.map(withoutRenderScale))).digest('hex'), originalSignatures[id]?.sha256, `${id}: immutable original appearance and placements`)
     const sceneIds = new Set(), typeCounts = new Map(), sourceIds = new Set()
     check(Boolean(raw), `${id}: no raw source to compare`)
     for (const object of objects) {
@@ -135,11 +136,11 @@ await withViteAuditServer(async ({ loadModule }) => {
       for (const key of ['width', 'height', 'mapGrid', 'visualPaths', 'roadPathEndpoints', 'forestTrails', 'roadJunctions', 'waterBodies', 'bridges', 'encounterZones', 'startPosition']) same(map[key], raw[key], `${id}: raw ${key}`)
       same(eventPositions(map), eventPositions(raw), `${id}: raw event positions`)
       checkOriginals(id, raw.decorativeObjects || [], objects, 'raw')
-      same(objects.filter(object => !object.environmentComposition), raw.decorativeObjects || [], `${id}: all original decorations and order`)
+      same(objects.filter(object => !object.environmentComposition && !object.environmentBoundary).map(withoutRenderScale), raw.decorativeObjects || [], `${id}: all original decorations and order`)
       same(map.renderAmbientGroundDecorations, raw.renderAmbientGroundDecorations, `${id}: original ambient scenery setting`)
       same(map.renderForestWallUndergrowth, raw.renderForestWallUndergrowth, `${id}: original forest scenery setting`)
       same(rawMaps[id], clone(id === 'GodotMap' ? starter : GODOT_REGION_MAPS[id]), `${id}: raw source mutated`)
-      check(map.generationNotes.environmentComposition.replaced === 0, `${id}: must not replace original scenery`)
+      check(retained.filter(o=>o.environmentHiddenBoundary).every(composition.isGenericEnvironmentBoundary), `${id}: only the requested generic boundary rocks may be hidden`)
     }
     if (baseline) {
       const previous = baseline[id]
@@ -175,15 +176,16 @@ await withViteAuditServer(async ({ loadModule }) => {
       check(!sourceIds.has(object.sourceId), `${label}: duplicate sourceId`)
       sourceIds.add(object.sourceId)
       typeCounts.set(object.type, (typeCounts.get(object.type) || 0) + 1)
-      check(object.environmentBackdrop === true, `${label}: missing environmentBackdrop:true`)
-      check(object.blocksPath === false, `${label}: must not introduce collision`)
+      check(object.environmentBackdrop === false, `${label}: scenery must stay within the map`)
+
       check(!isProtectedEnvironmentObject(object), `${label}: new scenery must not become a gameplay interaction or protected original`)
       check(isSafeEnvironmentBackground(map, object), `${label}: unsafe background/rim placement`)
       const declared = getEnvironmentObjectBounds(object)
       for (const other of added) if (other !== object) check(!overlap(declared, getEnvironmentObjectBounds(other)), `${label}: overlaps added ${other.sourceId}`)
       check(Object.values(declared).every(Number.isFinite), `${label}: non-finite bounds`)
       if (raw) for (const protectedObject of (raw.decorativeObjects || [])) {
-        check(!overlap(declared, getEnvironmentObjectBounds(protectedObject)), `${label}: overlaps original ${protectedObject.sourceId || protectedObject.eventId || protectedObject.type}`)
+        if (retained[raw.decorativeObjects.indexOf(protectedObject)].environmentHiddenBoundary) continue
+        check(!overlap(declared, getEnvironmentObjectBounds(retained[raw.decorativeObjects.indexOf(protectedObject)])), `${label}: overlaps original ${protectedObject.sourceId || protectedObject.eventId || protectedObject.type}`)
       }
       try {
         const data = await readGeometry(object.type)
@@ -210,7 +212,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       const cap = 1
       check(count <= cap, `${id}: ${type} repeated ${count} times; cap ${cap}`)
     }
-    maps.push({ id, added: added.length, scenes: [...sceneIds], assetTypes: Object.fromEntries(typeCounts) })
+    maps.push({ id, resized: retained.filter(o => o.environmentRenderScale).length, interior: added.filter(o => composition.isEnvironmentInterior(map, o)).length, added: added.length, scenes: [...sceneIds], assetTypes: Object.fromEntries(typeCounts) })
   }
 })
 
@@ -220,10 +222,10 @@ if (reportPath) {
   await fs.mkdir(path.dirname(reportPath), { recursive: true })
   await fs.writeFile(reportPath, JSON.stringify(report, null, 2) + '\n')
 }
-console.table(maps.map(map => ({ map: map.id, added: map.added, scenes: map.scenes.length, types: Object.keys(map.assetTypes).length, maxRepeats: Math.max(0, ...Object.values(map.assetTypes)) })))
+console.table(maps.map(map => ({ map: map.id, added: map.added, interior: map.interior, resized: map.resized, scenes: map.scenes.length, types: Object.keys(map.assetTypes).length, maxRepeats: Math.max(0, ...Object.values(map.assetTypes)) })))
 console.log(`Composition audit: ${maps.length} maps, ${maps.reduce((sum, map) => sum + map.added, 0)} additions; ${assets.length} exclusive GLBs / ${assets.reduce((sum, asset) => sum + asset.bytes, 0)} bytes. Snapshot: ${report.baseline || 'not present (raw sources still checked)'}.`)
 if (uniqueFailures.length) {
   for (const failure of uniqueFailures) console.error(`FAIL ${failure}`)
   console.error(`${uniqueFailures.length} checks failed.`)
   process.exitCode = 1
-} else console.log('PASS: gameplay layout and all original decorations unchanged; distinct scenes, safe placement and measured GLB budgets valid.')
+} else console.log('PASS: gameplay layout and original objects retained with approved natural-size and boundary visual overrides; distinct scenes, safe placement and measured GLB budgets valid.')

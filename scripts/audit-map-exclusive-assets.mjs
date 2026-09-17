@@ -29,11 +29,11 @@ await withViteAuditServer(async({loadModule})=>{
   assert.ok(decor.length >= 6,`${mapId}: insufficient new thematic scenery`)
   assert.equal(new Set(decor.map(o=>o.type)).size,decor.length,`${mapId}: new models must not repeat`)
   assert.ok(decor.every(o=>types.includes(o.type)),`${mapId}: new scenery must belong to this map`)
-  assert.equal(current.generationNotes.environmentComposition.replaced,0)
+  assert.equal(current.generationNotes.environmentComposition.replaced,current.decorativeObjects.filter(o=>o.environmentHiddenBoundary).length)
   for(const key of ['renderAmbientGroundDecorations','renderForestWallUndergrowth','renderForestWallTrees']) {
    assert.equal(current[key],originals[mapId][key],`${mapId}: original scenery setting ${key} changed`)
   }
-  assert.deepEqual(current.decorativeObjects.filter(o=>!o.environmentComposition),originals[mapId].decorativeObjects,`${mapId}: original decorations changed`)
+  assert.deepEqual(current.decorativeObjects.filter(o=>!o.environmentComposition&&!o.environmentBoundary).map(({environmentRenderScale,environmentHiddenBoundary,...o})=>o),originals[mapId].decorativeObjects,`${mapId}: original decorations changed`)
   if (before) {
   for(const key of ['mapGrid','visualPaths','forestTrails','encounterZones','waterBodies','bridges','runtimeEvents']){
    assert.deepEqual(JSON.parse(JSON.stringify(current[key])),before[mapId][key],`${mapId}: gameplay ${key} changed`)

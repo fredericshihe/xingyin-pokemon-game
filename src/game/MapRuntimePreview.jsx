@@ -79,9 +79,16 @@ export default function MapRuntimePreview() {
   const [mapName, setMapName] = useState(initialMapName)
   const [mapGrid, setMapGrid] = useState(() => loadPreviewGrid(initialMapName))
   const [playerPos, setPlayerPos] = useState(() => {
+    // QA-only route: reproduce an old saved position or inspect a tight passage.
+    const spawn = getPreviewSearchParams().get('spawn')
+    if (/^\d+,\d+$/.test(spawn || '')) {
+      const [x, y] = spawn.split(',').map(Number)
+      const info = getAdventureMapInfo(initialMapName)
+      if (x < info.width && y < info.height) return { x, y, direction: 'up' }
+    }
     const focus = getPreviewSearchParams().get('focus')
     const anchor = getAdventureMapInfo(initialMapName).decorativeObjects?.find(object =>
-      (object.environmentAnchor || object.environmentComposition) && (object.type === focus || object.environmentScene === focus))
+      (object.environmentAnchor || object.environmentComposition || object.environmentBoundary) && (object.type === focus || object.environmentScene === focus))
     return anchor ? { x: Math.round(anchor.x), y: Math.round(anchor.y + 2), direction: 'up' } : getMapStartPosition(initialMapName)
   })
   const [sceneRevision, setSceneRevision] = useState(0)

@@ -23,7 +23,7 @@ export function createEnvironmentGroundPatches(map, cell = 1.55) {
   for (let y = -4; y < map.height + 4; y++) {
     for (let x = -4; x < map.width + 4; x++) {
       const inside = x >= 0 && y >= 0 && x < map.width && y < map.height
-      if (inside && ![1, 20].includes(map.mapGrid[y][x])) continue
+      if (inside && ![0, 1, 13, 17, 20].includes(map.mapGrid[y][x])) continue
       if (strength(x, y) < .015) continue
       for (const [dx, dy] of [[-.5, -.5], [-.5, .5], [.5, -.5], [.5, -.5], [-.5, .5], [.5, .5]]) {
         const px = x + dx, py = y + dy

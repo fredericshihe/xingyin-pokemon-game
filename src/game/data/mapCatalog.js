@@ -1,4 +1,5 @@
 import starterMap from './godotMaps/my_first_map.js'
+import { composeMapEnvironment } from './mapEnvironmentComposition.js'
 import {
   GODOT_REGION_MAP_CONFIGS,
   GODOT_REGION_MAP_IDS,
@@ -208,12 +209,12 @@ function buildCatalogEntry({
   sources,
   chainOrder
 }) {
-  const normalizedMapInfo = {
+  const normalizedMapInfo = composeMapEnvironment({
     ...mapInfo,
     id,
     name: id,
     renderMode: mapInfo.renderMode || DEFAULT_RENDER_MODE
-  }
+  })
   const normalizedStartPosition = normalizeStartPosition(normalizedMapInfo.startPosition)
   const displayName = config.displayName || normalizedMapInfo.displayName || normalizedMapInfo.name || id
   const normalizedConfig = {

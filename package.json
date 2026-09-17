@@ -105,7 +105,11 @@
     "audit:balance-limits": "npm run audit:party-species && npm run audit:master-ball && npm run audit:shop-items && node scripts/audit-hidden-zone-rewards.mjs && node scripts/audit-hidden-zone-encounter-rarity.mjs",
     "verify:deploy": "node scripts/verify-deployed-version.mjs",
     "audit:core": "npm run build:check && npm run audit:data && npm run audit:pokemon-art && npm run audit:entry-preload && npm run audit:learnsets && npm run audit:pokemon-moves && npm run audit:growth && npm run audit:difficulty && npm run audit:cloud && npm run map:verify",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "environment:prepare": "node scripts/prepare-environment-assets.mjs",
+    "map:audit-environments": "node scripts/audit-map-environments.mjs",
+    "map:audit-composition": "node scripts/audit-map-environment-composition.mjs",
+    "map:audit-exclusive-assets": "node scripts/audit-map-exclusive-assets.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

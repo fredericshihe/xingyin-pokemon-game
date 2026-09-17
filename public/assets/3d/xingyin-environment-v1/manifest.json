@@ -1,0 +1,56 @@
+[
+  {
+    "key": "environment_farm_windmill",
+    "file": "/assets/3d/xingyin-environment-v1/farm_windmill.glb",
+    "bytes": 25764,
+    "bounds": {
+      "min": [
+        -1.1272287368774414,
+        0,
+        -1.0199999809265137
+      ],
+      "max": [
+        1.127244234085083,
+        3.5950000286102295,
+        1.2599272727966309
+      ]
+    },
+    "triangles": 5100
+  },
+  {
+    "key": "environment_ruin_arch",
+    "file": "/assets/3d/xingyin-environment-v1/ruin_arch.glb",
+    "bytes": 9368,
+    "bounds": {
+      "min": [
+        -1.1749999523162842,
+        0,
+        -0.375
+      ],
+      "max": [
+        1.175055980682373,
+        2.7099995613098145,
+        0.3749932050704956
+      ]
+    },
+    "triangles": 1836
+  },
+  {
+    "key": "environment_starwatch_marker",
+    "file": "/assets/3d/xingyin-environment-v1/starwatch_marker.glb",
+    "bytes": 6512,
+    "bounds": {
+      "min": [
+        -0.8299999833106995,
+        0,
+        -0.8299999833106995
+      ],
+      "max": [
+        0.830033004283905,
+        2.488226890563965,
+        0.830033004283905
+      ]
+    },
+    "triangles": 1168
+  }
+]

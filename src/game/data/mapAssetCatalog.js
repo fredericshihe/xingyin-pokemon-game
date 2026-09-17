@@ -1,9 +1,13 @@
+import { ENVIRONMENT_BIOME_ASSETS } from './environmentBiomeAssets.js'
+import { MAP_EXCLUSIVE_ASSETS } from './mapExclusiveAssets.generated.js'
+
 const ALL_AREAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
 
 const makeAsset = ({
   id,
   status = 'active',
   sourcePackage,
+  ownerMap = null,
   assetPath = null,
   sourceAssetName = null,
   themeTags = [],
@@ -26,6 +30,7 @@ const makeAsset = ({
   id,
   status,
   sourcePackage,
+  ownerMap,
   assetPath,
   sourceAssetName,
   themeTags,
@@ -573,6 +578,29 @@ Object.assign(
     return [asset.id, asset]
   }))
 )
+
+for (const [name, tags, footprint] of [
+  ['farm_windmill', ['farm', 'building', 'landmark'], { width: 1.55, height: 1.4 }],
+  ['ruin_arch', ['ruin', 'stone', 'landmark'], { width: 1.5, height: .5 }],
+  ['starwatch_marker', ['highland', 'stone', 'landmark'], { width: 1.1, height: 1.1 }]
+]) {
+  const id = `environment_${name}`
+  MAP_ASSET_CATALOG[id] = makeAsset({
+    id, sourcePackage: 'xingyin-original-blender',
+    assetPath: `/assets/3d/xingyin-environment-v1/${name}.glb`,
+    sourceAssetName: `${name}.glb`, themeTags: tags, footprint,
+    defaultBlocking: true, heightClass: 'high',
+    notes: 'Complete landmark, grounded origin, single vertex-color material.'
+  })
+}
+
+ENVIRONMENT_BIOME_ASSETS.forEach(asset => {
+  MAP_ASSET_CATALOG[asset.id] = makeAsset(asset)
+})
+
+MAP_EXCLUSIVE_ASSETS.forEach(asset => {
+  MAP_ASSET_CATALOG[asset.id] = makeAsset(asset)
+})
 
 export const MAP_ASSET_IDS = Object.keys(MAP_ASSET_CATALOG)
 

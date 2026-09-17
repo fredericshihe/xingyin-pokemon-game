@@ -6,6 +6,7 @@ import { getAdventureMapInfo, getEncounterZoneAt, getMapSignMessage } from './da
 import { getMapEventAt, getMapEvents } from './data/mapEvents'
 import { getMapEventTile } from './data/mapEventTypes'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
+import { createEnvironmentGroundPatches } from './environmentGroundPatches'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
@@ -2923,8 +2924,12 @@ function ThreeLowPolyMap({
     renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored, false)
 
     const usesCompactMapCamera = Number(mapInfo?.width) <= 28 && Number(mapInfo?.height) <= 24
-    const cameraHeight = usesCompactMapCamera ? 11.8 : CAMERA_HEIGHT
-    const cameraForwardOffset = usesCompactMapCamera ? 9.6 : CAMERA_FORWARD_OFFSET
+    // QA overview is only available inside the explicitly gated runtime preview.
+    const overviewMode = window.location.pathname.endsWith('/map-runtime-preview') &&
+      new URLSearchParams(window.location.search).get('view') === 'overview'
+    if (overviewMode) scene.fog = null
+    const cameraHeight = overviewMode ? Math.max(mapInfo.width, mapInfo.height) * CELL * 1.55 : usesCompactMapCamera ? 11.8 : CAMERA_HEIGHT
+    const cameraForwardOffset = overviewMode ? cameraHeight * .48 : usesCompactMapCamera ? 9.6 : CAMERA_FORWARD_OFFSET
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200)
     camera.position.set(0, cameraHeight, cameraForwardOffset)
     camera.lookAt(0, CAMERA_LOOK_Y, 0)
@@ -2997,6 +3002,7 @@ function ThreeLowPolyMap({
     }
 
     function clampCameraTarget(x, z) {
+      if (overviewMode) return clampCameraOut.set(0, CAMERA_LOOK_Y, 0)
       const bounds = camera.userData.bounds
       if (!bounds) {
         clampCameraOut.set(x, CAMERA_LOOK_Y, z)
@@ -3248,6 +3254,8 @@ function ThreeLowPolyMap({
       applyGroundDecalMaterial(sandPatchMaterial)
       applyGroundDecalMaterial(paleGrassPatchMaterial)
       applyGroundDecalMaterial(forestTrailMaterial)
+      const sceneryGround = createEnvironmentGroundPatches(mapInfo, CELL)
+      if (sceneryGround) root.add(sceneryGround)
 
       // === InstancedMesh 工厂 + Chunk 化 ===
       // 1) 把所有重复模型按 sub-mesh 建模板（draw call 从 ~1050 砍到 ~30）
@@ -3750,6 +3758,10 @@ function ThreeLowPolyMap({
             set.forEach((sub) => {
               sub.instancedMesh.instanceMatrix.needsUpdate = true
               sub.instancedMesh.computeBoundingSphere()
+              // Large gardens and the scenic rim extend past a chunk's tile grid.
+              // Include actual instances once at build time to prevent edge pop-in.
+              sub.instancedMesh.computeBoundingBox()
+              if (sub.instancedMesh.boundingBox) chunk.boundingBox.union(sub.instancedMesh.boundingBox)
             })
           })
         })
@@ -3760,7 +3772,8 @@ function ThreeLowPolyMap({
       stateRef.current.chunkGrid = { chunkCountX, chunkTiles: CHUNK_TILES }
 
       const placeSmallDecoration = (key, pos, scale, rotation = 0, offsetX = 0, offsetZ = 0) => {
-        return addInstance(key, pos.x + offsetX, 0.16, pos.z + offsetZ, rotation, scale)
+        const base = .025 - (getModelVisualBounds(models[key])?.minY ?? 0) * scale
+        return addInstance(key, pos.x + offsetX, base, pos.z + offsetZ, rotation, scale)
       }
 
       const getRenderedTile = (tileX, tileY) => {
@@ -3819,8 +3832,9 @@ function ThreeLowPolyMap({
         }
       }
 
-      const placeForestModel = (key, pos, scale, rotation, offsetX, offsetZ, y = 0.13) => {
-        return addInstance(key, pos.x + offsetX, y, pos.z + offsetZ, rotation, scale)
+      const placeForestModel = (key, pos, scale, rotation, offsetX, offsetZ) => {
+        const base = .025 - (getModelVisualBounds(models[key])?.minY ?? 0) * scale
+        return addInstance(key, pos.x + offsetX, base, pos.z + offsetZ, rotation, scale)
       }
 
       const placeForestUndergrowth = (x, y, pos, {
@@ -3885,7 +3899,7 @@ function ThreeLowPolyMap({
           const scale = force
             ? baseScale + seededRandom(x, y, 153 + i) * 0.12
             : baseScale + seededRandom(x, y, 153 + i) * (heavy ? 0.38 : 0.22)
-          placeForestModel(key, pos, scale, rotation, offsetX, offsetZ, key.includes('flower') || key === 'mushroom' ? 0.14 : 0.13)
+          placeForestModel(key, pos, scale, rotation, offsetX, offsetZ)
         }
       }
 
@@ -4238,7 +4252,7 @@ function ThreeLowPolyMap({
             }
           }
 
-          if (legacy === 0 && insidePlayableArea && !isNearRoad(x, y)) {
+          if (legacy === 0 && insidePlayableArea && mapInfo?.renderAmbientGroundDecorations !== false && !isNearRoad(x, y)) {
             const detailRoll = seededRandom(x, y, 70)
             const offsetX = (seededRandom(x, y, 71) - 0.5) * CELL * 0.58
             const offsetZ = (seededRandom(x, y, 72) - 0.5) * CELL * 0.58
@@ -4410,7 +4424,7 @@ function ThreeLowPolyMap({
           }
           renderedPickupEventIds.add(object.eventId)
         }
-        if (!object.eventType && shouldHideBlockedLowVegetation(object, mapGrid)) {
+        if (!object.eventType && !object.environmentComposition && shouldHideBlockedLowVegetation(object, mapGrid)) {
           trackDecorationStat('skippedBlocked')
           return
         }
@@ -4439,9 +4453,14 @@ function ThreeLowPolyMap({
         const modelScale = object.hiddenGateEntranceBlocker === true && currentObjectTile === REGION_MAP_TILE.objectBlocker
           ? lockedModelScale
           : baseModelScale
-        const modelLift = (object.eventType === 'item' || object.eventType === 'pickup')
+        const authoredLift = (object.eventType === 'item' || object.eventType === 'pickup')
           ? (object.height ?? -0.05)
           : (object.height ?? 0.2)
+        const eliteLandmark = createEliteFourLandmark(object.type)
+        const modelBounds = object.surface ? getModelVisualBounds(models[spec.key] || eliteLandmark) : null
+        const modelLift = modelBounds
+          ? (object.surface === 'water' ? .075 : .025) - modelBounds.minY * modelScale
+          : authoredLift
         const decorationRotationY = resolveDecorationRotationY(object)
         const shouldAddGenericSignal = Boolean(eventType)
         const signalBaseY = eventType
@@ -4466,7 +4485,6 @@ function ThreeLowPolyMap({
             }
           )
           : null
-        const eliteLandmark = createEliteFourLandmark(object.type)
         let refs = []
         if (eliteLandmark) {
           eliteLandmark.position.set(
@@ -4640,6 +4658,7 @@ function ThreeLowPolyMap({
       resize()
       recoverAttemptsRef.current = 0
       setRenderIssue(null)
+      stateRef.current.worldBuilt = true
     }
 
     const handleResize = () => resize()
@@ -5447,6 +5466,7 @@ function ThreeLowPolyMap({
 
       if (!renderer.getContext?.()?.isContextLost?.()) {
         renderer.render(scene, camera)
+        if (state.worldBuilt) state.worldReady = true
       }
 
       // 性能监控：移动端减少性能统计的频率以节省CPU
@@ -5458,6 +5478,7 @@ function ThreeLowPolyMap({
         // 移动端降低性能统计频率
         if (!isMobile || (state.frameCount || 0) % perfUpdateInterval === 0) {
           window.__THREE_LOW_POLY_MAP_PERF__ = {
+            worldReady: state.worldReady === true,
             mapName: currentMapName,
             mapVisualQuality: readMapVisualQualityPref(),
             isMobile,

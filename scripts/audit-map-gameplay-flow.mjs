@@ -297,7 +297,7 @@ function isPathBlockingDecoration(object, catalog) {
 
 function getDecorationFootprint(object, catalog, padding = 0) {
   const asset = getDecorativeAsset(object?.type, catalog)
-  const override = DECORATIVE_FOOTPRINT_OVERRIDES[object?.type]
+  const override = object?.footprint || DECORATIVE_FOOTPRINT_OVERRIDES[object?.type]
   const baseWidth = Number(override?.width ?? asset?.footprint?.width ?? 1)
   const baseHeight = Number(override?.height ?? asset?.footprint?.height ?? 1)
   const scale = Math.max(0.45, Number(object?.scale ?? asset?.defaultScale ?? 1) || 1)

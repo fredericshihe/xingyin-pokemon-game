@@ -9,6 +9,7 @@ import {
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
 import { getMapEventTile } from '../mapEventTypes.js'
 import { MAP_ASSET_CATALOG } from '../mapAssetCatalog.js'
+import { ENVIRONMENT_REVISION, refineMapEnvironmentDefinition, finishEnvironmentDecorations, isEnvironmentPointInWater, environmentDecorationRotation } from '../mapEnvironmentDesign.js'
 import { getEliteRouteStepAsideTile, isEliteRouteBlockerEvent } from '../../eliteRouteBlocker.js'
 import { LONG_TERM_PROGRESSION_FLAGS, getChampionTowerFloor, getEliteUnlockObjectiveEvents } from '../longTermProgression.js'
 
@@ -212,6 +213,7 @@ export function getRegionMapVisualPalette(mapId) {
  * Kenney building GLBs are authored small — these values are intentionally bold.
  */
 export const THEME_LANDMARK_SCALES = {
+  champion_obelisk: 0.74,
   nature_tree_oak: 1.85,
   nature_lily_large: 1.65,
   nature_canoe: 2.05,
@@ -362,14 +364,14 @@ const OPEN_GROUND_FILLER_PROFILES = {
     height: 0.18
   },
   GodotMapV2_MistLake: {
-    types: ['wetland_reed_clump', 'nature_lily_large', 'hex_water_rocks', 'nature_rock_large', 'nature_stone_large'],
+    types: ['nature_plant_bush_detailed', 'nature_rock_large', 'nature_stone_large'],
     salt: 1210,
     density: 0.55,
     scale: [1.3, 1.7],
     height: 0.18
   },
   GodotMapV2_FarmTown: {
-    types: ['town_hedge_large', 'town_hedge', 'farm_cart_high', 'nature_fence_planks', 'town_cart', 'nature_log_stack'],
+    types: ['town_hedge', 'nature_plant_bush_detailed', 'nature_grass_large'],
     salt: 1220,
     density: 0.62,
     scale: [1.2, 1.55],
@@ -383,9 +385,9 @@ const OPEN_GROUND_FILLER_PROFILES = {
     height: 0.18
   },
   GodotMapV2_Graveyard: {
-    types: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_rocks', 'grave_coffin_old', 'grave_bench_damaged'],
+    types: ['grave_rocks', 'nature_grass_large', 'nature_plant_bush_detailed'],
     salt: 1230,
-    density: 0.58,
+    density: 0.28,
     scale: [1.15, 1.5],
     height: 0.18
   },
@@ -397,14 +399,14 @@ const OPEN_GROUND_FILLER_PROFILES = {
     height: 0.22
   },
   GodotMapV2_SurvivalRidge: {
-    types: ['survival_tree_log', 'survival_rock_a', 'survival_rock_b', 'survival_rock_c', 'survival_fence', 'survival_barrel', 'survival_box'],
+    types: ['survival_rock_a', 'survival_rock_b', 'survival_patch_grass'],
     salt: 1250,
     density: 0.58,
     scale: [1.2, 1.5],
     height: 0.2
   },
   GodotMapV2_BossHighland: {
-    types: ['ridge_block_grass_edge', 'platformer_rocks', 'platformer_stones', 'hex_stone_hill', 'platformer_hedge'],
+    types: ['platformer_rocks', 'platformer_stones', 'nature_rock_large'],
     salt: 1260,
     density: 0.60,
     scale: [1.25, 1.6],
@@ -464,7 +466,7 @@ function addDensePlazaTreeForest({
       x: Number((x + jitterX).toFixed(2)),
       y: Number((y + jitterY).toFixed(2)),
       scale: Number(scaleValue.toFixed(2)),
-      rotation: Number((seededRandom(x, y, salt + 14 + index + layer) * Math.PI * 2).toFixed(4)),
+      rotation: environmentDecorationRotation(type, Number((seededRandom(x, y, salt + 14 + index + layer) * Math.PI * 2).toFixed(4))),
       height: 0.22,
       sourceId: `${idPrefix}_${index + 1}`,
       plazaForest: true,
@@ -504,7 +506,7 @@ function addOpenGroundFiller({
     : new Set([TILE.grass, TILE.paleGrass, TILE.flowers])
 
   const salt = profile.salt ?? 1000
-  const density = Math.max(0.05, Math.min(0.95, Number(profile.density ?? 0.5)))
+  const density = Math.max(0.05, Math.min(0.35, Number(profile.density ?? 0.3)))
   const scaleRange = profile.scale ?? [1, 1.2]
   const clearanceCells = collectPathClearanceCells(grid, runtimeEvents, definition)
 
@@ -534,7 +536,7 @@ function addOpenGroundFiller({
         x: Number((x + jitterX).toFixed(2)),
         y: Number((y + jitterY).toFixed(2)),
         scale: Number(scaleValue.toFixed(2)),
-        rotation: Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4)),
+        rotation: environmentDecorationRotation(type, Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4))),
         height: profile.height ?? 0.16,
         sourceId: `${mapId}_openfill_${index + 1}`,
         blocksPath: true
@@ -580,7 +582,7 @@ function addGridPlazaScatter({
         x: Number((x + jitterX).toFixed(2)),
         y: Number((y + jitterY).toFixed(2)),
         scale: Number(scaleValue.toFixed(2)),
-        rotation: Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4)),
+        rotation: environmentDecorationRotation(type, Number((seededRandom(x, y, salt + 14 + index) * Math.PI * 2).toFixed(4))),
         height: 0.16,
         sourceId: `${idPrefix}_${index + 1}`,
         landmark: true,
@@ -608,7 +610,7 @@ const REGION_OPEN_PLAZA_TYPES = {
     'platformer_flowers',
     'platformer_flowers_tall',
     'platformer_hedge',
-    'ridge_block_grass_edge'
+    'nature_rock_large'
   ]
 }
 
@@ -633,6 +635,7 @@ const REGION_OPEN_PLAZA_FILLS = {
 }
 
 function fillRegionOpenPlazas(grid, decorations, definition, runtimeEvents) {
+  if (definition.id === 'GodotMapV2_Graveyard') return // Tombstones already follow authored rows.
   const areas = REGION_OPEN_PLAZA_FILLS[definition.id]
   if (!areas?.length) return
 
@@ -813,7 +816,7 @@ function addThemeCorridorScatter({
         x: Number((cell.x + jitterX).toFixed(2)),
         y: Number((cell.y + jitterY).toFixed(2)),
         scale: scaleValue,
-        rotation: Number((seededRandom(cell.x, cell.y, salt + 104 + layer) * Math.PI * 2).toFixed(4)),
+        rotation: environmentDecorationRotation(type, Number((seededRandom(cell.x, cell.y, salt + 104 + layer) * Math.PI * 2).toFixed(4))),
         height: 0.2 + layer * 0.04,
         sourceId: `${idPrefix}_${cellIndex + 1}_${layer + 1}`
       })
@@ -1065,7 +1068,13 @@ function addScatter({
   runtimeEvents = [],
   minRoadDistance = 0,
   minEventDistance = 0,
-  respectSampledScale = false
+  respectSampledScale = false,
+  rotation = null,
+  jitter = 0.46,
+  rowSpacing = 1,
+  shoreDistance = null,
+  footprint = null,
+  footprintsByType = null
 }) {
   const allowed = new Set(allowedTiles)
   const blocked = new Set(keepAwayTiles)
@@ -1074,6 +1083,8 @@ function addScatter({
     for (let x = area.x1; x <= area.x2; x += 1) {
       if (!inBounds(x, y)) continue
       if (!allowed.has(grid[y][x])) continue
+      if (rowSpacing > 1 && (x % rowSpacing !== 0 || y % rowSpacing !== 0)) continue
+      if (shoreDistance != null && !isEnvironmentPointInWater(definition, x, y, shoreDistance)) continue
       if (minRoadDistance > 0 && definition && distanceToRoadPaths(x, y, definition) < minRoadDistance) continue
       if (minEventDistance > 0 && distanceToRuntimeEvents(runtimeEvents, x, y) < minEventDistance) continue
       let nearBlocked = false
@@ -1095,8 +1106,8 @@ function addScatter({
   candidates.sort((a, b) => a.score - b.score)
   candidates.slice(0, count).forEach((cell, index) => {
     const type = types[index % types.length]
-    const jitterX = (seededRandom(cell.x, cell.y, salt + 101) - 0.5) * 0.46
-    const jitterY = (seededRandom(cell.x, cell.y, salt + 102) - 0.5) * 0.46
+    const jitterX = (seededRandom(cell.x, cell.y, salt + 101) - 0.5) * jitter
+    const jitterY = (seededRandom(cell.x, cell.y, salt + 102) - 0.5) * jitter
     let scaleValue = scale[0] + seededRandom(cell.x, cell.y, salt + 103) * (scale[1] - scale[0])
     if (!respectSampledScale) {
       scaleValue = boostThemeLandmarkScatterScale(type, scaleValue)
@@ -1106,8 +1117,9 @@ function addScatter({
       x: Number((cell.x + jitterX).toFixed(2)),
       y: Number((cell.y + jitterY).toFixed(2)),
       scale: Number(scaleValue.toFixed(2)),
-      rotation: Number((seededRandom(cell.x, cell.y, salt + 104) * Math.PI * 2).toFixed(4)),
+      rotation: rotation ?? environmentDecorationRotation(type, Number((seededRandom(cell.x, cell.y, salt + 104) * Math.PI * 2).toFixed(4))),
       height,
+      ...((footprintsByType?.[type] || footprint) ? { footprint: footprintsByType?.[type] || footprint } : {}),
       sourceId: `${idPrefix}_${index + 1}`
     })
   })
@@ -2209,7 +2221,7 @@ const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
     compactScale: [0.98, 1.18]
   },
   farmTown: {
-    primary: ['town_hedge_large', 'nature_rock_large', 'nature_fence_planks', 'farm_cart_high'],
+    primary: ['town_hedge_large', 'nature_rock_large'],
     compact: ['town_hedge_large', 'nature_rock_large'],
     stackLayers: 3,
     primaryScale: [1.1, 1.3],
@@ -2243,8 +2255,8 @@ const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
     compactScale: [1.0, 1.2]
   },
   bossHighland: {
-    primary: ['ridge_block_grass_edge', 'hex_stone_hill', 'platformer_rocks', 'platformer_stones'],
-    compact: ['ridge_block_grass_edge', 'platformer_rocks'],
+    primary: ['nature_rock_large', 'platformer_rocks', 'platformer_stones'],
+    compact: ['nature_rock_large', 'platformer_rocks'],
     stackLayers: 3,
     primaryScale: [1.18, 1.42],
     compactScale: [1.08, 1.28]
@@ -2276,6 +2288,10 @@ const BOUNDARY_VISUAL_BLOCKER_PROFILES = {
     stackLayers: 2,
     primaryScale: [0.92, 1.12],
     compactScale: [0.84, 1.02]
+  },
+  champion: {
+    primary: ['champion_obelisk'], compact: ['champion_obelisk'],
+    stackLayers: 1, primaryScale: [.65, .8], compactScale: [.6, .7]
   }
 }
 const BOUNDARY_FIXED_LANDMARK_CLEARANCE_RADIUS = {
@@ -2354,7 +2370,7 @@ function isPathBlockingDecoration(object) {
 
 function getDecorationFootprint(object, padding = 0) {
   const asset = getDecorationAssetMeta(object?.type)
-  const override = DECORATIVE_FOOTPRINT_OVERRIDES[object?.type]
+  const override = object?.footprint || DECORATIVE_FOOTPRINT_OVERRIDES[object?.type]
   const baseWidth = Number(override?.width ?? asset?.footprint?.width ?? 1)
   const baseHeight = Number(override?.height ?? asset?.footprint?.height ?? 1)
   const scale = Math.max(0.45, Number(object?.scale ?? asset?.defaultScale ?? 1) || 1)
@@ -2521,6 +2537,8 @@ function shouldPreserveRoadSurfaceDecoration(object) {
 }
 
 function relocateRoadSurfaceDecoration(object, grid, eventTileKeys) {
+  // Authored water props must never be nudged onto land by a generic road cleanup.
+  if (object.surface === 'water') return object
   if (shouldPreserveRoadSurfaceDecoration(object)) return object
   if (!decorationOverlapsRoadSurface(object, grid)) return object
 
@@ -2599,6 +2617,14 @@ export function cleanupRoadSurfaceDecorationsWithShifts(decorations, grid, runti
     cleanedDecorations.push(...shiftedGroup)
     if (shift && !group.some((object) => shouldPreserveRoadSurfaceDecoration(object))) {
       eventShifts.set(eventId, shift)
+      const evt = runtimeEvents.find(entry => entry.id === eventId)
+      if (evt) {
+        const x = evt.position.x + shift.dx, y = evt.position.y + shift.dy
+        const radius = ['heal', 'challenge'].includes(evt.type) ? 2 : 0
+        for (let dy = -radius; dy <= radius; dy += 1) for (let dx = -radius; dx <= radius; dx += 1) {
+          eventTileKeys.add(`${x + dx},${y + dy}`)
+        }
+      }
     }
   })
 
@@ -2745,6 +2771,7 @@ function resolveBoundaryVisualBlockerProfile(mapId) {
   if (mapId === 'GodotMapV2_TideDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteTide
   if (mapId === 'GodotMapV2_IronDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteIron
   if (mapId === 'GodotMapV2_DragonDojo') return BOUNDARY_VISUAL_BLOCKER_PROFILES.eliteDragon
+  if (mapId === 'GodotMapV2_ChampionTower') return BOUNDARY_VISUAL_BLOCKER_PROFILES.champion
   return BOUNDARY_VISUAL_BLOCKER_PROFILES.default
 }
 
@@ -2761,11 +2788,11 @@ function isPirateShoreMap(mapId) {
 }
 
 function shouldRenderInstancedForestWallTrees(mapId) {
-  return isPirateShoreMap(mapId)
+  return false // Theme-specific border assets include palms; generic pines do not belong on the beach.
 }
 
 function shouldRenderForestWallUndergrowth(mapId) {
-  return !ELITE_FOUR_DOJO_MAP_IDS.has(mapId)
+  return !ELITE_FOUR_DOJO_MAP_IDS.has(mapId) && mapId !== 'GodotMapV2_ChampionTower'
 }
 
 function resolveLegacyBoundaryVisualBlockerScale(type, [minFactor, maxFactor], x, y, salt = 0) {
@@ -2886,7 +2913,7 @@ function createBoundaryVisualBlockerCandidate(mapId, grid, x, y, {
     x: Number((x + offset.x + jitterX).toFixed(2)),
     y: Number((y + offset.y + jitterY).toFixed(2)),
     scale: tunedScale,
-    rotation: Number((seededRandom(x, y, 1000 + saltBase) * Math.PI * 2).toFixed(4)),
+    rotation: environmentDecorationRotation(type, Number((seededRandom(x, y, 1000 + saltBase) * Math.PI * 2).toFixed(4))),
     sourceId: `boundary_visual_blocker_${mapId}_${x}_${y}`
   }
 }
@@ -2912,6 +2939,8 @@ function overlapsBoundaryFixedLandmarkClearance(object, runtimeEvents) {
 }
 
 function buildBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths) {
+  // The tower is an architectural room with authored obelisk pairs, not a forest edge.
+  if (mapId === 'GodotMapV2_ChampionTower') return []
   if (isPirateShoreMap(mapId)) {
     return buildLegacyBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, visualPaths)
   }
@@ -2931,9 +2960,7 @@ function buildBoundaryVisualBlockers(mapId, grid, decorations, runtimeEvents, vi
       const eventDistance = distanceToRuntimeEvents(runtimeEvents, x, y)
       const nearCriticalPath = roadDistance <= 2.75 || eventDistance <= 3
       const layerTypes = nearCriticalPath ? profile.compact : profile.primary
-      const stackLayers = nearCriticalPath
-        ? Math.max(2, Math.min(3, profile.stackLayers ?? 3))
-        : (profile.stackLayers ?? 4)
+      const stackLayers = nearCriticalPath ? 1 : Math.min(2, profile.stackLayers ?? 2)
 
       for (let layer = 0; layer < stackLayers; layer += 1) {
         const type = layerTypes[
@@ -3024,7 +3051,7 @@ function collectPathClearanceCells(grid, runtimeEvents, definition = null) {
     const y = Math.trunc(Number(evt.position?.y))
     if (!inBounds(x, y)) return
     if (EVENT_ACCESS_TYPES.has(evt.type)) cells.add(`${x},${y}`)
-    if (!EVENT_ACCESS_ADJACENT_TYPES.has(evt.type)) return
+    if (!EVENT_ACCESS_ADJACENT_TYPES.has(evt.type) && !['item', 'pickup', FAST_TRAVEL_EVENT_TYPE].includes(evt.type)) return
 
     for (let dy = -1; dy <= 1; dy += 1) {
       for (let dx = -1; dx <= 1; dx += 1) {
@@ -6739,12 +6766,48 @@ function buildRuntimeSignDecorations(definition, runtimeEvents) {
         y,
         scale: Number(evt.properties?.scale) || signScale,
         rotation: resolveRoadsideSignRotation(definition, x, y),
-        preserveRoadPosition: Boolean(evt.properties?.preserveRoadPosition),
+        preserveRoadPosition: visualModel === 'trail_sign' || Boolean(evt.properties?.preserveRoadPosition),
+        ...(visualModel === 'trail_sign' ? { footprint: { width: .20, height: .05 } } : {}),
         sourceId: `${evt.id}_${isHiddenGate ? 'gate_sign' : 'sign'}`,
         eventId: evt.id,
         eventType: evt.type
       }]
     })
+}
+
+function arrangeRoadsideSigns(grid, runtimeEvents, decorations, definition) {
+  const placed = []
+  const moves = new Map()
+  const candidates = collectTiles(grid, (tile, x, y) =>
+    ![TILE.water, TILE.road, TILE.bridge, TILE.exit, TILE.tallGrass].includes(tile) &&
+    CARDINAL_DIRECTIONS.some(([facing, dx, dy]) => facing !== 'up' && isRoadSurfaceTile(grid[y + dy]?.[x + dx])))
+  const signIds = new Set(decorations.filter(object => object.type === 'trail_sign').map(object => object.eventId))
+  runtimeEvents.forEach(evt => {
+    if (!signIds.has(evt.id)) return
+    const point = candidates
+      .filter(p => placed.every(other => Math.hypot(p.x - other.x, p.y - other.y) >= 4))
+      .filter(p => runtimeEvents.every(other => other.id === evt.id || signIds.has(other.id) ||
+        Math.hypot(p.x - other.position.x, p.y - other.position.y) >= 2.5))
+      .filter(p => !isEnvironmentPointInWater(definition, p.x, p.y, .15))
+      .filter(p => filterHiddenZoneEdgeClearanceDecorations([{ type: 'trail_sign', ...p, scale: 1, footprint: { width: .2, height: .05 } }], definition, runtimeEvents).length)
+      .sort((a, b) => Math.hypot(a.x - evt.position.x, a.y - evt.position.y) - Math.hypot(b.x - evt.position.x, b.y - evt.position.y) || a.y - b.y || a.x - b.x)[0]
+    if (!point) return
+    placed.push(point)
+    moves.set(evt.id, { dx: point.x - evt.position.x, dy: point.y - evt.position.y })
+  })
+  return {
+    events: runtimeEvents.map(evt => {
+      const move = moves.get(evt.id)
+      return move ? { ...evt, position: { ...evt.position, x: evt.position.x + move.dx, y: evt.position.y + move.dy } } : evt
+    }),
+    decorations: decorations.map(object => {
+      const move = moves.get(object.eventId)
+      if (!move) return object
+      const placed = translateDecoration(object, move.dx, move.dy)
+      const direction = CARDINAL_DIRECTIONS.find(([facing, dx, dy]) => facing !== 'up' && isRoadSurfaceTile(grid[placed.y + dy]?.[placed.x + dx]))
+      return { ...placed, rotation: SIGN_FACE_ROTATIONS[direction?.[0]] ?? placed.rotation }
+    })
+  }
 }
 
 function buildManualRuntimeTrainerDecoration(evt, index = 0) {
@@ -7760,6 +7823,7 @@ function deriveVisualPathsFromGrid(grid, roadPaths, runtimeEvents = []) {
 }
 
 export function buildGodotRegionMap(rawDefinition) {
+  rawDefinition = refineMapEnvironmentDefinition(rawDefinition)
   WIDTH = Math.max(20, Math.min(DEFAULT_WIDTH, Math.round(Number(rawDefinition?.width) || DEFAULT_WIDTH)))
   HEIGHT = Math.max(18, Math.min(DEFAULT_HEIGHT, Math.round(Number(rawDefinition?.height) || DEFAULT_HEIGHT)))
   const definition = {
@@ -7772,7 +7836,7 @@ export function buildGodotRegionMap(rawDefinition) {
   runtimeEvents = relocateRoadSurfaceHealEvents(definition, runtimeEvents)
   const gameplayEventIds = new Set(gameplayEvents.map((eventEntry) => eventEntry.id))
   const handPlacedDecorations = (definition.decorativeObjects || [])
-    .filter((object) => !isManualFixedSceneDuplicate(object, runtimeEvents))
+    .filter((object) => !object.environmentAnchor && !isManualFixedSceneDuplicate(object, runtimeEvents))
   let decorations = [
     ...handPlacedDecorations,
     ...buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, gameplayEventIds),
@@ -7821,6 +7885,7 @@ export function buildGodotRegionMap(rawDefinition) {
   clearEvents(grid, runtimeEvents)
   softenForestEdgeCollisions(grid)
 
+
   ;(definition.scatter || []).forEach((group) => addScatter({
     grid,
     output: decorations,
@@ -7850,6 +7915,7 @@ export function buildGodotRegionMap(rawDefinition) {
     mapId: definition.id
   })
 
+
   const bridges = deriveBridgeModelsFromGrid(grid, definition)
   paintBridgeModelFootprints(grid, bridges)
   decorations = filterLargeDecorationsOffGrassTiles(decorations, grid)
@@ -7862,8 +7928,40 @@ export function buildGodotRegionMap(rawDefinition) {
   } = cleanupRoadSurfaceDecorationsWithShifts(decorations, grid, runtimeEvents)
   decorations = roadSurfaceCleanedDecorations
   runtimeEvents = applyRoadSurfaceEventShifts(runtimeEvents, roadSurfaceEventShifts)
+  const roadside = arrangeRoadsideSigns(grid, runtimeEvents, decorations, definition)
+  runtimeEvents = roadside.events
+  decorations = roadside.decorations
   carveEventAccessCorridors(grid, runtimeEvents)
   clearEvents(grid, runtimeEvents)
+  // Place focal objects using their measured bounds before incidental scatter.
+  // Search locally, retain the authored habitat, and reserve approach corridors.
+  const anchorClearance = collectPathClearanceCells(grid, runtimeEvents, definition)
+  const placedAnchors = []
+  const environmentAnchors = (definition.decorativeObjects || []).filter(object => object.environmentAnchor).flatMap(object => {
+    const offsets = [[0, 0], ...ROAD_SURFACE_NUDGE_OFFSETS.filter(([dx, dy]) => Math.hypot(dx, dy) <= 7)]
+    for (const [dx, dy] of offsets) {
+      const candidate = { ...object, x: object.x + dx, y: object.y + dy }
+      const cells = getDecorationFootprintCells(candidate, .28)
+      if (!cells.length || cells.some(cell => anchorClearance.has(`${cell.x},${cell.y}`))) continue
+      if (distanceToRuntimeEvents(runtimeEvents, candidate.x, candidate.y) < 2.6) continue
+      if (decorationOverlapsAnyDecoration(candidate, placedAnchors, .2)) continue
+      const water = object.surface === 'water'
+      if (!cells.every(cell => inBounds(cell.x, cell.y) &&
+        ![TILE.road, TILE.bridge, TILE.exit, TILE.heal, TILE.sign, TILE.tallGrass].includes(grid[cell.y][cell.x]) &&
+        (water ? grid[cell.y][cell.x] === TILE.water && isEnvironmentPointInWater(definition, cell.x, cell.y, -.1)
+          : grid[cell.y][cell.x] !== TILE.water && !isEnvironmentPointInWater(definition, cell.x, cell.y, .25)))) continue
+      if (decorationOverlapsAnyBridge(candidate, bridges, .35)) continue
+      if (!filterHiddenZoneEdgeClearanceDecorations([candidate], definition, runtimeEvents).length) continue
+      if (!filterHiddenGateEntranceClearanceDecorations([candidate], runtimeEvents).length) continue
+      placedAnchors.push(candidate)
+      return [candidate]
+    }
+    return []
+  })
+
+  decorations = [...decorations.filter(object => isRuntimeEventDecoration(object) ||
+    !placedAnchors.some(anchor => doDecorationFootprintsOverlap(object, anchor, .2))), ...environmentAnchors]
+
   decorations = filterPathClearanceDecorations(decorations, grid, runtimeEvents, definition)
   decorations = filterFixedLandmarkOverlaps(decorations, runtimeEvents)
   decorations = filterBridgeSurfaceDecorations(decorations, bridges)
@@ -7902,6 +8000,7 @@ export function buildGodotRegionMap(rawDefinition) {
   visibleDecorations = filterPathClearanceDecorations(visibleDecorations, grid, runtimeEvents, definition)
   visibleDecorations = filterHiddenZoneEdgeClearanceDecorations(visibleDecorations, definition, runtimeEvents)
   visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
+  visibleDecorations = finishEnvironmentDecorations(visibleDecorations, definition)
   visibleDecorations = ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, visibleDecorations, bridges)
   visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
   paintBlockingDecorationFootprints(grid, visibleDecorations, runtimeEvents)
@@ -7942,6 +8041,8 @@ export function buildGodotRegionMap(rawDefinition) {
     signs,
     expansionSlots: definition.expansionSlots || [],
     generationNotes: {
+      environmentRevision: ENVIRONMENT_REVISION,
+      environmentAnchorsPlaced: placedAnchors.map(({ sourceId, type, x, y }) => ({ sourceId, type, x, y })),
       generatedFrom: 'src/game/data/godotMaps/godot_region_maps.js',
       roadSingleSource: true,
       design: 'Region-chain maps replace the old 100x100 GodotMapV2 runtime. Roads are orthogonal and expansion is definition-driven.'
@@ -8025,19 +8126,8 @@ const ALL_REGIONS = [
       { id: 'meadow_east_flowers', name: '星音东花地', x: 24, y: 5, width: 5, height: 6, encounterTableId: 'region_meadow_east_5_12', tallGrassRate: 0.2 },
       { id: 'meadow_hidden_grove', name: '星音秘境', x: 31, y: 5, width: 7, height: 5, encounterTableId: 'region_meadow_hidden_grove_5_12', tallGrassRate: 0.34, depth: 'deep', premiumHiddenZone: true, levelRange: [17, 19] }
     ],
-    decorativeObjects: [
-      // 中央巨大橡树 - 唯一视觉焦点
-      themeLandmark('nature_tree_oak', 20, 10, { scale: 3.2 }),
-      // 南侧野营角落（让玩家一眼记住”草径的南口”）
-      themeLandmark('nature_tent_detailed_open', 18, 27, { rotation: 0.08 }),
-      themeLandmark('nature_canoe', 14, 24, { rotation: -0.5 }),
-      // 北侧石阵（与草丛区形成对比）
-      themeLandmark('nature_stone_large', 14, 7, { rotation: 0.2 }),
-      themeLandmark('nature_rock_large', 16, 6, { rotation: -0.15 }),
-      // 新增：隐藏路径视觉线索
-      themeLandmark('nature_bush_large', 33, 16, { scale: 1.8, rotation: 0.1 }),  // 灌木标记入口
-      themeLandmark('nature_tree_oak', 33, 8, { scale: 2.8 })  // 巨树标记秘境
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 密集的野花海洋 - 营造花海草原氛围
       { idPrefix: 'meadow_flowers', types: ['nature_flower_yellow', 'nature_flower_red', 'nature_flower_purple_a', 'nature_flower_purple_b', 'platformer_flowers'], count: 160, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 120, scale: [1.0, 1.35], height: 0.16, blocksPath: false },
@@ -8107,21 +8197,8 @@ const ALL_REGIONS = [
       { id: 'lake_east_reeds', name: '东岸潮草', x: 29, y: 22, width: 9, height: 7, encounterTableId: 'region_lake_east_11_18', tallGrassRate: 0.23 },
       { id: 'lake_hidden_path', name: '环湖秘径', x: 26, y: 8, width: 6, height: 7, encounterTableId: 'region_lake_hidden_path_11_18', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [23, 25] }
     ],
-    decorativeObjects: [
-      // 湖心巨码头（玩家第一眼”雾湖记忆点”）
-      themeLandmark('shore_dock_small', 27, 16, { scale: 3.05 }),
-      // 两侧对称渔船（形成”湖心三件套”）
-      themeLandmark('pirate_boat_row_large', 24, 14, { rotation: 0.35 }),
-      themeLandmark('pirate_boat_row_large', 30, 18, { rotation: -0.45 }),
-      // 北侧漂流独木舟（指向北支路）
-      themeLandmark('nature_canoe', 18, 9, { rotation: 0.25 }),
-      // 南岸石圈（让南出口更像”码头集市”）
-      themeLandmark('hex_water_rocks', 23, 26, { rotation: -0.12 }),
-      themeLandmark('hex_water_rocks', 26, 27, { rotation: 0.35 }),
-      // 新增：环湖路径视觉线索
-      themeLandmark('nature_lily_large', 28, 8, { scale: 1.8 }),  // 荷花标记环湖路径
-      themeLandmark('nature_canoe', 28, 12, { rotation: -0.3 })  // 独木舟指向宝箱
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 密集的芦苇丛 - 营造湖泊氛围
       { idPrefix: 'lake_reeds', types: ['wetland_reed_clump', 'nature_lily_large'], count: 140, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 210, scale: [1.1, 1.45], height: 0.16, blocksPath: false },
@@ -8185,19 +8262,8 @@ const ALL_REGIONS = [
       { id: 'farm_east_rows', name: '东麦田', x: 24, y: 23, width: 12, height: 6, encounterTableId: 'region_farm_east_17_24', tallGrassRate: 0.23 },
       { id: 'farm_windmill_top', name: '风车塔顶', x: 6, y: 6, width: 5, height: 5, encounterTableId: 'region_farm_windmill_top_17_24', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: [29, 31] }
     ],
-    decorativeObjects: [
-      // 巨大风车 - 唯一视觉焦点
-      themeLandmark('town_windmill', 20, 10, { scale: 3.35 }),
-      // 农庄主路口的集市三件套（玩家从四个方向来都能一眼认出）
-      themeLandmark('town_cart', 23, 16, { rotation: 0.2 }),
-      themeLandmark('town_stall_red', 17, 15, { rotation: -0.25 }),
-      themeLandmark('town_stall_green', 16, 17, { rotation: 0.18 }),
-      // 水井旁补一个长凳角落
-      themeLandmark('town_stall_bench', 10, 12, { rotation: 0.45 }),
-      // 新增：隐藏路径视觉线索
-      themeLandmark('town_cart', 8, 12, { scale: 1.3, rotation: -0.3 }),  // 推车标记入口
-      themeLandmark('town_windmill', 8, 8, { scale: 2.0 })  // 小风车标记塔顶
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 密集的麦田海洋 - 营造丰收氛围
       { idPrefix: 'farm_wheat', types: ['nature_wheat_stage_a', 'nature_wheat_stage_b'], count: 200, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 310, scale: [1.0, 1.35], height: 0.16, blocksPath: false },
@@ -8277,13 +8343,8 @@ const ALL_REGIONS = [
       { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 8, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 },
       { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: [35, 40] }
     ],
-    decorativeObjects: [
-      { type: 'pirate_ship_wreck', x: 33, y: 19, scale: 0.78, rotation: -0.2 },
-      { type: 'pirate_boat_row_large', x: 30, y: 13, scale: 0.92, rotation: 0.45 },
-      // 新增：沉船入口视觉线索
-      { type: 'pirate_chest', x: 31, y: 28, scale: 0.9, rotation: 0.1 },  // 宝箱标记入口
-      { type: 'pirate_mast', x: 34, y: 24, scale: 0.82, rotation: -0.3 }  // 桅杆移入内舱，避免遮住入口旗
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       { idPrefix: 'shore_cargo', types: ['pirate_barrel', 'pirate_crate', 'pirate_chest', 'pirate_flag', 'pirate_flag_pennant', 'pirate_bottle'], count: 76, allowedTiles: [TILE.sand], salt: 410, scale: [0.72, 1.02] },
       { idPrefix: 'shore_edges', types: ['pirate_palm_detailed_straight', 'pirate_rocks_sand_a', 'pirate_rocks_sand_b', 'pirate_rocks_sand_c', 'pirate_patch_sand_foliage'], count: 54, allowedTiles: [TILE.wall], salt: 419, scale: [0.72, 1.05] }
@@ -8374,19 +8435,8 @@ const ALL_REGIONS = [
       { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 },
       { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: [41, 52] }
     ],
-    decorativeObjects: [
-      // 巨大陵墓 - 中央视觉焦点（偏心一点，避免“正中太死板”）
-      themeLandmark('grave_stone_wall_damaged', 19, 16, { scale: 3.5 }),
-      // 主记忆点：棺材广场 + 双灯
-      themeLandmark('grave_coffin_old', 18, 18, { rotation: 0.25 }),
-      themeLandmark('grave_lantern_glass', 16, 18, { rotation: -0.2 }),
-      themeLandmark('grave_lantern_glass', 20, 18, { rotation: 0.25 }),
-      // 幽灵守卫（站在陵墓前）
-      themeLandmark('grave_character_ghost', 19, 14, { scale: 2.65, rotation: -0.12 }),
-      // 次地标：长凳+南瓜角落
-      themeLandmark('grave_bench_damaged', 32, 18, { rotation: -0.15 }),
-      themeLandmark('grave_pumpkin_carved', 30, 19, { rotation: 0.12 })
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 密集的墓碑森林 - 营造阴森氛围（但别压到道路）
       { idPrefix: 'grave_stones', types: ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_cross_wood'], count: 165, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 512, scale: [0.92, 1.32], height: 0.16, minRoadDistance: 2.75, minEventDistance: 2.4, respectSampledScale: true },
@@ -8450,7 +8500,7 @@ const ALL_REGIONS = [
       warp('warp_hex_to_ridge', 38, 16, 'GodotMapV2_SurvivalRidge', { x: 3, y: 16, direction: 'right' }, '前往铁木营地'),
       heal('heal_hex_spring', 26, 12, '遗迹泉水'),
       sign('sign_hex_ruin', 2, 14, '六角遗迹 Lv.35-42：东营地，北海岸。'),
-      merchant('npc_hex_relic_buyer', 18, 14, {
+      merchant('npc_hex_relic_buyer', 14, 14, {
         name: '遗迹回收商',
         title: '遗迹回收商 · 出售道具',
         facing: 'down',
@@ -8486,19 +8536,8 @@ const ALL_REGIONS = [
       { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 },
       { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [47, 61] }
     ],
-    decorativeObjects: [
-      // 中央神殿废墟 - 主视觉焦点
-      themeLandmark('hex_building_mine', 20, 16, { scale: 3.5 }),
-      // 两侧石柱
-      themeLandmark('hex_stone_hill', 12, 16, { scale: 3.05 }),
-      themeLandmark('hex_stone_hill', 28, 16, { scale: 3.05 }),
-      // 东北泉水区的桥+码头组合（让“泉水”更像一处景点）
-      themeLandmark('hex_bridge', 31, 12, { rotation: 0.5 }),
-      themeLandmark('hex_building_dock', 32, 12, { rotation: 0.15 }),
-      // 东北封印密室：让遗迹拥有明确的隐藏探索目标
-      themeLandmark('hex_stone_rocks', 34, 10, { scale: 1.25, rotation: 0.18 }),
-      themeLandmark('platformer_stones', 31, 9, { scale: 1.05, rotation: -0.24 })
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 密集的遗迹碎石 - 营造古老氛围
       { idPrefix: 'hex_ruins', types: ['hex_stone_rocks', 'hex_grass_forest', 'platformer_rocks'], count: 160, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 610, scale: [1.05, 1.45], minRoadDistance: 2.2, minEventDistance: 2.1, respectSampledScale: true },
@@ -8597,21 +8636,8 @@ const ALL_REGIONS = [
       { id: 'ridge_south_grass', name: '南岭草丛', x: 5, y: 23, width: 11, height: 7, encounterTableId: 'region_ridge_south_41_47', tallGrassRate: 0.27 },
       { id: 'ridge_east_grass', name: '东岭草丛', x: 28, y: 5, width: 9, height: 7, encounterTableId: 'region_ridge_east_41_47', tallGrassRate: 0.27 }
     ],
-    decorativeObjects: [
-      // 中央营火 + 帐篷圈（玩家一眼记住“铁木营地”）
-      themeLandmark('survival_campfire_fishing', 20, 16, { scale: 3.2 }),
-      themeLandmark('survival_tent', 18, 15, { rotation: -0.25 }),
-      themeLandmark('survival_tent', 22, 17, { rotation: 0.35 }),
-      themeLandmark('survival_structure_canvas', 16, 16, { rotation: 0.08 }),
-      themeLandmark('survival_workbench', 24, 16, { rotation: -0.12 }),
-      themeLandmark('survival_signpost', 20, 18, { rotation: 0.05 }),
-      // 北侧训练林：树桩、器材和围栏形成一个有目的的可探索区域
-      themeLandmark('survival_tree_log', 18, 6, { rotation: 0.18 }),
-      themeLandmark('survival_fence', 24, 6, { scale: 1.35, rotation: 1.57 }),
-      themeLandmark('survival_workbench', 25, 10, { scale: 1.15, rotation: -0.32 }),
-      themeLandmark('nature_tree_pine', 20, 4, { scale: 2.35, rotation: 0.12 }),
-      themeLandmark('nature_tree_pine', 27, 5, { scale: 2.1, rotation: -0.18 })
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 物资散落（不阻挡，保证草丛可达）
       { idPrefix: 'ridge_camp', types: ['survival_box', 'survival_barrel', 'survival_chest', 'survival_resource_wood', 'survival_resource_planks'], count: 120, allowedTiles: [TILE.grass, TILE.tallGrass], salt: 710, scale: [1.1, 1.55], minRoadDistance: 2.2, minEventDistance: 2.1, blocksPath: false },
@@ -8701,19 +8727,8 @@ const ALL_REGIONS = [
       { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 },
       { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, exclusivePokemonIds: [207, 208, 209], levelRange: [65, 70] }
     ],
-    decorativeObjects: [
-      // 主记忆点：高地石阵 + 悬台旗帜
-      themeLandmark('hex_stone_hill', 20, 16, { scale: 3.7 }),
-      themeLandmark('platformer_platform_overhang', 31, 10, { rotation: 0.08 }),
-      themeLandmark('platformer_flag', 29, 10, { rotation: 0.05 }),
-      themeLandmark('platformer_flag', 33, 10, { rotation: -0.05 }),
-      // 西北“峡口”石门感
-      themeLandmark('ridge_block_grass_edge', 12, 12, { rotation: 0.2 }),
-      themeLandmark('ridge_block_grass_edge', 12, 8, { rotation: -0.2 }),
-      // 西北观星秘径：终局隐藏探索点
-      themeLandmark('platformer_platform_overhang', 7, 7, { scale: 0.92, rotation: -0.08 }),
-      themeLandmark('platformer_flag', 6, 7, { scale: 0.82, rotation: 0.12 })
-    ],
+    // Focal compositions live in mapEnvironmentDesign.js.
+    decorativeObjects: [],
     scatter: [
       // 巨石群（远离道路，别堵草丛）
       { idPrefix: 'peak_stones', types: ['platformer_rocks', 'platformer_stones', 'ridge_block_grass_edge'], count: 120, allowedTiles: [TILE.paleGrass, TILE.grass], salt: 812, scale: [1.15, 1.7], height: 0.18, minRoadDistance: 2.75, minEventDistance: 2.4, respectSampledScale: true },
@@ -9144,12 +9159,13 @@ const ALL_REGIONS = [
         rule: eliteRule({
           id: 'iron_elite_core',
           name: '铁壁核心',
-          description: '开场敌方防御提高 1 级；敌方受到暴击后，下一次造成伤害提高 20%。',
-          openingEnemyStatStages: { def: 1 },
+          description: '前 4 个敌方回合内，敌方受到的物理伤害降低 20%；敌方受到暴击后，下一次造成伤害提高 20%。',
+          enemyPhysicalDamageTakenMultiplierTurns: 4,
+          enemyDamageTakenMultiplier: 0.8,
           enemyDamageBoostOnCriticalTaken: { multiplier: 1.2, turns: 1 }
         }),
         beforeBattleText: '铁壁天王：能击碎防线，才算真正进入终局。',
-        battleHintText: '火或地面单核会被水箭龟、喷火龙截断；用两种突破属性分段攻破核心。',
+        battleHintText: '建议主力 Lv.93–95；特殊招式可绕过开场护甲，第 4 个敌方回合结束后物理伤害恢复正常。为水箭龟与喷火龙准备第二种突破属性。',
         defeatedText: '铁壁天王：铁壁开门，最后只剩龙穹。',
         dailyDefeatedText: '铁壁天王：铁壁已经认可你。'
       })
@@ -9305,7 +9321,7 @@ const ALL_REGIONS = [
           enemyDamageMultiplierAfterTurn: { turn: 5, multiplier: 1.1 }
         }),
         beforeBattleText: '龙穹天王：这里不是终点，是你队伍真正成型后的答卷。',
-        battleHintText: '特殊攻击手负责开局；巨金怪和梦幻会拆掉单一冰、龙或妖精速推，准备完整轮换。',
+        battleHintText: '建议主力 Lv.98–100，挑战前回门口恢复台补满状态。特殊攻击手首发，冰或妖精对付龙系，另留火或地面招式处理巨金怪；后半程增伤固定为 10%，不会逐回合叠加。',
         defeatedText: '龙穹天王：四馆已破，你拥有继续扩展终局内容的资格。',
         dailyDefeatedText: '龙穹天王：龙穹已经认可你。'
       })

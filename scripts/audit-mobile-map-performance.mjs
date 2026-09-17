@@ -287,7 +287,7 @@ async function waitForSceneReady(page, timeoutMs = 45000) {
     const value = await evaluate(page, `(() => {
       const canvas = document.querySelector('canvas.three-map-canvas')
       return {
-        ready: Boolean(canvas && window.__THREE_LOW_POLY_MAP_PERF__),
+        ready: Boolean(canvas && window.__THREE_LOW_POLY_MAP_PERF__?.worldReady),
         now: performance.now(),
         title: document.title,
         bodyText: document.body?.innerText?.slice(0, 160) || ''
@@ -304,7 +304,9 @@ function buildMeasureExpression(durationMs) {
     const durationMs = ${JSON.stringify(durationMs)};
     const frames = [];
     const longTasks = [];
-    const keyPlan = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'];
+    // Take single steps inward and back. Holding a key near a route blocker
+    // can cross the entrance warp and benchmark a neighbouring dojo instead.
+    const keyPlan = ['ArrowUp', 'ArrowDown'];
     let keyIndex = 0;
     let last = performance.now();
     let stopped = false;
@@ -325,7 +327,7 @@ function buildMeasureExpression(durationMs) {
       window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
       window.setTimeout(() => {
         window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true, cancelable: true }));
-      }, 640);
+      }, 150);
     }
 
     const movementTimer = window.setInterval(pulseMovement, 760);
@@ -496,7 +498,13 @@ async function runBenchmark(args) {
           const readyAtMs = await waitForSceneReady(page, args.readyTimeoutMs)
           await sleep(args.warmupMs)
           const measured = await evaluate(page, buildMeasureExpression(args.durationMs), args.durationMs + 10000)
+          if (measured.perfProbe?.mapName !== mapId) throw new Error(`Movement left ${mapId} for ${measured.perfProbe?.mapName}; sample is invalid`)
+          await mkdir(args.outDir, { recursive: true })
+          const screenshot = await page.send('Page.captureScreenshot', { format: 'png' })
+          const screenshotPath = path.join(args.outDir, `${device.id}-${mapId}.png`)
+          await writeFile(screenshotPath, Buffer.from(screenshot.data, 'base64'))
           const result = {
+            screenshotPath,
             mapId,
             mapName: mapEntry.config.displayName,
             deviceId: device.id,
@@ -537,6 +545,7 @@ async function runBenchmark(args) {
           results.push(result)
           console.log(`${result.status.padEnd(4)} ${device.id.padEnd(12)} ${mapId.padEnd(26)} ${error.message}`)
         } finally {
+          await page.send('Page.close').catch(() => {})
           page.close()
         }
       }
@@ -598,6 +607,9 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export { launchChrome, createPage, preparePage, navigateAndWait, evaluate, waitForSceneReady, sleep }
+
+if (process.argv.slice(1).some((arg) => path.resolve(arg) === __filename)) {
 const args = parseArgs(process.argv.slice(2))
 const startedAt = new Date()
 const { maps, devices, results } = await runBenchmark(args)
@@ -616,3 +628,4 @@ console.log(`Raw:    ${path.relative(PROJECT_ROOT, jsonPath)}`)
 console.log(`Summary: ${results.length} runs, ${failures.length} fail, ${warnings.length} warn`)
 
 process.exitCode = failures.length > 0 ? 1 : 0
+}

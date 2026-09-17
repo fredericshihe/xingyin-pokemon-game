@@ -78,7 +78,12 @@ export default function MapRuntimePreview() {
   }, [])
   const [mapName, setMapName] = useState(initialMapName)
   const [mapGrid, setMapGrid] = useState(() => loadPreviewGrid(initialMapName))
-  const [playerPos, setPlayerPos] = useState(() => getMapStartPosition(initialMapName))
+  const [playerPos, setPlayerPos] = useState(() => {
+    const focus = getPreviewSearchParams().get('focus')
+    const anchor = getAdventureMapInfo(initialMapName).decorativeObjects?.find(object =>
+      (object.environmentAnchor || object.environmentComposition) && (object.type === focus || object.environmentScene === focus))
+    return anchor ? { x: Math.round(anchor.x), y: Math.round(anchor.y + 2), direction: 'up' } : getMapStartPosition(initialMapName)
+  })
   const [sceneRevision, setSceneRevision] = useState(0)
   const [zoneName, setZoneName] = useState('')
   const [previewCeremony, setPreviewCeremony] = useState(() => (

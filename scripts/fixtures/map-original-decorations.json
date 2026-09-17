@@ -1,0 +1,58 @@
+{
+  "GodotMap": {
+    "count": 248,
+    "sha256": "84be283075ea77d518d3d4b3a99d2d006d87a970304a2fdf336dc76302811c82"
+  },
+  "GodotMapV2": {
+    "count": 237,
+    "sha256": "096b66e82f1bd5d91f577f2f97426932a8b6bedaea25dfddf3bfcb4936f13bfb"
+  },
+  "GodotMapV2_MistLake": {
+    "count": 182,
+    "sha256": "9a380ddcee8b1a97183755c8c908f0c69ef9cfe6539715fdc995b5d5d2818dcc"
+  },
+  "GodotMapV2_FarmTown": {
+    "count": 309,
+    "sha256": "61236f815a3b4227eaa9f3823efbd25e7cea79109f538f1d34ab7039b2bc4ac1"
+  },
+  "GodotMapV2_PirateShore": {
+    "count": 272,
+    "sha256": "7f8ee926fa9e70ad9e6cb02f8eaded0cc648f97b07241501bd7a0757a5ddcac7"
+  },
+  "GodotMapV2_Graveyard": {
+    "count": 236,
+    "sha256": "8a9bfc10ad9a904ceaa813c6030c8afadd7759da8ddae7ab2c974adf53860209"
+  },
+  "GodotMapV2_HexRuins": {
+    "count": 240,
+    "sha256": "0895d8c0054410204fe010fcb86260546d768ec5e90b11ffcb5a83f418bb49f0"
+  },
+  "GodotMapV2_SurvivalRidge": {
+    "count": 212,
+    "sha256": "200633614b683cce0b27ea9f3fb94b91868b1b25c9ef42abbc5f1359654da478"
+  },
+  "GodotMapV2_BossHighland": {
+    "count": 215,
+    "sha256": "cf677329c31787e6c3fbf533a71ab3cafa9d5a61b6691d543f013202fbd756ce"
+  },
+  "GodotMapV2_FrostDojo": {
+    "count": 60,
+    "sha256": "c4d55d40c4b07e554a014d08a5bd95bcf06f3de38642100b2b3e26d4de376508"
+  },
+  "GodotMapV2_TideDojo": {
+    "count": 58,
+    "sha256": "a06b5fd27227887b3cbc579bf90b1e5c5b34b09f537437f920a3d320cdeb1202"
+  },
+  "GodotMapV2_IronDojo": {
+    "count": 61,
+    "sha256": "cf453407132eb317f6c61b9fd3491bc47357cfb2c7186908ceea2075dc888a7c"
+  },
+  "GodotMapV2_DragonDojo": {
+    "count": 73,
+    "sha256": "a28d0a14cd603ed00b4568f14ce523ad9bd6651198136e264f5322dd44e378ec"
+  },
+  "GodotMapV2_ChampionTower": {
+    "count": 36,
+    "sha256": "9a83fadbaf478e1e898f4780d78dcc950122c5ad09ccb43c94cf1da337d935f3"
+  }
+}

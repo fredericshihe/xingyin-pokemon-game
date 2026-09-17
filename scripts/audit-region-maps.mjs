@@ -185,7 +185,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       }
     })
 
-    if (mapId !== 'GodotMapV2_BossHighland' && warpEvents.length < 2) {
+    if (!['GodotMapV2_BossHighland', 'GodotMapV2_ChampionTower'].includes(mapId) && warpEvents.length < 2) {
       addError(errors, `${mapId} 相邻区域连接点过少，当前 ${warpEvents.length}`)
     }
     warpEvents.forEach((event) => {
@@ -205,7 +205,10 @@ await withViteAuditServer(async ({ loadModule }) => {
         }
         for (const [sampleX, sampleY] of sampleOrthogonalSegment([x1, y1], [x2, y2])) {
           const tile = map.mapGrid[sampleY]?.[sampleX]
-          if (!WALKABLE_ROAD_TILES.has(tile)) {
+          const routeGuard = tile === 7 && map.runtimeEvents.some(event =>
+            event.properties?.blocksRouteUntilDefeated === true &&
+            event.position.x === sampleX && event.position.y === sampleY)
+          if (!WALKABLE_ROAD_TILES.has(tile) && !routeGuard) {
             addError(errors, `${mapId}/${path.id || 'visualPath'} 视觉道路中心线 ${sampleX},${sampleY} 不是可走道路格，当前 tile=${tile}`)
             break
           }

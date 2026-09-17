@@ -2754,6 +2754,7 @@ function ThreeLowPolyMap({
   encounterCooldownSteps = 0,
   cloudBlocked = false,
   mapActive = true,
+  loadingOverlayManaged = false,
   onPlayerMove,
   onEncounter,
   onCollect,
@@ -2847,17 +2848,21 @@ function ThreeLowPolyMap({
     let cleanupRenderer = null
     const perfProbeEnabled = mapDebugEnabled
 
-    const reportSceneReady = (ready) => {
+    const reportSceneReady = (ready, error = null) => {
       if (stateRef.current) stateRef.current.worldReady = ready
       host.dataset.sceneReady = String(ready)
       setSceneReady(ready)
-      onSceneReadyChangeRef.current?.({ mapName: currentMapName, ready })
+      onSceneReadyChangeRef.current?.({
+        mapName: currentMapName,
+        ready,
+        ...(error ? { error } : {})
+      })
     }
     reportSceneReady(false)
 
     const reportRenderIssue = (message, error) => {
       if (disposed) return
-      reportSceneReady(false)
+      reportSceneReady(false, message)
       console.warn('[ThreeLowPolyMap]', message, error || '')
       setRenderIssue({ message })
     }
@@ -5805,7 +5810,7 @@ function ThreeLowPolyMap({
             className="map-viewport three-map-host"
             style={{ width: '100%', height: '100%' }}
           />
-          {!sceneReady && !renderIssue && (
+          {!sceneReady && !renderIssue && !loadingOverlayManaged && (
             <div className="three-map-recovery-overlay" role="status" aria-live="polite">
               <div className="three-map-recovery-card">
                 <div className="three-map-recovery-title">正在准备冒险</div>

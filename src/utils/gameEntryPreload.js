@@ -1,20 +1,13 @@
 import {
   getP0ImageAssetUrls,
-  getP1ImageAssetUrls,
-  getP2ImageAssetUrls
+  getP1ImageAssetUrls
 } from './gameAssetBootstrap'
-import { getGameAudioPreloadEntries } from './gameBgmCatalog'
-import { preloadGameAudioAssets } from './gameAudioPreload'
 import { preloadImageAssetsUntilComplete, clearDecodedImageCache } from './localAssetPreloader'
-import {
-  isEntryPreloadComplete,
-  markEntryPreloadComplete
-} from './gameEntryPreloadMarks'
+import { markEntryPreloadComplete } from './gameEntryPreloadMarks'
 
 export {
   clearEntryPreloadMarks,
   getEntryPreloadStorageKey,
-  isEntryPreloadComplete,
   markEntryPreloadComplete
 } from './gameEntryPreloadMarks'
 
@@ -30,7 +23,7 @@ const PRELOAD_PHASES = {
   audio: '正在准备地图音乐与战斗音效',
   p2: '正在缓存完整图鉴立绘',
   p1: '正在准备当前队伍与遇敌素材',
-  models: '正在搭建全部地图 3D 场景',
+  models: '正在搭建当前地图 3D 场景',
   engine: '正在启动地图引擎',
   complete: '加载完成'
 }
@@ -196,24 +189,17 @@ function createRetryReporter(tracker, bucketKey, phaseLabel) {
   }
 }
 
-/** 进游戏前必须全部就绪：商店/战斗/UI + 完整图鉴 + 全部地图 3D 模型 */
+/** 进游戏前只准备当前地图可玩所需资源，图鉴和其他地图在后台预热。 */
 export async function buildFullEntryPreloadPlan({ mapName, playerTeam = [] } = {}) {
   const p0Urls = toUniqueUrls(getP0ImageAssetUrls())
-  const p2Urls = toUniqueUrls(getP2ImageAssetUrls())
   const p1Urls = toUniqueUrls(getP1ImageAssetUrls({ mapName, playerTeam }))
-  const audioEntries = getGameAudioPreloadEntries({
-    mapName,
-    includeAllMaps: true,
-    includeBattleTracks: true
-  })
-  const audioUrls = toUniqueUrls(audioEntries.map((entry) => entry.primary))
 
   let modelKeys = []
   let mapCount = 0
   try {
-    const { collectAllAdventureMapModelKeys } = await import('../game/threeLowPolyModelCache')
+    const { collectMapModelKeys } = await import('../game/threeLowPolyModelCache')
     const { ADVENTURE_MAP_CHAIN } = await import('../game/data/overworldMaps')
-    modelKeys = collectAllAdventureMapModelKeys()
+    modelKeys = collectMapModelKeys(mapName)
     mapCount = ADVENTURE_MAP_CHAIN.length
   } catch (error) {
     throw new Error(`地图模型清单读取失败：${error?.message || error}`)
@@ -225,14 +211,14 @@ export async function buildFullEntryPreloadPlan({ mapName, playerTeam = [] } = {
 
   return {
     p0Urls,
-    p2Urls,
+    p2Urls: [],
     p1Urls,
-    audioUrls,
-    audioEntries,
+    audioUrls: [],
+    audioEntries: [],
     modelKeys,
     mapName,
     mapCount,
-    totalSteps: p0Urls.length + audioUrls.length + p2Urls.length + p1Urls.length + modelKeys.length + ENGINE_STEP_COUNT
+    totalSteps: p0Urls.length + p1Urls.length + modelKeys.length + ENGINE_STEP_COUNT
   }
 }
 
@@ -286,86 +272,28 @@ async function loadImagePhaseUntilComplete(
   return result
 }
 
-const resolveAudioPreloadConcurrency = (networkOptions = {}) => {
-  const baseConcurrency = Math.trunc(Number(networkOptions.concurrency)) || 1
-  return Math.max(1, Math.min(3, Math.ceil(baseConcurrency / 2)))
-}
-
-async function loadAudioPhaseUntilComplete(audioEntriesOrUrls, tracker, shouldContinue, networkOptions) {
-  const entries = (Array.isArray(audioEntriesOrUrls) ? audioEntriesOrUrls : [])
-    .map((entry) => (
-      typeof entry === 'string'
-        ? { primary: entry, alternateUrls: [] }
-        : {
-          primary: entry?.primary,
-          alternateUrls: Array.isArray(entry?.alternateUrls) ? entry.alternateUrls : []
-        }
-    ))
-    .filter((entry) => entry.primary)
-  const urls = toUniqueUrls(entries.map((entry) => entry.primary))
-  if (!urls.length) {
-    tracker.buckets.audio = 0
-    tracker.totals.audio = 0
-    return { ok: true, total: 0, loaded: 0, failed: [] }
-  }
-
-  tracker.totals.audio = urls.length
-  tracker.report(PRELOAD_PHASES.audio, `0/${urls.length}`)
-
-  const result = await preloadGameAudioAssets({
-    entries,
-    concurrency: resolveAudioPreloadConcurrency(networkOptions),
-    retries: Math.max(3, networkOptions.retries),
-    perUrlTimeoutMs: Math.max(45000, networkOptions.timeoutMs),
-    shouldContinue,
-    onRetryRound: createRetryReporter(tracker, 'audio', PRELOAD_PHASES.audio),
-    onItemComplete: ({ loaded, total }) => {
-      if (!shouldContinue()) return
-      tracker.buckets.audio = Math.min(urls.length, loaded)
-      tracker.report(PRELOAD_PHASES.audio, `${tracker.buckets.audio}/${total}`)
-    }
-  })
-
-  if (!result.ok || result.failed?.length) {
-    throw new Error(`BGM 未完整加载，失败资源 ${result.failed?.length || 0} 个`)
-  }
-
-  tracker.buckets.audio = urls.length
-  tracker.report(PRELOAD_PHASES.audio, `${urls.length}/${urls.length}`)
-  return result
-}
-
 async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
   const plan = await buildFullEntryPreloadPlan({ mapName: DEFAULT_MAP_NAME, playerTeam: [] })
-  const { p0Urls, p2Urls, audioUrls, audioEntries, modelKeys, mapCount } = plan
-  const imageTotal = p0Urls.length + p2Urls.length
-  const totalSteps = p0Urls.length + audioUrls.length + p2Urls.length + modelKeys.length + ENGINE_STEP_COUNT
+  const { p0Urls, mapCount } = plan
+  const imageTotal = p0Urls.length
+  const totalSteps = p0Urls.length + ENGINE_STEP_COUNT
   const networkOptions = resolvePreloadNetworkOptions()
 
   const tracker = createProgressReporter({
     totalSteps,
     mapCount,
     imageTotal,
-    modelTotal: modelKeys.length,
+    modelTotal: 0,
     onProgress
   })
 
   tracker.totals.p0 = p0Urls.length
-  tracker.totals.p2 = p2Urls.length
+  tracker.totals.p2 = 0
   tracker.totals.p1 = 0
-  tracker.totals.audio = audioUrls.length
-  tracker.totals.models = modelKeys.length
+  tracker.totals.audio = 0
+  tracker.totals.models = 0
 
-  const modelModule = await import('../game/threeLowPolyModelCache')
   const mapModulePromise = import('../game/threeLowPolyMap')
-
-  const modelLoadOptions = {
-    concurrency: Math.max(1, Math.floor(networkOptions.concurrency / 2) || 1),
-    retries: networkOptions.retries + 1,
-    timeoutMs: Math.max(45000, networkOptions.timeoutMs * 2),
-    shouldContinue,
-    onRetryRound: createRetryReporter(tracker, 'models', PRELOAD_PHASES.models)
-  }
 
   await loadImagePhaseUntilComplete(
     p0Urls,
@@ -375,35 +303,6 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
     networkOptions,
     shouldContinue
   )
-  await loadAudioPhaseUntilComplete(audioEntries, tracker, shouldContinue, networkOptions)
-  await loadImagePhaseUntilComplete(
-    p2Urls,
-    PRELOAD_PHASES.p2,
-    tracker,
-    'p2',
-    networkOptions,
-    shouldContinue,
-    {
-      allowPlaceholderFallback: false
-    }
-  )
-
-  tracker.report(PRELOAD_PHASES.models, `0/${modelKeys.length}`)
-  const modelResult = await modelModule.preloadModelKeysUntilComplete(modelKeys, {
-    ...modelLoadOptions,
-    allowMissingPlaceholder: false,
-    shouldContinue,
-    onItemComplete: (_key, stats) => {
-      if (!shouldContinue()) return
-      tracker.buckets.models = stats.loaded
-      tracker.report(PRELOAD_PHASES.models, `${stats.loaded}/${stats.total}`)
-    }
-  })
-  if (!modelResult.ok || modelResult.failed?.length) {
-    throw new Error(`地图 3D 场景未完整加载，失败模型 ${modelResult.failed?.length || 0} 个`)
-  }
-  tracker.buckets.models = modelKeys.length
-  tracker.report(PRELOAD_PHASES.models, `${modelKeys.length}/${modelKeys.length}`)
 
   await mapModulePromise
   tracker.buckets.engine = ENGINE_STEP_COUNT
@@ -415,15 +314,15 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
 
 function markEarlyPhasesComplete(tracker, plan) {
   tracker.totals.p0 = plan.p0Urls.length
-  tracker.totals.p2 = plan.p2Urls.length
-  tracker.totals.audio = plan.audioUrls.length
+  tracker.totals.p2 = 0
+  tracker.totals.audio = 0
   tracker.totals.models = plan.modelKeys.length
   tracker.totals.p1 = plan.p1Urls.length
   tracker.buckets.p0 = plan.p0Urls.length
-  tracker.buckets.p2 = plan.p2Urls.length
-  tracker.buckets.audio = plan.audioUrls.length
-  tracker.buckets.models = plan.modelKeys.length
-  tracker.buckets.engine = ENGINE_STEP_COUNT
+  tracker.buckets.p2 = 0
+  tracker.buckets.audio = 0
+  tracker.buckets.models = 0
+  tracker.buckets.engine = 0
 }
 
 async function runWithStallGuard(task, { onStall, stallMs = PRELOAD_STALL_MS } = {}) {
@@ -456,13 +355,10 @@ async function runWithStallGuard(task, { onStall, stallMs = PRELOAD_STALL_MS } =
   }
 }
 
-/** 登录页 / 云端读取期间并行启动（P0 + 完整图鉴 + 全部地图模型） */
+/** 登录页 / 云端读取期间只预热基础图片与地图引擎代码。 */
 export function startEarlyEntryPreload({ onProgress = null, force = false } = {}) {
   if (force) {
     resetEntryPreloadSession()
-  }
-  if (!force && isEntryPreloadComplete()) {
-    return Promise.resolve({ ok: true, skipped: true, fromCache: true })
   }
   if (earlyPreloadPromise) {
     if (onProgress) {
@@ -495,11 +391,10 @@ export async function runGameEntryPreload({
     resetEntryPreloadSession({ clearImageCache: true })
     clearEntryPreloadMarks()
     await clearModelLoadCacheIfNeeded(true)
-  } else if (skipIfComplete && isEntryPreloadComplete()) {
-    return { ok: true, skipped: true, fromCache: true }
   }
 
   const execute = async () => {
+    const shouldContinue = resolveShouldContinue()
     const early = await startEarlyEntryPreload({ onProgress, force })
     const plan = await buildFullEntryPreloadPlan({ mapName, playerTeam })
     const networkOptions = resolvePreloadNetworkOptions()
@@ -518,11 +413,8 @@ export async function runGameEntryPreload({
     if (earlyComplete) {
       markEarlyPhasesComplete(tracker, plan)
       tracker.buckets.p1 = 0
-    } else if (!early?.skipped) {
-      await runEarlyAssetPreload(onProgress, resolveShouldContinue())
-      markEarlyPhasesComplete(tracker, plan)
-      tracker.buckets.p1 = 0
     } else {
+      await runEarlyAssetPreload(onProgress, shouldContinue)
       markEarlyPhasesComplete(tracker, plan)
       tracker.buckets.p1 = 0
     }
@@ -534,12 +426,36 @@ export async function runGameEntryPreload({
         tracker,
         'p1',
         networkOptions,
-        resolveShouldContinue()
+        shouldContinue
       )
     } else {
       tracker.buckets.p1 = 0
       tracker.totals.p1 = 0
     }
+
+    const modelModule = await import('../game/threeLowPolyModelCache')
+    const modelLoadOptions = {
+      concurrency: Math.max(1, Math.min(3, Math.floor(networkOptions.concurrency / 2) || 1)),
+      retries: networkOptions.retries + 1,
+      timeoutMs: Math.max(45000, networkOptions.timeoutMs * 2),
+      shouldContinue,
+      onRetryRound: createRetryReporter(tracker, 'models', PRELOAD_PHASES.models)
+    }
+    tracker.report(PRELOAD_PHASES.models, `0/${plan.modelKeys.length}`)
+    const modelResult = await modelModule.preloadModelKeysUntilComplete(plan.modelKeys, {
+      ...modelLoadOptions,
+      allowMissingPlaceholder: false,
+      onItemComplete: (_key, stats) => {
+        if (!shouldContinue()) return
+        tracker.buckets.models = stats.loaded
+        tracker.report(PRELOAD_PHASES.models, `${stats.loaded}/${stats.total}`)
+      }
+    })
+    if (!modelResult.ok || modelResult.failed?.length) {
+      throw new Error(`当前地图 3D 场景未完整加载，失败模型 ${modelResult.failed?.length || 0} 个`)
+    }
+    tracker.buckets.models = plan.modelKeys.length
+    tracker.report(PRELOAD_PHASES.models, `${plan.modelKeys.length}/${plan.modelKeys.length}`)
 
     tracker.report(PRELOAD_PHASES.complete)
     markEntryPreloadComplete()

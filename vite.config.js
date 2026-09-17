@@ -96,6 +96,7 @@ export default defineConfig({
         // 不预缓存 index.html，避免旧 SW 长期返回过期入口并引用已删除的 JS hash
         globPatterns: [
           '**/*.{js,css,wasm,svg}',
+          'assets/battle-vfx-atlas-*.png',
           'draco/**/*'
         ],
         globIgnores: [
@@ -125,7 +126,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.endsWith('.glb'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'game-glb',
+              cacheName: `game-glb-${appBuildId}`,
               expiration: {
                 maxEntries: 220,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -136,7 +137,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/(characters|items\/official-artwork|tiles|maps)\/.+\.(png|webp|svg)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'game-static-art',
+              cacheName: `game-static-art-${appBuildId}`,
               expiration: {
                 maxEntries: 260,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -147,7 +148,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/audio\/.+\.(ogg|wav|mp3|webm)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'game-audio',
+              cacheName: `game-audio-${appBuildId}`,
               expiration: {
                 maxEntries: 220,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -158,7 +159,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/pokemon\/official-artwork\/.+\.(webp|png)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'game-pokemon-art',
+              cacheName: `game-pokemon-art-${appBuildId}`,
               expiration: {
                 maxEntries: 900,
                 maxAgeSeconds: 60 * 60 * 24 * 180

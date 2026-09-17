@@ -7,6 +7,7 @@ import { getMapEventAt, getMapEvents } from './data/mapEvents'
 import { getMapEventTile } from './data/mapEventTypes'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { createEnvironmentGroundPatches } from './environmentGroundPatches'
+import { PLAYER_CHARACTER_KEY, isCharacterModelKey } from './data/characterAssets.js'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
@@ -2604,7 +2605,7 @@ const PROCEDURAL_OPEN_GRASS_DETAIL_MODEL_KEYS = ['flowerYellow', 'flowerRed', 'b
 const PROCEDURAL_DYNAMIC_BLOCKER_MODEL_KEYS = ['bush', 'stone', 'rock']
 
 function collectRuntimeModelKeys(mapInfo, mapGrid) {
-  const keys = new Set()
+  const keys = new Set([PLAYER_CHARACTER_KEY])
   const addKeys = (modelKeys) => modelKeys.forEach((key) => keys.add(key))
   const hasGrid = Array.isArray(mapGrid) && mapGrid.length > 0 && Array.isArray(mapGrid[0])
 
@@ -2636,7 +2637,7 @@ function collectRuntimeModelKeys(mapInfo, mapGrid) {
   }
 
   ;(Array.isArray(mapInfo?.decorativeObjects) ? mapInfo.decorativeObjects : []).forEach((object) => {
-    const spec = getDecorativeModel(object?.type)
+    const spec = getDecorativeModel(object?.type, object)
     if (spec?.key) keys.add(spec.key)
   })
 
@@ -2759,6 +2760,7 @@ function ThreeLowPolyMap({
   onMapWarp,
   onZoneEnter,
   onBlockedMove,
+  onSceneReadyChange,
   onEncounterCooldownChange,
   onNavigate,
   collectedEventIds = [],
@@ -2773,6 +2775,9 @@ function ThreeLowPolyMap({
   const recoverAttemptsRef = useRef(0)
   const [renderNonce, setRenderNonce] = useState(0)
   const [renderIssue, setRenderIssue] = useState(null)
+  const [sceneReady, setSceneReady] = useState(false)
+  const onSceneReadyChangeRef = useRef(onSceneReadyChange)
+  onSceneReadyChangeRef.current = onSceneReadyChange
   const mapDebugEnabled = useMemo(() => isMapRuntimeDebugEnabled(), [])
 
   const mapInfo = useMemo(() => {
@@ -2842,8 +2847,17 @@ function ThreeLowPolyMap({
     let cleanupRenderer = null
     const perfProbeEnabled = mapDebugEnabled
 
+    const reportSceneReady = (ready) => {
+      if (stateRef.current) stateRef.current.worldReady = ready
+      host.dataset.sceneReady = String(ready)
+      setSceneReady(ready)
+      onSceneReadyChangeRef.current?.({ mapName: currentMapName, ready })
+    }
+    reportSceneReady(false)
+
     const reportRenderIssue = (message, error) => {
       if (disposed) return
+      reportSceneReady(false)
       console.warn('[ThreeLowPolyMap]', message, error || '')
       setRenderIssue({ message })
     }
@@ -3032,6 +3046,8 @@ function ThreeLowPolyMap({
     }
 
 	    stateRef.current = {
+      worldReady: false,
+      worldBuilt: false,
       pointer,
       mapGrid,
       mapInfo,
@@ -3073,6 +3089,9 @@ function ThreeLowPolyMap({
 
     const resize = () => {
       if (!renderer) return
+      // Retained scenes can be display:none while a menu owns the screen.
+      // Preserve their buffer and camera until the viewport has dimensions again.
+      if (host.clientWidth === 0 || host.clientHeight === 0) return
       const size = getSafeRendererSize(host)
       const { width, height } = size
       if (mapDebugEnabled && size.wasClamped && host.dataset.rendererSizeClamped !== '1') {
@@ -3101,7 +3120,8 @@ function ThreeLowPolyMap({
       const width = mapGrid[0].length
 
       const start = worldFromTile(pointer.tileX, pointer.tileY, width, height)
-      const fallbackPlayer = createLowPolyPlayer()
+      const fallbackPlayer = new THREE.Group()
+      fallbackPlayer.visible = false
       fallbackPlayer.position.set(start.x, PLAYER_BASE_Y, start.z)
       fallbackPlayer.rotation.y = DIRS[pointer.direction]?.rot ?? 0
       root.add(fallbackPlayer)
@@ -3182,6 +3202,21 @@ function ThreeLowPolyMap({
         concurrency: runtimeIsMobile ? 3 : 6
       })
       if (disposed) return
+
+      const missingCharacters = [...runtimeRequiredModelKeys].filter((key) => isCharacterModelKey(key) && !models[key])
+      if (missingCharacters.length) throw new Error(`角色模型尚未就绪：${missingCharacters.join(', ')}`)
+      const characterPlayer = createLowPolyPlayer()
+      characterPlayer.position.copy(fallbackPlayer.position)
+      characterPlayer.rotation.copy(fallbackPlayer.rotation)
+      root.remove(fallbackPlayer)
+      fallbackPlayer.traverse((child) => {
+        child.geometry?.dispose?.()
+        if (Array.isArray(child.material)) child.material.forEach((material) => material.dispose())
+        else child.material?.dispose?.()
+      })
+      root.add(characterPlayer)
+      stateRef.current.player = characterPlayer
+      stateRef.current.characterModelKeys = [...runtimeRequiredModelKeys].filter(isCharacterModelKey)
 
       const pathMaterial = new THREE.MeshStandardMaterial({
         color: visualPalette.path ?? 0xd9bd86,
@@ -3289,8 +3324,8 @@ function ThreeLowPolyMap({
           const materials = Array.isArray(mat) ? mat : [mat]
           materials.forEach((entry) => {
             if (!entry) return
-            if (typeof entry.roughness === 'number') entry.roughness = 0.82
-            if (typeof entry.metalness === 'number') entry.metalness = 0.03
+            if (typeof entry.roughness === 'number') entry.roughness = isCharacterModelKey(key) ? 0.64 : 0.82
+            if (typeof entry.metalness === 'number') entry.metalness = isCharacterModelKey(key) ? 0 : 0.03
           })
           applyMapAssetMaterialStyle(mat, MAP_ASSET_CATALOG[key])
           subMeshes.push({
@@ -4381,7 +4416,7 @@ function ThreeLowPolyMap({
           return
         }
 
-        const spec = getDecorativeModel(object.type)
+        const spec = getDecorativeModel(object.type, object)
         if (!spec) {
           trackDecorationStat('skippedNoSpec')
           if (mapDebugEnabled && (object.eventType === 'item' || object.eventType === 'pickup')) {
@@ -4659,6 +4694,7 @@ function ThreeLowPolyMap({
       recoverAttemptsRef.current = 0
       setRenderIssue(null)
       stateRef.current.worldBuilt = true
+      stateRef.current.kickAnimation?.()
     }
 
     const handleResize = () => resize()
@@ -4780,7 +4816,7 @@ function ThreeLowPolyMap({
 
     function startMove(direction, options = {}) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return
       const pointerState = state.pointer
       const vec = DIRS[direction]
       if (!vec) return false
@@ -4839,7 +4875,7 @@ function ThreeLowPolyMap({
 
     function requestMove(direction) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return false
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return false
       const pointerState = state.pointer
       if (pointerState.moving) {
         pointerState.queued = direction
@@ -4856,7 +4892,7 @@ function ThreeLowPolyMap({
 
     function beginPress(direction) {
       const state = stateRef.current
-      if (!state || state.cloudBlocked || state.encounterPending || !state.mapActive) return
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive) return
       const vec = DIRS[direction]
       if (!vec) return
       clearMoveDelayTimer()
@@ -5466,7 +5502,11 @@ function ThreeLowPolyMap({
 
       if (!renderer.getContext?.()?.isContextLost?.()) {
         renderer.render(scene, camera)
-        if (state.worldBuilt) state.worldReady = true
+        // Download completion alone is insufficient: wait for a complete rendered frame.
+        if (state.worldBuilt && !state.worldReady && !browserContextLost && !rendererRestartPending) {
+          reportSceneReady(true)
+          state.frameCount = 0
+        }
       }
 
       // 性能监控：移动端减少性能统计的频率以节省CPU
@@ -5479,6 +5519,8 @@ function ThreeLowPolyMap({
         if (!isMobile || (state.frameCount || 0) % perfUpdateInterval === 0) {
           window.__THREE_LOW_POLY_MAP_PERF__ = {
             worldReady: state.worldReady === true,
+            playerModel: state.player?.userData?.kind,
+            characterModelKeys: state.characterModelKeys || [],
             mapName: currentMapName,
             mapVisualQuality: readMapVisualQualityPref(),
             isMobile,
@@ -5513,6 +5555,8 @@ function ThreeLowPolyMap({
     scheduleAnimation()
 
     const keyDown = (event) => {
+      if (!stateRef.current?.mapActive || stateRef.current.cloudBlocked) return
+      if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
       let direction = null
       if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') direction = 'up'
       if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') direction = 'down'
@@ -5527,6 +5571,11 @@ function ThreeLowPolyMap({
     }
 
     const keyUp = (event) => {
+      if (!stateRef.current?.mapActive || stateRef.current.cloudBlocked
+        || event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) {
+        keyboardDirection = null
+        return
+      }
       let direction = null
       if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') direction = 'up'
       if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') direction = 'down'
@@ -5548,6 +5597,7 @@ function ThreeLowPolyMap({
 
     cleanupRenderer = (reason = 'effect-cleanup') => {
       if (disposed) return
+      reportSceneReady(false)
       disposed = true
       clearActiveThreeMapRenderer(host, cleanupRenderer)
       clearMoveDelayTimer()
@@ -5755,6 +5805,14 @@ function ThreeLowPolyMap({
             className="map-viewport three-map-host"
             style={{ width: '100%', height: '100%' }}
           />
+          {!sceneReady && !renderIssue && (
+            <div className="three-map-recovery-overlay" role="status" aria-live="polite">
+              <div className="three-map-recovery-card">
+                <div className="three-map-recovery-title">正在准备冒险</div>
+                <div className="three-map-recovery-text">正在加载角色与地图，请稍候…</div>
+              </div>
+            </div>
+          )}
           {renderIssue && (
             <div className="three-map-recovery-overlay">
               <div className="three-map-recovery-card">
@@ -5772,7 +5830,7 @@ function ThreeLowPolyMap({
         <div className="dpad dpad--minimal">
           <button
             type="button"
-            disabled={cloudBlocked}
+            disabled={cloudBlocked || !sceneReady}
             onPointerDown={() => startMovePress('up')}
             onPointerUp={() => endMovePress('up')}
             onPointerLeave={() => endMovePress('up')}
@@ -5784,7 +5842,7 @@ function ThreeLowPolyMap({
           </button>
           <button
             type="button"
-            disabled={cloudBlocked}
+            disabled={cloudBlocked || !sceneReady}
             onPointerDown={() => startMovePress('down')}
             onPointerUp={() => endMovePress('down')}
             onPointerLeave={() => endMovePress('down')}
@@ -5796,7 +5854,7 @@ function ThreeLowPolyMap({
           </button>
           <button
             type="button"
-            disabled={cloudBlocked}
+            disabled={cloudBlocked || !sceneReady}
             onPointerDown={() => startMovePress('left')}
             onPointerUp={() => endMovePress('left')}
             onPointerLeave={() => endMovePress('left')}
@@ -5808,7 +5866,7 @@ function ThreeLowPolyMap({
           </button>
           <button
             type="button"
-            disabled={cloudBlocked}
+            disabled={cloudBlocked || !sceneReady}
             onPointerDown={() => startMovePress('right')}
             onPointerUp={() => endMovePress('right')}
             onPointerLeave={() => endMovePress('right')}

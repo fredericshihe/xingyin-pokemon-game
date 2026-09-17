@@ -2,6 +2,7 @@
 export const MAP_MODEL_MANIFEST = {
   "GodotMap": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -63,6 +64,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -95,7 +97,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_a",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "platformer_stones",
       "hex_stone_rocks",
       "graveLanternGlass",
@@ -136,6 +139,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_MistLake": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -169,7 +173,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_b",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "platformer_stones",
       "hex_stone_rocks",
       "graveLanternGlass",
@@ -198,6 +203,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_FarmTown": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -234,7 +240,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_b",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "platformer_stones",
       "hex_stone_rocks",
       "platformer_crate",
@@ -274,6 +281,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_PirateShore": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -310,7 +318,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_a",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "hex_stone_rocks",
       "graveLanternGlass",
       "pirate_crate",
@@ -340,6 +349,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_Graveyard": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -375,7 +385,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_a",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "hex_stone_rocks",
       "grave_rocks",
       "grave_gravestone_round",
@@ -407,6 +418,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_HexRuins": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -433,7 +445,7 @@ export const MAP_MODEL_MANIFEST = {
       "nature_stone_flat_a",
       "nature_stone_flat_b",
       "town_lantern",
-      "blocky_character_d",
+      "trainer_merchant",
       "hex_stone_hill",
       "platformer_chest",
       "hex_stone_rocks",
@@ -442,7 +454,9 @@ export const MAP_MODEL_MANIFEST = {
       "trail_sign",
       "blocky_character_a",
       "blocky_character_c",
-      "blocky_character_f",
+      "blocky_character_d",
+      "trainer_lieutenant",
+      "trainer_boss",
       "mineCrateStrong",
       "mineControlLever",
       "survival_metal_panel",
@@ -474,6 +488,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_SurvivalRidge": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -509,7 +524,8 @@ export const MAP_MODEL_MANIFEST = {
       "trail_sign",
       "blocky_character_a",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "hex_stone_rocks",
       "graveLanternGlass",
       "mineCrateStrong",
@@ -543,6 +559,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_BossHighland": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -574,7 +591,8 @@ export const MAP_MODEL_MANIFEST = {
       "blocky_character_a",
       "blocky_character_c",
       "blocky_character_d",
-      "blocky_character_f",
+      "trainer_lieutenant",
+      "trainer_boss",
       "platformer_stones",
       "hex_stone_rocks",
       "graveLanternGlass",
@@ -607,6 +625,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_FrostDojo": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -644,6 +663,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_TideDojo": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -677,6 +697,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_IronDojo": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -716,6 +737,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_DragonDojo": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",
@@ -751,6 +773,7 @@ export const MAP_MODEL_MANIFEST = {
   },
   "GodotMapV2_ChampionTower": {
     "modelKeys": [
+      "player_child_adventurer",
       "grass",
       "grassLarge",
       "bush",

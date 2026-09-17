@@ -6,6 +6,8 @@ import { clearDecodedImageCache } from './localAssetPreloader'
 const RELOAD_GUARD_KEY = 'game:stale-client-reload'
 const PRESERVED_RUNTIME_CACHE_PATTERNS = [
   /^game-glb(?:-|$)/,
+  /^game-static-art(?:-|$)/,
+  /^game-static(?:-|$)/,
   /^game-audio(?:-|$)/,
   /^game-pokemon-art(?:-|$)/
 ]

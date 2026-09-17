@@ -1,8 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { MAP_CHAIN, getMapInfo } from '../src/game/data/mapCatalog.js'
+import { PLAYER_CHARACTER_KEY, resolveCharacterModelKey } from '../src/game/data/characterAssets.js'
 
 const CORE_MODEL_KEYS = new Set([
+  PLAYER_CHARACTER_KEY,
   'grass',
   'grassLarge',
   'bush',
@@ -53,7 +55,7 @@ const getDecorativeModelKey = (type) => {
 const getRequiredModelKeys = (mapInfo) => {
   const keys = new Set(CORE_MODEL_KEYS)
   mapInfo?.decorativeObjects?.forEach((object) => {
-    const key = getDecorativeModelKey(object.type)
+    const key = resolveCharacterModelKey(getDecorativeModelKey(object.type), object)
     if (key) keys.add(key)
   })
   return [...keys]

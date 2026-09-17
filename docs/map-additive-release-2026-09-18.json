@@ -1,0 +1,44 @@
+{
+  "baseRelease": {
+    "buildId": "battle-smooth-20260917-v2",
+    "entryHash": "DLw2LL3x",
+    "builtAt": "2026-09-17T14:06:25.533Z"
+  },
+  "mapCommit": "9efaa0f62d8960ef814d96428bad3d68da45929a",
+  "preservedPublishedBattleFiles": {
+    "src/components/Game/BattleMoveEffect.jsx": "1dd2b21f57d804e9ce0a8b53fc37726757c1e99eb3949a1ac40c6e07e499b874",
+    "src/components/Game/BattleDialogueTypewriter.jsx": "f5df5794c3357472329671fb20b10467261d56f62f98b4f5b7d8c89047b13504",
+    "src/components/Game/battleMoveCanvas.css": "12a8cdc1221dfba7a857aee9ddf9fd94ce42c7449817cdc5e5b5e486c2420a64",
+    "src/components/Game/OriginalGame.jsx": "7f2437ee986ba8d960496a44d91340dce415b5af1bc875d2279d126e72aa4a68",
+    "src/utils/battleVfxRenderer.js": "0ce66b5b2006d7fb9c6d801d463ffd8308a4f63ddf8d7cee753b0e75cf87078e",
+    "src/utils/battleVfxRecipes.js": "4e3a4a7c4df34f0406c4aac6686359af5723ec9c2d030163096e14d3bbc49770",
+    "src/utils/battleVisualPlayback.js": "40ee88aed91e52320114cd271e55dd72fea907c5bb266fa973d6f9c8719abf3b",
+    "src/utils/battleEffectAnchors.js": "0fcfe165e7d9ef0ed55fa0b238d70a40dc62a7bc6240a1c9d174a7613ca3ba8f",
+    "src/utils/battleCinematics.js": "f9cb39278e36d3ac82197cbc3886ea3bcf3ea08d8f75c783e59e6665d9c03f96",
+    "src/utils/battlePacing.js": "a5aac01059f32d97827cbd5a7a6ffb47995f82f1c6ad8af2b901b815a171b213",
+    "src/game/BattleScenePreview.jsx": "89ee243bd6e59a22e2c570de767a5ca93afc4d2bfbefd093a279c9d63dfdda59",
+    "scripts/audit-battle-playback-clock.mjs": "f101beb8ca5742071de041139492c1e107234c175825fc074f83c40bf93465c5",
+    "scripts/audit-battle-vfx-flow.mjs": "9f069c5a2187308f6436659f0069a01d56e40df6c9987276a2d911cf717e0b97",
+    "scripts/review-battle-contact-vfx.mjs": "e59301b8dbe8f2d13a1cc876755cfad14c63db0ef0c197daa1a4b830fc2b318e",
+    "scripts/review-battle-vfx.mjs": "2f9cd44f7d6855cefba84c67e1886ba31c18989ebe5932656e7d3336270845a7",
+    "scripts/audit-battle-cinematics.mjs": "e07021779cdd3660446ae08a8d6f7c7e5e13df465b4a7e4e2e4c0b23733fc9b6",
+    "scripts/audit-battle-material-runtime.mjs": "fc09d4338ebd8f800782d5e47b3b515a9e15877df43249556ae7604c8ea8ef64",
+    "scripts/audit-battle-scene-integration.mjs": "2391b841aca399acf91b743962833f8564ae73bb79442e9fb6cbdd7008d220b4"
+  },
+  "mergeFiles": [
+    "src/game/ThreeLowPolyMap.jsx",
+    "src/game/MapRuntimePreview.jsx",
+    "src/game/data/mapAssetCatalog.js",
+    "src/game/data/mapModelManifest.generated.js",
+    "package.json"
+  ],
+  "preservedOriginalDecorations": 2439,
+  "newDecorations": 175,
+  "maps": 14,
+  "unpublishedWorkspaceBattleChangesIncluded": false,
+  "qaBuild": {
+    "buildId": "9efaa0f",
+    "entryHash": "B_iXyd9T",
+    "builtAt": "2026-09-17T16:44:55.961Z"
+  }
+}

@@ -27,6 +27,12 @@ const getErrorMessage = (error) => {
   }
 }
 
+const withAudioRetryQuery = (url, attempt) => {
+  if (!url || attempt <= 0) return url
+  const joiner = url.includes('?') ? '&' : '?'
+  return `${url}${joiner}_audio_retry=${attempt}`
+}
+
 const clampVolume = (value, fallback = DEFAULT_AUDIO_SETTINGS.sfxVolume) => {
   const numeric = Number(value)
   if (!Number.isFinite(numeric)) return fallback
@@ -1087,37 +1093,44 @@ class GameAudioController {
       const context = this.ensureContext()
       if (!context || typeof fetch !== 'function') return null
 
-      try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      let lastError = null
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const attemptUrl = withAudioRetryQuery(url, attempt)
+        let timeoutId = null
+        try {
+          const controller = new AbortController()
+          timeoutId = setTimeout(() => controller.abort(), timeoutMs + attempt * 5000)
 
-        const response = await fetch(url, {
-          cache: 'force-cache',
-          signal: controller.signal
-        })
-        clearTimeout(timeoutId)
+          const response = await fetch(attemptUrl, {
+            cache: 'force-cache',
+            signal: controller.signal
+          })
+          if (!response.ok) {
+            throw new Error(`SFX fetch failed (${response.status}) ${attemptUrl}`)
+          }
 
-        if (!response.ok) {
-          throw new Error(`SFX fetch failed (${response.status}) ${url}`)
+          const arrayBuffer = await response.arrayBuffer()
+          const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0))
+
+          this.sfxBuffers.set(url, audioBuffer)
+          this.updateDebugState({
+            loadedSfxCount: this.sfxBuffers.size
+          })
+          return audioBuffer
+        } catch (error) {
+          lastError = error
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId)
         }
-
-        const arrayBuffer = await response.arrayBuffer()
-        const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0))
-
-        this.sfxBuffers.set(url, audioBuffer)
-        this.updateDebugState({
-          loadedSfxCount: this.sfxBuffers.size
-        })
-        return audioBuffer
-      } catch (error) {
-        const message = getErrorMessage(error)
-        if (error.name === 'AbortError') {
-          this.logOnce(`sfx-timeout-${url}`, 'warn', `音效加载超时: ${url}`)
-        } else {
-          this.logOnce(`sfx-load-failed-${url}`, 'warn', `音效加载失败: ${url}`, message)
-        }
-        return null
       }
+
+      const message = getErrorMessage(lastError)
+      if (lastError?.name === 'AbortError') {
+        this.logOnce(`sfx-timeout-${url}`, 'warn', `音效加载超时: ${url}`)
+      } else {
+        this.logOnce(`sfx-load-failed-${url}`, 'warn', `音效加载失败: ${url}`, message)
+      }
+      return null
     })()
       .finally(() => {
         this.sfxLoadPromises.delete(url)

@@ -4,7 +4,7 @@ import { TYPES, TYPE_NAMES_CN } from "../../utils/constants"
 import { MOVES, MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS, STAT_BOOST_ITEMS, getBalancedMovesForLevel, getEvolutionCarryoverRepairedMovesForPokemonLevel, getEvolutionPreservedMovesForPokemonLevel, getMoveKeysAvailableForMonsterLevel, getWildMovesForPokemonLevel, normalizeMoveLoadoutMode, normalizeMovesForPokemonLevel } from "../../utils/gameData"
 import { getMovesLearnedAtLevel, getEvolutionLevelForBranch } from "../../utils/pokemonGrowth"
 import { MAP_CONFIG, getMapConfig, getRandomWildPokemon, getRandomWildLevel } from "../../data/maps/mapConfig"
-import GameCanvas from "../../game/GameCanvas"
+import MapSceneLayer from "../../game/MapSceneLayer"
 import { applyMapEventsToGrid, getMapEventAt, getMapEvents, getMapStartPosition, getMapSignMessage } from "../../game/data/mapEvents"
 import { getMapEventTile } from "../../game/data/mapEventTypes"
 import { getEncounterTable } from "../../game/data/encounterTables"
@@ -42,7 +42,6 @@ import {
 } from "../../utils/battleDamage"
 import { chooseTrainerBattleAction } from "../../utils/battleAi"
 import {
-  BATTLE_TEXT_CHAR_MS,
   getBattleLogReadDelay,
   getBattleMoveImpactDelay,
   getBattleMovePhaseDuration,
@@ -121,6 +120,8 @@ import {
   resolveBattleVfxQuality
 } from "../../utils/battleCinematics"
 import { measureBattleEffectAnchors } from "../../utils/battleEffectAnchors"
+import { createBattleVisualSession } from "../../utils/battleVisualPlayback"
+import BattleDialogueTypewriter from './BattleDialogueTypewriter'
 import {
   appendLevelUpCelebrationsToQueue,
   buildLevelUpCelebrationPayload,
@@ -129,7 +130,7 @@ import {
 import { applyImageFallback } from "../../utils/localAssetPreloader"
 import { markAppReady } from "../../utils/clientUpdate"
 import { recordGameplayEvent } from "../../utils/gameplayLogs"
-import { isEntryPreloadComplete, runGameEntryPreload, resetEntryPreloadSession, clearEntryPreloadMarks, bindEntryPreloadShouldContinue } from "../../utils/gameEntryPreload"
+import { runGameEntryPreload, resetEntryPreloadSession, clearEntryPreloadMarks, bindEntryPreloadShouldContinue } from "../../utils/gameEntryPreload"
 import { scheduleIdleAssetWarmup } from "../../utils/gameAssetBootstrap"
 import { clearClientCaches } from "../../utils/recoverStaleClient"
 import { saveCloudGameWithLock, clearCloudSaveQueue } from "../../utils/cloudSaveLock"
@@ -5614,7 +5615,7 @@ const BattleEscapeOverlay = ({ onComplete, paused = false, refundEligible = fals
 // --- This comment ensures the search for the next block is unique ---
 // The original MapScreen component is replaced by the version below.
 
-const BattleScene = ({
+export const BattleScene = ({
   playerMon, enemyMon, logs, onMove, onSwitch, turn, onNavigate, playerGold,
   isThrowingPokeball, captureSequenceData = null, onGoToLaunchScreen, onRun, onSurrender, surrenderGoldPenalty = 0, escapeRule = null,
   // New props for modal screens
@@ -5650,13 +5651,11 @@ const BattleScene = ({
   const [showSurrenderConfirm, setShowSurrenderConfirm] = useState(false);
   const [showControls, setShowControls] = useState('main'); // 'main' or 'moves'
   const [isBusy, setIsBusy] = useState(false);
-  const [typedLog, setTypedLog] = useState('');
   const [battleFeedbackCue, setBattleFeedbackCue] = useState(null);
   const isBattleSceneMountedRef = useRef(true);
   const battleSceneClassRef = useRef('');
   const battleSceneRoleClassRef = useRef('');
   const battleVisualTimerRef = useRef([]);
-  const battleEffectCleanupTimerRef = useRef(null);
   const battleFeedbackTimerRef = useRef(null);
   const battleCommandLockRef = useRef(false);
   const battlePlayerMon = useMemo(() => withBattleRuntimeDefaults(playerMon), [playerMon]);
@@ -5674,10 +5673,6 @@ const BattleScene = ({
       isBattleSceneMountedRef.current = false;
       battleVisualTimerRef.current.forEach(clearTimeout);
       battleVisualTimerRef.current = [];
-      if (battleEffectCleanupTimerRef.current) {
-        clearTimeout(battleEffectCleanupTimerRef.current);
-        battleEffectCleanupTimerRef.current = null;
-      }
       if (battleFeedbackTimerRef.current) {
         clearTimeout(battleFeedbackTimerRef.current);
         battleFeedbackTimerRef.current = null;
@@ -5702,10 +5697,6 @@ const BattleScene = ({
   const clearBattleVisualTimers = useCallback(() => {
     battleVisualTimerRef.current.forEach(clearTimeout);
     battleVisualTimerRef.current = [];
-    if (battleEffectCleanupTimerRef.current) {
-      clearTimeout(battleEffectCleanupTimerRef.current);
-      battleEffectCleanupTimerRef.current = null;
-    }
     setBattleCinematic(null);
     setBattleImpactFeedback(null);
   }, []);
@@ -5723,7 +5714,6 @@ const BattleScene = ({
     const attackerSide = event?.attackerSide;
     const phase = event?.phase || 'hit';
     const durationMs = event?.durationMs || getBattleMovePhaseDuration(phase);
-    const impactDelayMs = getBattleMoveImpactDelay(phase, durationMs);
     const move = event?.move || MOVES[moveKey];
     if (!move || isThrowingPokeball) return;
     const moveConfig = getMoveEffectConfig(moveKey, move);
@@ -5750,81 +5740,45 @@ const BattleScene = ({
     const targetAnim = `battle-hit-reaction battle-hit-reaction--${resolvedReactionClass} battle-move-signature-impact-${signatureImpact}`;
 
     clearBattleVisualTimers();
-    setAttackEffect(null);
-    setBattleCinematic({
-      id: event?.id || `${moveKey}-${phase}-${Date.now()}`,
-      ...profile,
-      type: move.type || 'normal',
-      phase,
-      impact: false,
-      hitStop: false,
-    });
-    if (shouldMoveActor) {
-      if (isEnemyAttack) {
-        setEnemyAnim(actorAnim);
-      } else {
-        setPlayerAnim(actorAnim);
+    const anchors = resolveBattleEffectAnchors();
+    const finishVisual = () => {
+      if (isBattleSceneMountedRef.current) {
+        setPlayerAnim('');
+        setEnemyAnim('');
+        setAttackEffect(null);
+        setBattleCinematic(null);
+        setBattleImpactFeedback(null);
       }
+    };
+    if (shouldShowTargetEffect) {
+      setAttackEffect({
+        id: event?.id || `${moveKey}-${phase}-${Date.now()}`,
+        type: move.type, category: move.category, attackerSide,
+        target: effectTarget, moveKey, move, phase, durationMs,
+        anchors, feedback: event?.feedback || null, profile,
+        suppressActorMotion: !shouldMoveActor,
+        onStart: () => {
+          event.playback?.start();
+          setBattleCinematic({ id: event.id, ...profile, type: move.type || 'normal', phase, impact: false, hitStop: false });
+          if (shouldMoveActor) {
+            if (isEnemyAttack) setEnemyAnim(actorAnim);
+            else setPlayerAnim(actorAnim);
+          }
+        },
+        onImpact: () => {
+          if (!isBattleSceneMountedRef.current) return;
+          event.playback?.impact();
+          setBattleCinematic(current => current ? { ...current, impact: true } : current);
+          if (event.feedback) setBattleImpactFeedback({ ...event.feedback, anchors });
+          if (shouldApplyTargetReaction && effectTarget !== attackerSide) {
+            if (effectTarget === 'player') setPlayerAnim(targetAnim);
+            else setEnemyAnim(targetAnim);
+          }
+        },
+        onComplete: () => { finishVisual(); event.playback?.finish(); },
+        onCancel: (error) => { finishVisual(); event.playback?.cancel(error); },
+      });
     }
-
-    battleVisualTimerRef.current.push(setTimeout(() => {
-      if (!isBattleSceneMountedRef.current) return;
-      const anchors = resolveBattleEffectAnchors();
-      const reducedMotion = typeof window !== 'undefined'
-        && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      setBattleCinematic((current) => current ? { ...current, impact: true, hitStop: !reducedMotion && profile.hitStopMs > 0 } : current);
-      if (event?.feedback) {
-        setBattleImpactFeedback({ ...event.feedback, anchors });
-      }
-      if (shouldMoveActor && shouldShowTargetEffect) {
-        if (isEnemyAttack) setEnemyAnim('');
-        else setPlayerAnim('');
-      }
-      if (shouldApplyTargetReaction) {
-        if (effectTarget === 'player') setPlayerAnim(targetAnim);
-        else setEnemyAnim(targetAnim);
-      }
-      if (shouldShowTargetEffect) {
-        setAttackEffect({
-          id: `${moveKey}-${phase}-${Date.now()}`,
-          type: move.type,
-          category: move.category,
-          attackerSide,
-          target: effectTarget,
-          moveKey,
-          move,
-          phase,
-          durationMs: Math.max(520, durationMs - impactDelayMs),
-          anchors,
-          feedback: event?.feedback || null,
-          profile,
-        });
-      }
-      if (profile.hitStopMs > 0) {
-        battleVisualTimerRef.current.push(setTimeout(() => {
-          if (!isBattleSceneMountedRef.current) return;
-          setBattleCinematic((current) => current ? { ...current, hitStop: false } : current);
-        }, reducedMotion ? 0 : profile.hitStopMs));
-      }
-      battleVisualTimerRef.current.push(setTimeout(() => {
-        if (!isBattleSceneMountedRef.current) return;
-        setBattleCinematic((current) => current ? { ...current, impact: false } : current);
-      }, reducedMotion ? 80 : 230));
-      if (event?.feedback) {
-        battleVisualTimerRef.current.push(setTimeout(() => {
-          if (!isBattleSceneMountedRef.current) return;
-          setBattleImpactFeedback((current) => current?.id === event.feedback.id ? null : current);
-        }, 920));
-      }
-    }, impactDelayMs));
-
-    battleVisualTimerRef.current.push(setTimeout(() => {
-      if (!isBattleSceneMountedRef.current) return;
-      setPlayerAnim('');
-      setEnemyAnim('');
-      setAttackEffect(null);
-      setBattleCinematic(null);
-    }, durationMs));
   }, [clearBattleVisualTimers, isThrowingPokeball, resolveBattleEffectAnchors]);
 
   useEffect(() => {
@@ -5908,22 +5862,6 @@ const BattleScene = ({
     setPlayerAnim(clearSettledSwitchAnimation);
     setEnemyAnim(clearSettledSwitchAnimation);
   }, [activeSwitchRequest?.nextActivePlayerId, battleEnemyMon, battlePlayerMon, switchVisualEvent]);
-
-  useEffect(() => {
-    if (!attackEffect) return undefined;
-    if (battleEffectCleanupTimerRef.current) clearTimeout(battleEffectCleanupTimerRef.current);
-    battleEffectCleanupTimerRef.current = setTimeout(() => {
-      if (!isBattleSceneMountedRef.current) return;
-      setAttackEffect(null);
-      battleEffectCleanupTimerRef.current = null;
-    }, attackEffect.durationMs || getBattleMovePhaseDuration(attackEffect.phase));
-    return () => {
-      if (battleEffectCleanupTimerRef.current) {
-        clearTimeout(battleEffectCleanupTimerRef.current);
-        battleEffectCleanupTimerRef.current = null;
-      }
-    };
-  }, [attackEffect]);
 
   // Reset local command locks only when battle input is genuinely available again.
   useEffect(() => {
@@ -6150,29 +6088,6 @@ const BattleScene = ({
     }
   }, [battleEnemyMon?.id, battleFeedbackCue, battlePhase, turn]);
 
-  useEffect(() => {
-    let index = 0;
-    let frameId = null;
-    let lastAdvanceAt = 0;
-    setTypedLog('');
-    const tick = (now) => {
-      if (index >= latestLog.length) return;
-      if (!lastAdvanceAt) lastAdvanceAt = now;
-      while (index < latestLog.length && now - lastAdvanceAt >= BATTLE_TEXT_CHAR_MS) {
-        lastAdvanceAt += BATTLE_TEXT_CHAR_MS;
-        index += 1;
-      }
-      setTypedLog(latestLog.slice(0, index));
-      if (index < latestLog.length) {
-        frameId = requestAnimationFrame(tick);
-      }
-    };
-    frameId = requestAnimationFrame(tick);
-    return () => {
-      if (frameId) cancelAnimationFrame(frameId);
-    };
-  }, [latestLog]);
-
   const battleSceneClass = useMemo(() => {
     const stableEnvironment = normalizeBattleEnvironment({
       ...(battleEnvironment || {}),
@@ -6294,7 +6209,7 @@ const BattleScene = ({
       }}
     >
       {/* ══ 战斗场景：吃掉剩余高度，底部面板不再挤出黑色空区 ══ */}
-      <div ref={battleStageRef} className={`anime-battle-bg ${battleSceneClass} ${battleSceneRoleClass} battle-vfx-quality--${battleVfxQuality} ${battleCinematicClasses} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
+      <div ref={battleStageRef} className={`anime-battle-bg battle-material-choreography ${battleSceneClass} ${battleSceneRoleClass} battle-vfx-quality--${battleVfxQuality} ${battleCinematicClasses} relative flex-1 min-h-0 overflow-hidden ${battleFeedbackKind ? `battle-scene-feedback battle-scene-feedback--${battleFeedbackKind}` : ''}`}>
         <div className="battle-environment-props" aria-hidden="true">
           <span className="battle-env-prop battle-env-prop--horizon" />
           <span className="battle-env-prop battle-env-prop--left" />
@@ -6399,14 +6314,13 @@ const BattleScene = ({
 	              {visibleDialogueLogs.map((log, index) => {
 	                const isLatest = index === visibleDialogueLogs.length - 1;
 	                const isPlaceholder = !isLatest && !log;
-	                const displayText = isLatest ? (typedLog || latestLog) : log;
 	                return (
 	                  <span
 	                    key={`${isLatest ? 'latest' : 'previous'}-${log || 'placeholder'}`}
 	                    className={`battle-dialogue-line ${isLatest ? 'battle-dialogue-line--latest battle-dialogue-text' : 'battle-dialogue-line--previous'}${isPlaceholder ? ' battle-dialogue-line--placeholder' : ''}`}
 	                    title={log || undefined}
 	                  >
-	                    {isPlaceholder ? '\u00A0' : displayText}
+	                    {isPlaceholder ? '\u00A0' : isLatest ? <BattleDialogueTypewriter text={latestLog} /> : log}
 	                  </span>
 	                );
 	              })}
@@ -12978,7 +12892,7 @@ export default function OriginalGame({ user, onLogout }) {
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState(null);
   const [hasLoadedCloudSave, setHasLoadedCloudSave] = useState(false);
-  const [entryAssetsReady, setEntryAssetsReady] = useState(() => isEntryPreloadComplete());
+  const [entryAssetsReady, setEntryAssetsReady] = useState(false);
   const [entryPreloadError, setEntryPreloadError] = useState(null);
   const [entryPreloadProgress, setEntryPreloadProgress] = useState(null);
   const [entryPreloadStalled, setEntryPreloadStalled] = useState(false);
@@ -13029,6 +12943,7 @@ export default function OriginalGame({ user, onLogout }) {
   const playtimeHeartbeatInFlightRef = useRef(null);
   const playtimeStatusInFlightRef = useRef(false);
   const playtimeSessionStartedRef = useRef(false);
+  const playtimeEnvironmentReadyRef = useRef(false);
   const playtimeSessionIdRef = useRef(null);
   const playtimeLastSessionIdRef = useRef(null);
   const playtimeLifecycleEpochRef = useRef(0);
@@ -13108,6 +13023,7 @@ export default function OriginalGame({ user, onLogout }) {
   const [maxReachedLevel, setMaxReachedLevel] = useState(1);
   const [useRealMaps, setUseRealMaps] = useState(true);
   const [currentMapName, setCurrentMapName] = useState(DEFAULT_WORLD_MAP_NAME);
+  const [mapSceneState, setMapSceneState] = useState({ mapName: null, ready: false });
 
   useEffect(() => {
     entryPreloadCompletedForUserRef.current = null;
@@ -13140,7 +13056,8 @@ export default function OriginalGame({ user, onLogout }) {
     const forceRetry = entryPreloadForceRetryRef.current;
     entryPreloadForceRetryRef.current = false;
 
-    if (!forceRetry && (entryPreloadCompletedForUserRef.current === userId || isEntryPreloadComplete())) {
+    const preloadScope = `${userId}:${currentMapName}`;
+    if (!forceRetry && entryPreloadCompletedForUserRef.current === preloadScope) {
       setEntryAssetsReady(true);
       setEntryPreloadError(null);
       setEntryPreloadStalled(false);
@@ -13200,7 +13117,7 @@ export default function OriginalGame({ user, onLogout }) {
       }
     }).then(() => {
       if (cancelled || entryPreloadRunIdRef.current !== runId) return;
-      entryPreloadCompletedForUserRef.current = userId;
+      entryPreloadCompletedForUserRef.current = preloadScope;
       setEntryAssetsReady(true);
       setEntryPreloadError(null);
       setEntryPreloadStalled(false);
@@ -14098,7 +14015,17 @@ export default function OriginalGame({ user, onLogout }) {
       durationMs,
     });
     const resolvedDurationMs = profile.durationMs || getBattleMovePhaseDuration(phase);
-    const impactDelayMs = getBattleMoveImpactDelay(phase, resolvedDurationMs);
+    const playback = createBattleVisualSession({
+      onImpact,
+      onStart: () => {
+        if (hitIndex > 0 || ['secondary', 'drain'].includes(phase)) return;
+        gameAudio.playBattleMove(resolvedMove, {
+          ...profile, moveKey: resolvedMoveKey,
+          phase: phase === 'charge' ? 'charge' : 'release',
+          semanticTags: moveConfig.semanticTags
+        });
+      }
+    });
     const visualId = `${moveKey}-${attackerSide}-${phase}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setMoveVisualEvent({
       id: visualId,
@@ -14113,15 +14040,10 @@ export default function OriginalGame({ user, onLogout }) {
       reactionClass,
       feedback,
       profile,
+      playback,
     });
     try {
-      if (typeof onImpact === 'function') {
-        await wait(impactDelayMs);
-        onImpact();
-        await wait(Math.max(0, resolvedDurationMs - impactDelayMs));
-        return;
-      }
-      await wait(resolvedDurationMs);
+      await playback.finished;
     } finally {
       setMoveVisualEvent((prev) => prev?.id === visualId ? null : prev);
     }
@@ -16469,7 +16391,7 @@ export default function OriginalGame({ user, onLogout }) {
   }, [applyStudentPlaytimeStatus, failStudentPlaytimeCheck, user?.id]);
 
   const beginStudentPlaytimeSession = useCallback(({ silent = false, retry = false } = {}) => {
-    if (!user?.id || !playtimePageVisibleRef.current) return Promise.resolve(null);
+    if (!user?.id || !playtimePageVisibleRef.current || !playtimeEnvironmentReadyRef.current) return Promise.resolve(null);
 
     const studentId = user.id;
     const requestEpoch = playtimeLifecycleEpochRef.current + 1;
@@ -16613,12 +16535,14 @@ export default function OriginalGame({ user, onLogout }) {
   const playtimeEnvironmentReady = (
     hasLoadedCloudSave &&
     entryAssetsReady &&
+    (view !== 'map' || (mapSceneState.mapName === currentMapName && mapSceneState.ready)) &&
     !cloudLoading &&
     !cloudError &&
     !cloudBlocked &&
     !requiresCloudReload &&
     Boolean(user?.id)
   );
+  playtimeEnvironmentReadyRef.current = playtimeEnvironmentReady;
   const fullPlayableScreenReady = (
     playtimeEnvironmentReady &&
     playtimeReady &&
@@ -18291,7 +18215,6 @@ export default function OriginalGame({ user, onLogout }) {
 
     if (move.charge && !attacker.volatileStatuses?.chargingMove) {
       const chargeProfile = getMoveProfile('charge');
-      gameAudio.playBattleMove(move, { ...chargeProfile, moveKey, phase: 'charge', semanticTags: moveConfig.semanticTags });
       const chargingAttacker = {
         ...withBattleRuntimeDefaults(attacker),
         volatileStatuses: {
@@ -18323,8 +18246,6 @@ export default function OriginalGame({ user, onLogout }) {
     const attackerAfterCharge = attacker.volatileStatuses?.chargingMove === moveKey
       ? { ...attacker, volatileStatuses: { ...(attacker.volatileStatuses || {}), chargingMove: null } }
       : attacker;
-    const releaseProfile = getMoveProfile('hit');
-    gameAudio.playBattleMove(move, { ...releaseProfile, moveKey, phase: 'release', semanticTags: moveConfig.semanticTags });
     if (attacker.volatileStatuses?.chargingMove === moveKey) {
       updateBattleMonBySide({
         side: attackerSide,
@@ -25032,7 +24953,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     !playtimeStatus
   );
 
-  if (showBootScreen) {
+  const bootScreen = showBootScreen ? (() => {
     const retryBoot = cloudError
       ? () => loadGameFromCloud({ force: true })
       : (playtimeError ? () => { void beginStudentPlaytimeSession({ silent: false, retry: true }) } : null);
@@ -25040,7 +24961,9 @@ const handleReorderTeam = useCallback((newTeam) => {
     return (
       <UnifiedBootScreen
         progress={bootProgress}
-        phase={playtimeBootPending ? '正在校验今日剩余游玩时间...' : ''}
+        phase={entryAssetsReady && view === 'map' && !(mapSceneState.mapName === currentMapName && mapSceneState.ready)
+          ? '正在呈现角色与地图...'
+          : playtimeBootPending ? '正在校验今日剩余游玩时间...' : ''}
         error={bootError}
         actionLabel={bootError ? (cloudError ? '重新连接后端' : '重新校验时长') : null}
         onAction={retryBoot}
@@ -25053,7 +24976,11 @@ const handleReorderTeam = useCallback((newTeam) => {
         showProgressBar={!bootError}
       />
     );
-  }
+  })() : null;
+
+  // Mount the map behind the time-check overlay so its first frame can unlock
+  // the server session. Keeping it mounted prevents a load/begin/unmount loop.
+  if (cloudLoading || cloudError || !hasLoadedCloudSave || !entryAssetsReady) return bootScreen;
 
   const showPlaytimeCountdown = Boolean(playtimeStatus && fullPlayableScreenReady);
 
@@ -25070,6 +24997,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   return (
     <>
+    {bootScreen && <div style={{ position: 'fixed', inset: 0, zIndex: 100000 }}>{bootScreen}</div>}
     <div className="game-app-bg game-app-bg--immersive">
       <div className={`game-console-shell${view === 'map' ? ' game-console-shell--map-overlay' : ''}${hideAdventureTopBar ? ' game-console-shell--panel-full' : ''}`}>
         {!hideAdventureTopBar && (
@@ -25120,16 +25048,16 @@ const handleReorderTeam = useCallback((newTeam) => {
           </div>
         ) : (
           <>
-        {view === 'map' && (
-          <div className="flex flex-1 min-h-0 flex-col">
-            <GameCanvas
+            <MapSceneLayer
               key={currentMapName}
+              active={view === 'map'}
               playerTeam={playerTeam}
               onEncounter={handleEncounter}
               onNavigate={handleNavigateView}
               onCollect={handleCollect}
               playerPos={playerPos}
               onPlayerMove={handlePlayerMove}
+              onSceneReadyChange={setMapSceneState}
               mapGrid={mapGrid}
               onMapGridChange={setMapGrid}
 	              useRealMaps={useRealMaps}
@@ -25138,18 +25066,15 @@ const handleReorderTeam = useCallback((newTeam) => {
 	              onMapWarp={handleMapWarp}
 	              onZoneEnter={handleZoneEnter}
 	              onBlockedMove={handleBlockedMove}
-              cloudBlocked={cloudBlocked || mapEnergyDepleted || playtimeExpired || encounterStartBusy || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || battleEventConfirmBusy || Boolean(activeEliteMinigame) || eliteMinigameCommitBusy || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || Boolean(eliteFourCeremony)}
+              cloudBlocked={cloudBlocked || !fullPlayableScreenReady || mapEnergyDepleted || playtimeExpired || encounterStartBusy || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || battleEventConfirmBusy || Boolean(activeEliteMinigame) || eliteMinigameCommitBusy || Boolean(pendingHiddenEncounterUnlock) || hiddenEncounterUnlockBusy || Boolean(pendingSpringRestoreConfirm) || springRestoreBusy || Boolean(pendingFastTravel) || fastTravelBusy || Boolean(mapWarpTransitTarget) || mapWarpBusy || Boolean(eliteFourCeremony)}
 	              encounterCooldownSteps={encounterCooldownSteps}
 	              onEncounterCooldownChange={handleEncounterCooldownChange}
-	              mapActive
 	              collectedEventIds={world?.collectedEventIds || []}
 	              springRestoreAnimation={springRestoreAnimation}
                 currentMapBossCompleted={currentMapBossCompleted}
                 mapEventVisualState={currentMapEventVisualState}
                 encounterZoneLocks={currentMapEncounterZoneLocks}
 	            />
-          </div>
-        )}
         {view === 'battle' && activeEnemyMon && <BattleScene playerMon={activePlayerMon} enemyMon={activeEnemyMon} logs={logs} playerGold={playerGold} onMove={handleTurn} onSwitch={handleSwitch} turn={turn} onNavigate={handleNavigateView} onRun={handleRun} onSurrender={handleSurrender} surrenderGoldPenalty={getPayableDefeatGoldPenalty(getDefeatGoldPenalty({ battleKind, mapName: battleEnvironment?.mapName || currentMapName, mapLevel, eventType: battleEnvironment?.eventType, eventRole: battleEnvironment?.eventRole }), playerGold)} escapeRule={battleEscapeRule} canUsePokeballs={battleKind !== 'trainer'} playerTeam={playerTeam} enemyTeam={enemyTeam} activeEnemyId={activeEnemyId} playerInventory={playerInventory} onUseItem={handleUseItem} onUsePotion={handleUsePotion} onUseExpPotion={handleUseExpPotion} onUseStatBoostItem={handleUseStatBoostItem} addLog={addLog} isThrowingPokeball={isThrowingPokeball} captureSequenceData={captureSequenceData} onGoToLaunchScreen={handleGoToLaunchScreen} onModalScreenChange={setBattleModalScreenOpen} moveVisualEvent={moveVisualEvent} switchVisualEvent={switchVisualEvent} pendingBattleSwitch={pendingBattleSwitch} battleEnvironment={battleEnvironment} battleKind={battleKind} battlePhase={battlePhase} battlePhaseData={battlePhaseData} openingIntro={battlePhase === 'intro'} openingSendOut={battlePhase === 'sendout'} onOpeningIntroComplete={handleBattleIntroComplete} onOpeningSendOutComplete={handleBattleSendOutComplete} />}
 
         {/* ── 战斗过场 Overlay ────────────────────────────────────── */}

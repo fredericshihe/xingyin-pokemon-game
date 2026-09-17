@@ -211,6 +211,8 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
   const originalGameSource = fs.readFileSync(path.join(rootDir, 'src/components/Game/OriginalGame.jsx'), 'utf8')
   const battleMoveEffectSource = fs.readFileSync(path.join(rootDir, 'src/components/Game/BattleMoveEffect.jsx'), 'utf8')
   const battleVisualRenderSource = `${originalGameSource}\n${battleMoveEffectSource}`
+  const materialRenderer = fs.readFileSync(path.join(rootDir, 'src/utils/battleVfxRenderer.js'), 'utf8')
+  const recipes = fs.readFileSync(path.join(rootDir, 'src/utils/battleVfxRecipes.js'), 'utf8')
   const battleDamageSource = fs.readFileSync(path.join(rootDir, 'src/utils/battleDamage.js'), 'utf8')
   const cssSource = [
     fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8'),
@@ -238,45 +240,45 @@ await withViteAuditServer(async ({ rootDir, loadModule }) => {
     })
   }
 
-  if (!/battle-move-effect--variant-\$\{visualVariant\}/.test(battleVisualRenderSource)) {
+  if (!/getMoveVfxRecipe/.test(battleMoveEffectSource) || !/createBattleVfxRenderer/.test(battleMoveEffectSource)) {
     issues.push({
-      issue: 'move_visual_variant_class_not_rendered',
+      issue: 'move_material_recipe_not_rendered',
       file: 'src/components/Game/OriginalGame.jsx',
     })
   }
 
-  if (!/battle-move-effect--tag-\$\{tag\}/.test(battleVisualRenderSource) || !/battle-vfx-icon/.test(battleVisualRenderSource)) {
+  if (/battle-vfx-icon|battle-vfx-symbol|fillText|strokeText/.test(battleMoveEffectSource + materialRenderer)) {
     issues.push({
-      issue: 'move_semantic_tag_or_icon_not_rendered',
+      issue: 'glyph_or_symbol_used_as_move_effect',
       file: 'src/components/Game/OriginalGame.jsx',
     })
   }
 
-  if (!/battle-move-effect__projectile/.test(battleVisualRenderSource) || !/--effect-source-x/.test(battleVisualRenderSource)) {
+  if (!/effect\.anchors/.test(materialRenderer) || !/pathPoint/.test(materialRenderer)) {
     issues.push({
       issue: 'move_projectile_layer_not_rendered',
       file: 'src/components/Game/OriginalGame.jsx',
     })
   }
 
-  if (!/data-move-signature=\{signatureStyle\.id/.test(battleMoveEffectSource)
-    || !/battle-move-effect--signature-pattern-\$\{signaturePattern\}/.test(battleMoveEffectSource)
-    || !/className="battle-vfx-signature"/.test(battleMoveEffectSource)
-    || !/--signature-delay/.test(battleMoveEffectSource)) {
+  if (!/data-move-signature=\{recipe\.signature/.test(battleMoveEffectSource)
+    || !/data-technique=\{recipe\.technique/.test(battleMoveEffectSource)
+    || !/recipe\.bend/.test(materialRenderer)
+    || !/recipe\.rotation/.test(materialRenderer)) {
     issues.push({
       issue: 'unique_move_render_signature_not_wired_to_effect_layers',
       file: 'src/components/Game/BattleMoveEffect.jsx',
     })
   }
 
-  if (!/battle-move-effect--tag-fang/.test(cssSource) || !/battle-move-effect--tag-sound/.test(cssSource) || !/battle-move-effect--tag-shield/.test(cssSource) || !/battle-move-effect--tag-coin/.test(cssSource) || !/battle-move-effect--tag-shell/.test(cssSource)) {
+  if (!['fang', 'sound', 'barrier', 'shatter'].every(technique => materialRenderer.includes(`case '${technique}':`))) {
     issues.push({
-      issue: 'move_semantic_tag_css_missing',
+      issue: 'move_semantic_material_renderer_missing',
       files: ['src/index.css', 'src/game.css'],
     })
   }
 
-  if (!/battle-move-effect--move-solar_beam/.test(cssSource) || !/battle-move-effect--move-will_o_wisp/.test(cssSource) || !/battleVfxElectroWave/.test(cssSource)) {
+  if (!/solar_beam\|beam/.test(recipes) || !/will_o_wisp\|volley/.test(recipes) || !/thunder_wave\|sound/.test(recipes)) {
     issues.push({
       issue: 'move_specific_signature_css_missing',
       files: ['src/index.css', 'src/game.css'],

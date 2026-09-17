@@ -13,7 +13,8 @@ const toPercentAnchor = (stageRect, spriteRect, fallback) => {
 
   return {
     x: `${(centerX / stageRect.width) * 100}%`,
-    y: `${(centerY / stageRect.height) * 100}%`
+    y: `${(centerY / stageRect.height) * 100}%`,
+    radius: Math.min(spriteRect.width, spriteRect.height) / 2,
   }
 }
 

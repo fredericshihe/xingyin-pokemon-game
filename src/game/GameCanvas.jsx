@@ -54,6 +54,7 @@ function GameCanvas({
   onMapWarp,
   onZoneEnter,
   onBlockedMove,
+  onSceneReadyChange,
   cloudBlocked = false,
   encounterCooldownSteps = 0,
   onEncounterCooldownChange,
@@ -114,6 +115,7 @@ function GameCanvas({
         onMapWarp={onMapWarp}
         onZoneEnter={onZoneEnter}
         onBlockedMove={onBlockedMove}
+        onSceneReadyChange={onSceneReadyChange}
         onEncounterCooldownChange={onEncounterCooldownChange}
         collectedEventIds={collectedEventIds}
         springRestoreAnimation={springRestoreAnimation}

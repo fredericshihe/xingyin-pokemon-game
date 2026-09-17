@@ -2,6 +2,7 @@ import { MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS, EVOLUTION_ITEMS } from './ga
 import { getMapConfig } from '../data/maps/mapConfig'
 import { preloadImageAssets, warmImageAssets } from './localAssetPreloader'
 import { assetUrl } from './assetUrl'
+import battleVfxAtlasUrl from '../assets/battle-vfx-atlas.png'
 import {
   pokemonArtUrl,
   POKEMON_PLACEHOLDER_URL
@@ -70,6 +71,7 @@ const getInventoryPreloadAssetUrls = () => toUniqueAssetUrls([
 ])
 
 export const getP0ImageAssetUrls = () => toUniqueAssetUrls([
+  battleVfxAtlasUrl,
   POKEMON_PLACEHOLDER_URL,
   BATTLE_SENDOUT_BALL_SPRITE,
   ...Object.values(TRAINER_PORTRAITS),
@@ -153,16 +155,26 @@ const preloadAdjacentMapModels = async (mapNames = []) => {
 
 const P2_WARMUP_BATCH_SIZE = 24
 
+const isMobileAssetClient = () => (
+  typeof navigator !== 'undefined' && (
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '')
+    || (navigator.maxTouchPoints > 1 && typeof window !== 'undefined' && window.innerWidth <= 1024)
+  )
+)
+
 const runIdleWarmup = ({ mapName, adjacentMapNames = [] } = {}) => {
   const p2Urls = getP2ImageAssetUrls()
+  const batchSize = isMobileAssetClient() ? 12 : P2_WARMUP_BATCH_SIZE
+  const batchDelayMs = isMobileAssetClient() ? 3500 : 1600
+  const batchConcurrency = isMobileAssetClient() ? 1 : 3
   let cursor = 0
   const loadNextBatch = () => {
-    const batch = p2Urls.slice(cursor, cursor + P2_WARMUP_BATCH_SIZE)
-    cursor += P2_WARMUP_BATCH_SIZE
+    const batch = p2Urls.slice(cursor, cursor + batchSize)
+    cursor += batchSize
     if (batch.length === 0) return
-    warmImageAssets(batch, { concurrency: 3, timeoutMs: 5000 })
+    warmImageAssets(batch, { concurrency: batchConcurrency, timeoutMs: 5000 })
     if (cursor < p2Urls.length) {
-      window.setTimeout(loadNextBatch, 1600)
+      window.setTimeout(loadNextBatch, batchDelayMs)
     }
   }
   loadNextBatch()

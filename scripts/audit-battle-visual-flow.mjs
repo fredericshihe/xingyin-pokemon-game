@@ -24,6 +24,7 @@ const readCssWithImports = (file, seen = new Set()) => {
 const originalGame = read('src/components/Game/OriginalGame.jsx')
 const battleMoveEffect = read('src/components/Game/BattleMoveEffect.jsx')
 const battleVisualSource = `${originalGame}\n${battleMoveEffect}`
+const materialRenderer = read('src/utils/battleVfxRenderer.js')
 const battlePacing = read('src/utils/battlePacing.js')
 const css = readCssWithImports('src/index.css')
 const battleSwitchSendCss = css.split('@keyframes battleSwitchSend')[1]?.split('@keyframes battleSwitchBeam')[0] || ''
@@ -38,9 +39,8 @@ const checks = [
     passed: /phase === 'secondary'/.test(battlePacing),
   },
   {
-    name: 'secondary_visual_uses_result_only_class',
-    passed: /const isSecondaryResult = effect\.phase === 'secondary'/.test(battleVisualSource) &&
-      /isSecondaryResult \? 'secondary-result'/.test(battleVisualSource),
+    name: 'secondary_visual_returns_before_attack_choreography',
+    passed: /phase === 'secondary'[\s\S]*?return \{ draws \}[\s\S]*?switch \(technique\)/.test(materialRenderer),
   },
   {
     name: 'secondary_visual_does_not_move_actor',

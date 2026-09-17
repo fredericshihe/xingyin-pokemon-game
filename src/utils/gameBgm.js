@@ -26,6 +26,12 @@ const resolveAbsoluteAssetUrl = (url) => {
   return url
 }
 
+const withAudioRetryQuery = (url, attempt) => {
+  if (!url || attempt <= 0) return url
+  const joiner = url.includes('?') ? '&' : '?'
+  return `${url}${joiner}_audio_retry=${attempt}`
+}
+
 /** Safari 并发 fetch 易误报 CORS；同源音频用 XHR 更稳 */
 const loadAudioArrayBuffer = (url, timeoutMs = 30000) => new Promise((resolve, reject) => {
   const absoluteUrl = resolveAbsoluteAssetUrl(url)
@@ -277,20 +283,21 @@ class GameBgmController {
       let lastError = null
       const candidateErrors = []
       for (const candidateUrl of candidateUrls) {
-        try {
-          const arrayBuffer = await loadAudioArrayBuffer(candidateUrl, timeoutMs)
-          if (!isLikelyAudioPayload(arrayBuffer)) {
-            throw new Error(`BGM payload is not audio (${candidateUrl})`)
-          }
-          const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0))
-          this.bufferCache.set(url, audioBuffer)
-          if (candidateUrl !== url) {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const attemptUrl = withAudioRetryQuery(candidateUrl, attempt)
+          try {
+            const arrayBuffer = await loadAudioArrayBuffer(attemptUrl, timeoutMs + attempt * 5000)
+            if (!isLikelyAudioPayload(arrayBuffer)) {
+              throw new Error(`BGM payload is not audio (${attemptUrl})`)
+            }
+            const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0))
+            this.bufferCache.set(url, audioBuffer)
             this.bufferCache.set(candidateUrl, audioBuffer)
+            return audioBuffer
+          } catch (error) {
+            lastError = error
+            candidateErrors.push({ url: attemptUrl, error })
           }
-          return audioBuffer
-        } catch (error) {
-          lastError = error
-          candidateErrors.push({ url: candidateUrl, error })
         }
       }
 

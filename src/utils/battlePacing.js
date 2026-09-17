@@ -51,7 +51,7 @@ export const getBattleMovePhaseDuration = (phase = 'hit') => (
 
 export const getBattleMoveImpactDelay = (phase = 'hit', durationMs = getBattleMovePhaseDuration(phase)) => {
   if (['hit', 'status', 'heal', 'drain'].includes(phase)) {
-    return Math.min(540, Math.max(360, Math.round(durationMs * 0.34)))
+    return Math.min(500, Math.max(220, Math.round(durationMs * 0.36)))
   }
 
   if (phase === 'secondary') {

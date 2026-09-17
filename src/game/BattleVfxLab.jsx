@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import '../game.css'
 import BattleMoveEffect, { BattleImpactFeedback } from '../components/Game/BattleMoveEffect'
 import { MOVES } from '../utils/gameData'
@@ -6,6 +6,7 @@ import { getMoveEffectConfig } from '../utils/moveVisuals'
 import { buildBattleImpactFeedback, getBattleCinematicProfile } from '../utils/battleCinematics'
 import { getBattleMoveImpactDelay } from '../utils/battlePacing'
 import { pokemonArtPngUrl, pokemonArtUrl } from '../utils/mediaAssetUrl'
+import { getMoveVfxRecipe } from '../utils/battleVfxRecipes'
 
 const LAB_ANCHORS = {
   player: { x: '24%', y: '69%' },
@@ -25,10 +26,18 @@ const getInitialMoveKey = () => {
   return MOVES[requested] ? requested : FEATURED_MOVES[0] || Object.keys(MOVES)[0]
 }
 
+const BattleScenePreview = lazy(() => import('./BattleScenePreview'))
+
 export default function BattleVfxLab() {
+  return new URLSearchParams(location.search).get('scene') === 'actual'
+    ? <Suspense fallback={<p>正在打开战斗场景预览…</p>}><BattleScenePreview /></Suspense>
+    : <BattleMaterialLab />
+}
+
+function BattleMaterialLab() {
   const [moveKey, setMoveKey] = useState(getInitialMoveKey)
-  const [phase, setPhase] = useState('hit')
-  const [attackerSide, setAttackerSide] = useState('player')
+  const [phase, setPhase] = useState(() => new URLSearchParams(location.search).get('phase') || 'hit')
+  const [attackerSide, setAttackerSide] = useState(() => new URLSearchParams(location.search).get('side') === 'enemy' ? 'enemy' : 'player')
   const [effect, setEffect] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [query, setQuery] = useState('')
@@ -37,6 +46,8 @@ export default function BattleVfxLab() {
   const move = MOVES[moveKey]
   const config = getMoveEffectConfig(moveKey, move)
   const profile = getBattleCinematicProfile(moveKey, move, config, { phase })
+  const recipe = getMoveVfxRecipe(moveKey, move, config)
+  const fixedFrame = new URLSearchParams(location.search).has('frame')
   const targetSide = config.target === 'self' ? attackerSide : attackerSide === 'player' ? 'enemy' : 'player'
 
   const moveOptions = useMemo(() => {
@@ -62,7 +73,7 @@ export default function BattleVfxLab() {
     const currentTargetSide = currentConfig.target === 'self'
       ? attackerSide
       : attackerSide === 'player' ? 'enemy' : 'player'
-    const currentFeedback = phase === 'hit'
+    const currentFeedback = phase === 'hit' && currentMove.category !== 'status'
       ? buildBattleImpactFeedback({
         damage: Math.max(1, Math.round((Number(currentMove.power) || 50) * 0.72)),
         effectiveness: 2,
@@ -91,11 +102,11 @@ export default function BattleVfxLab() {
         setFeedback({ ...currentFeedback, anchors: LAB_ANCHORS })
       }, getBattleMoveImpactDelay(phase, currentProfile.durationMs))
     }
-    replayTimerRef.current = window.setTimeout(() => {
+    if (!fixedFrame) replayTimerRef.current = window.setTimeout(() => {
       setEffect(null)
       setFeedback(null)
     }, currentProfile.durationMs + 120)
-  }, [attackerSide, moveKey, phase])
+  }, [attackerSide, moveKey, phase, fixedFrame])
 
   useEffect(() => () => {
     if (replayTimerRef.current) window.clearTimeout(replayTimerRef.current)
@@ -127,7 +138,7 @@ export default function BattleVfxLab() {
         </div>
       </header>
 
-      <section className={`battle-vfx-lab__stage anime-battle-bg battle-scene--meadow ${stageCinematicClass}`} data-active-move={moveKey} data-move-signature={config.signatureStyle?.id} data-effect-active={effect ? 'true' : 'false'}>
+      <section className={`battle-vfx-lab__stage anime-battle-bg battle-scene--meadow battle-vfx-quality--${new URLSearchParams(location.search).get('quality') === 'lite' ? 'lite' : 'standard'} ${fixedFrame ? '' : stageCinematicClass}`} data-active-move={moveKey} data-move-signature={config.signatureStyle?.id} data-effect-active={effect ? 'true' : 'false'}>
         <div className="battle-environment-props" aria-hidden="true"><span className="battle-env-prop battle-env-prop--horizon" /><span className="battle-env-prop battle-env-prop--foreground" /></div>
         <BattleMoveEffect effect={effect} onDone={() => setEffect(null)} />
         <BattleImpactFeedback feedback={feedback} anchors={LAB_ANCHORS} />
@@ -140,7 +151,7 @@ export default function BattleVfxLab() {
         <div className="battle-vfx-lab__move-title">
           <span>{move.type} · {move.category}</span>
           <strong>{move.name}</strong>
-          <small>{moveKey} · 威力 {move.power || '—'} · {config.visual}/{config.motion}/{config.hitReaction}</small>
+          <small>{moveKey} · 威力 {move.power || '—'} · {recipe.technique}/{recipe.material}</small>
         </div>
       </section>
 

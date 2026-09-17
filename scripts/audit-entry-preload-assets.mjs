@@ -28,6 +28,7 @@ function stripAssetUrl(url) {
 }
 
 function toPublicFile(url) {
+  if (stripAssetUrl(url).startsWith('/src/assets/')) return path.join(repoRoot, stripAssetUrl(url))
   return path.join(publicRoot, stripAssetUrl(url).replace(/^\//, ''))
 }
 

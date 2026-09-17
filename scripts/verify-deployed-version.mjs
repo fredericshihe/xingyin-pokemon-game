@@ -166,7 +166,7 @@ const parseEntryScript = (html) => {
 
 const parseSwBuildIds = (swText) => {
   const pageMatch = swText.match(/game-pages-([A-Za-z0-9_-]+)/)
-  const staticMatch = swText.match(/game-static-([A-Za-z0-9_-]+)/)
+  const staticMatch = swText.match(/cacheName:["']game-static-(?!art-)([^"']+)["']/)
   return {
     pageBuildId: pageMatch?.[1] || null,
     staticBuildId: staticMatch?.[1] || null

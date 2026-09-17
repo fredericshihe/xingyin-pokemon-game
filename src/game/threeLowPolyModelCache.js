@@ -4,7 +4,8 @@ import { Group } from 'three'
 import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo } from './data/overworldMaps'
 import { MAP_MODEL_MANIFEST } from './data/mapModelManifest.generated.js'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
-import { assetUrl } from '../utils/assetUrl'
+import { PLAYER_CHARACTER_KEY, resolveCharacterModelKey } from './data/characterAssets.js'
+import { assetUrl, versionedAssetUrl } from '../utils/assetUrl'
 
 const MODEL_BASE = assetUrl('/assets/3d/kenney-nature/')
 const SURVIVAL_MODEL_BASE = assetUrl('/assets/3d/kenney-survival/')
@@ -18,7 +19,7 @@ const CATALOG_MODEL_URLS = Object.fromEntries(
     .map((asset) => [asset.id, assetUrl(asset.assetPath)])
 )
 
-const MODEL_URLS = {
+const MODEL_URLS_RAW = {
   ...CATALOG_MODEL_URLS,
   grass: `${MODEL_BASE}grass.glb`,
   grassLarge: `${MODEL_BASE}grass_leafsLarge.glb`,
@@ -48,6 +49,10 @@ const MODEL_URLS = {
   mineControlLever: `${PLATFORMER_MODEL_BASE}lever.glb`
 }
 
+const MODEL_URLS = Object.fromEntries(
+  Object.entries(MODEL_URLS_RAW).map(([key, url]) => [key, versionedAssetUrl(url)])
+)
+
 export function getModelAssetUrl(key) {
   return MODEL_URLS[key] || null
 }
@@ -62,6 +67,8 @@ SHARED_GLTF_LOADER.setDRACOLoader(DRACO_LOADER)
 const MODEL_SCENE_CACHE = new Map()
 const MODEL_LOAD_PROMISE_CACHE = new Map()
 
+export const getCachedModelScene = (key) => MODEL_SCENE_CACHE.get(key) || null
+
 const DEFAULT_MODEL_TIMEOUT_MS = 45000
 const DEFAULT_MODEL_CONCURRENCY = 2
 const DEFAULT_MODEL_RETRIES = 4
@@ -73,6 +80,12 @@ const delay = (ms) => new Promise((resolve) => {
   }
   setTimeout(resolve, ms)
 })
+
+const withModelRetryQuery = (url, attempt) => {
+  if (!url || attempt <= 0) return url
+  const joiner = url.includes('?') ? '&' : '?'
+  return `${url}${joiner}_model_retry=${attempt}`
+}
 
 function resolveModelPreloadOptions(overrides = {}) {
   const base = {
@@ -135,6 +148,7 @@ async function verifyModelAssetExists(key) {
 }
 
 const CORE_MODEL_KEYS = new Set([
+  PLAYER_CHARACTER_KEY,
   'grass',
   'grassLarge',
   'bush',
@@ -152,7 +166,9 @@ const CORE_MODEL_KEYS = new Set([
   'sign'
 ])
 
-export function getDecorativeModel(type) {
+export function getDecorativeModel(type, decoration = {}) {
+  const characterKey = resolveCharacterModelKey(type, decoration)
+  if (characterKey !== type) return { key: characterKey, scale: 1 }
   switch (type) {
     case 'tent':
       return { key: 'tent', scale: 2.25 }
@@ -221,14 +237,13 @@ export function getDecorativeModel(type) {
 export function getRequiredModelKeys(mapInfo) {
   const keys = new Set(CORE_MODEL_KEYS)
   mapInfo?.decorativeObjects?.forEach((object) => {
-    const spec = getDecorativeModel(object.type)
+    const spec = getDecorativeModel(object.type, object)
     if (spec?.key) keys.add(spec.key)
   })
   return keys
 }
 
-function loadModelSceneOnce(key, { timeoutMs = DEFAULT_MODEL_TIMEOUT_MS } = {}) {
-  const url = MODEL_URLS[key]
+function loadModelSceneOnce(key, { timeoutMs = DEFAULT_MODEL_TIMEOUT_MS, url = MODEL_URLS[key] } = {}) {
   if (!url) {
     return Promise.resolve(null)
   }
@@ -263,10 +278,10 @@ async function loadModelSceneWithRetry(key, options = {}) {
   let lastError = null
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    MODEL_LOAD_PROMISE_CACHE.delete(key)
     try {
       const scene = await loadModelSceneOnce(key, {
-        timeoutMs: timeoutMs + attempt * 10000
+        timeoutMs: timeoutMs + attempt * 10000,
+        url: withModelRetryQuery(MODEL_URLS[key], attempt)
       })
       if (scene) {
         MODEL_SCENE_CACHE.set(key, scene)

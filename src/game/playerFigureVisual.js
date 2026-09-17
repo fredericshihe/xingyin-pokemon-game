@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { getCachedModelScene } from './threeLowPolyModelCache'
+import { PLAYER_CHARACTER_KEY } from './data/characterAssets.js'
 
 const WALK_CYCLE_MS = 540
 const PREVIEW_CACHE = new Map()
@@ -299,6 +301,25 @@ export function createLowPolyPlayerBody({ castShadow = true } = {}) {
 }
 
 export function createLowPolyPlayer() {
+  const template = getCachedModelScene(PLAYER_CHARACTER_KEY)
+  if (template) {
+    const player = template.clone(true)
+    const parts = {}
+    const base = {}
+    player.traverse((child) => {
+      if (!child.isMesh) return
+      // Each map/portrait owns its GPU buffers; disposing a preview cannot invalidate the cache.
+      child.geometry = child.geometry.clone()
+      child.material = child.material.clone()
+      child.castShadow = true
+      child.receiveShadow = true
+      parts[child.name] = child
+      base[child.name] = rememberBaseTransform(child)
+    })
+    player.userData.kind = 'xingyin-player'
+    player.userData.rig = { parts, base, walkBlend: 0, authored: true }
+    return player
+  }
   const group = new THREE.Group()
   const body = createLowPolyPlayerBody()
   group.add(body)
@@ -311,7 +332,25 @@ export function setLowPolyPlayerPose(player, { moving = false, phase = 0 } = {})
   const rig = player?.userData?.rig
   if (!rig) return
   rig.walkBlend = moving ? 1 : 0
-  applyLowPolyPlayerPose(rig, rig.walkBlend, phase)
+  if (rig.authored) applyAuthoredPlayerPose(rig, rig.walkBlend, phase)
+  else applyLowPolyPlayerPose(rig, rig.walkBlend, phase)
+}
+
+function applyAuthoredPlayerPose(rig, blend, phase) {
+  const stride = Math.sin(phase) * blend
+  const bounce = Math.abs(Math.sin(phase)) * .018 * blend
+  Object.entries(rig.parts).forEach(([name, part]) => {
+    const base = rig.base[name]
+    part.position.copy(base.position)
+    part.rotation.copy(base.rotation)
+    part.position.y += bounce
+  })
+  for (const [name, angle] of Object.entries({ leftArm: -stride * .46, rightArm: stride * .46, leftLeg: stride * .40, rightLeg: -stride * .40 })) {
+    const part = rig.parts[name]
+    if (part) part.rotateX(angle)
+  }
+  rig.parts.body?.rotateY(stride * .035)
+  rig.parts.head?.rotateZ(-stride * .015)
 }
 
 export function animateLowPolyPlayer(player, moving, now, dt) {
@@ -322,7 +361,9 @@ export function animateLowPolyPlayer(player, moving, now, dt) {
   const delta = Number.isFinite(dt) ? dt : 1
   const smooth = 1 - Math.pow(moving ? 0.001 : 0.02, delta)
   rig.walkBlend = THREE.MathUtils.lerp(rig.walkBlend ?? 0, blendTarget, smooth)
-  applyLowPolyPlayerPose(rig, rig.walkBlend, (now / WALK_CYCLE_MS) * Math.PI * 2)
+  const phase = (now / WALK_CYCLE_MS) * Math.PI * 2
+  if (rig.authored) applyAuthoredPlayerPose(rig, rig.walkBlend, phase)
+  else applyLowPolyPlayerPose(rig, rig.walkBlend, phase)
 }
 
 export function getLowPolyPlayerFigureDataUrl({
@@ -342,7 +383,8 @@ export function getLowPolyPlayerFigureDataUrl({
   const safeScale = Math.max(0.6, Number(scale) || 1)
   const safeCameraPreset = PREVIEW_CAMERA_PRESETS[cameraPreset] ? cameraPreset : 'portrait'
   const cameraConfig = PREVIEW_CAMERA_PRESETS[safeCameraPreset]
-  const cacheKey = `${safeDirection}:${safePose}:${safeWidth}:${safeHeight}:${safeScale.toFixed(2)}:${safeCameraPreset}`
+  const modelFamily = getCachedModelScene(PLAYER_CHARACTER_KEY) ? 'blender-v1' : 'fallback'
+  const cacheKey = `${modelFamily}:${safeDirection}:${safePose}:${safeWidth}:${safeHeight}:${safeScale.toFixed(2)}:${safeCameraPreset}`
 
   if (PREVIEW_CACHE.has(cacheKey)) {
     return PREVIEW_CACHE.get(cacheKey)

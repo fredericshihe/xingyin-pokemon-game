@@ -20,6 +20,12 @@ const toUniqueUrls = (urls = []) => (
     .map((url) => url.trim()))]
 )
 
+const withRetryQuery = (url, attempt) => {
+  if (!url || attempt <= 0) return url
+  const joiner = url.includes('?') ? '&' : '?'
+  return `${url}${joiner}_asset_retry=${attempt}`
+}
+
 export function aliasDecodedImageAsset(targetUrl, sourceUrl) {
   if (!targetUrl || !sourceUrl) return false
   const sourceImage = decodedImageAssets.get(sourceUrl)
@@ -117,12 +123,16 @@ export const preloadImageAssetWithFallback = async (url, { timeoutMs = 10000, re
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const attemptTimeoutMs = timeoutMs + attempt * 5000
-    const primary = await preloadImageAsset(url, { timeoutMs: attemptTimeoutMs })
-    if (primary.ok) return primary
-    lastResult = primary
+    const attemptUrl = withRetryQuery(url, attempt)
+    const primary = await preloadImageAsset(attemptUrl, { timeoutMs: attemptTimeoutMs })
+    if (primary.ok) {
+      if (attemptUrl !== url) aliasDecodedImageAsset(url, attemptUrl)
+      return { ...primary, url, requestedUrl: url, retryUrl: attemptUrl !== url ? attemptUrl : undefined }
+    }
+    lastResult = { ...primary, url }
 
     if (typeof url === 'string' && url.includes('.webp')) {
-      const fallbackUrl = toPngFallbackUrl(url)
+      const fallbackUrl = toPngFallbackUrl(attemptUrl)
       if (fallbackUrl && fallbackUrl !== url) {
         const fallback = await preloadImageAsset(fallbackUrl, { timeoutMs: attemptTimeoutMs })
         if (fallback.ok) {

@@ -1,0 +1,24 @@
+.battle-material-effect {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 34;
+  pointer-events: none;
+  contain: strict;
+}
+
+/* Combatants retain their existing attack, recoil and damage animations. */
+.battle-vfx-lab__stage .battle-material-effect { z-index: 12; }
+
+.battle-material-choreography .battle-actor-motion,
+.battle-material-choreography .battle-hit-reaction {
+  animation: none !important;
+  will-change: transform;
+}
+
+/* Soft textures supply the glow. Avoid a full-screen blur pass on tablets. */
+.battle-vfx-quality--standard .battle-cinematic-overlay::after,
+.battle-vfx-quality--lite .battle-cinematic-overlay::after {
+  filter: none;
+}

@@ -111,10 +111,10 @@ const getDurationForProfile = ({ phase, intensity, hitCount }) => {
   if (hitCount > 1) return intensity === 'ultimate' ? 820 : 680
   return {
     subtle: 980,
-    light: 1120,
-    medium: 1420,
-    heavy: 1720,
-    ultimate: 2140,
+    light: 820,
+    medium: 1040,
+    heavy: 1220,
+    ultimate: 1480,
   }[intensity] || 1420
 }
 
@@ -131,9 +131,7 @@ export const getBattleCinematicProfile = (
   const resolvedDuration = Number(durationMs) > 0
     ? Number(durationMs)
     : getDurationForProfile({ phase, intensity, hitCount })
-  const hitStopMs = phase === 'hit'
-    ? ({ subtle: 20, light: 30, medium: 46, heavy: 64, ultimate: 82 }[intensity] || 36)
-    : 0
+  const hitStopMs = 0
   const cameraStrength = ({ subtle: 0, light: 1, medium: 2, heavy: 3, ultimate: 4 }[intensity] || 1)
   const sceneFx = MOVE_SCENE_FX[normalizedMoveKey] || TYPE_SCENE_FX[move.type] || 'neutral'
   const fullScene = FULL_SCENE_MOVE_KEYS.has(normalizedMoveKey) || intensity === 'ultimate'
@@ -220,6 +218,9 @@ export const resolveBattleVfxQuality = ({ storedValue = null, navigatorLike = nu
   const memory = Number(resolvedNavigator?.deviceMemory) || 8
   const cores = Number(resolvedNavigator?.hardwareConcurrency) || 8
   if (memory <= 4 || cores <= 4) return 'lite'
+  // iPadOS often reports a Mac user agent and omits deviceMemory. Do not infer
+  // desktop GPU capacity from those missing values.
+  if (Number(resolvedNavigator?.maxTouchPoints) > 1 || /iPad|iPhone|Android/i.test(resolvedNavigator?.userAgent || '')) return 'standard'
   if ((Number(resolvedWindow?.innerWidth) || 1024) <= 760 || (Number(resolvedWindow?.devicePixelRatio) || 1) >= 2.5) return 'standard'
   return 'high'
 }

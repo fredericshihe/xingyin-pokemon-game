@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import '../game.css'
 import EliteFourCeremonyOverlay from '../components/Game/EliteFourCeremonyOverlay'
 import EliteUnlockMinigameOverlay from '../components/Game/EliteUnlockMinigameOverlay'
-import GameCanvas from './GameCanvas'
+import MapSceneLayer from './MapSceneLayer'
 import { createEliteFourCeremony } from './data/eliteFourCeremony'
 import { ELITE_UNLOCK_TASKS, ELITE_UNLOCK_TASK_BY_ID } from './data/longTermProgression'
 import {
@@ -85,6 +85,9 @@ export default function MapRuntimePreview() {
     return anchor ? { x: Math.round(anchor.x), y: Math.round(anchor.y + 2), direction: 'up' } : getMapStartPosition(initialMapName)
   })
   const [sceneRevision, setSceneRevision] = useState(0)
+  const [previewPanel, setPreviewPanel] = useState(null)
+  const [readyTransitions, setReadyTransitions] = useState([])
+  const recordReady = useCallback(({ ready }) => setReadyTransitions(previous => [...previous, ready]), [])
   const [zoneName, setZoneName] = useState('')
   const [previewCeremony, setPreviewCeremony] = useState(() => (
     initialCeremonyPhase ? createEliteFourCeremony(initialMapName, initialCeremonyPhase) : null
@@ -215,8 +218,10 @@ export default function MapRuntimePreview() {
 
       <main className="map-runtime-preview__main">
         <section className="map-runtime-preview__canvas" aria-label="地图画面">
-          <GameCanvas
+          <MapSceneLayer
             key={`${mapName}:${sceneRevision}`}
+            active={!previewPanel}
+            onSceneReadyChange={recordReady}
             playerTeam={[]}
             playerPos={playerPos}
             mapGrid={mapGrid}
@@ -229,7 +234,7 @@ export default function MapRuntimePreview() {
             mapLevel={1}
             onEncounter={(encounter) => pushLog('encounter', `Encounter ${encounter.pokemonId} Lv.${encounter.level}`)}
             onCollect={handlePreviewCollect}
-            onNavigate={(target) => pushLog('ui', `Open ${target}`)}
+            onNavigate={setPreviewPanel}
             onMapWarp={handlePreviewWarp}
             onZoneEnter={(name) => {
               setZoneName(name)
@@ -238,8 +243,13 @@ export default function MapRuntimePreview() {
             encounterCooldownSteps={0}
             onEncounterCooldownChange={() => {}}
             cloudBlocked={Boolean(previewMinigame)}
-            mapActive
           />
+          {previewPanel && <div role="dialog" aria-label="窗口切换检查" style={{ padding: 24, background: '#fff', height: '100%' }}>
+            <h2>{previewPanel}</h2>
+            <input aria-label="面板输入检查" placeholder="方向键只操作本窗口" />
+            <button type="button" onClick={() => setPreviewPanel(null)}>关闭窗口</button>
+          </div>}
+          <output hidden data-ready-transitions={JSON.stringify(readyTransitions)} />
         </section>
 
         {!perfMode && <aside className="map-runtime-preview__panel" aria-label="地图数据">

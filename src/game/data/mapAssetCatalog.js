@@ -1,5 +1,6 @@
 import { ENVIRONMENT_BIOME_ASSETS } from './environmentBiomeAssets.js'
 import { MAP_EXCLUSIVE_ASSETS } from './mapExclusiveAssets.generated.js'
+import { CHARACTER_MODEL_KEYS, characterAssetPath } from './characterAssets.js'
 
 const ALL_AREAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
 
@@ -578,6 +579,19 @@ Object.assign(
     return [asset.id, asset]
   }))
 )
+
+// Replace every character contract, including the formerly procedural Elite Four.
+// Map coordinates, event IDs and existing placement scales remain authoritative.
+CHARACTER_MODEL_KEYS.forEach((id) => {
+  MAP_ASSET_CATALOG[id] = makeAsset({
+    ...(MAP_ASSET_CATALOG[id] || { id, defaultScale: 0.62, themeTags: ['character', 'npc'] }),
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: characterAssetPath(id),
+    sourceAssetName: `${id}.glb`,
+    procedural: false,
+    notes: 'Original smooth-shaded anime character; vertex palette; feet at origin; +Z forward.'
+  })
+})
 
 for (const [name, tags, footprint] of [
   ['farm_windmill', ['farm', 'building', 'landmark'], { width: 1.55, height: 1.4 }],

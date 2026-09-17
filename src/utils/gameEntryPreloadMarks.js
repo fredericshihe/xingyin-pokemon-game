@@ -1,6 +1,6 @@
 const APP_BUILD_ID = typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'dev'
 const PRELOAD_DONE_PREFIX = 'game:entry-preload-done:'
-const ENTRY_PRELOAD_ASSET_VERSION = 'entry-assets-20260603-blocking'
+const ENTRY_PRELOAD_ASSET_VERSION = 'entry-assets-20260905-current-map-verified'
 
 let runtimeEntryPreloadComplete = false
 

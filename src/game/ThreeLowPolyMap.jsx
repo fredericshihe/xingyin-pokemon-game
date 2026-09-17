@@ -10,6 +10,7 @@ import { createEnvironmentGroundPatches } from './environmentGroundPatches'
 import { findEnvironmentSpawn, isEnvironmentTileBlocked } from './environmentNavigation.js'
 import { PLAYER_CHARACTER_KEY, isCharacterModelKey } from './data/characterAssets.js'
 import { NPC_WANDER_RADIUS, buildNpcWanderArea, createNpcWanderer, isNpcWanderEnabled } from './npcWander.js'
+import { attachNpcWalkShadows, configureNpcWalkMaterial, createNpcWalkGeometry, getNpcWalkStride, hasNpcWalkRig, setNpcWalkStride } from './npcWalkVisual.js'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
@@ -3390,7 +3391,11 @@ function ThreeLowPolyMap({
         const usesGrassSway = GRASS_SWAY_KEYS.has(key)
         const set = template.map((sub) => {
           if (usesGrassSway) ensureGrassSwayMaterial(sub.material)
-          const im = new THREE.InstancedMesh(sub.geometry, sub.material, cap)
+          const usesNpcWalk = isCharacterModelKey(key) && hasNpcWalkRig(sub.geometry)
+          const geometry = usesNpcWalk ? createNpcWalkGeometry(sub.geometry, cap) : sub.geometry
+          if (usesNpcWalk) configureNpcWalkMaterial(sub.material)
+          const im = new THREE.InstancedMesh(geometry, sub.material, cap)
+          if (usesNpcWalk) attachNpcWalkShadows(im)
           const isTreeLike = SHADOW_CASTING_MODEL_KEYS.has(key)
           im.castShadow = renderProfile.castDecorationShadows && (isTreeLike || renderProfile.castAllDecorationShadows)
           im.receiveShadow = true
@@ -3646,6 +3651,7 @@ function ThreeLowPolyMap({
           wanderPaused: true,
           walkBob: 0,
           walkRoll: 0,
+          walkStride: 0,
           lastUpdateAt: 0,
           tileX,
           tileY,
@@ -3696,6 +3702,7 @@ function ThreeLowPolyMap({
               _instTmpMatrix.multiplyMatrices(_instTmpComposed, ref.localOffset)
               ref.mesh.setMatrixAt(ref.index, _instTmpMatrix)
               ref.mesh.instanceMatrix.needsUpdate = true
+              setNpcWalkStride(ref.mesh, ref.index, this.walkStride)
             })
             const offsetX = this.currentPosX - this.posX
             const offsetZ = this.currentPosZ - this.posZ
@@ -3782,6 +3789,7 @@ function ThreeLowPolyMap({
               const previousZ = this.currentPosZ
               const previousBob = this.walkBob
               const previousRoll = this.walkRoll
+              const previousStride = this.walkStride
               const walk = this.wanderer.update(elapsed, {
                 paused: this.wanderPaused,
                 nearPlayer: distance <= 2,
@@ -3800,11 +3808,12 @@ function ThreeLowPolyMap({
               this.currentPosZ = this.posZ + (walk.y - this.tileY) * CELL
               this.interactionTileX = Math.round(walk.x)
               this.interactionTileY = Math.round(walk.y)
-              this.walkBob = walk.moving ? Math.abs(Math.sin(walk.stepProgress * Math.PI * 2)) * 0.045 : 0
-              this.walkRoll = walk.moving ? Math.sin(walk.stepProgress * Math.PI * 2) * 0.025 : 0
+              this.walkStride = getNpcWalkStride(walk, { standing: this.active })
+              this.walkBob = Math.abs(this.walkStride) * 0.025
+              this.walkRoll = this.walkStride * 0.018
               if (!this.active) this.targetRotation = DIRS[walk.direction].rot
               transformChanged = previousX !== this.currentPosX || previousZ !== this.currentPosZ ||
-                previousBob !== this.walkBob || previousRoll !== this.walkRoll
+                previousBob !== this.walkBob || previousRoll !== this.walkRoll || previousStride !== this.walkStride
               if (this.wanderPaused && !this.active) return false
             }
             if (this.moveStartedAt) {
@@ -5647,6 +5656,8 @@ function ThreeLowPolyMap({
               direction: controller.wanderer?.state.direction ?? null,
               wanderEnabled: Boolean(controller.wanderer),
               moving: controller.wanderer?.state.moving ?? false,
+              walkStride: controller.walkStride,
+              limbAnimation: controller.refs.some((ref) => hasNpcWalkRig(ref.mesh.geometry)),
               paused: controller.wanderer ? controller.wanderPaused : true,
               occupiedTiles: controller.wanderer?.state.occupiedTiles.map((tile) => ({ ...tile })) ??
                 [{ x: controller.interactionTileX, y: controller.interactionTileY }],
@@ -5748,6 +5759,8 @@ function ThreeLowPolyMap({
       root.traverse((child) => {
         if (child.isMesh) {
           child.geometry?.dispose?.()
+          child.customDepthMaterial?.dispose?.()
+          child.customDistanceMaterial?.dispose?.()
           if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose?.())
           else child.material?.dispose?.()
         }

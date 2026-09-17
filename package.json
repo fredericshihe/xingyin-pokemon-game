@@ -90,6 +90,7 @@
     "audit:trainer-daily-scope": "node scripts/audit-trainer-daily-map-scope.mjs",
     "audit:npc-dialogues": "node scripts/audit-npc-dialogues.mjs",
     "audit:npc-wander": "node scripts/audit-npc-wander.mjs",
+    "audit:npc-walk": "node scripts/audit-npc-walk-visual.mjs",
     "audit:npc-evolution-levels": "node scripts/audit-npc-evolution-levels.mjs",
     "audit:trial-unlocks": "node scripts/audit-trial-unlock-consistency.mjs",
     "audit:battle-scenes": "vite-node scripts/audit-battle-scenes.mjs",

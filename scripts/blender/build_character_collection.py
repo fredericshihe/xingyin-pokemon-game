@@ -1,6 +1,6 @@
 """Author the original Xingyin character collection in Blender; export Y-up GLB.
 
-blender -b --python scripts/blender/build_character_collection.py -- [--only player_child_adventurer]
+blender -b --python scripts/blender/build_character_collection.py -- [--only player_child_adventurer | --npc-walk] [--skip-preview]
 The .blend file and this deterministic source are the editable authoring assets.
 """
 import bpy
@@ -361,6 +361,18 @@ def make_character(spec):
     root['frontAxis']='+Z'
     root['style']='original tailored anime adventure'
     pivots={'body':(0,1.13,0),'head':(0,1.71,0),'leftArm':(-.27,1.51,0),'rightArm':(.27,1.51,0),'leftLeg':(-.135,.94,0),'rightLeg':(.135,.94,0)}
+    walkable_npc = not spec.get('hero') and not spec.get('theme') and spec['id'] != 'trainer_boss'
+    if walkable_npc:
+        # Keep exact authored limb membership while retaining one mesh/draw call.
+        # Custom vectors are exported verbatim, so pivots are explicitly Y-up.
+        swings={'leftArm':-.46,'rightArm':.46,'leftLeg':.40,'rightLeg':-.40}
+        for part,objects in parts.items():
+            for obj in objects:
+                pivot=obj.data.attributes.new('_NPC_PIVOT','FLOAT_VECTOR','POINT')
+                swing=obj.data.attributes.new('_NPC_SWING','FLOAT','POINT')
+                for item in pivot.data: item.vector=pivots.get(part,(0,0,0))
+                for item in swing.data: item.value=swings.get(part,0)
+        root['npcWalkRig']='limb-pivots-v1'
     groups=parts if spec.get('hero') else {'figure':sum(parts.values(),[])}
     meshes=[]
     for part,objects in groups.items():
@@ -384,21 +396,25 @@ def make_character(spec):
         obj.location.z-=floor
         obj.location*=factor
         for v in obj.data.vertices: v.co*=factor
+        if walkable_npc:
+            for item in obj.data.attributes['_NPC_PIVOT'].data: item.vector*=factor
     bpy.context.view_layer.update()
     bpy.ops.object.select_all(action='DESELECT')
     root.select_set(True)
     for obj in meshes: obj.select_set(True)
     bpy.context.view_layer.objects.active=root
-    bpy.ops.export_scene.gltf(filepath=str(OUT/(spec['id']+'.glb')),export_format='GLB',use_selection=True,export_yup=True,export_apply=True,export_extras=True,export_animations=False,export_texcoords=False,export_normals=True,export_materials='EXPORT',export_vertex_color='MATERIAL',export_all_vertex_colors=False)
+    bpy.ops.export_scene.gltf(filepath=str(OUT/(spec['id']+'.glb')),export_format='GLB',use_selection=True,export_yup=True,export_apply=True,export_extras=True,export_attributes=True,export_animations=False,export_texcoords=False,export_normals=True,export_materials='EXPORT',export_vertex_color='MATERIAL',export_all_vertex_colors=False)
     tris=sum(sum(len(poly.vertices)-2 for poly in obj.data.polygons) for obj in meshes)
     return root,dict(id=spec['id'],name=spec['label'],file=spec['id']+'.glb',height=target,triangles=tris,meshes=len(meshes),materials=1,theme=spec.get('theme'),rank=spec.get('rank'),style=spec['style'],source='Blender 5.2 / original Xingyin collection')
 
 args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
 only=args[args.index('--only')+1] if '--only' in args else None
+walk_only='--npc-walk' in args
 records=[]
 roots=[]
 for spec in SPECS:
     if only and spec['id']!=only: continue
+    if walk_only and (spec.get('hero') or spec.get('theme') or spec['id']=='trainer_boss'): continue
     root,record=make_character(spec)
     roots.append(root)
     records.append(record)
@@ -408,9 +424,9 @@ for spec in SPECS:
 for i,root in enumerate(roots):
     root.location.x=(i%6)*2.1
     root.location.y=(i//6)*3.8
-bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE/('xingyin-character-collection.blend' if not only else only+'.blend')))
+bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE/('npc-walk.blend' if walk_only else 'xingyin-character-collection.blend' if not only else only+'.blend')))
 manifest_path=OUT/'manifest.json'
-if only and manifest_path.exists():
+if (only or walk_only) and manifest_path.exists():
     previous=json.loads(manifest_path.read_text())
     # Replace the raw record as well as the GLB so partial exports are optimized
     # again; unchanged characters keep their compression metadata.
@@ -418,6 +434,8 @@ if only and manifest_path.exists():
     merged=[replacements.pop(record['id'],record) for record in previous['characters']]
     records=merged+list(replacements.values())
 manifest_path.write_text(json.dumps({'version':'xingyin-characters-v1','characters':records},ensure_ascii=False,indent=2)+'\n')
+if '--skip-preview' in args:
+    sys.exit(0)
 
 # A close studio render of the authored geometry before delivery compression.
 for root in roots:

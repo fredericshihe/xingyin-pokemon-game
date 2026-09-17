@@ -12168,7 +12168,7 @@ const FastTravelMapModal = ({
 };
 
 const FastTravelTransitOverlay = ({ transit }) => {
-  const phase = ['departing', 'arriving', 'syncing'].includes(transit?.phase) ? transit.phase : 'departing';
+  const phase = ['departing', 'loading', 'arriving', 'syncing'].includes(transit?.phase) ? transit.phase : 'departing';
   const direction = ['down', 'left', 'right', 'up'].includes(transit?.travelDirection) ? transit.travelDirection : 'right';
   const isMapWarp = transit?.kind === 'warp';
   const pose = phase === 'arriving' ? 'idle' : 'run';
@@ -12226,12 +12226,13 @@ const FastTravelTransitOverlay = ({ transit }) => {
       : `前往 ${toLabel}`;
   const caption = phase === 'arriving'
     ? '地图正在展开'
-    : `${fromLabel} -> ${toLabel}`;
+    : phase === 'loading' ? '正在加载地图，请稍候…' : `${fromLabel} -> ${toLabel}`;
   const ariaPrefix = isMapWarp ? '区域连接' : '快速传送';
 
   return (
     <div
-      className={`fast-travel-cinematic fast-travel-cinematic--${phase} fast-travel-cinematic--${transit.terrain || 'meadow'}${transit.concealMap ? ' fast-travel-cinematic--conceal-map' : ''}`}
+      className={`fast-travel-cinematic fast-travel-cinematic--${phase} fast-travel-cinematic--${transit.terrain || 'meadow'}${transit.concealMap || phase === 'loading' ? ' fast-travel-cinematic--conceal-map' : ''}`}
+      role="status"
       aria-live="polite"
       aria-label={`${ariaPrefix}：${fromLabel} 前往 ${toLabel}`}
     >
@@ -13056,7 +13057,9 @@ export default function OriginalGame({ user, onLogout }) {
     const forceRetry = entryPreloadForceRetryRef.current;
     entryPreloadForceRetryRef.current = false;
 
-    const preloadScope = `${userId}:${currentMapName}`;
+    // Entry assets belong to the signed-in session. Later maps load behind
+    // their transit overlay instead of unmounting the game for another boot.
+    const preloadScope = String(userId);
     if (!forceRetry && entryPreloadCompletedForUserRef.current === preloadScope) {
       setEntryAssetsReady(true);
       setEntryPreloadError(null);
@@ -13680,6 +13683,7 @@ export default function OriginalGame({ user, onLogout }) {
 
   const handleNavigateView = useCallback((nextView) => {
     if (typeof nextView !== 'string' || !nextView) return;
+    if (fastTravelBusy || mapWarpBusy || fastTravelTransitTarget || mapWarpTransitTarget) return;
     if (nextView === 'adventureProgress' && !LONG_TERM_PROGRESSION_FLAGS.mapProgressV1) return;
     primeGameAudio();
     if (nextView === 'map') {
@@ -13688,7 +13692,7 @@ export default function OriginalGame({ user, onLogout }) {
       gameAudio.playUiSelect();
     }
     setView(nextView);
-  }, [primeGameAudio]);
+  }, [fastTravelBusy, fastTravelTransitTarget, mapWarpBusy, mapWarpTransitTarget, primeGameAudio]);
 
   useEffect(() => {
     currentMapNameRef.current = currentMapName;
@@ -16553,6 +16557,55 @@ export default function OriginalGame({ user, onLogout }) {
   );
   const playtimeExpired = Boolean(playtimeReady && playtimeRemainingSeconds <= 0);
   const canAccruePlaytime = Boolean(fullPlayableScreenReady && playtimeRemainingSeconds > 0);
+  const activeMapTransit = fastTravelTransitTarget || mapWarpTransitTarget;
+  const currentMapSceneFailed = mapSceneState.mapName === currentMapName && Boolean(mapSceneState.error);
+
+  useEffect(() => {
+    if (!activeMapTransit) return undefined;
+    const transit = activeMapTransit;
+    const isWarp = transit.kind === 'warp';
+    const setTransit = isWarp ? setMapWarpTransitTarget : setFastTravelTransitTarget;
+    const finishTransit = () => {
+      setTransit((current) => current?.id === transit.id ? null : current);
+      if (isWarp) {
+        mapWarpBusyRef.current = false;
+        setMapWarpBusy(false);
+      } else {
+        setFastTravelBusy(false);
+      }
+    };
+
+    // Failures must expose the existing retry UI, never leave it behind a
+    // permanent cinematic. The map and playtime locks still prevent input.
+    if (cloudBlocked || cloudError || playtimeError || currentMapSceneFailed || requiresCloudReload) {
+      finishTransit();
+      return undefined;
+    }
+    if (!['loading', 'arriving'].includes(transit.phase)) return undefined;
+    const destinationReady = (
+      mapSceneState.mapName === transit.targetMapName &&
+      mapSceneState.ready &&
+      playtimeReady &&
+      (fullPlayableScreenReady || playtimeExpired)
+    );
+    if (!destinationReady) {
+      if (transit.phase === 'arriving') {
+        setTransit((current) => current?.id === transit.id ? { ...current, phase: 'loading' } : current);
+      }
+      return undefined;
+    }
+    if (transit.phase === 'loading') {
+      setTransit((current) => current?.id === transit.id ? { ...current, phase: 'arriving' } : current);
+      return undefined;
+    }
+    // Begin the reveal only after the destination's first rendered frame and
+    // the server time check. A cached destination follows the same path.
+    const timer = window.setTimeout(() => {
+      finishTransit();
+      if (!playtimeExpired) startEliteFourCeremony(transit.targetMapName, 'entry');
+    }, 1120);
+    return () => window.clearTimeout(timer);
+  }, [activeMapTransit, cloudBlocked, cloudError, currentMapSceneFailed, fullPlayableScreenReady, mapSceneState, playtimeError, playtimeExpired, playtimeReady, requiresCloudReload, startEliteFourCeremony]);
 
   useEffect(() => {
     playtimeExpiredRef.current = playtimeExpired || !playtimeReady;
@@ -16569,7 +16622,12 @@ export default function OriginalGame({ user, onLogout }) {
       if (playtimeSessionIdRef.current) void endStudentPlaytimeSession();
       return;
     }
-    if (playtimeSessionStartedRef.current || playtimeStatusRef.current?.remainingSeconds <= 0) return;
+    if (playtimeSessionStartedRef.current) return;
+    if (playtimeStatusRef.current?.remainingSeconds <= 0) {
+      // No new session will be requested; let the expiry UI finish the transit.
+      setPlaytimeLoading(false);
+      return;
+    }
     void beginStudentPlaytimeSession({ silent: false });
   }, [beginStudentPlaytimeSession, endStudentPlaytimeSession, playtimeEnvironmentReady, playtimeError]);
 
@@ -21871,6 +21929,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
     const transitId = `${currentMapName}:${targetMapName}:${Date.now()}`;
     const baseTransit = {
       id: transitId,
+      targetMapName,
       phase: 'departing',
       fromLabel,
       toLabel,
@@ -21880,6 +21939,7 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       travelDirection: 'right'
     };
     let latestGoldForFailure = knownGold;
+    let travelCommitted = false;
     setFastTravelBusy(true);
     setPendingFastTravel(null);
     setFastTravelTransitTarget(baseTransit);
@@ -21941,17 +22001,15 @@ const handleEncounter = useCallback(async (encounterPayload) => {
         addNotification(message, commitResult.requiresReload ? 'error' : 'warning');
         return;
       }
+      travelCommitted = true;
       gameAudio.playTravel({ kind: 'fast' });
 
       setFastTravelTransitTarget((current) => current?.id === transitId ? {
         ...current,
-        phase: 'arriving',
+        phase: 'loading',
         travelDirection: nextPosition.direction || 'down',
         renderMode: getAdventureMapInfo(targetMapName)?.renderMode || null
       } : current);
-      await wait(680);
-      startEliteFourCeremony(targetMapName, 'entry');
-      await wait(440);
       recordGameLog('fast_travel', {
         title: `快速传送到${toLabel}`,
         summary: `从${fromLabel}快速传送到${toLabel}，消耗 ${travelCost} 金币。`,
@@ -21971,8 +22029,10 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       setPendingFastTravel({ ...travelRequest, currentGold: latestGoldForFailure, error: message });
       addNotification(message, 'error');
     } finally {
-      setFastTravelBusy(false);
-      setFastTravelTransitTarget(null);
+      if (!travelCommitted) {
+        setFastTravelBusy(false);
+        setFastTravelTransitTarget(null);
+      }
     }
   }, [
     addNotification,
@@ -24726,7 +24786,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     const transitId = `${currentMapName}:${targetMapName}:${Date.now()}`;
     const currentDirection = playerPosRef.current?.direction || playerPos?.direction || 'right';
     const targetMapInfo = getAdventureMapInfo(targetMapName);
-    const warmupPromise = preloadThreeLowPolyMapModelsOnDemand(targetMapName).catch((error) => {
+    void preloadThreeLowPolyMapModelsOnDemand(targetMapName).catch((error) => {
       console.warn(`[OriginalGame] Failed to warm up map models for ${targetMapName}:`, error);
       return null;
     });
@@ -24741,6 +24801,7 @@ const handleReorderTeam = useCallback((newTeam) => {
     setMapWarpBusy(true);
     setMapWarpTransitTarget({
       id: transitId,
+      targetMapName,
       kind: 'warp',
       phase: 'departing',
       fromLabel,
@@ -24751,6 +24812,7 @@ const handleReorderTeam = useCallback((newTeam) => {
       travelDirection: currentDirection
     });
 
+    let travelCommitted = false;
     try {
       await wait(180);
       setMapWarpTransitTarget((current) => current?.id === transitId ? { ...current, phase: 'syncing' } : current);
@@ -24783,20 +24845,13 @@ const handleReorderTeam = useCallback((newTeam) => {
         return;
       }
 
+      travelCommitted = true;
       setMapWarpTransitTarget((current) => current?.id === transitId ? {
         ...current,
-        phase: 'arriving',
+        phase: 'loading',
         renderMode: targetMapInfo?.renderMode || null,
         travelDirection: nextPosition.direction || currentDirection
       } : current);
-      const arrivalWarmup = Promise.race([warmupPromise, wait(720)]);
-      if (ELITE_FOUR_CEREMONY_MAP_IDS.includes(targetMapName)) {
-        await Promise.all([arrivalWarmup, wait(680)]);
-        startEliteFourCeremony(targetMapName, 'entry');
-      } else {
-        await arrivalWarmup;
-      }
-      await wait(520);
       recordGameLog('map_enter', {
         title: `进入${mapConfig.displayName}`,
         summary: `从${fromLabel}前往${toLabel}。`,
@@ -24814,9 +24869,11 @@ const handleReorderTeam = useCallback((newTeam) => {
       });
       addNotification(`已进入${mapConfig.displayName}。`, 'info');
     } finally {
-      mapWarpBusyRef.current = false;
-      setMapWarpBusy(false);
-      setMapWarpTransitTarget(null);
+      if (!travelCommitted) {
+        mapWarpBusyRef.current = false;
+        setMapWarpBusy(false);
+        setMapWarpTransitTarget(null);
+      }
     }
 	  }, [addNotification, commitCloudSnapshot, currentMapName, hasLoadedCloudSave, playerPos?.direction, playerTeam, recordGameLog, startEliteFourCeremony, user?.id, world]);
 
@@ -24949,7 +25006,7 @@ const handleReorderTeam = useCallback((newTeam) => {
 
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
-  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(activeEliteMinigame) || Boolean(eliteFourCeremony);
+  const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(activeMapTransit) || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(activeEliteMinigame) || Boolean(eliteFourCeremony);
   const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress);
   const bootError = cloudError
     ? `必须联网并成功连接后端才能游戏。${cloudError}`
@@ -24960,9 +25017,9 @@ const handleReorderTeam = useCallback((newTeam) => {
     Boolean(cloudError) ||
     !hasLoadedCloudSave ||
     !entryAssetsReady ||
-    playtimeLoading ||
+    (playtimeLoading && !activeMapTransit && !currentMapSceneFailed && !cloudBlocked) ||
     Boolean(playtimeError) ||
-    !playtimeStatus
+    (!playtimeStatus && !activeMapTransit && !currentMapSceneFailed && !cloudBlocked)
   );
 
   const bootScreen = showBootScreen ? (() => {
@@ -25070,6 +25127,7 @@ const handleReorderTeam = useCallback((newTeam) => {
               playerPos={playerPos}
               onPlayerMove={handlePlayerMove}
               onSceneReadyChange={setMapSceneState}
+              loadingOverlayManaged={Boolean(activeMapTransit) || Boolean(bootScreen)}
               mapGrid={mapGrid}
               onMapGridChange={setMapGrid}
 	              useRealMaps={useRealMaps}

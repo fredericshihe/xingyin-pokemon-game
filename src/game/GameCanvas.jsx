@@ -15,6 +15,7 @@ class ThreeMapLazyErrorBoundary extends Component {
 
   componentDidCatch(error) {
     console.error('[GameCanvas] Failed to load 3D map module:', error)
+    this.props.onError?.('地图资源加载失败，请重新加载页面后再试。')
   }
 
   render() {
@@ -59,6 +60,7 @@ function GameCanvas({
   encounterCooldownSteps = 0,
   onEncounterCooldownChange,
   mapActive = true,
+  loadingOverlayManaged = false,
   collectedEventIds = [],
   springRestoreAnimation = null,
   currentMapBossCompleted = false,
@@ -99,7 +101,9 @@ function GameCanvas({
   }
 
   return (
-    <ThreeMapLazyErrorBoundary>
+    <ThreeMapLazyErrorBoundary
+      onError={(error) => onSceneReadyChange?.({ mapName: currentMapName, ready: false, error })}
+    >
       <ThreeLowPolyMap
         playerPos={playerPos}
         mapGrid={mapGrid}
@@ -108,6 +112,7 @@ function GameCanvas({
         encounterCooldownSteps={encounterCooldownSteps}
         cloudBlocked={cloudBlocked}
         mapActive={mapActive}
+        loadingOverlayManaged={loadingOverlayManaged}
         onPlayerMove={onPlayerMove}
         onEncounter={onEncounter}
         onCollect={onCollect}

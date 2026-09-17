@@ -1,0 +1,6274 @@
+[
+  {
+    "name": "village_01",
+    "label": "花枝玉兰",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 0,
+    "triangles": 790,
+    "id": "exclusive_village_01",
+    "bytes": 7580,
+    "bounds": {
+      "min": [
+        -1.2710986137390137,
+        0,
+        -1.2410860061645508
+      ],
+      "max": [
+        1.6969308853149414,
+        2.812408685684204,
+        1.383091926574707
+      ]
+    },
+    "footprint": {
+      "width": 2.19,
+      "height": 1.79
+    },
+    "geometryHash": "b1ecff16f38b5e6d9d6628f45205bce9b28dc11429d70c007e283990fef235c7"
+  },
+  {
+    "name": "village_02",
+    "label": "鸟屋花台",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 1,
+    "triangles": 200,
+    "id": "exclusive_village_02",
+    "bytes": 2800,
+    "bounds": {
+      "min": [
+        -0.7250000238418579,
+        0,
+        -0.5350000262260437
+      ],
+      "max": [
+        0.7249288558959961,
+        2.4049999713897705,
+        0.840061604976654
+      ]
+    },
+    "footprint": {
+      "width": 0.94,
+      "height": 1.09
+    },
+    "geometryHash": "adb0bc527d6077294e8080594c82f9faa59336da7e7c868d097fb0d5469f8db6"
+  },
+  {
+    "name": "village_03",
+    "label": "心纹长椅",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 2,
+    "triangles": 100,
+    "id": "exclusive_village_03",
+    "bytes": 1892,
+    "bounds": {
+      "min": [
+        -1.024999976158142,
+        0,
+        -0.36500000953674316
+      ],
+      "max": [
+        1.024999976158142,
+        1.505060076713562,
+        0.2900540232658386
+      ]
+    },
+    "footprint": {
+      "width": 1.33,
+      "height": 0.48
+    },
+    "geometryHash": "a8832bcf7624e889fb5067f7a4acee4ae7abf2137f91041ad1cfe08893775aa1"
+  },
+  {
+    "name": "village_04",
+    "label": "蜂巢庭柱",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 3,
+    "triangles": 304,
+    "id": "exclusive_village_04",
+    "bytes": 3440,
+    "bounds": {
+      "min": [
+        -0.9222542643547058,
+        0,
+        -0.5230810642242432
+      ],
+      "max": [
+        0.9700000882148743,
+        1.270050048828125,
+        0.8499958515167236
+      ]
+    },
+    "footprint": {
+      "width": 1.26,
+      "height": 1.1
+    },
+    "geometryHash": "aaca724a5d4f2feb5c9717f150fc7efb5e54d8617af7dd8e38bd8689739b37f9"
+  },
+  {
+    "name": "village_05",
+    "label": "风旗花箱",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 4,
+    "triangles": 245,
+    "id": "exclusive_village_05",
+    "bytes": 3288,
+    "bounds": {
+      "min": [
+        -0.949999988079071,
+        0,
+        -0.2750000059604645
+      ],
+      "max": [
+        0.9500463604927063,
+        2.4211292266845703,
+        0.2750484049320221
+      ]
+    },
+    "footprint": {
+      "width": 1.23,
+      "height": 0.36
+    },
+    "geometryHash": "d3c617e69f3727ba667686d1021e0f167d52f17dad448750ba3f62a120e5c16f"
+  },
+  {
+    "name": "village_06",
+    "label": "陶罐香草",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 5,
+    "triangles": 204,
+    "id": "exclusive_village_06",
+    "bytes": 2672,
+    "bounds": {
+      "min": [
+        -0.9800000190734863,
+        0,
+        -0.41846486926078796
+      ],
+      "max": [
+        0.9300000667572021,
+        1.3800079822540283,
+        0.4184935986995697
+      ]
+    },
+    "footprint": {
+      "width": 1.27,
+      "height": 0.54
+    },
+    "geometryHash": "d8f4c3bc81d758b61f0ca6e0989beea2471ed979d4a523408df8360552c0cc1d"
+  },
+  {
+    "name": "village_07",
+    "label": "玫瑰拱架",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 6,
+    "triangles": 506,
+    "id": "exclusive_village_07",
+    "bytes": 5136,
+    "bounds": {
+      "min": [
+        -1.1007952690124512,
+        0,
+        -0.2748275101184845
+      ],
+      "max": [
+        1.1900010108947754,
+        2.468599319458008,
+        0.3147854506969452
+      ]
+    },
+    "footprint": {
+      "width": 1.54,
+      "height": 0.41
+    },
+    "geometryHash": "dce3aa7302ee70c526dbfb3a7d4b5f8335258107c643e3538136c31129df9d46"
+  },
+  {
+    "name": "village_08",
+    "label": "老根树桩",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 7,
+    "triangles": 250,
+    "id": "exclusive_village_08",
+    "bytes": 2976,
+    "bounds": {
+      "min": [
+        -0.7207072973251343,
+        0,
+        -0.6795173287391663
+      ],
+      "max": [
+        0.8287014961242676,
+        1.041640043258667,
+        0.6816888451576233
+      ]
+    },
+    "footprint": {
+      "width": 1.07,
+      "height": 0.88
+    },
+    "geometryHash": "4fba9e2f02446dc2ca140793a80b608837c9885b8305640a595235dd890ecb69"
+  },
+  {
+    "name": "village_09",
+    "label": "雏菊石盆",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 8,
+    "triangles": 392,
+    "id": "exclusive_village_09",
+    "bytes": 4576,
+    "bounds": {
+      "min": [
+        -0.6600000262260437,
+        0,
+        -0.7265910506248474
+      ],
+      "max": [
+        0.7499963641166687,
+        1.2100194692611694,
+        0.7205035090446472
+      ]
+    },
+    "footprint": {
+      "width": 0.97,
+      "height": 0.94
+    },
+    "geometryHash": "33a5efbe03d86654a624ee54cb47fa330b06223bad01a10b81f9fd44261fb9f6"
+  },
+  {
+    "name": "village_10",
+    "label": "蜗牛石景",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 9,
+    "triangles": 292,
+    "id": "exclusive_village_10",
+    "bytes": 3288,
+    "bounds": {
+      "min": [
+        -0.767474889755249,
+        0,
+        -0.6839489936828613
+      ],
+      "max": [
+        0.8204389810562134,
+        0.4871424734592438,
+        0.5674430131912231
+      ]
+    },
+    "footprint": {
+      "width": 1.06,
+      "height": 0.89
+    },
+    "geometryHash": "c1e5fb359054d925c4c209bc36a26ad39e93e4f1d265a9d03b631b918e6b2093"
+  },
+  {
+    "name": "village_11",
+    "label": "乡村信箱",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 10,
+    "triangles": 58,
+    "id": "exclusive_village_11",
+    "bytes": 1732,
+    "bounds": {
+      "min": [
+        -0.46000000834465027,
+        0,
+        -0.33500000834465027
+      ],
+      "max": [
+        0.45996949076652527,
+        1.940000057220459,
+        0.4043859541416168
+      ]
+    },
+    "footprint": {
+      "width": 0.6,
+      "height": 0.53
+    },
+    "geometryHash": "ec8c48a18982e60384520f11abdafa8e173d92ae4599b90c0d6d09c4d0b5dadf"
+  },
+  {
+    "name": "village_12",
+    "label": "浇水小车",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 11,
+    "triangles": 244,
+    "id": "exclusive_village_12",
+    "bytes": 2648,
+    "bounds": {
+      "min": [
+        -1.1800230741500854,
+        0,
+        -0.28999999165534973
+      ],
+      "max": [
+        0.7250000238418579,
+        1.1295485496520996,
+        0.38500818610191345
+      ]
+    },
+    "footprint": {
+      "width": 1.53,
+      "height": 0.5
+    },
+    "geometryHash": "4bb9adfba6dab99eb63a2d706fccd005e9b9cefb0004143eb280d927292ba7e3"
+  },
+  {
+    "name": "village_13",
+    "label": "弧形花篱",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 12,
+    "triangles": 374,
+    "id": "exclusive_village_13",
+    "bytes": 4288,
+    "bounds": {
+      "min": [
+        -1.9846028089523315,
+        0,
+        -1.2300000190734863
+      ],
+      "max": [
+        1.9846028089523315,
+        0.9199214577674866,
+        0.29779160022735596
+      ]
+    },
+    "footprint": {
+      "width": 2.57,
+      "height": 1.59
+    },
+    "geometryHash": "f71166b592dd116c5dcb7147b2261632d98894b42408b6a516e860ec3c244f5a"
+  },
+  {
+    "name": "village_14",
+    "label": "庭院石阶",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 13,
+    "triangles": 200,
+    "id": "exclusive_village_14",
+    "bytes": 2872,
+    "bounds": {
+      "min": [
+        -1.4500000476837158,
+        0,
+        -0.8309120535850525
+      ],
+      "max": [
+        1.4900000095367432,
+        0.8473833203315735,
+        0.6000567078590393
+      ]
+    },
+    "footprint": {
+      "width": 1.93,
+      "height": 1.08
+    },
+    "geometryHash": "d4a7e0eea39e4cd8477ee518ca40f0bbba29447d91fb32003554807d28897b68"
+  },
+  {
+    "name": "village_15",
+    "label": "多年生花圃",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 14,
+    "triangles": 514,
+    "id": "exclusive_village_15",
+    "bytes": 5072,
+    "bounds": {
+      "min": [
+        -1.5750000476837158,
+        0,
+        -0.675000011920929
+      ],
+      "max": [
+        1.5750000476837158,
+        1.054614543914795,
+        0.674945056438446
+      ]
+    },
+    "footprint": {
+      "width": 2.04,
+      "height": 0.88
+    },
+    "geometryHash": "cb0c855752695096fc38ef86bf08696a8c3a6319e4ae490d1df812789c1fa8e4"
+  },
+  {
+    "name": "village_16",
+    "label": "尖桩花栏",
+    "mapId": "GodotMap",
+    "mapName": "新手山谷",
+    "setId": "village",
+    "slot": 15,
+    "triangles": 270,
+    "id": "exclusive_village_16",
+    "bytes": 3296,
+    "bounds": {
+      "min": [
+        -1.375,
+        0,
+        -0.1599999964237213
+      ],
+      "max": [
+        1.375,
+        1.4200695753097534,
+        0.760023832321167
+      ]
+    },
+    "footprint": {
+      "width": 1.78,
+      "height": 0.99
+    },
+    "geometryHash": "789820beb80d4ea6ed9b08303ff4300c83d037206166da7a9e3ae40dfc8b6fc4"
+  },
+  {
+    "name": "meadow_01",
+    "label": "风铃种荚木",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 0,
+    "triangles": 354,
+    "id": "exclusive_meadow_01",
+    "bytes": 3588,
+    "bounds": {
+      "min": [
+        -1.1547049283981323,
+        0,
+        -0.8144617676734924
+      ],
+      "max": [
+        1.6000515222549438,
+        3.202155113220215,
+        0.9270508885383606
+      ]
+    },
+    "footprint": {
+      "width": 2.07,
+      "height": 1.2
+    },
+    "geometryHash": "db10511fb76599aa84988fe743e494b5616b1c4ae6c3a0d2b4fbf98cf09044a2"
+  },
+  {
+    "name": "meadow_02",
+    "label": "蓝铃高花",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 1,
+    "triangles": 210,
+    "id": "exclusive_meadow_02",
+    "bytes": 2612,
+    "bounds": {
+      "min": [
+        -1.0499999523162842,
+        0,
+        -0.44373196363449097
+      ],
+      "max": [
+        1.0499999523162842,
+        1.7883903980255127,
+        0.24370622634887695
+      ]
+    },
+    "footprint": {
+      "width": 1.36,
+      "height": 0.58
+    },
+    "geometryHash": "ae473c78a4370e583e9bc120a8a22fdd6d3f083f981b4806e158a89970c2f34d"
+  },
+  {
+    "name": "meadow_03",
+    "label": "风弦木架",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 2,
+    "triangles": 218,
+    "id": "exclusive_meadow_03",
+    "bytes": 2544,
+    "bounds": {
+      "min": [
+        -0.8861348628997803,
+        0,
+        -0.18000000715255737
+      ],
+      "max": [
+        0.8861057758331299,
+        2.386930227279663,
+        0.18001368641853333
+      ]
+    },
+    "footprint": {
+      "width": 1.15,
+      "height": 0.24
+    },
+    "geometryHash": "022b2f6e863f4ba42dffe98c8fe8a816771659100ec74179cc5c9a466cad3947"
+  },
+  {
+    "name": "meadow_04",
+    "label": "种子小丘",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 3,
+    "triangles": 116,
+    "id": "exclusive_meadow_04",
+    "bytes": 2296,
+    "bounds": {
+      "min": [
+        -0.8049824833869934,
+        0,
+        -0.45083916187286377
+      ],
+      "max": [
+        0.8890871405601501,
+        1.3599709272384644,
+        0.5535249710083008
+      ]
+    },
+    "footprint": {
+      "width": 1.15,
+      "height": 0.72
+    },
+    "geometryHash": "901ba09ab06d0921619802009fa8172da687b0fb86303c50fd7374b39e4f5a89"
+  },
+  {
+    "name": "meadow_05",
+    "label": "蝶翼风标",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 4,
+    "triangles": 64,
+    "id": "exclusive_meadow_05",
+    "bytes": 1856,
+    "bounds": {
+      "min": [
+        -1.1399999856948853,
+        0,
+        -0.6088988780975342
+      ],
+      "max": [
+        1.1399999856948853,
+        2.1700568199157715,
+        0.4828791618347168
+      ]
+    },
+    "footprint": {
+      "width": 1.48,
+      "height": 0.79
+    },
+    "geometryHash": "a26363c89e1d832f6a67eeb9fcc919a1cce8127a0a5fae31348b25fffc805fdd"
+  },
+  {
+    "name": "meadow_06",
+    "label": "卷叶蕨杖",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 5,
+    "triangles": 118,
+    "id": "exclusive_meadow_06",
+    "bytes": 2120,
+    "bounds": {
+      "min": [
+        -0.8600000143051147,
+        0,
+        -0.3799999952316284
+      ],
+      "max": [
+        0.8599333763122559,
+        2.5839219093322754,
+        0.38005131483078003
+      ]
+    },
+    "footprint": {
+      "width": 1.11,
+      "height": 0.5
+    },
+    "geometryHash": "0f3991dc89ad2fed441dbd823ee7e0812bd95f5c263431f39af8b5b0a76da3cf"
+  },
+  {
+    "name": "meadow_07",
+    "label": "分叉枯木",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 6,
+    "triangles": 180,
+    "id": "exclusive_meadow_07",
+    "bytes": 2748,
+    "bounds": {
+      "min": [
+        -1.0653159618377686,
+        0,
+        -0.5005255341529846
+      ],
+      "max": [
+        1.0613634586334229,
+        1.0119997262954712,
+        0.5853361487388611
+      ]
+    },
+    "footprint": {
+      "width": 1.38,
+      "height": 0.76
+    },
+    "geometryHash": "218e035cf74e15bbed8762c5c1cb4954004750346ea348c6d6b7a0db371f30e1"
+  },
+  {
+    "name": "meadow_08",
+    "label": "弧形花带",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 7,
+    "triangles": 392,
+    "id": "exclusive_meadow_08",
+    "bytes": 4416,
+    "bounds": {
+      "min": [
+        -1.2265247106552124,
+        0,
+        -0.766295850276947
+      ],
+      "max": [
+        1.279999852180481,
+        0.789762556552887,
+        0.2662704586982727
+      ]
+    },
+    "footprint": {
+      "width": 1.66,
+      "height": 0.99
+    },
+    "geometryHash": "97a381460012d6e9e6e5bbf1b5e5afb52aec1bb9a29ca5630b4beb402af94b56"
+  },
+  {
+    "name": "meadow_09",
+    "label": "回声石",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 8,
+    "triangles": 156,
+    "id": "exclusive_meadow_09",
+    "bytes": 2260,
+    "bounds": {
+      "min": [
+        -0.8799999952316284,
+        0,
+        -0.4977498948574066
+      ],
+      "max": [
+        0.8100000619888306,
+        0.7000146508216858,
+        0.5684674978256226
+      ]
+    },
+    "footprint": {
+      "width": 1.14,
+      "height": 0.74
+    },
+    "geometryHash": "e854305c75494f076290653877932f6f71bd46e4dd450d64fc25be83c2a6a204"
+  },
+  {
+    "name": "meadow_10",
+    "label": "采花藤篮",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 9,
+    "triangles": 258,
+    "id": "exclusive_meadow_10",
+    "bytes": 2804,
+    "bounds": {
+      "min": [
+        -0.550000011920929,
+        0,
+        -0.3499999940395355
+      ],
+      "max": [
+        0.5500059723854065,
+        1.4412506818771362,
+        0.5199583768844604
+      ]
+    },
+    "footprint": {
+      "width": 0.71,
+      "height": 0.68
+    },
+    "geometryHash": "462869f6b980dd3cccc19757d8a177da5d81f8d274a4f24c994e8aa860b52220"
+  },
+  {
+    "name": "meadow_11",
+    "label": "蒲公英风轮",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 10,
+    "triangles": 76,
+    "id": "exclusive_meadow_11",
+    "bytes": 1984,
+    "bounds": {
+      "min": [
+        -0.7200000286102295,
+        0,
+        -0.20496022701263428
+      ],
+      "max": [
+        0.7199397087097168,
+        2.133538246154785,
+        0.16202449798583984
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.27
+    },
+    "geometryHash": "1fea548b11aafebb88a39b1e669cc66576b83b9213f05e86c2b5a3abc0050f50"
+  },
+  {
+    "name": "meadow_12",
+    "label": "晨露莲叶",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 11,
+    "triangles": 68,
+    "id": "exclusive_meadow_12",
+    "bytes": 1956,
+    "bounds": {
+      "min": [
+        -0.8100000023841858,
+        0,
+        -0.8100000023841858
+      ],
+      "max": [
+        0.8100000023841858,
+        0.4400292932987213,
+        0.8100000023841858
+      ]
+    },
+    "footprint": {
+      "width": 1.05,
+      "height": 1.05
+    },
+    "geometryHash": "5c92bc84fae8483a1e2fe7a357d9d82b203157aa25ca089cdf27d3728d0f6f28"
+  },
+  {
+    "name": "meadow_13",
+    "label": "柔叶草甸",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 12,
+    "triangles": 180,
+    "id": "exclusive_meadow_13",
+    "bytes": 2980,
+    "bounds": {
+      "min": [
+        -1.5774939060211182,
+        0,
+        -0.9397566318511963
+      ],
+      "max": [
+        1.4803810119628906,
+        0.5899983644485474,
+        0.5849812030792236
+      ]
+    },
+    "footprint": {
+      "width": 2.04,
+      "height": 1.22
+    },
+    "geometryHash": "4678bb2c2b7c0d558299848bcb15f8235bc2d7fbb39f1a9786ad34a6e357ee6b"
+  },
+  {
+    "name": "meadow_14",
+    "label": "波浪花带",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 13,
+    "triangles": 504,
+    "id": "exclusive_meadow_14",
+    "bytes": 5300,
+    "bounds": {
+      "min": [
+        -1.8103444576263428,
+        0,
+        -0.5546907782554626
+      ],
+      "max": [
+        1.7799999713897705,
+        0.546561598777771,
+        0.5342685580253601
+      ]
+    },
+    "footprint": {
+      "width": 2.34,
+      "height": 0.72
+    },
+    "geometryHash": "5f853e495aa73e9b1380e5744125d5d91035f0b2cd5e5e3ebb6f2ce108a80a88"
+  },
+  {
+    "name": "meadow_15",
+    "label": "菌生枯木",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 14,
+    "triangles": 204,
+    "id": "exclusive_meadow_15",
+    "bytes": 2596,
+    "bounds": {
+      "min": [
+        -1.467941164970398,
+        0,
+        -0.6265343427658081
+      ],
+      "max": [
+        1.321086049079895,
+        0.8859242796897888,
+        0.5030020475387573
+      ]
+    },
+    "footprint": {
+      "width": 1.9,
+      "height": 0.81
+    },
+    "geometryHash": "0e7ea788fe521a857289157c80bd48d6c6e6685afeefb3d83d62f0341f9a0098"
+  },
+  {
+    "name": "meadow_16",
+    "label": "蜜源花丛",
+    "mapId": "GodotMapV2",
+    "mapName": "星音草径",
+    "setId": "meadow",
+    "slot": 15,
+    "triangles": 276,
+    "id": "exclusive_meadow_16",
+    "bytes": 3944,
+    "bounds": {
+      "min": [
+        -1.2234553098678589,
+        0,
+        -0.8282161355018616
+      ],
+      "max": [
+        1.350000023841858,
+        0.6201551556587219,
+        0.7581432461738586
+      ]
+    },
+    "footprint": {
+      "width": 1.75,
+      "height": 1.07
+    },
+    "geometryHash": "cc9f753f5e8fac3b8641e4b31928bd3e5f445c846991e4ff9389ee67730c4a6d"
+  },
+  {
+    "name": "lake_01",
+    "label": "垂根雾柳",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 0,
+    "triangles": 270,
+    "id": "exclusive_lake_01",
+    "bytes": 3280,
+    "bounds": {
+      "min": [
+        -0.8367803692817688,
+        0,
+        -1.0093238353729248
+      ],
+      "max": [
+        1.14996337890625,
+        2.988872766494751,
+        0.9281618595123291
+      ]
+    },
+    "footprint": {
+      "width": 1.49,
+      "height": 1.31
+    },
+    "geometryHash": "60c5f94552d68f928830cb18e6cefddfe6524e040baf4b43814b73fbd7327c3a"
+  },
+  {
+    "name": "lake_02",
+    "label": "鹭鸟巢柱",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 1,
+    "triangles": 208,
+    "id": "exclusive_lake_02",
+    "bytes": 2676,
+    "bounds": {
+      "min": [
+        -0.6484045386314392,
+        0,
+        -0.772060751914978
+      ],
+      "max": [
+        0.8800233006477356,
+        3.089479684829712,
+        0.7720190286636353
+      ]
+    },
+    "footprint": {
+      "width": 1.14,
+      "height": 1
+    },
+    "geometryHash": "4f6994793c83a510b1377c0db6e45a1c475912014c54ee545a34e4f4c40333f6"
+  },
+  {
+    "name": "lake_03",
+    "label": "编苇凉棚",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 2,
+    "triangles": 280,
+    "id": "exclusive_lake_03",
+    "bytes": 2948,
+    "bounds": {
+      "min": [
+        -1,
+        0,
+        -0.675000011920929
+      ],
+      "max": [
+        1.000061273574829,
+        2.1700000762939453,
+        0.6940484642982483
+      ]
+    },
+    "footprint": {
+      "width": 1.3,
+      "height": 0.9
+    },
+    "geometryHash": "d647bcf99d31202ea1f901c199ab8657f91879d8e621a6d6d4bdf690bbbb7d2b"
+  },
+  {
+    "name": "lake_04",
+    "label": "竹编鱼篓",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 3,
+    "triangles": 640,
+    "id": "exclusive_lake_04",
+    "bytes": 4936,
+    "bounds": {
+      "min": [
+        -0.5450000166893005,
+        0,
+        -0.5350000262260437
+      ],
+      "max": [
+        0.5450000166893005,
+        1.036641001701355,
+        0.5349738001823425
+      ]
+    },
+    "footprint": {
+      "width": 0.71,
+      "height": 0.7
+    },
+    "geometryHash": "08793d1bad2adb84be44bb58bb84fdff62c090ae2c2b054362456f01df9b983b"
+  },
+  {
+    "name": "lake_05",
+    "label": "苇筏",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 4,
+    "triangles": 224,
+    "id": "exclusive_lake_05",
+    "bytes": 2504,
+    "bounds": {
+      "min": [
+        -0.8244086503982544,
+        0,
+        -1
+      ],
+      "max": [
+        0.8215293884277344,
+        0.5545305609703064,
+        1.430410385131836
+      ]
+    },
+    "footprint": {
+      "width": 1.07,
+      "height": 1.85
+    },
+    "geometryHash": "382b1286df7e3bff89b79acde8b3e4e726cea861478436924cfdfc80e3cd2fa7"
+  },
+  {
+    "name": "lake_06",
+    "label": "湿岸蛙石",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 5,
+    "triangles": 152,
+    "id": "exclusive_lake_06",
+    "bytes": 2452,
+    "bounds": {
+      "min": [
+        -0.8100000023841858,
+        0,
+        -0.770355761051178
+      ],
+      "max": [
+        0.8100000023841858,
+        0.8149935603141785,
+        0.7703400254249573
+      ]
+    },
+    "footprint": {
+      "width": 1.05,
+      "height": 1
+    },
+    "geometryHash": "d991708a72578bcbc211ee0cadd7357b37b699f41560162730a22db445396b3d"
+  },
+  {
+    "name": "lake_07",
+    "label": "香蒲苇束",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 6,
+    "triangles": 414,
+    "id": "exclusive_lake_07",
+    "bytes": 3804,
+    "bounds": {
+      "min": [
+        -0.957804262638092,
+        0,
+        -0.569277822971344
+      ],
+      "max": [
+        0.8500000834465027,
+        1.5031380653381348,
+        0.5271236300468445
+      ]
+    },
+    "footprint": {
+      "width": 1.24,
+      "height": 0.74
+    },
+    "geometryHash": "490a96403f77762bb9b90c13bb3fe901f89298c062291448f593c4896f4c94b2"
+  },
+  {
+    "name": "lake_08",
+    "label": "螺旋苔石",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 7,
+    "triangles": 182,
+    "id": "exclusive_lake_08",
+    "bytes": 2856,
+    "bounds": {
+      "min": [
+        -0.7651435732841492,
+        0,
+        -0.5234153866767883
+      ],
+      "max": [
+        1.0950469970703125,
+        0.49005571007728577,
+        0.8052759766578674
+      ]
+    },
+    "footprint": {
+      "width": 1.42,
+      "height": 1.04
+    },
+    "geometryHash": "36c77ae6a0418580383a5c5fa726c39ed1ea92347763d994cce5b45c38a6faf6"
+  },
+  {
+    "name": "lake_09",
+    "label": "浮木睡莲",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 8,
+    "triangles": 266,
+    "id": "exclusive_lake_09",
+    "bytes": 3260,
+    "bounds": {
+      "min": [
+        -1.015026569366455,
+        0,
+        -0.23966827988624573
+      ],
+      "max": [
+        0.9700000286102295,
+        0.4153495132923126,
+        0.6151423454284668
+      ]
+    },
+    "footprint": {
+      "width": 1.31,
+      "height": 0.8
+    },
+    "geometryHash": "fa9eb753de6f4c7f4987084b5ce82b941e33bb6bfc493ec5892bff7e569761cb"
+  },
+  {
+    "name": "lake_10",
+    "label": "水位木尺",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 9,
+    "triangles": 108,
+    "id": "exclusive_lake_10",
+    "bytes": 1804,
+    "bounds": {
+      "min": [
+        -0.17499999701976776,
+        0,
+        -0.15000000596046448
+      ],
+      "max": [
+        0.2200338989496231,
+        2.0850000381469727,
+        0.14996612071990967
+      ]
+    },
+    "footprint": {
+      "width": 0.29,
+      "height": 0.2
+    },
+    "geometryHash": "5852aae7aafec25104803a1a5b33a3815266862cf928bf7c5c4c6269edc1e96c"
+  },
+  {
+    "name": "lake_11",
+    "label": "渔网晾架",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 10,
+    "triangles": 140,
+    "id": "exclusive_lake_11",
+    "bytes": 2080,
+    "bounds": {
+      "min": [
+        -0.8199999928474426,
+        0,
+        -0.060621775686740875
+      ],
+      "max": [
+        0.8200293183326721,
+        1.649999976158142,
+        0.07504018396139145
+      ]
+    },
+    "footprint": {
+      "width": 1.06,
+      "height": 0.1
+    },
+    "geometryHash": "a33f19e920cf42789b0ef2be65768f2a851d0e67135b161eb30c19c122b05ed2"
+  },
+  {
+    "name": "lake_12",
+    "label": "雾灯",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 11,
+    "triangles": 292,
+    "id": "exclusive_lake_12",
+    "bytes": 2868,
+    "bounds": {
+      "min": [
+        -0.550000011920929,
+        0,
+        -0.5230810642242432
+      ],
+      "max": [
+        0.5500606894493103,
+        2.2732460498809814,
+        0.5231422185897827
+      ]
+    },
+    "footprint": {
+      "width": 0.71,
+      "height": 0.68
+    },
+    "geometryHash": "94f2f75274dbb13bdf77f5a4352367ddc4fe0a102433875467c2cdffbe780e0e"
+  },
+  {
+    "name": "lake_13",
+    "label": "浅岸苇堤",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 12,
+    "triangles": 500,
+    "id": "exclusive_lake_13",
+    "bytes": 4080,
+    "bounds": {
+      "min": [
+        -1.5346025228500366,
+        0,
+        -0.6338264346122742
+      ],
+      "max": [
+        1.5646024942398071,
+        1.350877285003662,
+        0.23390555381774902
+      ]
+    },
+    "footprint": {
+      "width": 2.02,
+      "height": 0.82
+    },
+    "geometryHash": "a468baf216b745c96bdbd312b23fa753ce5f3521d407b941fdedb90b5e350de9"
+  },
+  {
+    "name": "lake_14",
+    "label": "苔石湿床",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 13,
+    "triangles": 192,
+    "id": "exclusive_lake_14",
+    "bytes": 2860,
+    "bounds": {
+      "min": [
+        -1.7935470342636108,
+        0,
+        -0.4455578923225403
+      ],
+      "max": [
+        1.6935471296310425,
+        0.6000194549560547,
+        0.4554290771484375
+      ]
+    },
+    "footprint": {
+      "width": 2.32,
+      "height": 0.59
+    },
+    "geometryHash": "89e2bcbe8e7af9a8c89d281a499927f23e5ffac88bfa264cb63451380bf90a62"
+  },
+  {
+    "name": "lake_15",
+    "label": "柳根浅滩",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 14,
+    "triangles": 336,
+    "id": "exclusive_lake_15",
+    "bytes": 3664,
+    "bounds": {
+      "min": [
+        -1.1639095544815063,
+        0,
+        -0.8477764129638672
+      ],
+      "max": [
+        1.3928560018539429,
+        1.2920383214950562,
+        0.8537688255310059
+      ]
+    },
+    "footprint": {
+      "width": 1.8,
+      "height": 1.11
+    },
+    "geometryHash": "a7c9de584c629e7d68a5f10af65ac960c06ba117de251c7e196266f0370432f9"
+  },
+  {
+    "name": "lake_16",
+    "label": "浮叶睡莲丛",
+    "mapId": "GodotMapV2_MistLake",
+    "mapName": "雾湖苇岸",
+    "setId": "lake",
+    "slot": 15,
+    "triangles": 246,
+    "id": "exclusive_lake_16",
+    "bytes": 3204,
+    "bounds": {
+      "min": [
+        -1.3274340629577637,
+        0,
+        -0.8617962002754211
+      ],
+      "max": [
+        1.4600000381469727,
+        0.4200802743434906,
+        0.6017641425132751
+      ]
+    },
+    "footprint": {
+      "width": 1.89,
+      "height": 1.12
+    },
+    "geometryHash": "b93f7e821faa7de55053d6f2f65f2494c55549c9ffd10b2a94603bd5eee12b46"
+  },
+  {
+    "name": "farm_01",
+    "label": "乡野风磨",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 0,
+    "triangles": 376,
+    "id": "exclusive_farm_01",
+    "bytes": 3288,
+    "bounds": {
+      "min": [
+        -1.2799999713897705,
+        0,
+        -0.6499999761581421
+      ],
+      "max": [
+        1.2800953388214111,
+        3.430000066757202,
+        0.8505072593688965
+      ]
+    },
+    "footprint": {
+      "width": 1.66,
+      "height": 1.1
+    },
+    "geometryHash": "52279dd356868a69c40c9fd6c23998696e2635e9fa40a32bc4442efde1ad3f08"
+  },
+  {
+    "name": "farm_02",
+    "label": "扁架梨树",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 1,
+    "triangles": 580,
+    "id": "exclusive_farm_02",
+    "bytes": 5288,
+    "bounds": {
+      "min": [
+        -1.086507797241211,
+        0,
+        -0.29999998211860657
+      ],
+      "max": [
+        1.0665326118469238,
+        2.5299999713897705,
+        0.42056283354759216
+      ]
+    },
+    "footprint": {
+      "width": 1.41,
+      "height": 0.55
+    },
+    "geometryHash": "2baf63de0517d74ef1dab1aa39bc034439f420a69edf8b72bee9bab3e5606495"
+  },
+  {
+    "name": "farm_03",
+    "label": "三叠草垛",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 2,
+    "triangles": 108,
+    "id": "exclusive_farm_03",
+    "bytes": 1924,
+    "bounds": {
+      "min": [
+        -0.8949999809265137,
+        0,
+        -0.44999998807907104
+      ],
+      "max": [
+        0.8949999809265137,
+        1.2999707460403442,
+        0.47247880697250366
+      ]
+    },
+    "footprint": {
+      "width": 1.16,
+      "height": 0.61
+    },
+    "geometryHash": "72846c9cb93f5de6a089cfd3eef0b49bc76893cbf6d9572e34f65e9018c521b1"
+  },
+  {
+    "name": "farm_04",
+    "label": "收获板车",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 3,
+    "triangles": 416,
+    "id": "exclusive_farm_04",
+    "bytes": 3460,
+    "bounds": {
+      "min": [
+        -1.0199999809265137,
+        0,
+        -0.7300000190734863
+      ],
+      "max": [
+        1.4908831119537354,
+        1.445562481880188,
+        0.7299690246582031
+      ]
+    },
+    "footprint": {
+      "width": 1.93,
+      "height": 0.95
+    },
+    "geometryHash": "4a6cce2ef729053cd74dc0a77c0a1775942293da897ab6d0e4bc513f932c0d90"
+  },
+  {
+    "name": "farm_05",
+    "label": "南瓜藤",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 4,
+    "triangles": 546,
+    "id": "exclusive_farm_05",
+    "bytes": 5052,
+    "bounds": {
+      "min": [
+        -0.9120973944664001,
+        0,
+        -0.5539486408233643
+      ],
+      "max": [
+        0.9935800433158875,
+        0.9241657257080078,
+        0.6499676704406738
+      ]
+    },
+    "footprint": {
+      "width": 1.29,
+      "height": 0.84
+    },
+    "geometryHash": "2c5c5a44896219cc7cc43ef62fb3d03c4bae2c63f2db17075f04ea95fd95001c"
+  },
+  {
+    "name": "farm_06",
+    "label": "水车",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 5,
+    "triangles": 356,
+    "id": "exclusive_farm_06",
+    "bytes": 3044,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.949999988079071
+      ],
+      "max": [
+        0.8999606370925903,
+        1.965000033378601,
+        0.949991762638092
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 1.23
+    },
+    "geometryHash": "81cc98085b15d70233d177f3a1e28e94882e74223962c4167a6f7bd316b5afde"
+  },
+  {
+    "name": "farm_07",
+    "label": "粮食筒仓",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 6,
+    "triangles": 462,
+    "id": "exclusive_farm_07",
+    "bytes": 3316,
+    "bounds": {
+      "min": [
+        -0.800000011920929,
+        0,
+        -0.800000011920929
+      ],
+      "max": [
+        0.7999290823936462,
+        2.6599998474121094,
+        0.7999290823936462
+      ]
+    },
+    "footprint": {
+      "width": 1.04,
+      "height": 1.04
+    },
+    "geometryHash": "5c4daae09c6c637ca3c5be85f4aba835bca4154aaf15d6613cd29303e15a0f02"
+  },
+  {
+    "name": "farm_08",
+    "label": "农具挂架",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 7,
+    "triangles": 132,
+    "id": "exclusive_farm_08",
+    "bytes": 2008,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.10000000149011612
+      ],
+      "max": [
+        0.8999999761581421,
+        1.6800220012664795,
+        0.16995057463645935
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.22
+    },
+    "geometryHash": "adc548b21ee8df095910a7c10cb7c7347ab6de114e54f9805dabdb6be2869717"
+  },
+  {
+    "name": "farm_09",
+    "label": "稻草人",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 8,
+    "triangles": 144,
+    "id": "exclusive_farm_09",
+    "bytes": 2248,
+    "bounds": {
+      "min": [
+        -0.800000011920929,
+        0,
+        -0.4755282700061798
+      ],
+      "max": [
+        0.7999761700630188,
+        2.430000066757202,
+        0.4755283296108246
+      ]
+    },
+    "footprint": {
+      "width": 1.04,
+      "height": 0.62
+    },
+    "geometryHash": "6e3a4b3f77644f99d6ae1641ab471be3241b92d45a6f0f6b24b4777cd0a26e53"
+  },
+  {
+    "name": "farm_10",
+    "label": "鲜奶罐",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 9,
+    "triangles": 472,
+    "id": "exclusive_farm_10",
+    "bytes": 3692,
+    "bounds": {
+      "min": [
+        -0.7549999952316284,
+        0,
+        -0.40531694889068604
+      ],
+      "max": [
+        0.7649999856948853,
+        0.9188841581344604,
+        0.2853306531906128
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.53
+    },
+    "geometryHash": "7c38d7c911ba914d56a009192431ff5aa28004c0561ab3fd65afea4493af01ad"
+  },
+  {
+    "name": "farm_11",
+    "label": "蜂箱排",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 10,
+    "triangles": 384,
+    "id": "exclusive_farm_11",
+    "bytes": 3292,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.3400000035762787
+      ],
+      "max": [
+        0.8500000238418579,
+        0.9199902415275574,
+        0.33997926115989685
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.44
+    },
+    "geometryHash": "bb6256e69e8c4d1ac5d97b0a2ccd4b4bb453a1ced8a336b62be2a97e0f2e432c"
+  },
+  {
+    "name": "farm_12",
+    "label": "菜苗石槽",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 11,
+    "triangles": 96,
+    "id": "exclusive_farm_12",
+    "bytes": 2116,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.41499999165534973
+      ],
+      "max": [
+        0.8500000238418579,
+        0.764963686466217,
+        0.4150250256061554
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.54
+    },
+    "geometryHash": "4940fec88c80497f8d7859e6d14dbb9b602d19069f529a3f192825f5cda7cf0a"
+  },
+  {
+    "name": "farm_13",
+    "label": "胡萝卜垄",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 12,
+    "triangles": 690,
+    "id": "exclusive_farm_13",
+    "bytes": 5160,
+    "bounds": {
+      "min": [
+        -1.2999999523162842,
+        0,
+        -0.6499999761581421
+      ],
+      "max": [
+        1.2999999523162842,
+        0.6449612379074097,
+        0.6500793695449829
+      ]
+    },
+    "footprint": {
+      "width": 1.68,
+      "height": 0.84
+    },
+    "geometryHash": "d3a77ec247d4813c863578c0f239a9146e119c40669599c6da8f163eb201b1cb"
+  },
+  {
+    "name": "farm_14",
+    "label": "卷心菜床",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 13,
+    "triangles": 464,
+    "id": "exclusive_farm_14",
+    "bytes": 4964,
+    "bounds": {
+      "min": [
+        -1.46999990940094,
+        0,
+        -0.34648916125297546
+      ],
+      "max": [
+        1.470000147819519,
+        0.53997802734375,
+        0.3465634286403656
+      ]
+    },
+    "footprint": {
+      "width": 1.9,
+      "height": 0.45
+    },
+    "geometryHash": "bbf6b644228d0168273b7417e582daff1ae6942258feffea519b4965c962e9c9"
+  },
+  {
+    "name": "farm_15",
+    "label": "番茄支架",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 14,
+    "triangles": 420,
+    "id": "exclusive_farm_15",
+    "bytes": 4216,
+    "bounds": {
+      "min": [
+        -1.2799999713897705,
+        0,
+        -0.22714078426361084
+      ],
+      "max": [
+        1.2799999713897705,
+        1.2100738286972046,
+        0.4708705544471741
+      ]
+    },
+    "footprint": {
+      "width": 1.66,
+      "height": 0.61
+    },
+    "geometryHash": "d4a19278cf316e38cf6ea0f0348f7b49fc8c5cc839956e349f7227b94fc22bae"
+  },
+  {
+    "name": "farm_16",
+    "label": "金穗麦束",
+    "mapId": "GodotMapV2_FarmTown",
+    "mapName": "风车农庄",
+    "setId": "farm",
+    "slot": 15,
+    "triangles": 492,
+    "id": "exclusive_farm_16",
+    "bytes": 4400,
+    "bounds": {
+      "min": [
+        -1.4500000476837158,
+        0,
+        -0.38499999046325684
+      ],
+      "max": [
+        1.4500000476837158,
+        1.4322102069854736,
+        0.38500547409057617
+      ]
+    },
+    "footprint": {
+      "width": 1.88,
+      "height": 0.5
+    },
+    "geometryHash": "fe8906190455b1f610d23931b1a65455e3a4268ee66cda760873195829793eef"
+  },
+  {
+    "name": "shore_01",
+    "label": "破帆船骨",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 0,
+    "triangles": 190,
+    "id": "exclusive_shore_01",
+    "bytes": 2524,
+    "bounds": {
+      "min": [
+        -1.3435189723968506,
+        0,
+        -0.7000000476837158
+      ],
+      "max": [
+        1.3173248767852783,
+        2.692397356033325,
+        0.7000201940536499
+      ]
+    },
+    "footprint": {
+      "width": 1.74,
+      "height": 0.91
+    },
+    "geometryHash": "2a9c31ddfaf982a6c19b5df816730f8a0fd81ac260f02028c4f2d4e88ee70e27"
+  },
+  {
+    "name": "shore_02",
+    "label": "蟹穴贝岩",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 1,
+    "triangles": 220,
+    "id": "exclusive_shore_02",
+    "bytes": 3032,
+    "bounds": {
+      "min": [
+        -1.0272716283798218,
+        0,
+        -0.5198007822036743
+      ],
+      "max": [
+        1.0272716283798218,
+        0.9999955892562866,
+        0.7636146545410156
+      ]
+    },
+    "footprint": {
+      "width": 1.33,
+      "height": 0.99
+    },
+    "geometryHash": "e1b0386023154fb6c79dfaf473b713fe7c0d832b561230a07682b252b421c242"
+  },
+  {
+    "name": "shore_03",
+    "label": "绞盘",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 2,
+    "triangles": 352,
+    "id": "exclusive_shore_03",
+    "bytes": 3176,
+    "bounds": {
+      "min": [
+        -0.8600000143051147,
+        0,
+        -0.8600000143051147
+      ],
+      "max": [
+        0.8600000143051147,
+        1.2000000476837158,
+        0.8600000143051147
+      ]
+    },
+    "footprint": {
+      "width": 1.11,
+      "height": 1.11
+    },
+    "geometryHash": "c382abc61564cc3b598e279ed29b88a4e3f782a19ab93492b5d42bb838de4fef"
+  },
+  {
+    "name": "shore_04",
+    "label": "潮网晾杆",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 3,
+    "triangles": 420,
+    "id": "exclusive_shore_04",
+    "bytes": 3620,
+    "bounds": {
+      "min": [
+        -0.9300000071525574,
+        0,
+        -0.07000000029802322
+      ],
+      "max": [
+        0.9299890398979187,
+        1.899999976158142,
+        0.46011656522750854
+      ]
+    },
+    "footprint": {
+      "width": 1.21,
+      "height": 0.6
+    },
+    "geometryHash": "2ec8859d4dfd05ebb4c1ed3270711dc968b73a17d4daf0fd9c40a345d1c82295"
+  },
+  {
+    "name": "shore_05",
+    "label": "高脚瞭棚",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 4,
+    "triangles": 188,
+    "id": "exclusive_shore_05",
+    "bytes": 2336,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.75
+      ],
+      "max": [
+        0.8499742746353149,
+        2.859999895095825,
+        0.7499157190322876
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.97
+    },
+    "geometryHash": "ad8f4a7b0384db026e36aff60f66e60a6787279d5e1f8e703806229541cec714"
+  },
+  {
+    "name": "shore_06",
+    "label": "倾风椰树",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 5,
+    "triangles": 136,
+    "id": "exclusive_shore_06",
+    "bytes": 2404,
+    "bounds": {
+      "min": [
+        -0.75,
+        0,
+        -0.952627956867218
+      ],
+      "max": [
+        1.850010871887207,
+        2.6654138565063477,
+        0.9526800513267517
+      ]
+    },
+    "footprint": {
+      "width": 2.39,
+      "height": 1.23
+    },
+    "geometryHash": "6438390207000fd7d32aa0aa708f3a0dda139cb9e83bdc4b9b473e0b6bcc12f6"
+  },
+  {
+    "name": "shore_07",
+    "label": "扇形巨贝",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 6,
+    "triangles": 200,
+    "id": "exclusive_shore_07",
+    "bytes": 2644,
+    "bounds": {
+      "min": [
+        -0.8735684752464294,
+        0,
+        -0.3863735496997833
+      ],
+      "max": [
+        0.8735684752464294,
+        1.010231852531433,
+        0.10002648830413818
+      ]
+    },
+    "footprint": {
+      "width": 1.13,
+      "height": 0.5
+    },
+    "geometryHash": "4efb2a1dd5f4a85ce61a9cef61ee171e05a93137f1177911204dbf87fe94ce4c"
+  },
+  {
+    "name": "shore_08",
+    "label": "海锚",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 7,
+    "triangles": 206,
+    "id": "exclusive_shore_08",
+    "bytes": 2576,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.10499999672174454
+      ],
+      "max": [
+        0.8499754667282104,
+        1.8993860483169556,
+        0.13000309467315674
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.17
+    },
+    "geometryHash": "13bff44fcd4fb237d771b37065951b72829e8f71d062311477dfcd66bb6b36e9"
+  },
+  {
+    "name": "shore_09",
+    "label": "浮标组",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 8,
+    "triangles": 192,
+    "id": "exclusive_shore_09",
+    "bytes": 2636,
+    "bounds": {
+      "min": [
+        -0.6057177782058716,
+        0,
+        -0.29564720392227173
+      ],
+      "max": [
+        0.7557176351547241,
+        0.9013079404830933,
+        0.39566582441329956
+      ]
+    },
+    "footprint": {
+      "width": 0.98,
+      "height": 0.52
+    },
+    "geometryHash": "9cf45bfaac1462845183d59f40b639fe7bfecd1efd46d3a71d4d70a18ee89be4"
+  },
+  {
+    "name": "shore_10",
+    "label": "冲浪板架",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 9,
+    "triangles": 252,
+    "id": "exclusive_shore_10",
+    "bytes": 3384,
+    "bounds": {
+      "min": [
+        -0.715847909450531,
+        0,
+        -0.2449999749660492
+      ],
+      "max": [
+        0.7190304398536682,
+        2.0150532722473145,
+        0.10504835844039917
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.32
+    },
+    "geometryHash": "b9c95ddc7b7cbde51637f83f92c23a01aa7a48d431bdabb0786bdc746a3632c3"
+  },
+  {
+    "name": "shore_11",
+    "label": "舵轮盘",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 10,
+    "triangles": 276,
+    "id": "exclusive_shore_11",
+    "bytes": 2936,
+    "bounds": {
+      "min": [
+        -0.8799999952316284,
+        0,
+        -0.08058319240808487
+      ],
+      "max": [
+        0.8799999952316284,
+        1.7599999904632568,
+        0.1406119465827942
+      ]
+    },
+    "footprint": {
+      "width": 1.14,
+      "height": 0.19
+    },
+    "geometryHash": "15857734eb3adc868845b891a44444e97d26ea003911bc1615d5a07d55fba9f8"
+  },
+  {
+    "name": "shore_12",
+    "label": "盘绳",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 11,
+    "triangles": 488,
+    "id": "exclusive_shore_12",
+    "bytes": 3888,
+    "bounds": {
+      "min": [
+        -0.6600000262260437,
+        0,
+        -0.6434524059295654
+      ],
+      "max": [
+        0.9953438639640808,
+        0.3333320915699005,
+        0.643498420715332
+      ]
+    },
+    "footprint": {
+      "width": 1.29,
+      "height": 0.84
+    },
+    "geometryHash": "81ce9afcf4f686441781119a9d71b3b5ec6d50d64f8f5602e01be505979dc4a2"
+  },
+  {
+    "name": "shore_13",
+    "label": "盐白漂流木",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 12,
+    "triangles": 264,
+    "id": "exclusive_shore_13",
+    "bytes": 2984,
+    "bounds": {
+      "min": [
+        -1.4716980457305908,
+        0,
+        -0.4471675157546997
+      ],
+      "max": [
+        1.5261375904083252,
+        0.6047638654708862,
+        0.4437841773033142
+      ]
+    },
+    "footprint": {
+      "width": 1.97,
+      "height": 0.58
+    },
+    "geometryHash": "4fbc389cd1d4b998152a8987be677d6004a998c30da9d8dffaf3efc98b2880e7"
+  },
+  {
+    "name": "shore_14",
+    "label": "风蚀砂岩",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 13,
+    "triangles": 120,
+    "id": "exclusive_shore_14",
+    "bytes": 2404,
+    "bounds": {
+      "min": [
+        -1.5366549491882324,
+        0,
+        -0.5359032154083252
+      ],
+      "max": [
+        1.4619338512420654,
+        0.5999740362167358,
+        0.5480034351348877
+      ]
+    },
+    "footprint": {
+      "width": 1.99,
+      "height": 0.71
+    },
+    "geometryHash": "c763bdd84b83f7e8c7a97e8f6b3dec3604ce14c188d652fde598220cd0d0cd30"
+  },
+  {
+    "name": "shore_15",
+    "label": "滨海沙草",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 14,
+    "triangles": 308,
+    "id": "exclusive_shore_15",
+    "bytes": 3608,
+    "bounds": {
+      "min": [
+        -1.697271704673767,
+        0,
+        -0.45913833379745483
+      ],
+      "max": [
+        1.5572715997695923,
+        0.4199538826942444,
+        0.4705609083175659
+      ]
+    },
+    "footprint": {
+      "width": 2.2,
+      "height": 0.61
+    },
+    "geometryHash": "b9a528d3e30bf0b281cb3852591b1585bca623000b920d744d858af8ee8e6874"
+  },
+  {
+    "name": "shore_16",
+    "label": "贝壳浅滩",
+    "mapId": "GodotMapV2_PirateShore",
+    "mapName": "贝壳海岸",
+    "setId": "shore",
+    "slot": 15,
+    "triangles": 420,
+    "id": "exclusive_shore_16",
+    "bytes": 3680,
+    "bounds": {
+      "min": [
+        -1.3326258659362793,
+        0,
+        -0.5421351790428162
+      ],
+      "max": [
+        1.282625675201416,
+        0.3799242377281189,
+        0.2070179581642151
+      ]
+    },
+    "footprint": {
+      "width": 1.72,
+      "height": 0.7
+    },
+    "geometryHash": "175d2ef85ac50e5916112747eb77cf49782063b83749300d9bdc1e708347a009"
+  },
+  {
+    "name": "grave_01",
+    "label": "月门石祠",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 0,
+    "triangles": 348,
+    "id": "exclusive_grave_01",
+    "bytes": 3300,
+    "bounds": {
+      "min": [
+        -0.925000011920929,
+        0,
+        -0.7099999785423279
+      ],
+      "max": [
+        0.9249903559684753,
+        2.1700000762939453,
+        0.7850126624107361
+      ]
+    },
+    "footprint": {
+      "width": 1.2,
+      "height": 1.02
+    },
+    "geometryHash": "1aca9962a04d94881b219241368f73fb0ae34b0a03681e51e31c8c0b66732487"
+  },
+  {
+    "name": "grave_02",
+    "label": "夜色柏木",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 1,
+    "triangles": 340,
+    "id": "exclusive_grave_02",
+    "bytes": 3992,
+    "bounds": {
+      "min": [
+        -0.5516135096549988,
+        0,
+        -0.41759997606277466
+      ],
+      "max": [
+        0.5516816973686218,
+        3.242203712463379,
+        0.4175400733947754
+      ]
+    },
+    "footprint": {
+      "width": 0.72,
+      "height": 0.54
+    },
+    "geometryHash": "ff81ddc22f4130593714f13588eb475d59f8c611ada2e6e7a9aefdf1b1b58759"
+  },
+  {
+    "name": "grave_03",
+    "label": "铭文尖碑",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 2,
+    "triangles": 66,
+    "id": "exclusive_grave_03",
+    "bytes": 1704,
+    "bounds": {
+      "min": [
+        -0.5149999856948853,
+        0,
+        -0.4350000023841858
+      ],
+      "max": [
+        0.5150525569915771,
+        2.1500000953674316,
+        0.43494749069213867
+      ]
+    },
+    "footprint": {
+      "width": 0.67,
+      "height": 0.57
+    },
+    "geometryHash": "34dabff6d9491e6c9b14018ea688023242be79f71624f37c678f86666f2478e9"
+  },
+  {
+    "name": "grave_04",
+    "label": "裂纹石棺",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 3,
+    "triangles": 104,
+    "id": "exclusive_grave_04",
+    "bytes": 1976,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.4350000023841858
+      ],
+      "max": [
+        0.8999999761581421,
+        0.8499542474746704,
+        0.4809860587120056
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.63
+    },
+    "geometryHash": "8371b8e4b3f79a22f9659effabd9e2367799b7c6b153ad2f27d9cec1e1599628"
+  },
+  {
+    "name": "grave_05",
+    "label": "烛盏柱",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 4,
+    "triangles": 244,
+    "id": "exclusive_grave_05",
+    "bytes": 2844,
+    "bounds": {
+      "min": [
+        -0.3700000047683716,
+        0,
+        -0.3700000047683716
+      ],
+      "max": [
+        0.3700079917907715,
+        1.4450000524520874,
+        0.3700079917907715
+      ]
+    },
+    "footprint": {
+      "width": 0.48,
+      "height": 0.48
+    },
+    "geometryHash": "6132fa1ad76aa467a37e04a0e89b69f52cef1ca10da677307cb21be771a2f819"
+  },
+  {
+    "name": "grave_06",
+    "label": "月环悼架",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 5,
+    "triangles": 392,
+    "id": "exclusive_grave_06",
+    "bytes": 3536,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.30000001192092896
+      ],
+      "max": [
+        0.8999999761581421,
+        1.1568211317062378,
+        0.30000001192092896
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.39
+    },
+    "geometryHash": "ffc34b5bbeba247dcabe6f9d28b9620c3884d6b5be9c6527faa9cb5f25d4617d"
+  },
+  {
+    "name": "grave_07",
+    "label": "十字碑片",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 6,
+    "triangles": 80,
+    "id": "exclusive_grave_07",
+    "bytes": 1892,
+    "bounds": {
+      "min": [
+        -0.6557177305221558,
+        0,
+        -0.5040599703788757
+      ],
+      "max": [
+        0.6357177495956421,
+        1.2599831819534302,
+        0.5040684342384338
+      ]
+    },
+    "footprint": {
+      "width": 0.85,
+      "height": 0.66
+    },
+    "geometryHash": "cb04fbd857e83cf264f93a65a91b405f40bc48eadf71f1eb65f00c51140ba697"
+  },
+  {
+    "name": "grave_08",
+    "label": "圆冠旧碑",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 7,
+    "triangles": 58,
+    "id": "exclusive_grave_08",
+    "bytes": 1644,
+    "bounds": {
+      "min": [
+        -0.4300000071525574,
+        0,
+        -0.4300000071525574
+      ],
+      "max": [
+        0.4299743175506592,
+        1.2799999713897705,
+        0.4299743175506592
+      ]
+    },
+    "footprint": {
+      "width": 0.56,
+      "height": 0.56
+    },
+    "geometryHash": "b415314cd513e20308f5be80e3f92bf3762fe00d00f5bb92cae46c3b01472fff"
+  },
+  {
+    "name": "grave_09",
+    "label": "夜开幽花",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 8,
+    "triangles": 92,
+    "id": "exclusive_grave_09",
+    "bytes": 2188,
+    "bounds": {
+      "min": [
+        -0.6399999856948853,
+        0,
+        -0.55425626039505
+      ],
+      "max": [
+        0.6399999856948853,
+        0.7502020001411438,
+        0.5542488694190979
+      ]
+    },
+    "footprint": {
+      "width": 0.83,
+      "height": 0.72
+    },
+    "geometryHash": "94eb29a4a71592e17a2a7a8af30c7d91513637b1f642c3e4e56b3c67ac2ce99f"
+  },
+  {
+    "name": "grave_10",
+    "label": "追思石瓮",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 9,
+    "triangles": 244,
+    "id": "exclusive_grave_10",
+    "bytes": 2696,
+    "bounds": {
+      "min": [
+        -0.6480000019073486,
+        0,
+        -0.4699999988079071
+      ],
+      "max": [
+        0.6480000019073486,
+        1.0249814987182617,
+        0.4700212776660919
+      ]
+    },
+    "footprint": {
+      "width": 0.84,
+      "height": 0.61
+    },
+    "geometryHash": "accbada688f38b8c77c5d721b22a8b342d2c6bec2e1ac20debcffa96cef97c24"
+  },
+  {
+    "name": "grave_11",
+    "label": "月纹石椅",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 10,
+    "triangles": 100,
+    "id": "exclusive_grave_11",
+    "bytes": 1900,
+    "bounds": {
+      "min": [
+        -0.7749999761581421,
+        0,
+        -0.3050000071525574
+      ],
+      "max": [
+        0.7749999761581421,
+        1.1449733972549438,
+        0.2900039553642273
+      ]
+    },
+    "footprint": {
+      "width": 1,
+      "height": 0.4
+    },
+    "geometryHash": "c315c3742da6d8295495a33a9c24b0058b72e9087b5b18693bb0c51b28843d68"
+  },
+  {
+    "name": "grave_12",
+    "label": "尖顶铁栏",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 11,
+    "triangles": 144,
+    "id": "exclusive_grave_12",
+    "bytes": 2096,
+    "bounds": {
+      "min": [
+        -0.7200000286102295,
+        0,
+        -0.07000000029802322
+      ],
+      "max": [
+        0.7200000286102295,
+        1.0449954271316528,
+        0.07001831382513046
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.1
+    },
+    "geometryHash": "30596a087215a1c44bf299563e76a65fee19294f8f4d945b99a8ceb34390b434"
+  },
+  {
+    "name": "grave_13",
+    "label": "错落悼碑",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 12,
+    "triangles": 120,
+    "id": "exclusive_grave_13",
+    "bytes": 2032,
+    "bounds": {
+      "min": [
+        -1.399999976158142,
+        0,
+        -0.30000001192092896
+      ],
+      "max": [
+        1.409999966621399,
+        1.180052399635315,
+        0.29997432231903076
+      ]
+    },
+    "footprint": {
+      "width": 1.82,
+      "height": 0.39
+    },
+    "geometryHash": "7575b962651d435440e29d29d383db85f25e12e28bb0374e565bb3b41c521f7b"
+  },
+  {
+    "name": "grave_14",
+    "label": "幽花石盆",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 13,
+    "triangles": 342,
+    "id": "exclusive_grave_14",
+    "bytes": 4104,
+    "bounds": {
+      "min": [
+        -1.309999942779541,
+        0,
+        -0.7599999904632568
+      ],
+      "max": [
+        1.3499999046325684,
+        0.8126289248466492,
+        0.47006523609161377
+      ]
+    },
+    "footprint": {
+      "width": 1.75,
+      "height": 0.99
+    },
+    "geometryHash": "fa7766d62fd3f4803872f6bc4a8f305208808242d599915c73943356855d06a3"
+  },
+  {
+    "name": "grave_15",
+    "label": "断墙藤影",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 14,
+    "triangles": 144,
+    "id": "exclusive_grave_15",
+    "bytes": 2468,
+    "bounds": {
+      "min": [
+        -1.4500000476837158,
+        0,
+        -0.23999999463558197
+      ],
+      "max": [
+        1.4700000286102295,
+        1.2100275754928589,
+        0.2601233124732971
+      ]
+    },
+    "footprint": {
+      "width": 1.9,
+      "height": 0.34
+    },
+    "geometryHash": "987f11ac7c3d4fd7da10556000e9475a4d2c1dc139b3e8b6dd0f3b21e1407c9e"
+  },
+  {
+    "name": "grave_16",
+    "label": "烛火追思环",
+    "mapId": "GodotMapV2_Graveyard",
+    "mapName": "月影墓园",
+    "setId": "grave",
+    "slot": 15,
+    "triangles": 546,
+    "id": "exclusive_grave_16",
+    "bytes": 4784,
+    "bounds": {
+      "min": [
+        -1.272028923034668,
+        0,
+        -0.7116289138793945
+      ],
+      "max": [
+        1.3299999237060547,
+        0.46456292271614075,
+        0.7116012573242188
+      ]
+    },
+    "footprint": {
+      "width": 1.72,
+      "height": 0.92
+    },
+    "geometryHash": "4a02810f65a48a629ed424267db45471048ad61ee07e003d233fbcbf16858c22"
+  },
+  {
+    "name": "ruins_01",
+    "label": "六棱古门",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 0,
+    "triangles": 124,
+    "id": "exclusive_ruins_01",
+    "bytes": 2064,
+    "bounds": {
+      "min": [
+        -1.1699999570846558,
+        0,
+        -0.3810511827468872
+      ],
+      "max": [
+        1.169981837272644,
+        2.6600000858306885,
+        0.38108277320861816
+      ]
+    },
+    "footprint": {
+      "width": 1.51,
+      "height": 0.5
+    },
+    "geometryHash": "5147ef916bed02cf78ac69f4b9f920080e9465c381486d0e859dcf346ee077ac"
+  },
+  {
+    "name": "ruins_02",
+    "label": "蜂巢柱阵",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 1,
+    "triangles": 140,
+    "id": "exclusive_ruins_02",
+    "bytes": 2124,
+    "bounds": {
+      "min": [
+        -0.949999988079071,
+        0,
+        -0.8227241039276123
+      ],
+      "max": [
+        0.949999988079071,
+        1.6899713277816772,
+        0.8227132558822632
+      ]
+    },
+    "footprint": {
+      "width": 1.23,
+      "height": 1.07
+    },
+    "geometryHash": "22d1f732429a1f6fd1c268e77f067912e8d579620a7148b6cfe8798b80346a72"
+  },
+  {
+    "name": "ruins_03",
+    "label": "六芒石盘",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 2,
+    "triangles": 100,
+    "id": "exclusive_ruins_03",
+    "bytes": 1868,
+    "bounds": {
+      "min": [
+        -0.9700000286102295,
+        0,
+        -0.8400446176528931
+      ],
+      "max": [
+        0.9700000286102295,
+        0.7250576615333557,
+        0.8400335311889648
+      ]
+    },
+    "footprint": {
+      "width": 1.26,
+      "height": 1.09
+    },
+    "geometryHash": "b989c3f986c85746535a979662d62ecebbc3d69fb9ecb4d17e5f9bdc2c637d0a"
+  },
+  {
+    "name": "ruins_04",
+    "label": "崩塌祭壁",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 3,
+    "triangles": 78,
+    "id": "exclusive_ruins_04",
+    "bytes": 1780,
+    "bounds": {
+      "min": [
+        -0.8600000143051147,
+        0,
+        -0.5450000166893005
+      ],
+      "max": [
+        0.8600000143051147,
+        1.234960675239563,
+        0.624238908290863
+      ]
+    },
+    "footprint": {
+      "width": 1.11,
+      "height": 0.81
+    },
+    "geometryHash": "fc611feccb9db3da24f5878972613e51959722f559cbe82f089a87c3506ba22f"
+  },
+  {
+    "name": "ruins_05",
+    "label": "环纹石塔",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 4,
+    "triangles": 174,
+    "id": "exclusive_ruins_05",
+    "bytes": 2272,
+    "bounds": {
+      "min": [
+        -0.5400000214576721,
+        0,
+        -0.46765372157096863
+      ],
+      "max": [
+        0.5399304032325745,
+        2.625,
+        0.46759167313575745
+      ]
+    },
+    "footprint": {
+      "width": 0.7,
+      "height": 0.61
+    },
+    "geometryHash": "0aa54917c84bed42bd30406b81499ef4ee17297ae8d6f90b0867040307e76018"
+  },
+  {
+    "name": "ruins_06",
+    "label": "六角残池",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 5,
+    "triangles": 110,
+    "id": "exclusive_ruins_06",
+    "bytes": 2084,
+    "bounds": {
+      "min": [
+        -0.9300000071525574,
+        0,
+        -0.9547622799873352
+      ],
+      "max": [
+        1.0499999523162842,
+        0.550020158290863,
+        0.9303650259971619
+      ]
+    },
+    "footprint": {
+      "width": 1.36,
+      "height": 1.24
+    },
+    "geometryHash": "e5de1f5e86062fb6fba4476da840e15ccf0bb57ea799a2de55d77ad08c35e45d"
+  },
+  {
+    "name": "ruins_07",
+    "label": "铭文拓台",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 6,
+    "triangles": 88,
+    "id": "exclusive_ruins_07",
+    "bytes": 1848,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.44999998807907104
+      ],
+      "max": [
+        0.8999999761581421,
+        1.5100531578063965,
+        0.45005494356155396
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.59
+    },
+    "geometryHash": "54ad50ebead6ef40f0a94b4431a53f69e43c892f9cdd3b673fc58b6c3ef0771c"
+  },
+  {
+    "name": "ruins_08",
+    "label": "棱形绿矿",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 7,
+    "triangles": 90,
+    "id": "exclusive_ruins_08",
+    "bytes": 1952,
+    "bounds": {
+      "min": [
+        -0.8100000023841858,
+        0,
+        -0.4684678614139557
+      ],
+      "max": [
+        0.8800000548362732,
+        1.519999384880066,
+        0.6184839010238647
+      ]
+    },
+    "footprint": {
+      "width": 1.14,
+      "height": 0.8
+    },
+    "geometryHash": "432697b4afa4bed1df443c2f0266201e4d7843a336a9c209c8d568780bcca7db"
+  },
+  {
+    "name": "ruins_09",
+    "label": "镶嵌石板",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 8,
+    "triangles": 68,
+    "id": "exclusive_ruins_09",
+    "bytes": 1724,
+    "bounds": {
+      "min": [
+        -0.5400000214576721,
+        0,
+        -0.41499999165534973
+      ],
+      "max": [
+        0.5400000214576721,
+        0.2924959063529968,
+        0.4150238335132599
+      ]
+    },
+    "footprint": {
+      "width": 0.7,
+      "height": 0.54
+    },
+    "geometryHash": "488ef2f4bed1167df4d7ae57c1dd0bf7ad05ce8eaeb92d909f5814f57beb6867"
+  },
+  {
+    "name": "ruins_10",
+    "label": "纹带古罐",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 9,
+    "triangles": 148,
+    "id": "exclusive_ruins_10",
+    "bytes": 2180,
+    "bounds": {
+      "min": [
+        -0.5299999713897705,
+        0,
+        -0.45899346470832825
+      ],
+      "max": [
+        0.5299999713897705,
+        0.8900299072265625,
+        0.4589873254299164
+      ]
+    },
+    "footprint": {
+      "width": 0.69,
+      "height": 0.6
+    },
+    "geometryHash": "7d10749f67ac3df4d0bcdf7fc477528a4d7dbf9e597a7b1c1006aed9865c3876"
+  },
+  {
+    "name": "ruins_11",
+    "label": "断裂石轴",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 10,
+    "triangles": 170,
+    "id": "exclusive_ruins_11",
+    "bytes": 2296,
+    "bounds": {
+      "min": [
+        -0.699999988079071,
+        0,
+        -0.3774251341819763
+      ],
+      "max": [
+        0.699999988079071,
+        0.7381554245948792,
+        0.27501946687698364
+      ]
+    },
+    "footprint": {
+      "width": 0.91,
+      "height": 0.49
+    },
+    "geometryHash": "e0708062acdbdf9adebc35fbbf9326f4c67220f538ebb42d18503330aa84a1ae"
+  },
+  {
+    "name": "ruins_12",
+    "label": "蕨根石阶",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 11,
+    "triangles": 54,
+    "id": "exclusive_ruins_12",
+    "bytes": 1740,
+    "bounds": {
+      "min": [
+        -0.9418699145317078,
+        0,
+        -0.5174441933631897
+      ],
+      "max": [
+        0.8947339653968811,
+        0.8849508762359619,
+        0.5173900723457336
+      ]
+    },
+    "footprint": {
+      "width": 1.22,
+      "height": 0.67
+    },
+    "geometryHash": "593818ff53dfc7fca2446b71d11e86f17c53fc2caeb1f78fc27bb530636da9be"
+  },
+  {
+    "name": "ruins_13",
+    "label": "蜂巢石基",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 12,
+    "triangles": 140,
+    "id": "exclusive_ruins_13",
+    "bytes": 2160,
+    "bounds": {
+      "min": [
+        -1.5299999713897705,
+        0,
+        -0.6723909378051758
+      ],
+      "max": [
+        1.6600000858306885,
+        0.940079391002655,
+        0.4923884868621826
+      ]
+    },
+    "footprint": {
+      "width": 2.15,
+      "height": 0.87
+    },
+    "geometryHash": "8e9154df327e3709c2c768019709013bec9daa176a88d6d6cd41701bb0f0bd6f"
+  },
+  {
+    "name": "ruins_14",
+    "label": "六角蕨池",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 13,
+    "triangles": 176,
+    "id": "exclusive_ruins_14",
+    "bytes": 2372,
+    "bounds": {
+      "min": [
+        -1.6299999952316284,
+        0,
+        -1.0217691659927368
+      ],
+      "max": [
+        1.6299999952316284,
+        0.7899774312973022,
+        0.3118400573730469
+      ]
+    },
+    "footprint": {
+      "width": 2.11,
+      "height": 1.32
+    },
+    "geometryHash": "fa30fe6b0b9bcd8650884289e8fdefc1345ffee821fc50801959bc3713639d8d"
+  },
+  {
+    "name": "ruins_15",
+    "label": "镶纹断盘",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 14,
+    "triangles": 168,
+    "id": "exclusive_ruins_15",
+    "bytes": 2316,
+    "bounds": {
+      "min": [
+        -1.4299999475479126,
+        0,
+        -0.46765372157096863
+      ],
+      "max": [
+        1.5100001096725464,
+        0.6099652647972107,
+        0.46766218543052673
+      ]
+    },
+    "footprint": {
+      "width": 1.95,
+      "height": 0.61
+    },
+    "geometryHash": "5c4e7598462b819e9ae82ec4bf0fb1dec5258ee1ac39f21c2ae094360154bd2a"
+  },
+  {
+    "name": "ruins_16",
+    "label": "崩落柱轴",
+    "mapId": "GodotMapV2_HexRuins",
+    "mapName": "六角遗迹",
+    "setId": "ruins",
+    "slot": 15,
+    "triangles": 112,
+    "id": "exclusive_ruins_16",
+    "bytes": 1980,
+    "bounds": {
+      "min": [
+        -1.4253284931182861,
+        0,
+        -0.4300000071525574
+      ],
+      "max": [
+        1.8353285789489746,
+        0.8191945552825928,
+        0.22579354047775269
+      ]
+    },
+    "footprint": {
+      "width": 2.37,
+      "height": 0.56
+    },
+    "geometryHash": "a168334da4b143ccea1d46ef7d453023147f210f00af68a04b512b642b9c838f"
+  },
+  {
+    "name": "ridge_01",
+    "label": "三角杉木棚",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 0,
+    "triangles": 100,
+    "id": "exclusive_ridge_01",
+    "bytes": 1928,
+    "bounds": {
+      "min": [
+        -1.059999942779541,
+        0,
+        -1.1799999475479126
+      ],
+      "max": [
+        1.0600647926330566,
+        2.188596248626709,
+        0.2799992561340332
+      ]
+    },
+    "footprint": {
+      "width": 1.37,
+      "height": 1.53
+    },
+    "geometryHash": "f72ef4241021fca0ec42c3497ea34745896974562c14d210bbde00acd2bcba63"
+  },
+  {
+    "name": "ridge_02",
+    "label": "扁枝山杉",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 1,
+    "triangles": 176,
+    "id": "exclusive_ridge_02",
+    "bytes": 2540,
+    "bounds": {
+      "min": [
+        -0.8580408692359924,
+        0,
+        -0.3799999952316284
+      ],
+      "max": [
+        0.8580978512763977,
+        2.9000000953674316,
+        0.3799157738685608
+      ]
+    },
+    "footprint": {
+      "width": 1.11,
+      "height": 0.5
+    },
+    "geometryHash": "7b87249683324f01c53c4855f2686a795d6681e0cc0a7cd2915994c0d0fd400c"
+  },
+  {
+    "name": "ridge_03",
+    "label": "攀索晾架",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 2,
+    "triangles": 380,
+    "id": "exclusive_ridge_03",
+    "bytes": 3228,
+    "bounds": {
+      "min": [
+        -0.9300000071525574,
+        0,
+        -0.21444223821163177
+      ],
+      "max": [
+        0.9300000071525574,
+        1.8500090837478638,
+        0.2144828587770462
+      ]
+    },
+    "footprint": {
+      "width": 1.21,
+      "height": 0.28
+    },
+    "geometryHash": "96bc08a93447bb1e4272b931036835655621a9ba31d49ed70b4893f2c114345c"
+  },
+  {
+    "name": "ridge_04",
+    "label": "山径勘图台",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 3,
+    "triangles": 116,
+    "id": "exclusive_ridge_04",
+    "bytes": 2012,
+    "bounds": {
+      "min": [
+        -0.7749999761581421,
+        0,
+        -0.33000001311302185
+      ],
+      "max": [
+        0.7749713659286499,
+        1.5700000524520874,
+        0.32998839020729065
+      ]
+    },
+    "footprint": {
+      "width": 1,
+      "height": 0.43
+    },
+    "geometryHash": "f5d20bc680e388adea5f5b2211823e1ed39b27d0b96683184e047eb0dfc4a5f6"
+  },
+  {
+    "name": "ridge_05",
+    "label": "山脊石标",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 4,
+    "triangles": 121,
+    "id": "exclusive_ridge_05",
+    "bytes": 2348,
+    "bounds": {
+      "min": [
+        -0.6984876990318298,
+        0,
+        -0.3827880024909973
+      ],
+      "max": [
+        0.6225126385688782,
+        2.0899999141693115,
+        0.38276708126068115
+      ]
+    },
+    "footprint": {
+      "width": 0.91,
+      "height": 0.5
+    },
+    "geometryHash": "40ab5a12d6598b5b31f9fcfdf77556c0f5843404bde3aa945b84c111e72607d5"
+  },
+  {
+    "name": "ridge_06",
+    "label": "远征背包",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 5,
+    "triangles": 132,
+    "id": "exclusive_ridge_06",
+    "bytes": 2060,
+    "bounds": {
+      "min": [
+        -0.38999998569488525,
+        0,
+        -0.4099999964237213
+      ],
+      "max": [
+        0.39001375436782837,
+        1.1349999904632568,
+        0.4500311315059662
+      ]
+    },
+    "footprint": {
+      "width": 0.51,
+      "height": 0.59
+    },
+    "geometryHash": "7beaac4e212be7facfda9ba34f5024055c3fa97c5c3c21af25f264c32d19341e"
+  },
+  {
+    "name": "ridge_07",
+    "label": "木工锯架",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 6,
+    "triangles": 124,
+    "id": "exclusive_ridge_07",
+    "bytes": 1960,
+    "bounds": {
+      "min": [
+        -1,
+        0,
+        -0.37766802310943604
+      ],
+      "max": [
+        1,
+        1.1850088834762573,
+        0.37762707471847534
+      ]
+    },
+    "footprint": {
+      "width": 1.3,
+      "height": 0.49
+    },
+    "geometryHash": "2b2271d3163840a8e89e5a28cd4dcd878b4cd53e0de5c27382df0118c3e4c0df"
+  },
+  {
+    "name": "ridge_08",
+    "label": "盘根伐桩",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 7,
+    "triangles": 156,
+    "id": "exclusive_ridge_08",
+    "bytes": 2272,
+    "bounds": {
+      "min": [
+        -0.7077222466468811,
+        0,
+        -0.6636744737625122
+      ],
+      "max": [
+        0.8421639800071716,
+        1.0122555494308472,
+        0.6642724275588989
+      ]
+    },
+    "footprint": {
+      "width": 1.09,
+      "height": 0.86
+    },
+    "geometryHash": "7b9e866ae7c45ad4f54b979be28013744963da27f25539e2b5eb6d4080d9f8ca"
+  },
+  {
+    "name": "ridge_09",
+    "label": "雪地行具",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 8,
+    "triangles": 284,
+    "id": "exclusive_ridge_09",
+    "bytes": 2860,
+    "bounds": {
+      "min": [
+        -0.6499089002609253,
+        0,
+        -0.7531999945640564
+      ],
+      "max": [
+        0.6932816505432129,
+        0.19355258345603943,
+        0.7531999945640564
+      ]
+    },
+    "footprint": {
+      "width": 0.9,
+      "height": 0.98
+    },
+    "geometryHash": "8265541ee07d347d96061933637d17636c83fd234218d38ed444991c38adb6b4"
+  },
+  {
+    "name": "ridge_10",
+    "label": "野外标本桌",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 9,
+    "triangles": 108,
+    "id": "exclusive_ridge_10",
+    "bytes": 1924,
+    "bounds": {
+      "min": [
+        -0.7599999904632568,
+        0,
+        -0.4650000035762787
+      ],
+      "max": [
+        0.7600101232528687,
+        1.5750000476837158,
+        0.46502193808555603
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.61
+    },
+    "geometryHash": "44f06688515ac28fd9952af14caa16ae86b095642ae9a1f42106b230ec9a9d20"
+  },
+  {
+    "name": "ridge_11",
+    "label": "索桥木段",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 10,
+    "triangles": 128,
+    "id": "exclusive_ridge_11",
+    "bytes": 2036,
+    "bounds": {
+      "min": [
+        -0.9888811111450195,
+        0,
+        -0.6100000143051147
+      ],
+      "max": [
+        0.9883482456207275,
+        0.5411643981933594,
+        0.6100336313247681
+      ]
+    },
+    "footprint": {
+      "width": 1.28,
+      "height": 0.79
+    },
+    "geometryHash": "118b6cc39d0c520687c88e3b441bacd8beb90dfb06d072028103b3e3aff03dd9"
+  },
+  {
+    "name": "ridge_12",
+    "label": "巡山灯柱",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 11,
+    "triangles": 84,
+    "id": "exclusive_ridge_12",
+    "bytes": 1820,
+    "bounds": {
+      "min": [
+        -0.49000000953674316,
+        0,
+        -0.49000000953674316
+      ],
+      "max": [
+        0.49004822969436646,
+        1.7300000190734863,
+        0.49004822969436646
+      ]
+    },
+    "footprint": {
+      "width": 0.64,
+      "height": 0.64
+    },
+    "geometryHash": "eea55b6e8bca58c097d8d860f36bcae666aaf3a7891c9958353d988dbfe8da88"
+  },
+  {
+    "name": "ridge_13",
+    "label": "矮杉山坡",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 12,
+    "triangles": 132,
+    "id": "exclusive_ridge_13",
+    "bytes": 2340,
+    "bounds": {
+      "min": [
+        -1.370688796043396,
+        0,
+        -0.7645493745803833
+      ],
+      "max": [
+        1.4800001382827759,
+        2.1200509071350098,
+        0.3845655918121338
+      ]
+    },
+    "footprint": {
+      "width": 1.91,
+      "height": 0.99
+    },
+    "geometryHash": "530bff23840ca1c6d0d98e269e22e650d6fd31e0dba2b26a59ae2f71ce6ff1af"
+  },
+  {
+    "name": "ridge_14",
+    "label": "松针岩沿",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 13,
+    "triangles": 130,
+    "id": "exclusive_ridge_14",
+    "bytes": 2372,
+    "bounds": {
+      "min": [
+        -1.6377700567245483,
+        0,
+        -0.550000011920929
+      ],
+      "max": [
+        1.5177699327468872,
+        0.47998571395874023,
+        0.2976793646812439
+      ]
+    },
+    "footprint": {
+      "width": 2.12,
+      "height": 0.71
+    },
+    "geometryHash": "5f234c2ca9c35348b21614473ae21c8dbd1fd6fbbbfdaac974985a5b781ade7f"
+  },
+  {
+    "name": "ridge_15",
+    "label": "根桩作业区",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 14,
+    "triangles": 432,
+    "id": "exclusive_ridge_15",
+    "bytes": 3680,
+    "bounds": {
+      "min": [
+        -1.3984671831130981,
+        0,
+        -0.34196439385414124
+      ],
+      "max": [
+        1.5387505292892456,
+        0.8123379945755005,
+        0.30220475792884827
+      ]
+    },
+    "footprint": {
+      "width": 1.99,
+      "height": 0.45
+    },
+    "geometryHash": "a418f7c81aa4fd93d00ea919f12aa3fa1b77709b80d69a71ed449e64eb1a81f0"
+  },
+  {
+    "name": "ridge_16",
+    "label": "山莓蕨丛",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "mapName": "铁木营地",
+    "setId": "ridge",
+    "slot": 15,
+    "triangles": 308,
+    "id": "exclusive_ridge_16",
+    "bytes": 3544,
+    "bounds": {
+      "min": [
+        -1.7199995517730713,
+        0,
+        -0.49004533886909485
+      ],
+      "max": [
+        1.6200001239776611,
+        0.7149715423583984,
+        0.50096595287323
+      ]
+    },
+    "footprint": {
+      "width": 2.22,
+      "height": 0.65
+    },
+    "geometryHash": "a0f16fbbec53ca4c4ba78d89d76aba559b64e4dfd169087975d65254547d7862"
+  },
+  {
+    "name": "highland_01",
+    "label": "观星浑仪",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 0,
+    "triangles": 364,
+    "id": "exclusive_highland_01",
+    "bytes": 3380,
+    "bounds": {
+      "min": [
+        -0.8149999976158142,
+        0,
+        -0.7549999952316284
+      ],
+      "max": [
+        0.8150208592414856,
+        2.462618350982666,
+        0.7550691366195679
+      ]
+    },
+    "footprint": {
+      "width": 1.06,
+      "height": 0.98
+    },
+    "geometryHash": "7b8e2c28d78d749d046bf96649b90890a01a7f2e3a3856ba8b78e9d1201d9e4b"
+  },
+  {
+    "name": "highland_02",
+    "label": "风蚀叠台",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 1,
+    "triangles": 74,
+    "id": "exclusive_highland_02",
+    "bytes": 1888,
+    "bounds": {
+      "min": [
+        -0.6266383528709412,
+        0,
+        -0.5026794075965881
+      ],
+      "max": [
+        0.6266607642173767,
+        2.049999952316284,
+        0.502737820148468
+      ]
+    },
+    "footprint": {
+      "width": 0.81,
+      "height": 0.65
+    },
+    "geometryHash": "47292437b762788248a83ebce33266936b591e7bc61706903f9c91997c696c91"
+  },
+  {
+    "name": "highland_03",
+    "label": "风洞石拱",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 2,
+    "triangles": 128,
+    "id": "exclusive_highland_03",
+    "bytes": 2104,
+    "bounds": {
+      "min": [
+        -1.097416639328003,
+        0,
+        -0.4192190170288086
+      ],
+      "max": [
+        1.1400001049041748,
+        1.8742786645889282,
+        0.41918063163757324
+      ]
+    },
+    "footprint": {
+      "width": 1.48,
+      "height": 0.55
+    },
+    "geometryHash": "16cc121c48b358eef362115a64a9d8cae650be5c13749da076497d8c2ef23965"
+  },
+  {
+    "name": "highland_04",
+    "label": "高地日晷",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 3,
+    "triangles": 241,
+    "id": "exclusive_highland_04",
+    "bytes": 2988,
+    "bounds": {
+      "min": [
+        -0.7200000286102295,
+        0,
+        -0.7200000286102295
+      ],
+      "max": [
+        0.7200000286102295,
+        1.3200219869613647,
+        0.7200000286102295
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.93
+    },
+    "geometryHash": "52a0642e28ff4ee6e37473566e82ceac0d7a3b5cf2974afa4ed13c552ba7b0a3"
+  },
+  {
+    "name": "highland_05",
+    "label": "星瓣花杆",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 4,
+    "triangles": 132,
+    "id": "exclusive_highland_05",
+    "bytes": 2264,
+    "bounds": {
+      "min": [
+        -0.7799999713897705,
+        0,
+        -0.2199999988079071
+      ],
+      "max": [
+        0.9099433422088623,
+        1.9800000190734863,
+        0.3000476062297821
+      ]
+    },
+    "footprint": {
+      "width": 1.18,
+      "height": 0.39
+    },
+    "geometryHash": "135fe620aa3b2bcb0fbca34958530f3d40da1df1f28d88ca5bc6b6201f0290c2"
+  },
+  {
+    "name": "highland_06",
+    "label": "天文望镜",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 5,
+    "triangles": 196,
+    "id": "exclusive_highland_06",
+    "bytes": 2496,
+    "bounds": {
+      "min": [
+        -0.6812174916267395,
+        0,
+        -0.5830336213111877
+      ],
+      "max": [
+        0.7951021790504456,
+        2.25431489944458,
+        0.5825832486152649
+      ]
+    },
+    "footprint": {
+      "width": 1.03,
+      "height": 0.76
+    },
+    "geometryHash": "dddc4758ec856fce1f0c0acb4b983b39a50e703f2d232be4ef0ec110c265ebdb"
+  },
+  {
+    "name": "highland_07",
+    "label": "陨痕石盘",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 6,
+    "triangles": 368,
+    "id": "exclusive_highland_07",
+    "bytes": 3360,
+    "bounds": {
+      "min": [
+        -0.7699999809265137,
+        0,
+        -0.7323135137557983
+      ],
+      "max": [
+        0.7699999809265137,
+        0.7550070285797119,
+        0.7322986125946045
+      ]
+    },
+    "footprint": {
+      "width": 1,
+      "height": 0.95
+    },
+    "geometryHash": "ba47edfb16ade11b8408507782559dbcb068ac616e7fecac0855fac694df9458"
+  },
+  {
+    "name": "highland_08",
+    "label": "风积岩塔",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 7,
+    "triangles": 92,
+    "id": "exclusive_highland_08",
+    "bytes": 2148,
+    "bounds": {
+      "min": [
+        -0.7334284782409668,
+        0,
+        -0.5103840231895447
+      ],
+      "max": [
+        0.7334284782409668,
+        1.2349605560302734,
+        0.5104079842567444
+      ]
+    },
+    "footprint": {
+      "width": 0.95,
+      "height": 0.66
+    },
+    "geometryHash": "aaed1305100eae63d0a6541d5b81feecfbd2723926dc966605f8bcf03557204e"
+  },
+  {
+    "name": "highland_09",
+    "label": "银叶小花",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 8,
+    "triangles": 150,
+    "id": "exclusive_highland_09",
+    "bytes": 2680,
+    "bounds": {
+      "min": [
+        -0.8252107501029968,
+        0,
+        -0.24730384349822998
+      ],
+      "max": [
+        0.8699999451637268,
+        0.5600000023841858,
+        0.24719727039337158
+      ]
+    },
+    "footprint": {
+      "width": 1.13,
+      "height": 0.32
+    },
+    "geometryHash": "86ddbd93fa17dee9722be5cdaf75ac9db453d5d7830f919dcfc9547990224c25"
+  },
+  {
+    "name": "highland_10",
+    "label": "星图三角台",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 9,
+    "triangles": 109,
+    "id": "exclusive_highland_10",
+    "bytes": 2000,
+    "bounds": {
+      "min": [
+        -0.7418034076690674,
+        0,
+        -0.7300000190734863
+      ],
+      "max": [
+        0.7799999713897705,
+        0.7699583768844604,
+        0.4400320053100586
+      ]
+    },
+    "footprint": {
+      "width": 1.01,
+      "height": 0.95
+    },
+    "geometryHash": "b619c428d6c7a06ad282090c958920b82f931e76f7e4a7e64e19ca812012f404"
+  },
+  {
+    "name": "highland_11",
+    "label": "弯月托柱",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 10,
+    "triangles": 124,
+    "id": "exclusive_highland_11",
+    "bytes": 2140,
+    "bounds": {
+      "min": [
+        -0.5431384444236755,
+        0,
+        -0.3412247598171234
+      ],
+      "max": [
+        0.5427994132041931,
+        1.9600000381469727,
+        0.3411801755428314
+      ]
+    },
+    "footprint": {
+      "width": 0.71,
+      "height": 0.45
+    },
+    "geometryHash": "f29629ebad68a6fac8a463767906a374e6aca2d40eaa8871f2e0aa198e9ffd83"
+  },
+  {
+    "name": "highland_12",
+    "label": "雾银地衣",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 11,
+    "triangles": 130,
+    "id": "exclusive_highland_12",
+    "bytes": 2532,
+    "bounds": {
+      "min": [
+        -0.7658235430717468,
+        0,
+        -0.5362103581428528
+      ],
+      "max": [
+        0.8499999642372131,
+        0.37498387694358826,
+        0.5361725687980652
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.7
+    },
+    "geometryHash": "5b1f30a6d1d0be64e9c4b362f8620652953b977ae1491375a5036ac09efd3e16"
+  },
+  {
+    "name": "highland_13",
+    "label": "层理高原",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 12,
+    "triangles": 96,
+    "id": "exclusive_highland_13",
+    "bytes": 1908,
+    "bounds": {
+      "min": [
+        -1.5775986909866333,
+        0,
+        -0.6132504343986511
+      ],
+      "max": [
+        1.615564227104187,
+        0.7400622367858887,
+        0.6132999062538147
+      ]
+    },
+    "footprint": {
+      "width": 2.09,
+      "height": 0.8
+    },
+    "geometryHash": "5566bcb72efc30ff932f2fe5682c3c9d933da91ae30ee155c64ceeca2eb87ac9"
+  },
+  {
+    "name": "highland_14",
+    "label": "银蕊花甸",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 13,
+    "triangles": 558,
+    "id": "exclusive_highland_14",
+    "bytes": 5576,
+    "bounds": {
+      "min": [
+        -0.9354974031448364,
+        0,
+        -0.8809211850166321
+      ],
+      "max": [
+        1.1309565305709839,
+        0.627012312412262,
+        0.946887195110321
+      ]
+    },
+    "footprint": {
+      "width": 1.46,
+      "height": 1.23
+    },
+    "geometryHash": "3d4d8d4c8d454d2aa585b5de430b6460066b66cfa0b7bc8e39db1bf2ceca848a"
+  },
+  {
+    "name": "highland_15",
+    "label": "陨石落点",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 14,
+    "triangles": 212,
+    "id": "exclusive_highland_15",
+    "bytes": 2916,
+    "bounds": {
+      "min": [
+        -1.6341044902801514,
+        0,
+        -0.958179235458374
+      ],
+      "max": [
+        1.6341044902801514,
+        0.5599623322486877,
+        0.9581007957458496
+      ]
+    },
+    "footprint": {
+      "width": 2.11,
+      "height": 1.24
+    },
+    "geometryHash": "8be26ec8de790eb790ec778c8318d816fe3141e9f8131a065a16c5f7087248fb"
+  },
+  {
+    "name": "highland_16",
+    "label": "风磨岩鳍",
+    "mapId": "GodotMapV2_BossHighland",
+    "mapName": "星雾高地",
+    "setId": "highland",
+    "slot": 15,
+    "triangles": 88,
+    "id": "exclusive_highland_16",
+    "bytes": 1976,
+    "bounds": {
+      "min": [
+        -1.3427051305770874,
+        0,
+        -0.28952649235725403
+      ],
+      "max": [
+        1.5700000524520874,
+        1.459997296333313,
+        0.28526297211647034
+      ]
+    },
+    "footprint": {
+      "width": 2.03,
+      "height": 0.38
+    },
+    "geometryHash": "ddb5e53808243688e15ca251207e4b32a559ae37d7a3e7c8bd2cda92d84f9abe"
+  },
+  {
+    "name": "frost_01",
+    "label": "霜拱冰门",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 0,
+    "triangles": 276,
+    "id": "exclusive_frost_01",
+    "bytes": 3016,
+    "bounds": {
+      "min": [
+        -1.0436067581176758,
+        0,
+        -0.38042259216308594
+      ],
+      "max": [
+        1.119957447052002,
+        3.0935304164886475,
+        0.3803558945655823
+      ]
+    },
+    "footprint": {
+      "width": 1.45,
+      "height": 0.5
+    },
+    "geometryHash": "b1e216c5e9596175e8d0ee171e0dcf0ab76a3642017908268eefb3b6ad519703"
+  },
+  {
+    "name": "frost_02",
+    "label": "结晶枯枝",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 1,
+    "triangles": 160,
+    "id": "exclusive_frost_02",
+    "bytes": 2288,
+    "bounds": {
+      "min": [
+        -0.91148841381073,
+        0,
+        -0.11999999731779099
+      ],
+      "max": [
+        0.9114208221435547,
+        2.7952752113342285,
+        0.12006301432847977
+      ]
+    },
+    "footprint": {
+      "width": 1.18,
+      "height": 0.16
+    },
+    "geometryHash": "4a5bfe4c531ea53dab6724047fe927e98001a02ce742ca6c2bd63779bb8578db"
+  },
+  {
+    "name": "frost_03",
+    "label": "冰笋风琴",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 2,
+    "triangles": 140,
+    "id": "exclusive_frost_03",
+    "bytes": 2360,
+    "bounds": {
+      "min": [
+        -0.9391461610794067,
+        0,
+        -0.44233277440071106
+      ],
+      "max": [
+        0.9500499963760376,
+        2.259999990463257,
+        0.44232699275016785
+      ]
+    },
+    "footprint": {
+      "width": 1.23,
+      "height": 0.58
+    },
+    "geometryHash": "dd4cf5541a9e88669464ac9400a960a317be4036949b3b266202b691a38c47db"
+  },
+  {
+    "name": "frost_04",
+    "label": "冰雕小亭",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 3,
+    "triangles": 64,
+    "id": "exclusive_frost_04",
+    "bytes": 1728,
+    "bounds": {
+      "min": [
+        -0.7649999856948853,
+        0,
+        -0.7599999904632568
+      ],
+      "max": [
+        0.7650426626205444,
+        1.809999942779541,
+        0.7599890232086182
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.99
+    },
+    "geometryHash": "dd35dd56bb064a5579757b07a9a5aeb7f9d0ba67db5dbf9fec16088c89b7e99c"
+  },
+  {
+    "name": "frost_05",
+    "label": "裂纹冰盘",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 4,
+    "triangles": 160,
+    "id": "exclusive_frost_05",
+    "bytes": 2296,
+    "bounds": {
+      "min": [
+        -0.8299999833106995,
+        0,
+        -0.7188010811805725
+      ],
+      "max": [
+        0.8299999833106995,
+        0.3947604298591614,
+        0.7187915444374084
+      ]
+    },
+    "footprint": {
+      "width": 1.08,
+      "height": 0.93
+    },
+    "geometryHash": "703a828808e98b0e2095b0621e04bc5e5196f7eb9871526d2f6fd5f082b9f237"
+  },
+  {
+    "name": "frost_06",
+    "label": "叠冰阶台",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 5,
+    "triangles": 80,
+    "id": "exclusive_frost_06",
+    "bytes": 1804,
+    "bounds": {
+      "min": [
+        -0.949999988079071,
+        0,
+        -0.5464453101158142
+      ],
+      "max": [
+        0.8999999165534973,
+        0.974967896938324,
+        0.5464131236076355
+      ]
+    },
+    "footprint": {
+      "width": 1.23,
+      "height": 0.71
+    },
+    "geometryHash": "1a7350203eff68845e2a4cd9459721bad3011bb787e9f0909988ecfafa61cb39"
+  },
+  {
+    "name": "frost_07",
+    "label": "六角雪莲",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 6,
+    "triangles": 156,
+    "id": "exclusive_frost_07",
+    "bytes": 2420,
+    "bounds": {
+      "min": [
+        -0.7400000095367432,
+        0,
+        -0.6408587694168091
+      ],
+      "max": [
+        0.7400000095367432,
+        0.5867424011230469,
+        0.640850305557251
+      ]
+    },
+    "footprint": {
+      "width": 0.96,
+      "height": 0.83
+    },
+    "geometryHash": "1cd9684223f14095a0da8a1d8d56bbf2d086bfd23a1d997dc7ee9be0e40f078a"
+  },
+  {
+    "name": "frost_08",
+    "label": "冰封长椅",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 7,
+    "triangles": 80,
+    "id": "exclusive_frost_08",
+    "bytes": 1848,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.36500000953674316
+      ],
+      "max": [
+        0.8500000238418579,
+        0.7750290036201477,
+        0.36499446630477905
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 0.48
+    },
+    "geometryHash": "3d0332f329bc84d7a5cf03c863ee080e254b28716c37adb2eabfd47c026b1a88"
+  },
+  {
+    "name": "frost_09",
+    "label": "冰灯柱",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 8,
+    "triangles": 114,
+    "id": "exclusive_frost_09",
+    "bytes": 2036,
+    "bounds": {
+      "min": [
+        -0.33000001311302185,
+        0,
+        -0.3050000071525574
+      ],
+      "max": [
+        0.3300420939922333,
+        1.5549999475479126,
+        0.30502164363861084
+      ]
+    },
+    "footprint": {
+      "width": 0.43,
+      "height": 0.4
+    },
+    "geometryHash": "cc7f02c62e17c22de5e4a681b1d45c5b841b44182991ce6fa2a074bd019f80d4"
+  },
+  {
+    "name": "frost_10",
+    "label": "积雪冰丘",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 9,
+    "triangles": 128,
+    "id": "exclusive_frost_10",
+    "bytes": 2348,
+    "bounds": {
+      "min": [
+        -0.7703568339347839,
+        0,
+        -0.6399999260902405
+      ],
+      "max": [
+        0.7703568339347839,
+        0.6500282287597656,
+        0.6400253176689148
+      ]
+    },
+    "footprint": {
+      "width": 1,
+      "height": 0.83
+    },
+    "geometryHash": "3db964157852f295dafc625a7dec9ce739eba50987b465e56fb24d30dd5d2a5a"
+  },
+  {
+    "name": "frost_11",
+    "label": "层叠冰锥",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 10,
+    "triangles": 80,
+    "id": "exclusive_frost_11",
+    "bytes": 1836,
+    "bounds": {
+      "min": [
+        -0.7200000286102295,
+        0,
+        -0.6235383152961731
+      ],
+      "max": [
+        0.7200000286102295,
+        1.1149606704711914,
+        0.6235299706459045
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.81
+    },
+    "geometryHash": "3c6286fb21abc7999cb5885cc9cc442727cd4738ff9233856f646f5b79d3ccd7"
+  },
+  {
+    "name": "frost_12",
+    "label": "冰屏断墙",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 11,
+    "triangles": 72,
+    "id": "exclusive_frost_12",
+    "bytes": 1844,
+    "bounds": {
+      "min": [
+        -0.7699999809265137,
+        0,
+        -0.2799667418003082
+      ],
+      "max": [
+        0.7599999904632568,
+        1.1899688243865967,
+        0.2799966037273407
+      ]
+    },
+    "footprint": {
+      "width": 1,
+      "height": 0.37
+    },
+    "geometryHash": "b06481030df7bdfd259ea93cba81906f2b3f3d986a50d914a21ae44930ca4eaf"
+  },
+  {
+    "name": "frost_13",
+    "label": "断层冰台",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 12,
+    "triangles": 144,
+    "id": "exclusive_frost_13",
+    "bytes": 2236,
+    "bounds": {
+      "min": [
+        -1.7300000190734863,
+        0,
+        -0.6225786209106445
+      ],
+      "max": [
+        1.832230806350708,
+        0.9949806928634644,
+        0.6226692199707031
+      ]
+    },
+    "footprint": {
+      "width": 2.37,
+      "height": 0.81
+    },
+    "geometryHash": "e07176f466065bea69701e7e6bdff8e3f226b9c2b9085f2e367e654b45c77933"
+  },
+  {
+    "name": "frost_14",
+    "label": "霜针冰簇",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 13,
+    "triangles": 216,
+    "id": "exclusive_frost_14",
+    "bytes": 2636,
+    "bounds": {
+      "min": [
+        -1.438991904258728,
+        0,
+        -0.34206220507621765
+      ],
+      "max": [
+        1.4800001382827759,
+        1.5249742269515991,
+        0.33481326699256897
+      ]
+    },
+    "footprint": {
+      "width": 1.91,
+      "height": 0.45
+    },
+    "geometryHash": "37c5f4fd5c8dfc4a71a44d7af9ea082ed4cb92304d9de9ba99f498a2dfb3126b"
+  },
+  {
+    "name": "frost_15",
+    "label": "结霜花冠",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 14,
+    "triangles": 468,
+    "id": "exclusive_frost_15",
+    "bytes": 4336,
+    "bounds": {
+      "min": [
+        -1.4455009698867798,
+        0,
+        -0.7381247282028198
+      ],
+      "max": [
+        1.4755009412765503,
+        0.39117854833602905,
+        0.41811633110046387
+      ]
+    },
+    "footprint": {
+      "width": 1.91,
+      "height": 0.96
+    },
+    "geometryHash": "b1dc74cef2ba7b759c0f55fc28b74879904dd089d842d81b67f2919dd0713997"
+  },
+  {
+    "name": "frost_16",
+    "label": "积雪风脊",
+    "mapId": "GodotMapV2_FrostDojo",
+    "mapName": "霜镜道馆",
+    "setId": "frost",
+    "slot": 15,
+    "triangles": 300,
+    "id": "exclusive_frost_16",
+    "bytes": 3628,
+    "bounds": {
+      "min": [
+        -1.7142722606658936,
+        0,
+        -0.5499999523162842
+      ],
+      "max": [
+        1.7242722511291504,
+        0.9300000071525574,
+        0.5500068664550781
+      ]
+    },
+    "footprint": {
+      "width": 2.23,
+      "height": 0.71
+    },
+    "geometryHash": "46b904232b7cb57789ebd75b684863f9f15a180df3f7bec1127b4f6c1939c7b0"
+  },
+  {
+    "name": "tide_01",
+    "label": "鹿角珊瑚门",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 0,
+    "triangles": 280,
+    "id": "exclusive_tide_01",
+    "bytes": 3188,
+    "bounds": {
+      "min": [
+        -1.217420220375061,
+        0,
+        -0.3762304186820984
+      ],
+      "max": [
+        1.217422366142273,
+        2.79988956451416,
+        0.2362828254699707
+      ]
+    },
+    "footprint": {
+      "width": 1.58,
+      "height": 0.49
+    },
+    "geometryHash": "027fbb14acc5fbbb748c9aeacc6219c4d4022fa2831cc7fba69ea8a704c47cee"
+  },
+  {
+    "name": "tide_02",
+    "label": "珍珠贝座",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 1,
+    "triangles": 336,
+    "id": "exclusive_tide_02",
+    "bytes": 3528,
+    "bounds": {
+      "min": [
+        -1.0246474742889404,
+        0,
+        -0.5135705471038818
+      ],
+      "max": [
+        1.0246474742889404,
+        1.3698241710662842,
+        0.5135161876678467
+      ]
+    },
+    "footprint": {
+      "width": 1.33,
+      "height": 0.67
+    },
+    "geometryHash": "a65344f5d64e806731f03a048ddc4811660c058142728be83f88d0ed22c0bd5c"
+  },
+  {
+    "name": "tide_03",
+    "label": "管状海绵",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 2,
+    "triangles": 480,
+    "id": "exclusive_tide_03",
+    "bytes": 3552,
+    "bounds": {
+      "min": [
+        -0.9150000214576721,
+        0,
+        -0.5649999976158142
+      ],
+      "max": [
+        0.9850000739097595,
+        1.7050479650497437,
+        0.27499884366989136
+      ]
+    },
+    "footprint": {
+      "width": 1.28,
+      "height": 0.73
+    },
+    "geometryHash": "88a8941c788869d615c66944ee1bb2d950e2b06b4c68161808bb62583d8ebe27"
+  },
+  {
+    "name": "tide_04",
+    "label": "海藻波丛",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 3,
+    "triangles": 322,
+    "id": "exclusive_tide_04",
+    "bytes": 3460,
+    "bounds": {
+      "min": [
+        -0.810871958732605,
+        0,
+        -0.8774351477622986
+      ],
+      "max": [
+        0.89997398853302,
+        1.471121907234192,
+        0.8774351477622986
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 1.14
+    },
+    "geometryHash": "1694e9d5fa32761a89d372a548d846082b6f2471453a202052c6dd553b43b272"
+  },
+  {
+    "name": "tide_05",
+    "label": "潮庭仪盘",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 4,
+    "triangles": 196,
+    "id": "exclusive_tide_05",
+    "bytes": 2588,
+    "bounds": {
+      "min": [
+        -0.7300000190734863,
+        0,
+        -0.7300000190734863
+      ],
+      "max": [
+        0.7300000190734863,
+        1.3299787044525146,
+        0.7300000190734863
+      ]
+    },
+    "footprint": {
+      "width": 0.95,
+      "height": 0.95
+    },
+    "geometryHash": "659c16f907c1ade10d9f001f6608cc391139b77e86cca401a2745f201fa5ae5d"
+  },
+  {
+    "name": "tide_06",
+    "label": "海光笼",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 5,
+    "triangles": 440,
+    "id": "exclusive_tide_06",
+    "bytes": 4104,
+    "bounds": {
+      "min": [
+        -0.6775688529014587,
+        0,
+        -0.5930418372154236
+      ],
+      "max": [
+        0.6775967478752136,
+        1.5942610502243042,
+        0.5929957032203674
+      ]
+    },
+    "footprint": {
+      "width": 0.88,
+      "height": 0.77
+    },
+    "geometryHash": "237809c4c6a60c6d7f459d67b91d08f5115559021def761e9494a12ff33deef5"
+  },
+  {
+    "name": "tide_07",
+    "label": "螺纹海贝",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 6,
+    "triangles": 208,
+    "id": "exclusive_tide_07",
+    "bytes": 3096,
+    "bounds": {
+      "min": [
+        -0.5600000619888306,
+        0,
+        -0.7046089172363281
+      ],
+      "max": [
+        0.9614948034286499,
+        0.9440270662307739,
+        0.7399892807006836
+      ]
+    },
+    "footprint": {
+      "width": 1.25,
+      "height": 0.96
+    },
+    "geometryHash": "adda5b00553cbc76ef73ec0173b957f85c63c1eae420bc008dab02af8cbe4b2c"
+  },
+  {
+    "name": "tide_08",
+    "label": "珊瑚长榻",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 7,
+    "triangles": 228,
+    "id": "exclusive_tide_08",
+    "bytes": 3168,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.37114736437797546
+      ],
+      "max": [
+        0.8999999761581421,
+        0.921369731426239,
+        0.35003921389579773
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.48
+    },
+    "geometryHash": "59a4a3b399e95ece64ced6df52fc0e9fd82e1d13c553f3cdce0ef02fc6b00180"
+  },
+  {
+    "name": "tide_09",
+    "label": "海葵丛",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 8,
+    "triangles": 192,
+    "id": "exclusive_tide_09",
+    "bytes": 2888,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.5464101433753967
+      ],
+      "max": [
+        0.8100000619888306,
+        0.8158066868782043,
+        0.746397078037262
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.97
+    },
+    "geometryHash": "038cc2cfdc77bc5024c625e2de03b01180c072502d91eb2eb40205a213ab6583"
+  },
+  {
+    "name": "tide_10",
+    "label": "育珠石盏",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 9,
+    "triangles": 102,
+    "id": "exclusive_tide_10",
+    "bytes": 2088,
+    "bounds": {
+      "min": [
+        -0.6200000047683716,
+        0,
+        -0.6200000047683716
+      ],
+      "max": [
+        0.6200000047683716,
+        1.0999767780303955,
+        0.6200000047683716
+      ]
+    },
+    "footprint": {
+      "width": 0.81,
+      "height": 0.81
+    },
+    "geometryHash": "9318f5b7fe1c1cf1b4355ae60d2ac58d4dd4bfa8eba9594ad351eed5195d0e0d"
+  },
+  {
+    "name": "tide_11",
+    "label": "巨型海星",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 10,
+    "triangles": 50,
+    "id": "exclusive_tide_11",
+    "bytes": 1804,
+    "bounds": {
+      "min": [
+        -0.7362054586410522,
+        0,
+        -0.7418240904808044
+      ],
+      "max": [
+        0.9099999666213989,
+        0.3400329053401947,
+        0.7418006062507629
+      ]
+    },
+    "footprint": {
+      "width": 1.18,
+      "height": 0.96
+    },
+    "geometryHash": "a90403c53f797476d0050bc74fecafc905b5a1cbff571252f4176b7a3466feaf"
+  },
+  {
+    "name": "tide_12",
+    "label": "潮纹仪柱",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 11,
+    "triangles": 208,
+    "id": "exclusive_tide_12",
+    "bytes": 2432,
+    "bounds": {
+      "min": [
+        -0.5799999833106995,
+        0,
+        -0.5799999833106995
+      ],
+      "max": [
+        0.5800318121910095,
+        1.600000023841858,
+        0.5800318121910095
+      ]
+    },
+    "footprint": {
+      "width": 0.75,
+      "height": 0.75
+    },
+    "geometryHash": "79fc93900d47226ac4461d41a256841681cc3af5c2eaeeb26a38e3312c5ce8ac"
+  },
+  {
+    "name": "tide_13",
+    "label": "扇枝珊瑚床",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 12,
+    "triangles": 480,
+    "id": "exclusive_tide_13",
+    "bytes": 4128,
+    "bounds": {
+      "min": [
+        -1.5687137842178345,
+        0,
+        -0.07000000029802322
+      ],
+      "max": [
+        1.5279134511947632,
+        1.2854887247085571,
+        0.0700598731637001
+      ]
+    },
+    "footprint": {
+      "width": 2.03,
+      "height": 0.1
+    },
+    "geometryHash": "4db7ff0ba3cfdab16d416a9b7a89e620df1b6b6defd21d8bc0e3c6ca80798e7d"
+  },
+  {
+    "name": "tide_14",
+    "label": "波纹海葵",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 13,
+    "triangles": 228,
+    "id": "exclusive_tide_14",
+    "bytes": 2996,
+    "bounds": {
+      "min": [
+        -1.3899993896484375,
+        0,
+        -0.8099998235702515
+      ],
+      "max": [
+        1.4500000476837158,
+        0.43996328115463257,
+        0.5299986600875854
+      ]
+    },
+    "footprint": {
+      "width": 1.88,
+      "height": 1.05
+    },
+    "geometryHash": "1050c3e60e0370357480785caee3c1272f52868c08e65aa011a9bffdd2be74f8"
+  },
+  {
+    "name": "tide_15",
+    "label": "珍珠潮池",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 14,
+    "triangles": 420,
+    "id": "exclusive_tide_15",
+    "bytes": 3592,
+    "bounds": {
+      "min": [
+        -1.6534647941589355,
+        0,
+        -0.4333154261112213
+      ],
+      "max": [
+        1.6399998664855957,
+        0.6549537777900696,
+        0.4333222806453705
+      ]
+    },
+    "footprint": {
+      "width": 2.14,
+      "height": 0.56
+    },
+    "geometryHash": "e8aa008d9eab73ec2c643064ae89e8d7788df00db6a4e94775231c981d1c0322"
+  },
+  {
+    "name": "tide_16",
+    "label": "海绵浅床",
+    "mapId": "GodotMapV2_TideDojo",
+    "mapName": "深潮道馆",
+    "setId": "tide",
+    "slot": 15,
+    "triangles": 368,
+    "id": "exclusive_tide_16",
+    "bytes": 3096,
+    "bounds": {
+      "min": [
+        -1.4199999570846558,
+        0,
+        -0.5400000214576721
+      ],
+      "max": [
+        1.4199999570846558,
+        1.1099627017974854,
+        0.33992671966552734
+      ]
+    },
+    "footprint": {
+      "width": 1.84,
+      "height": 0.7
+    },
+    "geometryHash": "da7a87104f972125626c08c14c12da6a9661697c5d17fca0872f763f311b4377"
+  },
+  {
+    "name": "iron_01",
+    "label": "烟囱熔炉",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 0,
+    "triangles": 144,
+    "id": "exclusive_iron_01",
+    "bytes": 2108,
+    "bounds": {
+      "min": [
+        -0.699999988079071,
+        0,
+        -0.699999988079071
+      ],
+      "max": [
+        0.7000707983970642,
+        3.259999990463257,
+        0.7000707983970642
+      ]
+    },
+    "footprint": {
+      "width": 0.91,
+      "height": 0.91
+    },
+    "geometryHash": "51a3365c4eebe0830cee37e93d95b5c9754482a91eb6fad26ea76554a65206ef"
+  },
+  {
+    "name": "iron_02",
+    "label": "锻压机械",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 1,
+    "triangles": 72,
+    "id": "exclusive_iron_02",
+    "bytes": 1716,
+    "bounds": {
+      "min": [
+        -0.8899999856948853,
+        0,
+        -0.42500001192092896
+      ],
+      "max": [
+        0.8900244235992432,
+        2.380000114440918,
+        0.42498964071273804
+      ]
+    },
+    "footprint": {
+      "width": 1.15,
+      "height": 0.55
+    },
+    "geometryHash": "f05b988e6773b0d5fdcdb4fe032b573b799484d0102d1d8b712671343803f99a"
+  },
+  {
+    "name": "iron_03",
+    "label": "三联排风管",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 2,
+    "triangles": 580,
+    "id": "exclusive_iron_03",
+    "bytes": 3848,
+    "bounds": {
+      "min": [
+        -0.8500000238418579,
+        0,
+        -0.33000001311302185
+      ],
+      "max": [
+        1.099920630455017,
+        2.950000047683716,
+        0.3299371302127838
+      ]
+    },
+    "footprint": {
+      "width": 1.42,
+      "height": 0.43
+    },
+    "geometryHash": "8211e28e0c58f8b24a10a6aa127c8fb24870bcbe8d25265cf4fd7a6b9ec34e2d"
+  },
+  {
+    "name": "iron_04",
+    "label": "分层矿料架",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 3,
+    "triangles": 148,
+    "id": "exclusive_iron_04",
+    "bytes": 2448,
+    "bounds": {
+      "min": [
+        -0.8199999928474426,
+        0,
+        -0.4099999964237213
+      ],
+      "max": [
+        0.8199999928474426,
+        1.4199719429016113,
+        0.40994998812675476
+      ]
+    },
+    "footprint": {
+      "width": 1.06,
+      "height": 0.53
+    },
+    "geometryHash": "aec44e230f6b544acb5493689898f58e7c89dc9afbcb8285820e7049f8c1f093"
+  },
+  {
+    "name": "iron_05",
+    "label": "铸铁砧",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 4,
+    "triangles": 52,
+    "id": "exclusive_iron_05",
+    "bytes": 1644,
+    "bounds": {
+      "min": [
+        -0.6899999976158142,
+        0,
+        -0.3449999988079071
+      ],
+      "max": [
+        0.8799999356269836,
+        1.2599865198135376,
+        0.3449834883213043
+      ]
+    },
+    "footprint": {
+      "width": 1.14,
+      "height": 0.45
+    },
+    "geometryHash": "b5f5bb23f6fb9531c67be5f4e368f9e053ccbe31ee4cd4eb45545f882494658e"
+  },
+  {
+    "name": "iron_06",
+    "label": "冷却水罐",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 5,
+    "triangles": 364,
+    "id": "exclusive_iron_06",
+    "bytes": 3176,
+    "bounds": {
+      "min": [
+        -0.6850000023841858,
+        0,
+        -0.6850000023841858
+      ],
+      "max": [
+        0.9249998927116394,
+        1.394979476928711,
+        0.6850182414054871
+      ]
+    },
+    "footprint": {
+      "width": 1.2,
+      "height": 0.89
+    },
+    "geometryHash": "e18dfa265aa4d68b0ecd23f0de0139b3fec0b52e72f858793fbd8a22a3a36114"
+  },
+  {
+    "name": "iron_07",
+    "label": "钢坯堆",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 6,
+    "triangles": 84,
+    "id": "exclusive_iron_07",
+    "bytes": 1764,
+    "bounds": {
+      "min": [
+        -0.7799999713897705,
+        0,
+        -0.3700000047683716
+      ],
+      "max": [
+        0.7799999713897705,
+        0.8700311183929443,
+        0.3699597120285034
+      ]
+    },
+    "footprint": {
+      "width": 1.01,
+      "height": 0.48
+    },
+    "geometryHash": "dca14802764c6455aa3f13e6aedd7c38629f194c1d5fa5314789dda940a38605"
+  },
+  {
+    "name": "iron_08",
+    "label": "垂钩悬臂",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 7,
+    "triangles": 140,
+    "id": "exclusive_iron_08",
+    "bytes": 2144,
+    "bounds": {
+      "min": [
+        -0.550000011920929,
+        0,
+        -0.550000011920929
+      ],
+      "max": [
+        1.1373929977416992,
+        2.4800000190734863,
+        0.5500524640083313
+      ]
+    },
+    "footprint": {
+      "width": 1.47,
+      "height": 0.71
+    },
+    "geometryHash": "6827019af57f495aa1794f1a1ab051b8a05d53871b2beacd13299dd911cc0fd4"
+  },
+  {
+    "name": "iron_09",
+    "label": "铸模工作台",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 8,
+    "triangles": 132,
+    "id": "exclusive_iron_09",
+    "bytes": 1968,
+    "bounds": {
+      "min": [
+        -0.6449999809265137,
+        0,
+        -0.36000001430511475
+      ],
+      "max": [
+        0.6449999809265137,
+        0.9000000357627869,
+        0.36000001430511475
+      ]
+    },
+    "footprint": {
+      "width": 0.84,
+      "height": 0.47
+    },
+    "geometryHash": "9006207413bdff28f0fbeb08d3fa9a2bd54132664dafc40ebce6347b32040e53"
+  },
+  {
+    "name": "iron_10",
+    "label": "齿轮支座",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 9,
+    "triangles": 236,
+    "id": "exclusive_iron_10",
+    "bytes": 2652,
+    "bounds": {
+      "min": [
+        -0.8299999833106995,
+        0,
+        -0.1558605581521988
+      ],
+      "max": [
+        0.8399999737739563,
+        1.303238034248352,
+        0.1558564454317093
+      ]
+    },
+    "footprint": {
+      "width": 1.09,
+      "height": 0.21
+    },
+    "geometryHash": "e73e9de0994d6784496d9fc1777927dee6d96b5a9888f403c522f7db83fadb2a"
+  },
+  {
+    "name": "iron_11",
+    "label": "熔炼坩埚",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 10,
+    "triangles": 236,
+    "id": "exclusive_iron_11",
+    "bytes": 2556,
+    "bounds": {
+      "min": [
+        -0.8949999809265137,
+        0,
+        -0.6657395362854004
+      ],
+      "max": [
+        0.8949999809265137,
+        0.9474992752075195,
+        0.6656979322433472
+      ]
+    },
+    "footprint": {
+      "width": 1.16,
+      "height": 0.86
+    },
+    "geometryHash": "9892093429fea78bac76111391fb564c2cdd284ea9297426d6cab6cd49b109dd"
+  },
+  {
+    "name": "iron_12",
+    "label": "压力表柜",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 11,
+    "triangles": 216,
+    "id": "exclusive_iron_12",
+    "bytes": 2500,
+    "bounds": {
+      "min": [
+        -0.5,
+        0,
+        -0.30000001192092896
+      ],
+      "max": [
+        0.49997931718826294,
+        1.4600000381469727,
+        0.3000231981277466
+      ]
+    },
+    "footprint": {
+      "width": 0.65,
+      "height": 0.39
+    },
+    "geometryHash": "9e16de9860f74b44a8a4b4bb060ed9b779ab43c9d3abe1c16e46b6a5781e68a7"
+  },
+  {
+    "name": "iron_13",
+    "label": "铆接钢墩",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 12,
+    "triangles": 280,
+    "id": "exclusive_iron_13",
+    "bytes": 2604,
+    "bounds": {
+      "min": [
+        -1.6399999856948853,
+        0,
+        -0.30310890078544617
+      ],
+      "max": [
+        1.659999966621399,
+        0.600054919719696,
+        0.30319032073020935
+      ]
+    },
+    "footprint": {
+      "width": 2.15,
+      "height": 0.4
+    },
+    "geometryHash": "bee4de7cdfcc29f7638a0dd5803938692b2cd99488e1227ac7892477f512784e"
+  },
+  {
+    "name": "iron_14",
+    "label": "输料滚床",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 13,
+    "triangles": 564,
+    "id": "exclusive_iron_14",
+    "bytes": 3568,
+    "bounds": {
+      "min": [
+        -1.5499999523162842,
+        0,
+        -0.41499999165534973
+      ],
+      "max": [
+        1.5499999523162842,
+        0.5150582790374756,
+        0.44008758664131165
+      ]
+    },
+    "footprint": {
+      "width": 2,
+      "height": 0.57
+    },
+    "geometryHash": "d2a186c357c3f2dff3afe123c470ef6859d786358ebacfc75e526e1a213d8bd5"
+  },
+  {
+    "name": "iron_15",
+    "label": "矿石料斗",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 14,
+    "triangles": 124,
+    "id": "exclusive_iron_15",
+    "bytes": 2228,
+    "bounds": {
+      "min": [
+        -1.4100000858306885,
+        0,
+        -0.5350000858306885
+      ],
+      "max": [
+        1.4988257884979248,
+        1.0500394105911255,
+        0.534925103187561
+      ]
+    },
+    "footprint": {
+      "width": 1.94,
+      "height": 0.7
+    },
+    "geometryHash": "a5b709367d297c7045b9c0c86682cd78f28c3f3b880d7cf612da0e05504e4f84"
+  },
+  {
+    "name": "iron_16",
+    "label": "铸铁排水架",
+    "mapId": "GodotMapV2_IronDojo",
+    "mapName": "铁壁道馆",
+    "setId": "iron",
+    "slot": 15,
+    "triangles": 220,
+    "id": "exclusive_iron_16",
+    "bytes": 2220,
+    "bounds": {
+      "min": [
+        -1.5,
+        0,
+        -0.6799999475479126
+      ],
+      "max": [
+        1.5,
+        0.44753706455230713,
+        0.5000036954879761
+      ]
+    },
+    "footprint": {
+      "width": 1.94,
+      "height": 0.88
+    },
+    "geometryHash": "403da1f5329475230da1d659cdd12d1f3f09e8a94354c71e7ad29206dd6d728a"
+  },
+  {
+    "name": "dragon_01",
+    "label": "肋骨化石",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 0,
+    "triangles": 472,
+    "id": "exclusive_dragon_01",
+    "bytes": 4244,
+    "bounds": {
+      "min": [
+        -1.0756908655166626,
+        0,
+        -0.8413998484611511
+      ],
+      "max": [
+        1.0981260538101196,
+        1.9915045499801636,
+        0.8413413166999817
+      ]
+    },
+    "footprint": {
+      "width": 1.42,
+      "height": 1.09
+    },
+    "geometryHash": "a8684e88ad808c725283e817f06f27f55bacf310fd1009d752e0db7c2776950c"
+  },
+  {
+    "name": "dragon_02",
+    "label": "龙首残骸",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 1,
+    "triangles": 208,
+    "id": "exclusive_dragon_02",
+    "bytes": 2924,
+    "bounds": {
+      "min": [
+        -0.8459290266036987,
+        0,
+        -0.9523632526397705
+      ],
+      "max": [
+        0.8458871841430664,
+        1.6997318267822266,
+        1.3633711338043213
+      ]
+    },
+    "footprint": {
+      "width": 1.1,
+      "height": 1.76
+    },
+    "geometryHash": "2dedf8cdf2b00e48c9152f8526b99067566db3294db3f452bbb4278901b72c19"
+  },
+  {
+    "name": "dragon_03",
+    "label": "裂脉黑曜石",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 2,
+    "triangles": 156,
+    "id": "exclusive_dragon_03",
+    "bytes": 2376,
+    "bounds": {
+      "min": [
+        -0.7888854146003723,
+        0,
+        -0.5043380856513977
+      ],
+      "max": [
+        0.8299329876899719,
+        2.259999990463257,
+        0.6843587756156921
+      ]
+    },
+    "footprint": {
+      "width": 1.08,
+      "height": 0.89
+    },
+    "geometryHash": "97b3f80a0734fabbcd2059a1501289560a9f233a283b28f8ffebda5476459177"
+  },
+  {
+    "name": "dragon_04",
+    "label": "翼骨残片",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 3,
+    "triangles": 143,
+    "id": "exclusive_dragon_04",
+    "bytes": 2224,
+    "bounds": {
+      "min": [
+        -0.7423217296600342,
+        0,
+        -0.11999999731779099
+      ],
+      "max": [
+        1.141086220741272,
+        2.3294484615325928,
+        0.12001153081655502
+      ]
+    },
+    "footprint": {
+      "width": 1.48,
+      "height": 0.16
+    },
+    "geometryHash": "d14b4275823b2a4be21992c6ef53734dd9c69a086e86d6f8b161cacd4e4cc49f"
+  },
+  {
+    "name": "dragon_05",
+    "label": "龙卵巢",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 4,
+    "triangles": 360,
+    "id": "exclusive_dragon_05",
+    "bytes": 4040,
+    "bounds": {
+      "min": [
+        -1.0219335556030273,
+        0,
+        -0.8586744070053101
+      ],
+      "max": [
+        1.0414948463439941,
+        0.7300024628639221,
+        0.5290355682373047
+      ]
+    },
+    "footprint": {
+      "width": 1.35,
+      "height": 1.11
+    },
+    "geometryHash": "275cb7c5ed793b641ffb4a4f98117e46b2d843e57e50bc10128c1c8ff70970b6"
+  },
+  {
+    "name": "dragon_06",
+    "label": "双角祭座",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 5,
+    "triangles": 160,
+    "id": "exclusive_dragon_06",
+    "bytes": 2296,
+    "bounds": {
+      "min": [
+        -0.7338107824325562,
+        0,
+        -0.6321985721588135
+      ],
+      "max": [
+        0.7338192462921143,
+        1.9789451360702515,
+        0.6322582960128784
+      ]
+    },
+    "footprint": {
+      "width": 0.95,
+      "height": 0.82
+    },
+    "geometryHash": "e674bcc20b76b2dc5d4de2c0ef8e33ac5ac27aa9c668b923968cf51c7691ea89"
+  },
+  {
+    "name": "dragon_07",
+    "label": "龙鳞石壁",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 6,
+    "triangles": 27,
+    "id": "exclusive_dragon_07",
+    "bytes": 1552,
+    "bounds": {
+      "min": [
+        -0.7649999856948853,
+        0,
+        -0.33000001311302185
+      ],
+      "max": [
+        0.7649761438369751,
+        1.6799999475479126,
+        0.3899706304073334
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.51
+    },
+    "geometryHash": "8651063b5583d512c374cbaf2ec29dbc7fed27d00240363340edc5ae843b3011"
+  },
+  {
+    "name": "dragon_08",
+    "label": "脊骨遗存",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 7,
+    "triangles": 188,
+    "id": "exclusive_dragon_08",
+    "bytes": 2504,
+    "bounds": {
+      "min": [
+        -1.090000033378601,
+        0,
+        -0.5302426815032959
+      ],
+      "max": [
+        1.0499998331069946,
+        0.8149581551551819,
+        0.19053614139556885
+      ]
+    },
+    "footprint": {
+      "width": 1.41,
+      "height": 0.69
+    },
+    "geometryHash": "a3e32accfad5318a2b541a06604a4238541cbb8ea32f0665c0cfda182681b7de"
+  },
+  {
+    "name": "dragon_09",
+    "label": "龙爪岩",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 8,
+    "triangles": 140,
+    "id": "exclusive_dragon_09",
+    "bytes": 2224,
+    "bounds": {
+      "min": [
+        -0.5903205275535583,
+        0,
+        -0.45083916187286377
+      ],
+      "max": [
+        0.5903483033180237,
+        1.0063871145248413,
+        0.8318463563919067
+      ]
+    },
+    "footprint": {
+      "width": 0.77,
+      "height": 1.08
+    },
+    "geometryHash": "92c050e1c7b24f0a1641d12c1978e23a5273619b0b27db6c5bd9421720d1c831"
+  },
+  {
+    "name": "dragon_10",
+    "label": "紫晶龙齿",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 9,
+    "triangles": 84,
+    "id": "exclusive_dragon_10",
+    "bytes": 1892,
+    "bounds": {
+      "min": [
+        -0.6600000262260437,
+        0,
+        -0.33000001311302185
+      ],
+      "max": [
+        0.6599767804145813,
+        1.940000057220459,
+        0.3300475776195526
+      ]
+    },
+    "footprint": {
+      "width": 0.86,
+      "height": 0.43
+    },
+    "geometryHash": "d784a7658984ef93c0208bc2e2fb99be366921186e3b707f518a116f8dc882ef"
+  },
+  {
+    "name": "dragon_11",
+    "label": "骨骼研究台",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 10,
+    "triangles": 172,
+    "id": "exclusive_dragon_11",
+    "bytes": 2372,
+    "bounds": {
+      "min": [
+        -0.7599999904632568,
+        0,
+        -0.35499998927116394
+      ],
+      "max": [
+        0.7599999904632568,
+        0.9846645593643188,
+        0.35503843426704407
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.46
+    },
+    "geometryHash": "d2821b6151bcc509a1350a5d558207735ac5f06746875edfbe2b841ef006c652"
+  },
+  {
+    "name": "dragon_12",
+    "label": "龙牙香炉",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 11,
+    "triangles": 108,
+    "id": "exclusive_dragon_12",
+    "bytes": 2140,
+    "bounds": {
+      "min": [
+        -0.5225619673728943,
+        0,
+        -0.5654581785202026
+      ],
+      "max": [
+        0.5800108313560486,
+        1.3700000047683716,
+        0.5654628276824951
+      ]
+    },
+    "footprint": {
+      "width": 0.75,
+      "height": 0.73
+    },
+    "geometryHash": "d6adf2b03786e94f2539b630063123545a6f3f20c77de1f7fbeee68381e28dcd"
+  },
+  {
+    "name": "dragon_13",
+    "label": "黑曜龙脊",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 12,
+    "triangles": 160,
+    "id": "exclusive_dragon_13",
+    "bytes": 2264,
+    "bounds": {
+      "min": [
+        -1.5393363237380981,
+        0,
+        -0.3518909215927124
+      ],
+      "max": [
+        1.6899999380111694,
+        1.335060477256775,
+        0.35180991888046265
+      ]
+    },
+    "footprint": {
+      "width": 2.19,
+      "height": 0.46
+    },
+    "geometryHash": "a4d041fe28574b4ca7c989f94e277296bdae19b1396623530b0b01ee9af5139b"
+  },
+  {
+    "name": "dragon_14",
+    "label": "远古牙阵",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 13,
+    "triangles": 256,
+    "id": "exclusive_dragon_14",
+    "bytes": 2836,
+    "bounds": {
+      "min": [
+        -1.361280918121338,
+        0,
+        -0.2827290892601013
+      ],
+      "max": [
+        1.3899998664855957,
+        1.4820271730422974,
+        0.28270840644836426
+      ]
+    },
+    "footprint": {
+      "width": 1.8,
+      "height": 0.37
+    },
+    "geometryHash": "1236c735fcb678df10c1ae8871a707f9e7a7223c74f1ab4bf2de84374cac2c93"
+  },
+  {
+    "name": "dragon_15",
+    "label": "散落龙鳞",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 14,
+    "triangles": 21,
+    "id": "exclusive_dragon_15",
+    "bytes": 1488,
+    "bounds": {
+      "min": [
+        -1.6399999856948853,
+        0,
+        -0.8700000047683716
+      ],
+      "max": [
+        1.600000023841858,
+        0.12993223965168,
+        -0.000027477741241455078
+      ]
+    },
+    "footprint": {
+      "width": 2.12,
+      "height": 1.13
+    },
+    "geometryHash": "af4d4853ca1378e2e8d1250ba8bab495f92e4227d6d03f9def5228c9223d130d"
+  },
+  {
+    "name": "dragon_16",
+    "label": "龙血晶草",
+    "mapId": "GodotMapV2_DragonDojo",
+    "mapName": "龙穹道馆",
+    "setId": "dragon",
+    "slot": 15,
+    "triangles": 162,
+    "id": "exclusive_dragon_16",
+    "bytes": 2648,
+    "bounds": {
+      "min": [
+        -1.259966254234314,
+        0,
+        -0.6504674553871155
+      ],
+      "max": [
+        1.2999998331069946,
+        0.9750465750694275,
+        0.4002076983451843
+      ]
+    },
+    "footprint": {
+      "width": 1.68,
+      "height": 0.84
+    },
+    "geometryHash": "e12b3d64ed0c2adba4310b334222af5770c44103ae0909701836b2ebf2c45f79"
+  },
+  {
+    "name": "champion_01",
+    "label": "荣誉金杯",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 0,
+    "triangles": 396,
+    "id": "exclusive_champion_01",
+    "bytes": 3460,
+    "bounds": {
+      "min": [
+        -0.9350000023841858,
+        0,
+        -0.6650000214576721
+      ],
+      "max": [
+        0.9350009560585022,
+        2.0250000953674316,
+        0.664976179599762
+      ]
+    },
+    "footprint": {
+      "width": 1.21,
+      "height": 0.86
+    },
+    "geometryHash": "83c70f069b076da7accaccaaa46a04ba031ef45e9cc0ec5bfea008c203864ec2"
+  },
+  {
+    "name": "champion_02",
+    "label": "月桂凯旋架",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 1,
+    "triangles": 346,
+    "id": "exclusive_champion_02",
+    "bytes": 3552,
+    "bounds": {
+      "min": [
+        -1.2914999723434448,
+        0,
+        -0.30000001192092896
+      ],
+      "max": [
+        1.2914663553237915,
+        3.059999942779541,
+        0.2999340295791626
+      ]
+    },
+    "footprint": {
+      "width": 1.67,
+      "height": 0.39
+    },
+    "geometryHash": "1ff74ba572fed80ea07f69852dc6390a9400b5a1d769cee027cb32286ce75242"
+  },
+  {
+    "name": "champion_03",
+    "label": "修剪冠木",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 2,
+    "triangles": 156,
+    "id": "exclusive_champion_03",
+    "bytes": 2508,
+    "bounds": {
+      "min": [
+        -0.5799999833106995,
+        0,
+        -0.5899999141693115
+      ],
+      "max": [
+        0.5800545811653137,
+        2.434999942779541,
+        0.5899710655212402
+      ]
+    },
+    "footprint": {
+      "width": 0.75,
+      "height": 0.77
+    },
+    "geometryHash": "addcef417ddfad83844c25099bdd42cb9e5745359b9f5f063c46a3b986e587e6"
+  },
+  {
+    "name": "champion_04",
+    "label": "荣誉垂旗",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 3,
+    "triangles": 101,
+    "id": "exclusive_champion_04",
+    "bytes": 2064,
+    "bounds": {
+      "min": [
+        -0.6399999856948853,
+        0,
+        -0.2549999952316284
+      ],
+      "max": [
+        0.6399497985839844,
+        2.2950000762939453,
+        0.2550467252731323
+      ]
+    },
+    "footprint": {
+      "width": 0.83,
+      "height": 0.33
+    },
+    "geometryHash": "7fc8b2cd1dd10c5b4fc981b26f97995edb0ddae86d197d832e27a0b5bdb3fa95"
+  },
+  {
+    "name": "champion_05",
+    "label": "金环石椅",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 4,
+    "triangles": 256,
+    "id": "exclusive_champion_05",
+    "bytes": 2688,
+    "bounds": {
+      "min": [
+        -0.8050000071525574,
+        0,
+        -0.36000001430511475
+      ],
+      "max": [
+        0.8050000071525574,
+        1.2550393342971802,
+        0.3600432872772217
+      ]
+    },
+    "footprint": {
+      "width": 1.04,
+      "height": 0.47
+    },
+    "geometryHash": "b4f3509f1fc2328782443eede612279d8a21cd7e5751ea3d082c00f95f929b6f"
+  },
+  {
+    "name": "champion_06",
+    "label": "荣耀天球",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 5,
+    "triangles": 372,
+    "id": "exclusive_champion_06",
+    "bytes": 3568,
+    "bounds": {
+      "min": [
+        -0.574999988079071,
+        0,
+        -0.574999988079071
+      ],
+      "max": [
+        0.5749956965446472,
+        1.5549999475479126,
+        0.5749956965446472
+      ]
+    },
+    "footprint": {
+      "width": 0.75,
+      "height": 0.75
+    },
+    "geometryHash": "5066de761956bebeaa49e1ede3079758ef825943ffa4cf4af84a97d473929c3b"
+  },
+  {
+    "name": "champion_07",
+    "label": "冠冕台座",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 6,
+    "triangles": 172,
+    "id": "exclusive_champion_07",
+    "bytes": 2420,
+    "bounds": {
+      "min": [
+        -0.6299999952316284,
+        0,
+        -0.6299999952316284
+      ],
+      "max": [
+        0.6299866437911987,
+        1.5700000524520874,
+        0.6299866437911987
+      ]
+    },
+    "footprint": {
+      "width": 0.82,
+      "height": 0.82
+    },
+    "geometryHash": "a723fc539d7675bff651f9da6a586e97b675523d5883bd31d50b911a9dc7c941"
+  },
+  {
+    "name": "champion_08",
+    "label": "金蕊花箱",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 7,
+    "triangles": 258,
+    "id": "exclusive_champion_08",
+    "bytes": 3408,
+    "bounds": {
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.3799999952316284
+      ],
+      "max": [
+        0.8999999761581421,
+        1.2275773286819458,
+        0.3799707293510437
+      ]
+    },
+    "footprint": {
+      "width": 1.17,
+      "height": 0.5
+    },
+    "geometryHash": "8c7187f99c7839c2d1495fa953472fa1ab70ebc29fb204da70b536edb36152fd"
+  },
+  {
+    "name": "champion_09",
+    "label": "冠军名录",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 8,
+    "triangles": 120,
+    "id": "exclusive_champion_09",
+    "bytes": 1984,
+    "bounds": {
+      "min": [
+        -0.7200000286102295,
+        0,
+        -0.4099999964237213
+      ],
+      "max": [
+        0.7200000286102295,
+        0.909987211227417,
+        0.40998169779777527
+      ]
+    },
+    "footprint": {
+      "width": 0.93,
+      "height": 0.53
+    },
+    "geometryHash": "35e630bc693f99ca56b3a9db49d2764900bee5dabe82b82c8594a753b6d7d7dd"
+  },
+  {
+    "name": "champion_10",
+    "label": "礼仪绿篱",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 9,
+    "triangles": 324,
+    "id": "exclusive_champion_10",
+    "bytes": 3680,
+    "bounds": {
+      "min": [
+        -0.7599999904632568,
+        0,
+        -0.3799999952316284
+      ],
+      "max": [
+        0.7599999904632568,
+        0.9449551105499268,
+        0.38004636764526367
+      ]
+    },
+    "footprint": {
+      "width": 0.99,
+      "height": 0.5
+    },
+    "geometryHash": "63231be6680fdeb155c4aef6b57bcc9cd13a91094d6bd4d1e46e91100a3ac267"
+  },
+  {
+    "name": "champion_11",
+    "label": "六臂礼灯",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 10,
+    "triangles": 416,
+    "id": "exclusive_champion_11",
+    "bytes": 4116,
+    "bounds": {
+      "min": [
+        -0.7573309540748596,
+        0,
+        -0.7200000286102295
+      ],
+      "max": [
+        0.7573309540748596,
+        1.4650145769119263,
+        0.7199597358703613
+      ]
+    },
+    "footprint": {
+      "width": 0.98,
+      "height": 0.93
+    },
+    "geometryHash": "016eacc5006c09c6c7164959e7e4eb042677ba0871931431739383a8cbec53fb"
+  },
+  {
+    "name": "champion_12",
+    "label": "月桂徽章",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 11,
+    "triangles": 188,
+    "id": "exclusive_champion_12",
+    "bytes": 2648,
+    "bounds": {
+      "min": [
+        -0.7218028903007507,
+        0,
+        -0.2750000059604645
+      ],
+      "max": [
+        0.7218028903007507,
+        1.4436057806015015,
+        0.275020569562912
+      ]
+    },
+    "footprint": {
+      "width": 0.94,
+      "height": 0.36
+    },
+    "geometryHash": "b42aa348b6ce44e5a10c33b4a006969164d7188fc03ec2e470fdc87ab0235564"
+  },
+  {
+    "name": "champion_13",
+    "label": "礼仪剪篱",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 12,
+    "triangles": 272,
+    "id": "exclusive_champion_13",
+    "bytes": 2696,
+    "bounds": {
+      "min": [
+        -1.4500000476837158,
+        0,
+        -0.3700000047683716
+      ],
+      "max": [
+        1.4500000476837158,
+        1.0950008630752563,
+        0.36991333961486816
+      ]
+    },
+    "footprint": {
+      "width": 1.88,
+      "height": 0.48
+    },
+    "geometryHash": "1e8d80f3c8401d19e4e5772102217880bf8e62fa2e0da5d31c6a36193222ecf4"
+  },
+  {
+    "name": "champion_14",
+    "label": "象牙花坛",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 13,
+    "triangles": 436,
+    "id": "exclusive_champion_14",
+    "bytes": 4816,
+    "bounds": {
+      "min": [
+        -1.5750000476837158,
+        0,
+        -0.5550000071525574
+      ],
+      "max": [
+        1.5750000476837158,
+        0.5550906658172607,
+        0.5549890398979187
+      ]
+    },
+    "footprint": {
+      "width": 2.04,
+      "height": 0.72
+    },
+    "geometryHash": "ab8ee70cdebbb4ae03a26d8d17481f371118d4b35611f33629e66b6a08064374"
+  },
+  {
+    "name": "champion_15",
+    "label": "勋章步台",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 14,
+    "triangles": 352,
+    "id": "exclusive_champion_15",
+    "bytes": 3132,
+    "bounds": {
+      "min": [
+        -1.7799999713897705,
+        0,
+        -0.41999998688697815
+      ],
+      "max": [
+        1.7799999713897705,
+        0.950028657913208,
+        0.4200756847858429
+      ]
+    },
+    "footprint": {
+      "width": 2.3,
+      "height": 0.55
+    },
+    "geometryHash": "4c25668ce977df5ad39185b39e2f3b0e5b4d2d285b76f7f5eed0b324276297b3"
+  },
+  {
+    "name": "champion_16",
+    "label": "月桂冠木列",
+    "mapId": "GodotMapV2_ChampionTower",
+    "mapName": "冠军挑战塔",
+    "setId": "champion",
+    "slot": 15,
+    "triangles": 672,
+    "id": "exclusive_champion_16",
+    "bytes": 5380,
+    "bounds": {
+      "min": [
+        -1.5374866724014282,
+        0,
+        -0.3700000047683716
+      ],
+      "max": [
+        1.5374866724014282,
+        1.6049622297286987,
+        0.37007319927215576
+      ]
+    },
+    "footprint": {
+      "width": 1.99,
+      "height": 0.48
+    },
+    "geometryHash": "508274ea6986dff08e88c10129370122cf13d20bc150b429f4dd04b200b66d55"
+  }
+]

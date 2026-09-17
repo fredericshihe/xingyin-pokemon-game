@@ -1,0 +1,1 @@
+var e=`/assets/battle-vfx-atlas-Dk2Gm3ff.png`;export{e as t};

@@ -1,10 +1,9 @@
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import '../game.css'
 import BattleMoveEffect, { BattleImpactFeedback } from '../components/Game/BattleMoveEffect'
 import { MOVES } from '../utils/gameData'
 import { getMoveEffectConfig } from '../utils/moveVisuals'
 import { buildBattleImpactFeedback, getBattleCinematicProfile } from '../utils/battleCinematics'
-import { getBattleMoveImpactDelay } from '../utils/battlePacing'
 import { pokemonArtPngUrl, pokemonArtUrl } from '../utils/mediaAssetUrl'
 import { getMoveVfxRecipe } from '../utils/battleVfxRecipes'
 
@@ -41,8 +40,6 @@ function BattleMaterialLab() {
   const [effect, setEffect] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [query, setQuery] = useState('')
-  const replayTimerRef = useRef(null)
-  const feedbackTimerRef = useRef(null)
   const move = MOVES[moveKey]
   const config = getMoveEffectConfig(moveKey, move)
   const profile = getBattleCinematicProfile(moveKey, move, config, { phase })
@@ -65,8 +62,6 @@ function BattleMaterialLab() {
   }, [query])
 
   const play = useCallback(() => {
-    if (replayTimerRef.current) window.clearTimeout(replayTimerRef.current)
-    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current)
     const currentMove = MOVES[moveKey]
     const currentConfig = getMoveEffectConfig(moveKey, currentMove)
     const currentProfile = getBattleCinematicProfile(moveKey, currentMove, currentConfig, { phase })
@@ -96,22 +91,11 @@ function BattleMaterialLab() {
       anchors: LAB_ANCHORS,
       feedback: currentFeedback,
       profile: currentProfile,
+      onImpact: () => {
+        if (currentFeedback) setFeedback({ ...currentFeedback, anchors: LAB_ANCHORS })
+      },
     })
-    if (currentFeedback) {
-      feedbackTimerRef.current = window.setTimeout(() => {
-        setFeedback({ ...currentFeedback, anchors: LAB_ANCHORS })
-      }, getBattleMoveImpactDelay(phase, currentProfile.durationMs))
-    }
-    if (!fixedFrame) replayTimerRef.current = window.setTimeout(() => {
-      setEffect(null)
-      setFeedback(null)
-    }, currentProfile.durationMs + 120)
   }, [attackerSide, moveKey, phase, fixedFrame])
-
-  useEffect(() => () => {
-    if (replayTimerRef.current) window.clearTimeout(replayTimerRef.current)
-    if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current)
-  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -138,9 +122,9 @@ function BattleMaterialLab() {
         </div>
       </header>
 
-      <section className={`battle-vfx-lab__stage anime-battle-bg battle-scene--meadow battle-vfx-quality--${new URLSearchParams(location.search).get('quality') === 'lite' ? 'lite' : 'standard'} ${fixedFrame ? '' : stageCinematicClass}`} data-active-move={moveKey} data-move-signature={config.signatureStyle?.id} data-effect-active={effect ? 'true' : 'false'}>
+      <section className={`battle-vfx-lab__stage anime-battle-bg battle-material-choreography battle-scene--meadow battle-vfx-quality--${new URLSearchParams(location.search).get('quality') === 'lite' ? 'lite' : 'standard'} ${fixedFrame ? '' : stageCinematicClass}`} data-active-move={moveKey} data-move-signature={config.signatureStyle?.id} data-effect-active={effect ? 'true' : 'false'}>
         <div className="battle-environment-props" aria-hidden="true"><span className="battle-env-prop battle-env-prop--horizon" /><span className="battle-env-prop battle-env-prop--foreground" /></div>
-        <BattleMoveEffect effect={effect} onDone={() => setEffect(null)} />
+        <BattleMoveEffect effect={effect} onDone={() => { setEffect(null); setFeedback(null) }} />
         <BattleImpactFeedback feedback={feedback} anchors={LAB_ANCHORS} />
         <div className="battle-vfx-lab__mon battle-vfx-lab__mon--enemy">
           <img src={pokemonArtUrl(150)} onError={(event) => { event.currentTarget.src = pokemonArtPngUrl(150) }} alt="敌方宝可梦" />

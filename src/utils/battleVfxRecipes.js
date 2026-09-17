@@ -46,7 +46,7 @@ dream_eater|drain|smoke|17|1.1|.9|.3
 fury_cutter|slash|claw|2|.65|.2|-.4
 rock_throw|volley|rock|1|.75|-.8|.4
 rock_slide|storm|rock|8|1.4|.3|-.25
-rollout|orb|rock|5|.6|.2|2
+rollout|roll|rock|5|.6|.2|2
 lick|whip|droplet|1|.65|.4|-.2
 shadowball|orb|smoke|12|1.05|-.2|.8
 rage_fist|strike|smoke|7|.92|.4|-.4
@@ -95,7 +95,7 @@ charm|shroud|petal|8|.65|.8|.4
 clear_smog|shroud|mist|13|1|.45|0
 close_combat|strike|spark|12|1.15|.6|.5
 coil|barrier|mist|3|.65|1.2|0
-confuse_ray|beam|light|3|.45|.85|.6
+confuse_ray|orb|light|3|.45|.85|.6
 confusion|levitate|mist|3|.65|.4|0
 cosmic_power|aura|light|14|1.1|1|.5
 covet|dash|dust|5|.55|-.3|.25
@@ -144,7 +144,7 @@ fire_fang|fang|flame|4|.9|.3|0
 fire_punch|strike|flame|8|.9|.2|0
 first_impression|dash|claw|6|.9|.25|-.3
 flame_charge|dash|flame|8|.72|.2|0
-flame_wheel|orb|flame|10|.8|.2|2
+flame_wheel|roll|flame|10|.8|.2|2
 flare_blitz|dash|flame|22|1.5|.3|.2
 flash_cannon|beam|metal|7|1|0|.2
 flatter|sound|smoke|3|.75|1|.2
@@ -155,12 +155,12 @@ fury_swipes|slash|claw|4|.7|.2|-.9
 future_sight|levitate|light|12|1.45|1.3|.6
 giga_drain|drain|leaf|18|1.15|.8|.3
 giga_impact|dash|light|18|1.7|.1|.2
-glare|beam|light|2|.4|0|.25
+glare|gaze|light|2|.4|0|.25
 growl|sound|mist|3|.5|.2|0
 growth|aura|leaf|8|.85|.6|.1
 gunk_shot|volley|droplet|3|1.55|-.9|.7
 gust|vortex|mist|9|.62|.5|.3
-gyro_ball|orb|metal|10|.85|.2|2.6
+gyro_ball|roll|metal|10|.85|.2|2.6
 hammer_arm|strike|dust|10|1.25|.7|1.3
 harden|barrier|light|3|.7|.3|0
 head_smash|strike|rock|15|1.6|.2|.1
@@ -191,7 +191,7 @@ lava_plume|eruption|smoke|18|1.25|.7|.2
 leaf_blade|slash|leaf|2|1.2|.65|-.65
 leaf_storm|vortex|leaf|32|1.7|1.2|.6
 leech_life|drain|droplet|14|.9|.45|.2
-leer|beam|mist|2|.5|.1|-.1
+leer|gaze|mist|2|.5|.1|-.1
 life_dew|heal|droplet|9|.85|.5|0
 liquidation|slash|splash|3|1.1|.7|-.4
 lovely_kiss|shroud|smoke|7|.75|.8|.1
@@ -263,7 +263,7 @@ shadow_sneak|dash|smoke|7|.55|.35|0
 shell_smash|shatter|shell|9|1.1|.6|.4
 shock_wave|wave|spark|12|1.05|.7|.4
 sing|sound|mist|4|.7|.8|.1
-slam|strike|dust|8|1.1|.6|1.05
+slam|slam|dust|8|1.1|.6|1.05
 sleep_powder|spore|dust|18|.85|.8|.4
 sludge|volley|droplet|5|.95|-.65|.4
 sludge_bomb|orb|droplet|12|1.2|-.7|1
@@ -331,6 +331,97 @@ export const MOVE_VFX_RECIPES = Object.fromEntries(AUTHORED.trim().split('\n').m
   return [key, Object.freeze({ technique, material, count: +count, spread: +spread, bend: +bend, rotation: +rotation })]
 }))
 
+const CONTACT_GESTURES = {
+  punch: 'bullet_punch close_combat drain_punch dynamic_punch fire_punch focus_punch ice_punch mach_punch mega_punch meteor_mash rage_fist shadow_punch sucker_punch thunder_punch',
+  kick: 'axe_kick blaze_kick double_kick high_jump_kick low_kick low_sweep mega_kick triple_kick',
+  head: 'head_smash headbutt iron_head zen_headbutt',
+  palm: 'arm_thrust fake_out force_palm pound rock_smash strength superpower',
+  chop: 'brick_break cross_chop karate_chop',
+  tail: 'aqua_tail dragon_tail iron_tail slam tail_whip',
+}
+const GESTURE_BY_KEY = Object.fromEntries(Object.entries(CONTACT_GESTURES).flatMap(([gesture, keys]) => keys.split(' ').map(key => [key, gesture])))
+
+// Material nouns and actions are explicit. A bone, a coin, powder and a water
+// droplet must not all be recolored versions of a rock or a generic spark.
+const MATERIAL_GROUPS = {
+  bone: 'bone_rush bonemerang', wood: 'wood_hammer', gem: 'power_gem',
+  needle: 'poison_sting pin_missile fell_stinger',
+  pollen: 'spore poison_powder stun_spore sleep_powder sweet_scent',
+  egg: 'soft_boiled', frost: 'freeze_dry powder_snow icy_wind', coin: 'pay_day',
+  foam: 'surf waterfall wave_crash',
+  blade: 'swords_dance sacred_sword',
+  pincer: 'crabhammer vice_grip', horn: 'horn_attack fury_attack megahorn',
+}
+const MATERIAL_BY_KEY = Object.fromEntries(Object.entries(MATERIAL_GROUPS).flatMap(([material, keys]) => keys.split(' ').map(key => [key, material])))
+const ACTION_GROUPS = {
+  'bone-swing': 'bone_rush', boomerang: 'bonemerang', hammer: 'wood_hammer crabhammer hammer_arm',
+  clamp: 'vice_grip', burrow: 'dig dive', toss: 'storm_throw vital_throw submission',
+  tears: 'fake_tears tearful_look', gaze: 'baby_doll_eyes scary_face',
+  hop: 'splash', roll: 'rapid_spin',
+  'egg-heal': 'soft_boiled', 'sword-dance': 'swords_dance', 'rock-prison': 'rock_tomb',
+  rampage: 'thrash',
+}
+const ACTION_BY_KEY = Object.fromEntries(Object.entries(ACTION_GROUPS).flatMap(([technique, keys]) => keys.split(' ').map(key => [key, technique])))
+const POSE_GROUPS = {
+  dance: 'dragon_dance quiver_dance swords_dance teeter_dance feather_dance petal_dance',
+  meditate: 'calm_mind amnesia nasty_plot cosmic_power recover',
+  flex: 'bulk_up growth stockpile swagger howl',
+  curl: 'defense_curl withdraw coil harden iron_defense acid_armor',
+  plead: 'charm covet baby_doll_eyes play_nice sweet_kiss lovely_kiss draining_kiss',
+  cry: 'fake_tears tearful_look', drink: 'milk_drink swallow soft_boiled life_dew',
+  vanish: 'teleport agility double_team minimize',
+}
+const POSE_BY_KEY = Object.fromEntries(Object.entries(POSE_GROUPS).flatMap(([gesture, keys]) => keys.split(' ').map(key => [key, gesture])))
+
+export const BATTLE_VFX_ACTION_NOTES = {
+  strike: '蓄势贴身发力，命中局部压缩、冲击碎屑；不发射光棍',
+  dash: '快速贴身冲刺，短残影随身体移动，碰撞后散开',
+  slash: '沿真实挥动方向划出渐细弧形切痕',
+  slam: '先抬升再向下压落，地面尘土与冲击波扩散',
+  drill: '尖端贴身突刺并旋转，命中处碎屑飞散',
+  fang: '上下齿列合拢咬击，元素只附着齿缘和咬痕',
+  dive: '跃升或起飞，向对手俯冲，羽流随冲势散开',
+  'dragon-dive': '龙焰包裹俯冲路径，命中后龙焰撕裂扩散',
+  rampage: '暴怒近身冲击与连续交错撕扯；逆鳞留龙焰余烬，大闹一番扬起尘土',
+  whip: '藤蔓或舌头柔性伸展；尾部招式在身体附近弧形甩动',
+  roll: '旋转身体与周围材料一起滚向对手',
+  jet: '从施术者前方连续喷出对应液体、火焰、气体或泡沫',
+  beam: '蓄光后释放渐细透明能量束，命中后衰减',
+  volley: '独立实体沿弹道发射，命中后对应材料碎裂或溅开',
+  orb: '聚集成实体或能量球，投向对方并在落点解体',
+  lightning: '分叉电流跳动；打雷从上方落下，电击从施术者发出',
+  wave: '液体、气流或沙尘形成宽阔推进面，到达目标后消散',
+  storm: '对应材料从上方或斜侧持续席卷目标',
+  vortex: '旋转气流卷起对应材料，形成由下至上的旋涡',
+  quake: '地面震裂并抛起泥土岩屑，目标跟随地面震动',
+  eruption: '地面或水面喷发，在目标下方产生向上力量',
+  sound: '从施术者向外传播连续空气压缩波，不使用音符',
+  spore: '细小孢子、粉末或香气慢慢飘向并包围目标',
+  bind: '细丝伸向目标后缠绕收紧，不使用束缚图标',
+  aura: '动作配合局部能量聚集，根据能力变化向内凝聚或向外消散',
+  heal: '再生能量汇入身体；光、叶、蛋或水对应实际恢复方式',
+  barrier: '收拢身体或加固外层，硬质材料包裹身体',
+  levitate: '精神力收紧包围目标，岩石则悬起后落下',
+  shroud: '烟气、毒液或柔光包围对应目标，并保留材料流动',
+  shatter: '外层碎裂或剥落，碎片向外散开并淡出',
+  warp: '身形压缩、透明与残影表现复制或移动',
+  drain: '从目标抽出能量，沿弧线回到施术者体内',
+  explosion: '能量从自身爆发，冲击、材料扩散与烟尘依次呈现',
+  burst: '目标处能量迅速展开并逐层衰减',
+  gaze: '施术者目光处亮起局部光，对方产生收缩压力，无射线',
+  'bone-swing': '骨棒随近身挥打摆动，骨质碎尘在接触点散开',
+  boomerang: '骨头自转飞出，绕过目标后沿回程弧线返回',
+  hammer: '重物、钳或手臂先举起后下砸，碎屑符合物体材料',
+  clamp: '两侧钳刃张开后夹紧，夹住目标而非齿列咬合',
+  burrow: '自身潜入土或水，目标下方隆起后破土或破水而出',
+  toss: '近身借力翻摔，目标旋转落地，尘土从落点扩散',
+  tears: '施术者眼部泪滴沿脸颊落下，目标的能力反馈在实际生效时出现',
+  hop: '原地无力跃起再落地，不在对手身上制造命中',
+  'egg-heal': '一颗蛋举起裂开，外壳落下，再生能量汇入身体',
+  'sword-dance': '实体刀刃绕身体舞动，施术者配合转身摆动',
+  'rock-prison': '岩石从上方逐块落下，围住目标并扬起尘土',
+}
+
 export const VFX_TYPE_PALETTES = {
   normal: ['#f5e7cc', '#a7b6c7', '#fff8e5'], fire: ['#ff6b22', '#bd251b', '#fff4ad'],
   water: ['#39baf5', '#176ebd', '#d4ffff'], grass: ['#77d750', '#26864c', '#e7ffc0'],
@@ -353,16 +444,23 @@ const PALETTE_OVERRIDES = {
   poison_powder: ['#c082cc', '#7b479b', '#efcaff'], wood_hammer: ['#b29a63', '#647143', '#e4cf8c'],
   petal_dance: ['#f5a9c6', '#b46095', '#ffe1ed'], petal_blizzard: ['#f0a8c6', '#a567ad', '#ffe7ef'],
   recover: ['#9befce', '#4ba989', '#e1fff1'], milk_drink: ['#f7eddf', '#cbb9ad', '#ffffff'],
+  lick: ['#e9a6b4', '#a95773', '#ffe3e6'],
+  bone_rush: ['#e2d7bd', '#8e8270', '#fff6e3'], bonemerang: ['#e2d7bd', '#8e8270', '#fff6e3'],
+  pay_day: ['#f0cc67', '#a77826', '#fff2be'],
 }
 
 export function getMoveVfxRecipe(moveKey, move = {}, config = {}) {
   const authored = MOVE_VFX_RECIPES[moveKey]
-  const recipe = authored || { technique: move.category === 'status' ? 'aura' : 'strike', material: 'light', count: 6, spread: .7, bend: .2, rotation: 0 }
+  const base = authored || { technique: move.category === 'status' ? 'aura' : 'strike', material: 'light', count: 6, spread: .7, bend: .2, rotation: 0 }
+  const recipe = { ...base, technique: ACTION_BY_KEY[moveKey] || base.technique, material: MATERIAL_BY_KEY[moveKey] || base.material }
   const power = Math.max(0, Number(move.power) || 0)
   const powerLevel = power >= 130 ? 4 : power >= 95 ? 3 : power >= 60 ? 2 : power > 0 ? 1 : 0
   const palette = PALETTE_OVERRIDES[moveKey] || VFX_TYPE_PALETTES[move.type] || VFX_TYPE_PALETTES.normal
   return {
     ...recipe, key: moveKey, authored: Boolean(authored), palette, power, powerLevel,
+    gesture: POSE_BY_KEY[moveKey] || GESTURE_BY_KEY[moveKey] || 'body',
+    direction: BATTLE_VFX_ACTION_NOTES[recipe.technique],
+    selfOnly: move.effect === 'nothing',
     energy: power ? .56 + Math.min(200, power) / 150 : .7,
     target: config.target || 'foe', drain: move.effect === 'drain',
     signature: [recipe.technique, recipe.material, recipe.count, recipe.spread, recipe.bend, recipe.rotation, power, ...palette].join(':'),

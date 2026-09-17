@@ -26,6 +26,7 @@ export default function BattleScenePreview() {
   })
   const [side, setSide] = useState('player')
   const [phase, setPhase] = useState('hit')
+  const [resultMode, setResultMode] = useState('applied')
   const [event, setEvent] = useState(null)
   const [log, setLog] = useState('选择招式，验证正式战斗场景。')
   const started = useRef(0)
@@ -38,6 +39,11 @@ export default function BattleScenePreview() {
     const config = getMoveEffectConfig(key, move)
     const profile = getBattleCinematicProfile(key, move, config, { phase })
     const targetSide = config.target === 'self' ? side : side === 'player' ? 'enemy' : 'player'
+    const stat = move.statChange || move.statChanges?.[0]
+    const visualResult = !['status', 'secondary'].includes(phase) ? null : resultMode === 'blocked' ? { kind: 'blocked' }
+      : move.status || move.volatileStatus ? { kind: 'status', status: move.status || move.volatileStatus }
+        : stat ? { kind: 'stat', stat: stat.stat, stages: stat.stages }
+          : ['heal', 'drain'].includes(move.effect) ? { kind: 'heal' } : null
     const feedback = phase === 'hit' && move.category !== 'status'
       ? buildBattleImpactFeedback({ damage: 37, targetSide, moveType: move.type, intensity: profile.intensity })
       : null
@@ -52,7 +58,7 @@ export default function BattleScenePreview() {
     } })
     void playback.finished.then(() => setPlaybackState('complete'), () => setPlaybackState('cancelled'))
     setEvent({ id: `preview-${started.current}`, moveKey: key, move, attackerSide: side,
-      targetSide, phase, durationMs: profile.durationMs, profile, feedback, playback })
+      targetSide, phase, durationMs: profile.durationMs, profile, feedback, playback, visualResult })
     setLog(`${side === 'player' ? player.name : enemy.name}使用了${move.name}！`)
   }
   return <main data-battle-scene-preview="ready" data-battle-vfx-lab="actual" data-started={started.current}
@@ -67,6 +73,9 @@ export default function BattleScenePreview() {
       <select aria-label="预览攻击方" value={side} onChange={e => setSide(e.target.value)}><option value="player">我方</option><option value="enemy">敌方</option></select>
       <select aria-label="预览阶段" value={phase} onChange={e => setPhase(e.target.value)}>
         {['hit', 'charge', 'miss', 'heal', 'status', 'drain', 'secondary'].map(value => <option key={value}>{value}</option>)}
+      </select>
+      <select aria-label="预览效果结果" value={resultMode} onChange={e => setResultMode(e.target.value)}>
+        <option value="applied">效果生效</option><option value="blocked">免疫／已存在</option>
       </select>
       <button data-play-actual onClick={() => play()} style={{ color: '#fff' }}>播放正式场景</button>
     </div>

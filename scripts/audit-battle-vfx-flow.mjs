@@ -4,7 +4,7 @@ import { launchChrome, createPage, preparePage, navigateAndWait, evaluate, sleep
 
 const base = process.argv[2] || 'http://127.0.0.1:4176'
 const label = process.argv[3] || 'after'
-const out = `output/battle-vfx-v3/${label}`
+const out = process.argv[4] || `output/battle-vfx-v3/${label}`
 await fs.mkdir(out, { recursive: true })
 const report = { label, errors: [], cases: [] }
 const browser = await launchChrome()

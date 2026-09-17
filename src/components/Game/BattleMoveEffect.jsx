@@ -5,7 +5,7 @@ import { getBattleCinematicProfile } from '../../utils/battleCinematics'
 import { BATTLE_EFFECT_FALLBACK_ANCHORS } from '../../utils/battleEffectAnchors'
 import { getMoveVfxRecipe } from '../../utils/battleVfxRecipes'
 import { createBattleVfxRenderer } from '../../utils/battleVfxRenderer'
-import { createBattleActorPlayback, createBattleFrameClock } from '../../utils/battleVisualPlayback'
+import { createBattleActorPlayback, createBattleFrameClock, getBattleCanvasScale } from '../../utils/battleVisualPlayback'
 import { getBattleMoveImpactDelay } from '../../utils/battlePacing'
 import atlasUrl from '../../assets/battle-vfx-atlas.png'
 import './battleMoveCanvas.css'
@@ -29,6 +29,7 @@ export function preloadBattleVfxAtlas() {
 
 export function BattleMoveEffect({ effect, onDone }) {
   const canvasRef = useRef(null)
+  const renderScaleRef = useRef(1)
   const liveRef = useRef({ effect, onDone })
   liveRef.current = { effect, onDone }
   // Battle scenes mount before the first turn, warming the single shared atlas.
@@ -46,16 +47,24 @@ export function BattleMoveEffect({ effect, onDone }) {
     const quality = qualityHost?.classList.contains('battle-vfx-quality--lite') ? 'lite'
       : qualityHost?.classList.contains('battle-vfx-quality--high') ? 'high' : 'standard'
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const dpr = Math.min(window.devicePixelRatio || 1, quality === 'lite' ? 1.25 : quality === 'high' ? 1.75 : 1.5)
+    const isLab = Boolean(canvas.closest('[data-battle-vfx-lab]'))
+    if (isLab) {
+      for (const key of ['ready', 'frame', 'maxDraws', 'maxDrawMs', 'progress', 'elapsed', 'actorSeeks']) delete canvas.dataset[key]
+    }
+    let dpr = 1
     let width = 0, height = 0, renderer = null, actorPlayback = null, frame = 0, disposed = false
     let started = false, impacted = false, completed = false
     let renderedFrames = 0, maxDraws = 0, lastProgress = 0
     const resize = () => {
-      const box = canvas.getBoundingClientRect()
-      const nextWidth = Math.max(1, box.width), nextHeight = Math.max(1, box.height)
+      // Layout size excludes CSS camera/parent transforms; backing storage only
+      // changes on a real resize or an adaptive quality change between moves.
+      const nextWidth = Math.max(1, canvas.clientWidth), nextHeight = Math.max(1, canvas.clientHeight)
       if (width === nextWidth && height === nextHeight) return
       width = nextWidth; height = nextHeight
-      canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr)
+      dpr = getBattleCanvasScale(width, height, window.devicePixelRatio || 1, quality) * renderScaleRef.current
+      const pixelsWide = Math.round(width * dpr), pixelsHigh = Math.round(height * dpr)
+      if (canvas.width !== pixelsWide) canvas.width = pixelsWide
+      if (canvas.height !== pixelsHigh) canvas.height = pixelsHigh
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       if (renderer) renderer.render(lastProgress, width, height)
     }
@@ -64,13 +73,14 @@ export function BattleMoveEffect({ effect, onDone }) {
     observer.observe(canvas)
     const duration = effect.durationMs || profile.durationMs
     const clock = createBattleFrameClock(duration)
-    const resetVisibleClock = () => clock.sample(performance.now(), true)
+    const resetVisibleClock = () => { clock.sample(performance.now(), true); actorPlayback?.pause() }
     document.addEventListener('visibilitychange', resetVisibleClock)
     const hitAt = getBattleMoveImpactDelay(effect.phase || 'hit', duration)
-    const isLab = Boolean(canvas.closest('[data-battle-vfx-lab]'))
     const fixedProgress = isLab ? Number(new URLSearchParams(location.search).get('frame')) : NaN
     const hasFixedProgress = isLab && new URLSearchParams(location.search).has('frame') && Number.isFinite(fixedProgress)
     const renderEffect = { ...effect }
+    let lastFrameAt = null, maxDrawMs = 0
+    const frameIntervals = []
     const animate = now => {
       if (disposed || !renderer) return
       const elapsed = clock.sample(now, document.hidden)
@@ -80,10 +90,13 @@ export function BattleMoveEffect({ effect, onDone }) {
       lastProgress = progress
       // Layout measurements can refine anchors after the effect has mounted.
       renderEffect.anchors = liveRef.current.effect?.anchors || renderEffect.anchors
-      actorPlayback?.update(hasFixedProgress ? progress * duration : elapsed)
+      const seeks = actorPlayback?.update(hasFixedProgress ? progress * duration : elapsed, now, hasFixedProgress)
       const renderStarted = performance.now()
       const stats = renderer.render(progress, width, height)
       const drawMs = performance.now() - renderStarted
+      if (lastFrameAt !== null && frameIntervals.length < 240) frameIntervals.push(now - lastFrameAt)
+      lastFrameAt = now
+      maxDrawMs = Math.max(maxDrawMs, drawMs)
       if (!impacted && progress * duration >= hitAt) {
         impacted = true
         // This callback runs AFTER drawing the impact, and commits HP, audio,
@@ -92,22 +105,57 @@ export function BattleMoveEffect({ effect, onDone }) {
       }
       maxDraws = Math.max(maxDraws, stats.draws)
       renderedFrames++
-      canvas.dataset.frame = String(renderedFrames)
-      canvas.dataset.renderedMove = recipe.key
-      canvas.dataset.draws = String(stats.draws)
-      canvas.dataset.maxDraws = String(maxDraws)
-      canvas.dataset.progress = progress.toFixed(3)
-      canvas.dataset.elapsed = elapsed.toFixed(1)
-      canvas.dataset.maxDrawMs = String(Math.max(Number(canvas.dataset.maxDrawMs) || 0, drawMs))
+      // Diagnostics are for the preview only; no per-frame DOM attributes in
+      // student sessions (WebKit invalidates style for attribute mutations).
+      if (isLab) {
+        canvas.dataset.frame = String(renderedFrames)
+        canvas.dataset.renderedMove = recipe.key
+        canvas.dataset.draws = String(stats.draws)
+        canvas.dataset.maxDraws = String(maxDraws)
+        canvas.dataset.progress = progress.toFixed(3)
+        canvas.dataset.elapsed = elapsed.toFixed(1)
+        canvas.dataset.maxDrawMs = String(maxDrawMs)
+        canvas.dataset.actorSeeks = String(seeks || 0)
+      }
       if (progress < 1 && !hasFixedProgress) frame = requestAnimationFrame(animate)
-      else if (!hasFixedProgress) { completed = true; effect.onComplete?.(); liveRef.current.onDone?.() }
+      else if (!hasFixedProgress) {
+        if (frameIntervals.length > 15) {
+          const sorted = frameIntervals.slice().sort((a, b) => a - b)
+          // Respect a stable 30 Hz display/low-power host; only missed refreshes
+          // justify dropping the next move's resolution.
+          const refreshMs = sorted[Math.floor(sorted.length * .2)]
+          const slow = frameIntervals.filter(ms => ms > Math.max(24, refreshMs * 1.5)).length
+          if (slow / frameIntervals.length > .18) renderScaleRef.current = Math.max(.7, renderScaleRef.current * .85)
+        }
+        completed = true; effect.onComplete?.(); liveRef.current.onDone?.()
+      }
     }
     void preloadBattleVfxAtlas().then(image => {
       if (disposed) return
       renderer = createBattleVfxRenderer(ctx, image, recipe, renderEffect, { quality, reducedMotion })
       actorPlayback = createBattleActorPlayback(canvas.closest('.anime-battle-bg'), renderEffect, recipe, reducedMotion)
-      canvas.dataset.ready = 'true'
-      frame = requestAnimationFrame(animate)
+      // Mount the scene's attack classes before the timed animation as well.
+      // The first CSS layer commit can be expensive on a cold WebKit page.
+      started = true
+      effect.onStart?.()
+      // Submit texture uploads and establish the canvas layer before starting
+      // the gameplay clock. WebKit can otherwise stall on the first draw.
+      renderer.warmup()
+      frame = requestAnimationFrame(() => {
+        if (disposed) return
+        // Prime real-size draw paths too, without reaching any impact or
+        // advancing the actor/gameplay clocks.
+        renderer.render(.01, width, height)
+        frame = requestAnimationFrame(() => {
+          if (disposed) return
+          ctx.clearRect(0, 0, width, height)
+          frame = requestAnimationFrame(now => {
+            if (disposed) return
+            if (isLab) canvas.dataset.ready = 'true'
+            animate(now)
+          })
+        })
+      })
     }).catch(error => {
       if (!disposed) { console.warn('[BattleVfx]', error); effect.onCancel?.(error); liveRef.current.onDone?.() }
     })
@@ -118,7 +166,7 @@ export function BattleMoveEffect({ effect, onDone }) {
       if (!completed && !hasFixedProgress) effect.onCancel?.()
     }
   }, [effect?.id])
-  if (!effect) return null
+  if (!effect) return <canvas ref={canvasRef} className="battle-material-surface" hidden aria-hidden="true" />
   const move = effect.move || MOVES[effect.moveKey] || effect
   const config = getMoveEffectConfig(effect.moveKey, move)
   const recipe = getMoveVfxRecipe(effect.moveKey, move, config)
@@ -128,18 +176,36 @@ export function BattleMoveEffect({ effect, onDone }) {
 }
 
 export function BattleImpactFeedback({ feedback, anchors = BATTLE_EFFECT_FALLBACK_ANCHORS }) {
-  if (!feedback) return null
-  const targetSide = feedback.targetSide === 'player' ? 'player' : 'enemy'
+  const nodeRef = useRef(null)
+  const lastFeedbackRef = useRef(null)
+  if (feedback) lastFeedbackRef.current = feedback
+  const shown = feedback || lastFeedbackRef.current || {}
+  useEffect(() => {
+    if (!feedback || !nodeRef.current) return undefined
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const animation = nodeRef.current.animate(reduced ? [
+      { opacity: 0, transform: 'translate(-50%,-50%)' },
+      { opacity: 1, offset: .15, transform: 'translate(-50%,-50%)' },
+      { opacity: 0, transform: 'translate(-50%,-50%)' },
+    ] : [
+      { opacity: 0, transform: 'translate(-50%,-25%) scale(.7)' },
+      { opacity: 1, offset: .17, transform: 'translate(-50%,-60%) scale(1.12)' },
+      { opacity: 1, offset: .4, transform: 'translate(-50%,-72%) scale(1)' },
+      { opacity: 0, transform: 'translate(-50%,-125%) scale(.94)' },
+    ], { duration: reduced ? 620 : 900, fill: 'both', easing: 'ease-out' })
+    return () => animation.cancel()
+  }, [feedback?.id])
+  const targetSide = shown.targetSide === 'player' ? 'player' : 'enemy'
   const target = anchors?.[targetSide] || BATTLE_EFFECT_FALLBACK_ANCHORS[targetSide]
-  const amountPrefix = feedback.kind === 'heal' ? '+' : feedback.kind === 'immune' ? '' : '−'
-  const hitCounter = feedback.hitCount > 1 ? `${feedback.hitIndex + 1}/${feedback.hitCount}` : ''
+  const amountPrefix = shown.kind === 'heal' ? '+' : shown.kind === 'immune' ? '' : '−'
+  const hitCounter = shown.hitCount > 1 ? `${shown.hitIndex + 1}/${shown.hitCount}` : ''
   return (
-    <div key={feedback.id}
-      className={`battle-impact-feedback battle-impact-feedback--${safeClassName(feedback.kind, 'damage')} battle-impact-feedback--${safeClassName(feedback.intensity, 'medium')} ${feedback.crit ? 'battle-impact-feedback--crit' : ''}`}
-      style={{ '--feedback-x': target.x, '--feedback-y': target.y }} aria-live="polite">
-      {feedback.amount > 0 && <strong>{amountPrefix}{feedback.amount}</strong>}
-      <span>{feedback.label || (feedback.kind === 'immune' ? '免疫' : '')}</span>
-      {hitCounter && <small>连击 {hitCounter}</small>}
+    <div ref={nodeRef}
+      className={`battle-feedback-surface ${feedback ? 'battle-impact-feedback' : ''} battle-impact-feedback--${safeClassName(shown.kind, 'damage')} battle-impact-feedback--${safeClassName(shown.intensity, 'medium')} ${shown.crit ? 'battle-impact-feedback--crit' : ''}`}
+      style={{ '--feedback-x': target.x, '--feedback-y': target.y, opacity: 0 }} aria-live="polite" aria-hidden={!feedback}>
+      <strong>{shown.amount > 0 ? `${amountPrefix}${shown.amount}` : '0'}</strong>
+      <span>{shown.label || (shown.kind === 'immune' ? '免疫' : '')}</span>
+      <small>{hitCounter ? `连击 ${hitCounter}` : ''}</small>
     </div>
   )
 }

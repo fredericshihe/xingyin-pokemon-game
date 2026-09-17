@@ -37,6 +37,6 @@ await withViteAuditServer(async ({loadModule}) => {
   assert.ok(!/Math\.random/.test(renderer))
   assert.ok(/getBattleMoveImpactDelay/.test(renderer))
   assert.ok(/phase === 'miss'/.test(renderer)&&/phase === 'secondary'/.test(renderer))
-  assert.ok((await fs.stat('src/assets/battle-vfx-atlas.png')).size<160000)
+  assert.ok((await fs.stat('src/assets/battle-vfx-atlas.png')).size<240000)
   console.log(JSON.stringify({moves:signatures.size,techniques:techniques.size,materials:materials.size,atlasSprites:VFX_ATLAS.sprites.length,uniqueRecipes:true,noGlyphEffects:true},null,2))
 })

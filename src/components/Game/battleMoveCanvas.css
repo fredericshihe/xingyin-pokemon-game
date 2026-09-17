@@ -8,7 +8,8 @@
   contain: strict;
 }
 
-/* Combatants retain their existing attack, recoil and damage animations. */
+/* The same retained canvas is reused for every move. */
+.battle-material-effect[hidden] { display: none; }
 .battle-vfx-lab__stage .battle-material-effect { z-index: 12; }
 
 .battle-material-choreography .battle-actor-motion,
@@ -17,8 +18,82 @@
   will-change: transform;
 }
 
-/* Soft textures supply the glow. Avoid a full-screen blur pass on tablets. */
-.battle-vfx-quality--standard .battle-cinematic-overlay::after,
-.battle-vfx-quality--lite .battle-cinematic-overlay::after {
+/* Never scale/shake a filtered full-screen scene for a local impact. This
+   rerasterized the background, both sprites and the HUD on every attack. */
+.anime-battle-bg.battle-material-choreography.battle-cinematic {
+  animation: none !important;
+  transform: none;
+}
+.battle-material-choreography .battle-cinematic-overlay { display: none; }
+.battle-material-choreography::before,
+.battle-material-choreography::after,
+.battle-material-choreography .battle-env-prop,
+.battle-material-choreography .battle-sprite-slot {
   filter: none;
 }
+.battle-material-choreography .battle-sprite-slot { will-change: transform; }
+.battle-material-choreography .battle-glass-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(135deg, rgba(12, 18, 34, .82), rgba(12, 38, 45, .78));
+}
+.battle-material-choreography .battle-glass-card--critical {
+  animation: none;
+  border-color: #f87171;
+}
+.battle-material-choreography .battle-sprite-slot .blur-sm {
+  filter: none;
+  background: radial-gradient(ellipse, rgba(0,0,0,.26), transparent 70%);
+}
+.battle-material-choreography .battle-actor-motion .battle-sprite-float,
+.battle-material-choreography .battle-hit-reaction .battle-sprite-float {
+  animation-play-state: paused;
+}
+
+/* Persistent conditions use the same material language as move results. */
+.battle-material-choreography .battle-persistent-status i { box-shadow: none; }
+.battle-material-choreography .battle-status-visual--sleep .battle-persistent-status i {
+  width: 22px;
+  height: 8px;
+  background: radial-gradient(ellipse, rgba(199,210,254,.65), transparent 70%);
+}
+.battle-material-choreography .battle-status-visual--sleep .battle-persistent-status i::before { content: none; }
+.battle-material-choreography .battle-status-visual--confusion .battle-persistent-status i {
+  width: 20px;
+  height: 10px;
+  clip-path: none;
+  background: radial-gradient(ellipse, rgba(196,181,253,.8), transparent 70%);
+}
+.battle-material-choreography .battle-status-visual--paralysis .battle-persistent-status i {
+  width: 18px;
+  height: 3px;
+  border-radius: 40%;
+  clip-path: none;
+  background: linear-gradient(100deg, transparent, #fff5b6, #facc15, transparent);
+}
+
+/* Retain the feedback layer between hits. In WebKit, inserting this overlapping
+   layer at impact caused a repeatable ~160 ms compositor stall. */
+.battle-feedback-surface {
+  position: absolute;
+  z-index: 48;
+  left: var(--feedback-x);
+  top: var(--feedback-y);
+  display: grid;
+  min-width: 96px;
+  justify-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+  will-change: transform, opacity;
+}
+.battle-feedback-surface.battle-impact-feedback { animation: none !important; }
+:where(.battle-feedback-surface) strong {
+  color: #fff;
+  font-size: clamp(24px, 5vw, 43px);
+  font-weight: 1000;
+  line-height: .9;
+  letter-spacing: -.06em;
+  text-shadow: 0 2px 2px rgba(0,0,0,.6), 0 0 12px #ef4444, 0 0 26px rgba(239,68,68,.62);
+}
+.battle-feedback-surface > :empty { display: none; }

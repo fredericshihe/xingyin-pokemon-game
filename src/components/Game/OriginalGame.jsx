@@ -5755,7 +5755,7 @@ export const BattleScene = ({
         id: event?.id || `${moveKey}-${phase}-${Date.now()}`,
         type: move.type, category: move.category, attackerSide,
         target: effectTarget, moveKey, move, phase, durationMs,
-        anchors, feedback: event?.feedback || null, profile,
+        anchors, feedback: event?.feedback || null, profile, visualResult: event?.visualResult || null,
         suppressActorMotion: !shouldMoveActor,
         onStart: () => {
           event.playback?.start();
@@ -14001,6 +14001,7 @@ export default function OriginalGame({ user, onLogout }) {
     forceTargetReaction = false,
     reactionClass = null,
     feedback = null,
+    visualResult = null,
     hitCount = feedback?.hitCount || 1,
     hitIndex = feedback?.hitIndex || 0,
   } = {}) => {
@@ -14041,6 +14042,7 @@ export default function OriginalGame({ user, onLogout }) {
       feedback,
       profile,
       playback,
+      visualResult,
     });
     try {
       await playback.finished;
@@ -18129,6 +18131,7 @@ export default function OriginalGame({ user, onLogout }) {
       hitIndex = 0,
       suppressActorMotion = false,
       targetFainted = false,
+      visualResult = null,
     } = {}) => {
       const profile = getMoveProfile(phase, { hitCount, hitIndex, durationMs });
       const resolvedDurationMs = profile.durationMs || getBattleMovePhaseDuration(phase);
@@ -18155,6 +18158,7 @@ export default function OriginalGame({ user, onLogout }) {
         hitIndex,
         feedback,
         suppressActorMotion,
+        visualResult,
         // 会心一击时叠加更强的命中反应，让受击精灵抖动更明显。
         reactionClass: crit && phase === 'hit' ? 'crit' : null,
         onImpact: () => {
@@ -18560,6 +18564,7 @@ export default function OriginalGame({ user, onLogout }) {
       });
       await playMovePhaseWithResult('secondary', `${defenderName} 的${STAT_LABELS[typeHitStageRule.stat] || typeHitStageRule.stat}${typeHitStageRule.stages > 0 ? '提高了' : '降低了'}！`, {
         targetSide: defenderSide,
+        visualResult: { kind: 'stat', stat: typeHitStageRule.stat, stages: typeHitStageRule.stages },
         onImpact: () => {
           updateBattleMonBySide({
             side: defenderSide,
@@ -18613,6 +18618,7 @@ export default function OriginalGame({ user, onLogout }) {
       updatedAttacker = { ...updatedAttacker, currentHp: nextHp };
       await playMovePhaseWithResult('secondary', `${attackerName} 吸取了体力！`, {
         targetSide: attackerSide,
+        visualResult: { kind: 'heal' },
         healingAmount: Math.max(0, nextHp - previousHp),
         onImpact: () => {
           updateBattleMonBySide({
@@ -18669,6 +18675,7 @@ export default function OriginalGame({ user, onLogout }) {
       if (updatedDefender.status) {
         await playMovePhaseWithResult(secondaryResultPhase, `${defenderName} 已经处于${STATUS_LABELS[updatedDefender.status] || '异常'}状态。`, {
           targetSide: defenderSide,
+          visualResult: { kind: 'blocked' },
           minMs: 820,
           maxMs: 1900,
           extraMs: 100,
@@ -18676,6 +18683,7 @@ export default function OriginalGame({ user, onLogout }) {
       } else if (hasStatusImmunity(updatedDefender, move.status)) {
         await playMovePhaseWithResult(secondaryResultPhase, `${defenderName} 不会陷入${STATUS_LABELS[move.status] || move.status}状态。`, {
           targetSide: defenderSide,
+          visualResult: { kind: 'blocked' },
           minMs: 820,
           maxMs: 1900,
           extraMs: 100,
@@ -18685,6 +18693,7 @@ export default function OriginalGame({ user, onLogout }) {
         updatedDefender = defenderAfterStatus;
         await playMovePhaseWithResult(secondaryResultPhase, getStatusAppliedBattleMessage(defenderName, move.status), {
           targetSide: defenderSide,
+          visualResult: { kind: 'status', status: move.status },
           onImpact: () => {
             updateBattleMonBySide({
               side: defenderSide,
@@ -18703,6 +18712,7 @@ export default function OriginalGame({ user, onLogout }) {
       if (move.volatileStatus === 'confusion' && updatedDefender.volatileStatuses?.confusion) {
         await playMovePhaseWithResult(secondaryResultPhase, `${defenderName} 已经混乱了。`, {
           targetSide: defenderSide,
+          visualResult: { kind: 'blocked' },
           minMs: 820,
           maxMs: 1900,
           extraMs: 100,
@@ -18712,6 +18722,7 @@ export default function OriginalGame({ user, onLogout }) {
         updatedDefender = defenderAfterVolatile;
         await playMovePhaseWithResult(secondaryResultPhase, getStatusAppliedBattleMessage(defenderName, move.volatileStatus), {
           targetSide: defenderSide,
+          visualResult: { kind: 'status', status: move.volatileStatus },
           onImpact: () => {
             updateBattleMonBySide({
               side: defenderSide,
@@ -18738,6 +18749,7 @@ export default function OriginalGame({ user, onLogout }) {
       }
       await playMovePhaseWithResult(secondaryResultPhase, `${targetName} 的${STAT_LABELS[statChange.stat] || statChange.stat}${statChange.stages > 0 ? '提高了' : '降低了'}！`, {
         targetSide: statTargetSide,
+        visualResult: { kind: 'stat', stat: statChange.stat, stages: statChange.stages },
         onImpact: () => {
           updateBattleMonBySide({
             side: statTargetSide,

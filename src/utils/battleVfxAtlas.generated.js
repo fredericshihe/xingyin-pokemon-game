@@ -22,6 +22,18 @@ export const VFX_ATLAS = {
     "light",
     "dust",
     "splash",
-    "claw"
+    "claw",
+    "bone",
+    "wood",
+    "gem",
+    "needle",
+    "pollen",
+    "egg",
+    "frost",
+    "coin",
+    "foam",
+    "blade",
+    "pincer",
+    "horn"
   ]
 }

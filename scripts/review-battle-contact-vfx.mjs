@@ -4,7 +4,7 @@ import sharp from 'sharp'
 import { launchChrome, createPage, preparePage, navigateAndWait, evaluate, sleep } from './audit-mobile-map-performance.mjs'
 
 const base = process.argv[2] || 'http://127.0.0.1:4176'
-const out = 'output/battle-vfx-v3/contact'
+const out = process.argv[3] || 'output/battle-vfx-v3/contact'
 await fs.mkdir(out, { recursive: true })
 const browser = await launchChrome()
 const report = []

@@ -6,7 +6,9 @@ import { MOVES } from '../src/utils/gameData.js'
 
 const base = process.argv[2] || 'http://127.0.0.1:4176'
 const mode = process.argv[3] || 'gallery'
-const featured = ['ember','flamethrower','fire_blast','watergun','hydropump','surf','icebeam','blizzard','thundershock','thunderbolt','thunder','razorleaf','leaf_storm','rock_slide','earthquake','shadowball','slash','close_combat','poison_gas','recover','swords_dance','dream_eater','solar_beam','hyper_beam']
+const featured = mode === 'semantics'
+  ? ['bone_rush','bonemerang','wood_hammer','crabhammer','vice_grip','dig','dive','storm_throw','fake_tears','soft_boiled','swords_dance','rock_tomb','poison_powder','freeze_dry','pay_day','string_shot','horn_attack','bite','moonlight','splash']
+  : ['ember','flamethrower','fire_blast','watergun','hydropump','surf','icebeam','blizzard','thundershock','thunderbolt','thunder','razorleaf','leaf_storm','rock_slide','earthquake','shadowball','slash','close_combat','poison_gas','recover','swords_dance','dream_eater','solar_beam','hyper_beam']
 const out = process.argv[4] || 'output/battle-vfx-v2'
 await fs.mkdir(`${out}/screenshots`, {recursive:true})
 const browser = await launchChrome()

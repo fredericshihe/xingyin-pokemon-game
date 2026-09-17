@@ -1,0 +1,1250 @@
+[
+  {
+    "name": "village_01",
+    "label": "花木根石·1",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 0,
+    "triangles": 600
+  },
+  {
+    "name": "village_02",
+    "label": "花木根石·2",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 1,
+    "triangles": 700
+  },
+  {
+    "name": "village_03",
+    "label": "花木根石·3",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 2,
+    "triangles": 44
+  },
+  {
+    "name": "village_04",
+    "label": "花木根石·4",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 3,
+    "triangles": 148
+  },
+  {
+    "name": "village_05",
+    "label": "花木根石·5",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 4,
+    "triangles": 700
+  },
+  {
+    "name": "village_06",
+    "label": "花木根石·6",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 5,
+    "triangles": 800
+  },
+  {
+    "name": "village_07",
+    "label": "花木根石·7",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 6,
+    "triangles": 44
+  },
+  {
+    "name": "village_08",
+    "label": "花木根石·8",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 7,
+    "triangles": 222
+  },
+  {
+    "name": "village_09",
+    "label": "花木根石·9",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 8,
+    "triangles": 800
+  },
+  {
+    "name": "village_10",
+    "label": "花木根石·10",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 9,
+    "triangles": 600
+  },
+  {
+    "name": "village_11",
+    "label": "花木根石·11",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 10,
+    "triangles": 44
+  },
+  {
+    "name": "village_12",
+    "label": "花木根石·12",
+    "mapId": "GodotMap",
+    "setId": "village",
+    "slot": 11,
+    "triangles": 296
+  },
+  {
+    "name": "meadow_01",
+    "label": "风叶菌岩·1",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 0,
+    "triangles": 406
+  },
+  {
+    "name": "meadow_02",
+    "label": "风叶菌岩·2",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 1,
+    "triangles": 144
+  },
+  {
+    "name": "meadow_03",
+    "label": "风叶菌岩·3",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 2,
+    "triangles": 48
+  },
+  {
+    "name": "meadow_04",
+    "label": "风叶菌岩·4",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 3,
+    "triangles": 48
+  },
+  {
+    "name": "meadow_05",
+    "label": "风叶菌岩·5",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 4,
+    "triangles": 506
+  },
+  {
+    "name": "meadow_06",
+    "label": "风叶菌岩·6",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 5,
+    "triangles": 144
+  },
+  {
+    "name": "meadow_07",
+    "label": "风叶菌岩·7",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 6,
+    "triangles": 48
+  },
+  {
+    "name": "meadow_08",
+    "label": "风叶菌岩·8",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 7,
+    "triangles": 48
+  },
+  {
+    "name": "meadow_09",
+    "label": "风叶菌岩·9",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 8,
+    "triangles": 606
+  },
+  {
+    "name": "meadow_10",
+    "label": "风叶菌岩·10",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 9,
+    "triangles": 144
+  },
+  {
+    "name": "meadow_11",
+    "label": "风叶菌岩·11",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 10,
+    "triangles": 48
+  },
+  {
+    "name": "meadow_12",
+    "label": "风叶菌岩·12",
+    "mapId": "GodotMapV2",
+    "setId": "meadow",
+    "slot": 11,
+    "triangles": 48
+  },
+  {
+    "name": "lake_01",
+    "label": "柳根苔岸·1",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 0,
+    "triangles": 232
+  },
+  {
+    "name": "lake_02",
+    "label": "柳根苔岸·2",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 1,
+    "triangles": 276
+  },
+  {
+    "name": "lake_03",
+    "label": "柳根苔岸·3",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 2,
+    "triangles": 144
+  },
+  {
+    "name": "lake_04",
+    "label": "柳根苔岸·4",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 3,
+    "triangles": 144
+  },
+  {
+    "name": "lake_05",
+    "label": "柳根苔岸·5",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 4,
+    "triangles": 276
+  },
+  {
+    "name": "lake_06",
+    "label": "柳根苔岸·6",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 5,
+    "triangles": 320
+  },
+  {
+    "name": "lake_07",
+    "label": "柳根苔岸·7",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 6,
+    "triangles": 144
+  },
+  {
+    "name": "lake_08",
+    "label": "柳根苔岸·8",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 7,
+    "triangles": 144
+  },
+  {
+    "name": "lake_09",
+    "label": "柳根苔岸·9",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 8,
+    "triangles": 320
+  },
+  {
+    "name": "lake_10",
+    "label": "柳根苔岸·10",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 9,
+    "triangles": 232
+  },
+  {
+    "name": "lake_11",
+    "label": "柳根苔岸·11",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 10,
+    "triangles": 144
+  },
+  {
+    "name": "lake_12",
+    "label": "柳根苔岸·12",
+    "mapId": "GodotMapV2_MistLake",
+    "setId": "lake",
+    "slot": 11,
+    "triangles": 144
+  },
+  {
+    "name": "farm_01",
+    "label": "果树田埂·1",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 0,
+    "triangles": 480
+  },
+  {
+    "name": "farm_02",
+    "label": "果树田埂·2",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 1,
+    "triangles": 580
+  },
+  {
+    "name": "farm_03",
+    "label": "果树田埂·3",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 2,
+    "triangles": 100
+  },
+  {
+    "name": "farm_04",
+    "label": "果树田埂·4",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 3,
+    "triangles": 120
+  },
+  {
+    "name": "farm_05",
+    "label": "果树田埂·5",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 4,
+    "triangles": 580
+  },
+  {
+    "name": "farm_06",
+    "label": "果树田埂·6",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 5,
+    "triangles": 680
+  },
+  {
+    "name": "farm_07",
+    "label": "果树田埂·7",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 6,
+    "triangles": 100
+  },
+  {
+    "name": "farm_08",
+    "label": "果树田埂·8",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 7,
+    "triangles": 120
+  },
+  {
+    "name": "farm_09",
+    "label": "果树田埂·9",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 8,
+    "triangles": 680
+  },
+  {
+    "name": "farm_10",
+    "label": "果树田埂·10",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 9,
+    "triangles": 480
+  },
+  {
+    "name": "farm_11",
+    "label": "果树田埂·11",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 10,
+    "triangles": 100
+  },
+  {
+    "name": "farm_12",
+    "label": "果树田埂·12",
+    "mapId": "GodotMapV2_FarmTown",
+    "setId": "farm",
+    "slot": 11,
+    "triangles": 120
+  },
+  {
+    "name": "grave_01",
+    "label": "夜柏墓岩·1",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 0,
+    "triangles": 400
+  },
+  {
+    "name": "grave_02",
+    "label": "夜柏墓岩·2",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 1,
+    "triangles": 120
+  },
+  {
+    "name": "grave_03",
+    "label": "夜柏墓岩·3",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 2,
+    "triangles": 174
+  },
+  {
+    "name": "grave_04",
+    "label": "夜柏墓岩·4",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 3,
+    "triangles": 174
+  },
+  {
+    "name": "grave_05",
+    "label": "夜柏墓岩·5",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 4,
+    "triangles": 500
+  },
+  {
+    "name": "grave_06",
+    "label": "夜柏墓岩·6",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 5,
+    "triangles": 120
+  },
+  {
+    "name": "grave_07",
+    "label": "夜柏墓岩·7",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 6,
+    "triangles": 174
+  },
+  {
+    "name": "grave_08",
+    "label": "夜柏墓岩·8",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 7,
+    "triangles": 174
+  },
+  {
+    "name": "grave_09",
+    "label": "夜柏墓岩·9",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 8,
+    "triangles": 600
+  },
+  {
+    "name": "grave_10",
+    "label": "夜柏墓岩·10",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 9,
+    "triangles": 120
+  },
+  {
+    "name": "grave_11",
+    "label": "夜柏墓岩·11",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 10,
+    "triangles": 174
+  },
+  {
+    "name": "grave_12",
+    "label": "夜柏墓岩·12",
+    "mapId": "GodotMapV2_Graveyard",
+    "setId": "grave",
+    "slot": 11,
+    "triangles": 174
+  },
+  {
+    "name": "ruins_01",
+    "label": "六棱残垣·1",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 0,
+    "triangles": 136
+  },
+  {
+    "name": "ruins_02",
+    "label": "六棱残垣·2",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 1,
+    "triangles": 204
+  },
+  {
+    "name": "ruins_03",
+    "label": "六棱残垣·3",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 2,
+    "triangles": 40
+  },
+  {
+    "name": "ruins_04",
+    "label": "六棱残垣·4",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 3,
+    "triangles": 72
+  },
+  {
+    "name": "ruins_05",
+    "label": "六棱残垣·5",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 4,
+    "triangles": 136
+  },
+  {
+    "name": "ruins_06",
+    "label": "六棱残垣·6",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 5,
+    "triangles": 204
+  },
+  {
+    "name": "ruins_07",
+    "label": "六棱残垣·7",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 6,
+    "triangles": 40
+  },
+  {
+    "name": "ruins_08",
+    "label": "六棱残垣·8",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 7,
+    "triangles": 72
+  },
+  {
+    "name": "ruins_09",
+    "label": "六棱残垣·9",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 8,
+    "triangles": 136
+  },
+  {
+    "name": "ruins_10",
+    "label": "六棱残垣·10",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 9,
+    "triangles": 204
+  },
+  {
+    "name": "ruins_11",
+    "label": "六棱残垣·11",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 10,
+    "triangles": 40
+  },
+  {
+    "name": "ruins_12",
+    "label": "六棱残垣·12",
+    "mapId": "GodotMapV2_HexRuins",
+    "setId": "ruins",
+    "slot": 11,
+    "triangles": 72
+  },
+  {
+    "name": "ridge_01",
+    "label": "杉林页岩·1",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 0,
+    "triangles": 232
+  },
+  {
+    "name": "ridge_02",
+    "label": "杉林页岩·2",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 1,
+    "triangles": 276
+  },
+  {
+    "name": "ridge_03",
+    "label": "杉林页岩·3",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 2,
+    "triangles": 72
+  },
+  {
+    "name": "ridge_04",
+    "label": "杉林页岩·4",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 3,
+    "triangles": 92
+  },
+  {
+    "name": "ridge_05",
+    "label": "杉林页岩·5",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 4,
+    "triangles": 276
+  },
+  {
+    "name": "ridge_06",
+    "label": "杉林页岩·6",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 5,
+    "triangles": 320
+  },
+  {
+    "name": "ridge_07",
+    "label": "杉林页岩·7",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 6,
+    "triangles": 72
+  },
+  {
+    "name": "ridge_08",
+    "label": "杉林页岩·8",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 7,
+    "triangles": 92
+  },
+  {
+    "name": "ridge_09",
+    "label": "杉林页岩·9",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 8,
+    "triangles": 320
+  },
+  {
+    "name": "ridge_10",
+    "label": "杉林页岩·10",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 9,
+    "triangles": 232
+  },
+  {
+    "name": "ridge_11",
+    "label": "杉林页岩·11",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 10,
+    "triangles": 72
+  },
+  {
+    "name": "ridge_12",
+    "label": "杉林页岩·12",
+    "mapId": "GodotMapV2_SurvivalRidge",
+    "setId": "ridge",
+    "slot": 11,
+    "triangles": 92
+  },
+  {
+    "name": "highland_01",
+    "label": "风蚀星岩·1",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 0,
+    "triangles": 50
+  },
+  {
+    "name": "highland_02",
+    "label": "风蚀星岩·2",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 1,
+    "triangles": 78
+  },
+  {
+    "name": "highland_03",
+    "label": "风蚀星岩·3",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 2,
+    "triangles": 72
+  },
+  {
+    "name": "highland_04",
+    "label": "风蚀星岩·4",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 3,
+    "triangles": 108
+  },
+  {
+    "name": "highland_05",
+    "label": "风蚀星岩·5",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 4,
+    "triangles": 50
+  },
+  {
+    "name": "highland_06",
+    "label": "风蚀星岩·6",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 5,
+    "triangles": 78
+  },
+  {
+    "name": "highland_07",
+    "label": "风蚀星岩·7",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 6,
+    "triangles": 72
+  },
+  {
+    "name": "highland_08",
+    "label": "风蚀星岩·8",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 7,
+    "triangles": 108
+  },
+  {
+    "name": "highland_09",
+    "label": "风蚀星岩·9",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 8,
+    "triangles": 50
+  },
+  {
+    "name": "highland_10",
+    "label": "风蚀星岩·10",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 9,
+    "triangles": 78
+  },
+  {
+    "name": "highland_11",
+    "label": "风蚀星岩·11",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 10,
+    "triangles": 72
+  },
+  {
+    "name": "highland_12",
+    "label": "风蚀星岩·12",
+    "mapId": "GodotMapV2_BossHighland",
+    "setId": "highland",
+    "slot": 11,
+    "triangles": 108
+  },
+  {
+    "name": "frost_01",
+    "label": "层冰霜脊·1",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 0,
+    "triangles": 48
+  },
+  {
+    "name": "frost_02",
+    "label": "层冰霜脊·2",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 1,
+    "triangles": 64
+  },
+  {
+    "name": "frost_03",
+    "label": "层冰霜脊·3",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 2,
+    "triangles": 84
+  },
+  {
+    "name": "frost_04",
+    "label": "层冰霜脊·4",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 3,
+    "triangles": 84
+  },
+  {
+    "name": "frost_05",
+    "label": "层冰霜脊·5",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 4,
+    "triangles": 60
+  },
+  {
+    "name": "frost_06",
+    "label": "层冰霜脊·6",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 5,
+    "triangles": 80
+  },
+  {
+    "name": "frost_07",
+    "label": "层冰霜脊·7",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 6,
+    "triangles": 84
+  },
+  {
+    "name": "frost_08",
+    "label": "层冰霜脊·8",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 7,
+    "triangles": 84
+  },
+  {
+    "name": "frost_09",
+    "label": "层冰霜脊·9",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 8,
+    "triangles": 72
+  },
+  {
+    "name": "frost_10",
+    "label": "层冰霜脊·10",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 9,
+    "triangles": 96
+  },
+  {
+    "name": "frost_11",
+    "label": "层冰霜脊·11",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 10,
+    "triangles": 84
+  },
+  {
+    "name": "frost_12",
+    "label": "层冰霜脊·12",
+    "mapId": "GodotMapV2_FrostDojo",
+    "setId": "frost",
+    "slot": 11,
+    "triangles": 84
+  },
+  {
+    "name": "tide_01",
+    "label": "珊瑚礁丛·1",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 0,
+    "triangles": 240
+  },
+  {
+    "name": "tide_02",
+    "label": "珊瑚礁丛·2",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 1,
+    "triangles": 320
+  },
+  {
+    "name": "tide_03",
+    "label": "珊瑚礁丛·3",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 2,
+    "triangles": 192
+  },
+  {
+    "name": "tide_04",
+    "label": "珊瑚礁丛·4",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 3,
+    "triangles": 54
+  },
+  {
+    "name": "tide_05",
+    "label": "珊瑚礁丛·5",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 4,
+    "triangles": 240
+  },
+  {
+    "name": "tide_06",
+    "label": "珊瑚礁丛·6",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 5,
+    "triangles": 320
+  },
+  {
+    "name": "tide_07",
+    "label": "珊瑚礁丛·7",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 6,
+    "triangles": 256
+  },
+  {
+    "name": "tide_08",
+    "label": "珊瑚礁丛·8",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 7,
+    "triangles": 54
+  },
+  {
+    "name": "tide_09",
+    "label": "珊瑚礁丛·9",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 8,
+    "triangles": 240
+  },
+  {
+    "name": "tide_10",
+    "label": "珊瑚礁丛·10",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 9,
+    "triangles": 320
+  },
+  {
+    "name": "tide_11",
+    "label": "珊瑚礁丛·11",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 10,
+    "triangles": 320
+  },
+  {
+    "name": "tide_12",
+    "label": "珊瑚礁丛·12",
+    "mapId": "GodotMapV2_TideDojo",
+    "setId": "tide",
+    "slot": 11,
+    "triangles": 54
+  },
+  {
+    "name": "iron_01",
+    "label": "赤铁矿脉·1",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 0,
+    "triangles": 56
+  },
+  {
+    "name": "iron_02",
+    "label": "赤铁矿脉·2",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 1,
+    "triangles": 56
+  },
+  {
+    "name": "iron_03",
+    "label": "赤铁矿脉·3",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 2,
+    "triangles": 24
+  },
+  {
+    "name": "iron_04",
+    "label": "赤铁矿脉·4",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 3,
+    "triangles": 48
+  },
+  {
+    "name": "iron_05",
+    "label": "赤铁矿脉·5",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 4,
+    "triangles": 56
+  },
+  {
+    "name": "iron_06",
+    "label": "赤铁矿脉·6",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 5,
+    "triangles": 56
+  },
+  {
+    "name": "iron_07",
+    "label": "赤铁矿脉·7",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 6,
+    "triangles": 36
+  },
+  {
+    "name": "iron_08",
+    "label": "赤铁矿脉·8",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 7,
+    "triangles": 60
+  },
+  {
+    "name": "iron_09",
+    "label": "赤铁矿脉·9",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 8,
+    "triangles": 56
+  },
+  {
+    "name": "iron_10",
+    "label": "赤铁矿脉·10",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 9,
+    "triangles": 56
+  },
+  {
+    "name": "iron_11",
+    "label": "赤铁矿脉·11",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 10,
+    "triangles": 48
+  },
+  {
+    "name": "iron_12",
+    "label": "赤铁矿脉·12",
+    "mapId": "GodotMapV2_IronDojo",
+    "setId": "iron",
+    "slot": 11,
+    "triangles": 72
+  },
+  {
+    "name": "dragon_01",
+    "label": "黑曜龙岩·1",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 0,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_02",
+    "label": "黑曜龙岩·2",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 1,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_03",
+    "label": "黑曜龙岩·3",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 2,
+    "triangles": 96
+  },
+  {
+    "name": "dragon_04",
+    "label": "黑曜龙岩·4",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 3,
+    "triangles": 96
+  },
+  {
+    "name": "dragon_05",
+    "label": "黑曜龙岩·5",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 4,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_06",
+    "label": "黑曜龙岩·6",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 5,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_07",
+    "label": "黑曜龙岩·7",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 6,
+    "triangles": 96
+  },
+  {
+    "name": "dragon_08",
+    "label": "黑曜龙岩·8",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 7,
+    "triangles": 96
+  },
+  {
+    "name": "dragon_09",
+    "label": "黑曜龙岩·9",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 8,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_10",
+    "label": "黑曜龙岩·10",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 9,
+    "triangles": 64
+  },
+  {
+    "name": "dragon_11",
+    "label": "黑曜龙岩·11",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 10,
+    "triangles": 96
+  },
+  {
+    "name": "dragon_12",
+    "label": "黑曜龙岩·12",
+    "mapId": "GodotMapV2_DragonDojo",
+    "setId": "dragon",
+    "slot": 11,
+    "triangles": 96
+  },
+  {
+    "name": "champion_01",
+    "label": "月桂园岩·1",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 0,
+    "triangles": 472
+  },
+  {
+    "name": "champion_02",
+    "label": "月桂园岩·2",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 1,
+    "triangles": 572
+  },
+  {
+    "name": "champion_03",
+    "label": "月桂园岩·3",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 2,
+    "triangles": 92
+  },
+  {
+    "name": "champion_04",
+    "label": "月桂园岩·4",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 3,
+    "triangles": 92
+  },
+  {
+    "name": "champion_05",
+    "label": "月桂园岩·5",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 4,
+    "triangles": 572
+  },
+  {
+    "name": "champion_06",
+    "label": "月桂园岩·6",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 5,
+    "triangles": 672
+  },
+  {
+    "name": "champion_07",
+    "label": "月桂园岩·7",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 6,
+    "triangles": 92
+  },
+  {
+    "name": "champion_08",
+    "label": "月桂园岩·8",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 7,
+    "triangles": 92
+  },
+  {
+    "name": "champion_09",
+    "label": "月桂园岩·9",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 8,
+    "triangles": 672
+  },
+  {
+    "name": "champion_10",
+    "label": "月桂园岩·10",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 9,
+    "triangles": 472
+  },
+  {
+    "name": "champion_11",
+    "label": "月桂园岩·11",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 10,
+    "triangles": 92
+  },
+  {
+    "name": "champion_12",
+    "label": "月桂园岩·12",
+    "mapId": "GodotMapV2_ChampionTower",
+    "setId": "champion",
+    "slot": 11,
+    "triangles": 92
+  }
+]

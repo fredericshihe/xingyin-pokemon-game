@@ -12489,9 +12489,12 @@ const AdventureTopBar = ({
             </span>
           </div>
           {hasEcologySurveyProgress && (
-            <div
+            <button
+              type="button"
+              onClick={onOpenProgress}
+              disabled={!onOpenProgress}
               className={`map-player-hud__quest${ecologySurveyCompleted ? ' map-player-hud__quest--complete' : ''}`}
-              title={ecologySurveyCompleted ? '本地图生态调查已完成，队伍前 3 只主力已获得成长训练。' : `击败本地图野怪累计 ${ecologySurveyRequired} 次后，队伍前 3 只主力获得成长训练。`}
+              title="查看完整地图进度与生态调查"
               aria-label={ecologySurveyCompleted ? '生态调查完成，成长已领取' : `生态调查 ${ecologySurveyDefeats} / ${ecologySurveyRequired}，还差 ${ecologySurveyRemaining} 次`}
               style={{ '--quest-progress': `${ecologySurveyPercent}%` }}
             >
@@ -12501,7 +12504,7 @@ const AdventureTopBar = ({
               <span className="map-player-hud__quest-label">{ecologySurveyLabel}</span>
               <span className="map-player-hud__quest-hint">{ecologySurveyHint}</span>
               <span className="map-player-hud__quest-bar" aria-hidden="true"><span /></span>
-            </div>
+            </button>
           )}
         </div>
       </div>
@@ -12515,6 +12518,7 @@ const AdventureTopBar = ({
             aria-label="打开冒险完成度"
           >
             <i className="fa-solid fa-map-location-dot"></i>
+            <span className="map-progress-entry-button__label">地图进度</span>
             <span className="map-progress-entry-button__value">{mapProgressSummary?.completionPercent || 0}%</span>
           </button>
         )}

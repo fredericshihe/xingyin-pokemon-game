@@ -135,6 +135,7 @@ import { scheduleIdleAssetWarmup } from "../../utils/gameAssetBootstrap"
 import { clearClientCaches } from "../../utils/recoverStaleClient"
 import { saveCloudGameWithLock, clearCloudSaveQueue } from "../../utils/cloudSaveLock"
 import UnifiedBootScreen from "../UnifiedBootScreen"
+import { mergeBootProgress } from "../../utils/bootProgress"
 import { pokemonArtUrl, pokemonArtPngUrl, POKEMON_PLACEHOLDER_URL, toPngFallbackUrl } from "../../utils/mediaAssetUrl"
 import { gameAudio, getBgmSettings, getSfxSettings, normalizeAudioSettings, readStoredAudioSettings, writeStoredAudioSettings } from "../../utils/gameAudio"
 import { gameBgm } from "../../utils/gameBgm"
@@ -10990,33 +10991,6 @@ const formatSaveTime = (value) => {
   return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 };
 
-const CLOUD_BOOT_PERCENT = 12;
-
-const mergeBootProgress = (cloudLoading, assetProgress) => {
-  const assetPercent = Number.isFinite(assetProgress?.percent)
-    ? Math.min(100, Math.max(0, Number(assetProgress.percent)))
-    : 0;
-  if (cloudLoading) {
-    const assetDetail = assetProgress?.phase
-      ? `正在同步云端进度，同时后台准备素材：${assetProgress.phase}`
-      : null;
-    return {
-      ...(assetProgress || {}),
-      phase: '正在读取云端进度',
-      detail: assetDetail || assetProgress?.detail || '正在同步你的队伍、背包、地图位置与奖励记录…',
-      hideResourceCounts: true,
-      percent: Math.min(CLOUD_BOOT_PERCENT, Math.max(4, 4 + Math.round(assetPercent * 0.08)))
-    };
-  }
-  return {
-    ...(assetProgress || {}),
-    percent: Math.min(
-      100,
-      CLOUD_BOOT_PERCENT + Math.round(assetPercent * (100 - CLOUD_BOOT_PERCENT) / 100)
-    )
-  };
-};
-
 const CloudGateScreen = ({ title, message, actionLabel, onAction, busy = false }) => (
   <div className="game-app-bg">
     <div className="game-gate-card game-card p-5 text-center relative z-[1]">
@@ -12900,7 +12874,6 @@ export default function OriginalGame({ user, onLogout }) {
   const entryPreloadStallRecoveringRef = useRef(false);
   const [entryPreloadRetryNonce, setEntryPreloadRetryNonce] = useState(0);
   const entryPreloadRunIdRef = useRef(0);
-  const entryPreloadMaxPercentRef = useRef(0);
   const entryPreloadForceRetryRef = useRef(false);
   const entryPreloadCompletedForUserRef = useRef(null);
   const [saveStatus, setSaveStatus] = useState('idle');
@@ -13029,7 +13002,6 @@ export default function OriginalGame({ user, onLogout }) {
   useEffect(() => {
     entryPreloadCompletedForUserRef.current = null;
     entryPreloadRunIdRef.current += 1;
-    entryPreloadMaxPercentRef.current = 0;
     setEntryAssetsReady(false);
     setEntryPreloadError(null);
     setEntryPreloadProgress(null);
@@ -13070,14 +13042,13 @@ export default function OriginalGame({ user, onLogout }) {
 
     const runId = entryPreloadRunIdRef.current + 1;
     entryPreloadRunIdRef.current = runId;
-    entryPreloadMaxPercentRef.current = 0;
     setEntryAssetsReady(false);
     setEntryPreloadError(null);
     setEntryPreloadStalled(false);
     setEntryPreloadProgress({
       phase: forceRetry ? '正在重新加载游戏素材' : '正在确认本地缓存',
       detail: forceRetry ? '正在清理旧缓存并重新准备素材…' : '正在检查已缓存的图鉴、音频和地图素材…',
-      percent: 0,
+      percent: null,
       loaded: 0,
       total: 0
     });
@@ -13109,14 +13080,7 @@ export default function OriginalGame({ user, onLogout }) {
           lastProgressAt = Date.now();
           setEntryPreloadStalled(false);
         }
-        const stableProgress = { ...(progress || {}) };
-        if (Number.isFinite(stableProgress.percent)) {
-          const safePercent = Math.min(100, Math.max(0, Number(stableProgress.percent)));
-          const monotonicPercent = Math.max(entryPreloadMaxPercentRef.current, safePercent);
-          entryPreloadMaxPercentRef.current = monotonicPercent;
-          stableProgress.percent = monotonicPercent;
-        }
-        setEntryPreloadProgress(stableProgress);
+        setEntryPreloadProgress(progress);
       }
     }).then(() => {
       if (cancelled || entryPreloadRunIdRef.current !== runId) return;
@@ -25007,7 +24971,7 @@ const handleReorderTeam = useCallback((newTeam) => {
   const launchOverlayOnMap = launchDepartureTransition?.stage === 'arriving' && Boolean(activePlayerMon);
   const showLaunchScreenUnderlay = showLaunchScreen && !launchOverlayOnMap;
   const hideAdventureTopBar = view !== 'map' || showLaunchScreenUnderlay || Boolean(activeMapTransit) || Boolean(pendingFastTravel) || Boolean(pendingBattleEventConfirm) || Boolean(pendingNpcBattleConfirm) || Boolean(activeEliteMinigame) || Boolean(eliteFourCeremony);
-  const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress);
+  const bootProgress = mergeBootProgress(cloudLoading, entryPreloadProgress, entryAssetsReady);
   const bootError = cloudError
     ? `必须联网并成功连接后端才能游戏。${cloudError}`
     : playtimeError;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 function getEstimatedTimeHint(percent) {
   if (typeof navigator === 'undefined') return null
-  if (percent > 85) return '即将进入冒险'
+  if (percent > 85) return '正在加载剩余素材'
 
   const connection = navigator.connection
     || navigator.mozConnection
@@ -59,6 +59,9 @@ export default function UnifiedBootScreen({
   const stageLoaded = toSafeCount(progress?.stageLoaded)
   const stageTotal = toSafeCount(progress?.stageTotal)
   const mapCount = toSafeCount(progress?.mapCount)
+  const loaded = toSafeCount(progress?.loaded)
+  const total = toSafeCount(progress?.total)
+  const showTotalCount = !progress?.hideResourceCounts && loaded !== null && total !== null && total > 0
   const showStageMeta = !progress?.hideResourceCounts && stageIndex !== null && stageCount !== null && stageCount > 0
   const showStageCount = !progress?.hideResourceCounts && stageLoaded !== null && stageTotal !== null && stageTotal > 0
   const [showSlowHint, setShowSlowHint] = useState(false)
@@ -102,6 +105,7 @@ export default function UnifiedBootScreen({
                   <span className="game-entry-loading__bar-fill" style={{ width: `${displayPercent}%` }} />
                 </div>
                 <p className="text-sm font-bold text-sky-700">{displayPercent}%</p>
+                {showTotalCount ? <p className="text-xs text-slate-500">已就绪 {loaded}/{total} 项</p> : null}
               </>
             ) : null}
             {showStageMeta || showStageCount || mapCount ? (

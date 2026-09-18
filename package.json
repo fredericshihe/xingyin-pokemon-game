@@ -57,6 +57,7 @@
     "audit:one-time-pickups": "node scripts/audit-one-time-pickups.mjs",
     "audit:assets": "node scripts/audit-runtime-assets.mjs",
     "audit:entry-preload": "vite-node scripts/audit-entry-preload-assets.mjs",
+    "audit:entry-progress": "node --experimental-vm-modules scripts/audit-entry-loading-progress.mjs",
     "audit:pokemon-art": "node scripts/audit-pokemon-art-assets.mjs",
     "audit:official": "node scripts/audit-official-pokemon-data.mjs",
     "audit:stats": "node scripts/audit-stat-growth.mjs",

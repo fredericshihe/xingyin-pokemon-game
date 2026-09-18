@@ -3,7 +3,7 @@ import {
   getP1ImageAssetUrls
 } from './gameAssetBootstrap'
 import { preloadImageAssetsUntilComplete, clearDecodedImageCache } from './localAssetPreloader'
-import { markEntryPreloadComplete } from './gameEntryPreloadMarks'
+import { markEntryPreloadComplete, clearEntryPreloadMarks } from './gameEntryPreloadMarks'
 
 export {
   clearEntryPreloadMarks,
@@ -28,17 +28,18 @@ const PRELOAD_PHASES = {
   complete: '加载完成'
 }
 
-const PRELOAD_PHASE_ORDER = ['p0', 'audio', 'p2', 'p1', 'models', 'engine']
+const PRELOAD_PHASE_ORDER = ['p0', 'engine', 'audio', 'p2', 'p1', 'models']
 
 function resolveProgressStage(phase, buckets, totals) {
-  const phaseKey = PRELOAD_PHASE_ORDER.find((key) => PRELOAD_PHASES[key] === phase)
-    || PRELOAD_PHASE_ORDER.find((key) => (buckets[key] || 0) < (totals[key] || 0))
-    || 'engine'
-  const stageIndex = Math.max(1, PRELOAD_PHASE_ORDER.indexOf(phaseKey) + 1)
+  const activePhases = PRELOAD_PHASE_ORDER.filter((key) => totals[key] > 0)
+  const phaseKey = activePhases.find((key) => PRELOAD_PHASES[key] === phase)
+    || activePhases.find((key) => (buckets[key] || 0) < totals[key])
+    || activePhases.at(-1)
+  const stageIndex = Math.max(1, activePhases.indexOf(phaseKey) + 1)
   return {
     stageKey: phaseKey,
     stageIndex,
-    stageCount: PRELOAD_PHASE_ORDER.length,
+    stageCount: activePhases.length,
     stageLoaded: Math.max(0, buckets[phaseKey] || 0),
     stageTotal: Math.max(0, totals[phaseKey] || 0)
   }
@@ -74,7 +75,7 @@ const toUniqueUrls = (urls = []) => (
     .map((url) => url.trim()))]
 )
 
-let earlyPreloadPromise = null
+let earlyPreloadSession = null
 let activeShouldContinue = () => true
 let progressSubscribers = new Set()
 
@@ -106,7 +107,11 @@ export function subscribeEntryPreloadProgress(listener) {
 
 /** 失败重试或版本更新时调用，避免复用已失败/已完成的预加载 Promise */
 export function resetEntryPreloadSession({ clearImageCache = false } = {}) {
-  earlyPreloadPromise = null
+  if (earlyPreloadSession) {
+    earlyPreloadSession.cancelled = true
+    earlyPreloadSession.listeners.clear()
+  }
+  earlyPreloadSession = null
   if (clearImageCache) {
     clearDecodedImageCache()
   }
@@ -123,7 +128,8 @@ function createProgressReporter({
   mapCount,
   imageTotal,
   modelTotal,
-  onProgress
+  onProgress,
+  scope = 'entry'
 }) {
   const buckets = {
     p0: 0,
@@ -159,9 +165,11 @@ function createProgressReporter({
     const payload = {
       phase,
       detail,
-      percent: totalSteps > 0 ? Math.min(100, Math.round((loaded / totalSteps) * 100)) : 100,
+      percent: totalSteps > 0 ? Math.min(100, Math.floor((loaded / totalSteps) * 100)) : 100,
       loaded,
       total: totalSteps,
+      scope,
+      completedByPhase: { ...buckets },
       ...stage,
       imageTotal,
       modelTotal,
@@ -192,15 +200,16 @@ function createRetryReporter(tracker, bucketKey, phaseLabel) {
 /** 进游戏前只准备当前地图可玩所需资源，图鉴和其他地图在后台预热。 */
 export async function buildFullEntryPreloadPlan({ mapName, playerTeam = [] } = {}) {
   const p0Urls = toUniqueUrls(getP0ImageAssetUrls())
+  const p0UrlSet = new Set(p0Urls)
   const p1Urls = toUniqueUrls(getP1ImageAssetUrls({ mapName, playerTeam }))
+    .filter((url) => !p0UrlSet.has(url))
 
   let modelKeys = []
   let mapCount = 0
   try {
     const { collectMapModelKeys } = await import('../game/threeLowPolyModelCache')
-    const { ADVENTURE_MAP_CHAIN } = await import('../game/data/overworldMaps')
     modelKeys = collectMapModelKeys(mapName)
-    mapCount = ADVENTURE_MAP_CHAIN.length
+    mapCount = 1
   } catch (error) {
     throw new Error(`地图模型清单读取失败：${error?.message || error}`)
   }
@@ -262,6 +271,7 @@ async function loadImagePhaseUntilComplete(
     }
   })
 
+  if (!shouldContinue()) throw new Error('aborted')
   if (!result.ok || result.failed?.length) {
     const failedCount = result.failed?.length || 0
     throw new Error(`${phaseLabel}未完整加载，失败资源 ${failedCount} 个`)
@@ -274,6 +284,7 @@ async function loadImagePhaseUntilComplete(
 
 async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
   const plan = await buildFullEntryPreloadPlan({ mapName: DEFAULT_MAP_NAME, playerTeam: [] })
+  if (!shouldContinue()) throw new Error('aborted')
   const { p0Urls, mapCount } = plan
   const imageTotal = p0Urls.length
   const totalSteps = p0Urls.length + ENGINE_STEP_COUNT
@@ -284,7 +295,8 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
     mapCount,
     imageTotal,
     modelTotal: 0,
-    onProgress
+    onProgress,
+    scope: 'early'
   })
 
   tracker.totals.p0 = p0Urls.length
@@ -304,7 +316,9 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
     shouldContinue
   )
 
+  tracker.report(PRELOAD_PHASES.engine)
   await mapModulePromise
+  if (!shouldContinue()) throw new Error('aborted')
   tracker.buckets.engine = ENGINE_STEP_COUNT
   tracker.report(PRELOAD_PHASES.engine)
   tracker.report(PRELOAD_PHASES.complete, '核心素材已预热，等待云端进度确认…')
@@ -322,7 +336,7 @@ function markEarlyPhasesComplete(tracker, plan) {
   tracker.buckets.p2 = 0
   tracker.buckets.audio = 0
   tracker.buckets.models = 0
-  tracker.buckets.engine = 0
+  tracker.buckets.engine = ENGINE_STEP_COUNT
 }
 
 async function runWithStallGuard(task, { onStall, stallMs = PRELOAD_STALL_MS } = {}) {
@@ -331,6 +345,7 @@ async function runWithStallGuard(task, { onStall, stallMs = PRELOAD_STALL_MS } =
   let stallTriggered = false
 
   const unsubscribe = subscribeEntryPreloadProgress((progress) => {
+    if (progress?.scope !== 'entry') return
     if (!Number.isFinite(progress?.loaded)) return
     if (progress.loaded !== lastLoaded) {
       lastLoaded = progress.loaded
@@ -360,23 +375,34 @@ export function startEarlyEntryPreload({ onProgress = null, force = false } = {}
   if (force) {
     resetEntryPreloadSession()
   }
-  if (earlyPreloadPromise) {
-    if (onProgress) {
-      const unsubscribe = subscribeEntryPreloadProgress(onProgress)
-      earlyPreloadPromise.finally(unsubscribe)
-    }
-    return earlyPreloadPromise
+  if (!earlyPreloadSession) {
+    const session = { listeners: new Set(), progress: null, cancelled: false, promise: null }
+    earlyPreloadSession = session
+    const shouldContinue = resolveShouldContinue()
+    session.promise = runEarlyAssetPreload((progress) => {
+      if (session.cancelled) return
+      session.progress = progress
+      session.listeners.forEach((listener) => listener(progress))
+    }, () => !session.cancelled && shouldContinue())
+      .then((plan) => ({ ok: true, plan, earlyComplete: true }))
+      .catch((error) => {
+        if (earlyPreloadSession === session) earlyPreloadSession = null
+        throw error
+      })
   }
-
-  const shouldContinue = resolveShouldContinue()
-  earlyPreloadPromise = runEarlyAssetPreload(onProgress, shouldContinue)
-    .then((plan) => ({ ok: true, plan, earlyComplete: true }))
-    .catch((error) => {
-      earlyPreloadPromise = null
-      throw error
-    })
-
-  return earlyPreloadPromise
+  const session = earlyPreloadSession
+  if (!onProgress) return session.promise
+  // A joining caller receives only this prewarm session, including cached progress.
+  // Global full-entry reports must not feed back into its early-progress callback.
+  session.listeners.add(onProgress)
+  if (session.progress) onProgress(session.progress)
+  return session.promise.then((result) => {
+    session.listeners.delete(onProgress)
+    return result
+  }, (error) => {
+    session.listeners.delete(onProgress)
+    throw error
+  })
 }
 
 export async function runGameEntryPreload({
@@ -395,8 +421,8 @@ export async function runGameEntryPreload({
 
   const execute = async () => {
     const shouldContinue = resolveShouldContinue()
-    const early = await startEarlyEntryPreload({ onProgress, force })
     const plan = await buildFullEntryPreloadPlan({ mapName, playerTeam })
+    if (!shouldContinue()) throw new Error('aborted')
     const networkOptions = resolvePreloadNetworkOptions()
     const { p1Urls, mapCount, totalSteps } = plan
 
@@ -408,16 +434,20 @@ export async function runGameEntryPreload({
       onProgress
     })
 
-    const earlyComplete = Boolean(early?.earlyComplete && early?.plan)
-
-    if (earlyComplete) {
-      markEarlyPhasesComplete(tracker, plan)
-      tracker.buckets.p1 = 0
-    } else {
-      await runEarlyAssetPreload(onProgress, shouldContinue)
-      markEarlyPhasesComplete(tracker, plan)
-      tracker.buckets.p1 = 0
-    }
+    Object.assign(tracker.totals, {
+      p0: plan.p0Urls.length, p1: plan.p1Urls.length, models: plan.modelKeys.length
+    })
+    tracker.report()
+    // The full resource plan owns one denominator from the first visible update.
+    // Prewarming contributes completed work, never its separate percentage.
+    await startEarlyEntryPreload({ onProgress: (progress) => {
+      if (!shouldContinue()) return
+      tracker.buckets.p0 = Math.min(plan.p0Urls.length, progress.completedByPhase.p0)
+      tracker.buckets.engine = Math.min(ENGINE_STEP_COUNT, progress.completedByPhase.engine)
+      tracker.report(progress.phase === PRELOAD_PHASES.complete ? null : progress.phase, progress.detail)
+    } })
+    if (!shouldContinue()) throw new Error('aborted')
+    markEarlyPhasesComplete(tracker, plan)
 
     if (p1Urls.length > 0) {
       await loadImagePhaseUntilComplete(
@@ -459,7 +489,6 @@ export async function runGameEntryPreload({
 
     tracker.report(PRELOAD_PHASES.complete)
     markEntryPreloadComplete()
-    earlyPreloadPromise = null
 
     return {
       ok: true,

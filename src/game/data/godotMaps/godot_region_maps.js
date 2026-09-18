@@ -1,3 +1,4 @@
+import { getEncounterTableLevelRange } from '../encounterTables.js'
 import { MONSTERS } from '../../../utils/gameData.js'
 import { TYPES } from '../../../utils/constants.js'
 import { isLevelValidForSpecies } from '../../../utils/wildEncounterRules.js'
@@ -8124,7 +8125,7 @@ const ALL_REGIONS = [
       { id: 'meadow_west_grass', name: '星音西草丛', x: 4, y: 4, width: 15, height: 7, encounterTableId: 'region_meadow_5_12', tallGrassRate: 0.22 },
       { id: 'meadow_south_grass', name: '星音南草坡', x: 5, y: 22, width: 12, height: 7, encounterTableId: 'region_meadow_south_5_12', tallGrassRate: 0.24 },
       { id: 'meadow_east_flowers', name: '星音东花地', x: 24, y: 5, width: 5, height: 6, encounterTableId: 'region_meadow_east_5_12', tallGrassRate: 0.2 },
-      { id: 'meadow_hidden_grove', name: '星音秘境', x: 31, y: 5, width: 7, height: 5, encounterTableId: 'region_meadow_hidden_grove_5_12', tallGrassRate: 0.34, depth: 'deep', premiumHiddenZone: true, levelRange: [17, 19] }
+      { id: 'meadow_hidden_grove', name: '星音秘境', x: 31, y: 5, width: 7, height: 5, encounterTableId: 'region_meadow_hidden_grove_5_12', tallGrassRate: 0.34, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_meadow_hidden_grove_5_12') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8195,7 +8196,7 @@ const ALL_REGIONS = [
       { id: 'lake_west_reeds', name: '西岸芦草', x: 4, y: 5, width: 10, height: 6, encounterTableId: 'region_lake_11_18', tallGrassRate: 0.22 },
       { id: 'lake_south_reeds', name: '南岸芦草', x: 5, y: 22, width: 12, height: 7, encounterTableId: 'region_lake_south_11_18', tallGrassRate: 0.24 },
       { id: 'lake_east_reeds', name: '东岸潮草', x: 29, y: 22, width: 9, height: 7, encounterTableId: 'region_lake_east_11_18', tallGrassRate: 0.23 },
-      { id: 'lake_hidden_path', name: '环湖秘径', x: 26, y: 8, width: 6, height: 7, encounterTableId: 'region_lake_hidden_path_11_18', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [23, 25] }
+      { id: 'lake_hidden_path', name: '环湖秘径', x: 26, y: 8, width: 6, height: 7, encounterTableId: 'region_lake_hidden_path_11_18', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_lake_hidden_path_11_18') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8260,7 +8261,7 @@ const ALL_REGIONS = [
       { id: 'farm_north_rows', name: '北田垄', x: 13, y: 5, width: 5, height: 6, encounterTableId: 'region_farm_17_24', tallGrassRate: 0.2 },
       { id: 'farm_west_rows', name: '西麦田', x: 7, y: 23, width: 11, height: 6, encounterTableId: 'region_farm_west_17_24', tallGrassRate: 0.23 },
       { id: 'farm_east_rows', name: '东麦田', x: 24, y: 23, width: 12, height: 6, encounterTableId: 'region_farm_east_17_24', tallGrassRate: 0.23 },
-      { id: 'farm_windmill_top', name: '风车塔顶', x: 6, y: 6, width: 5, height: 5, encounterTableId: 'region_farm_windmill_top_17_24', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: [29, 31] }
+      { id: 'farm_windmill_top', name: '风车塔顶', x: 6, y: 6, width: 5, height: 5, encounterTableId: 'region_farm_windmill_top_17_24', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_farm_windmill_top_17_24') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8341,7 +8342,7 @@ const ALL_REGIONS = [
       { id: 'shore_dune_grass', name: '沙丘草丛', x: 4, y: 5, width: 10, height: 6, encounterTableId: 'region_shore_23_30', tallGrassRate: 0.22 },
       { id: 'shore_south_grass', name: '南岸潮草', x: 6, y: 23, width: 12, height: 6, encounterTableId: 'region_shore_south_23_30', tallGrassRate: 0.24 },
       { id: 'shore_wreck_grass', name: '沉船潮草', x: 24, y: 24, width: 8, height: 6, encounterTableId: 'region_shore_wreck_23_30', tallGrassRate: 0.25 },
-      { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: [35, 40] }
+      { id: 'shore_wreck_inner', name: '沉船内舱', x: 34, y: 22, width: 5, height: 5, encounterTableId: 'region_shore_wreck_inner_23_30', tallGrassRate: 0.40, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_shore_wreck_inner_23_30') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8433,7 +8434,7 @@ const ALL_REGIONS = [
       { id: 'grave_north_thicket', name: '北墓草丛', x: 5, y: 5, width: 9, height: 6, encounterTableId: 'region_grave_29_36', tallGrassRate: 0.24 },
       { id: 'grave_south_thicket', name: '南墓荒草', x: 5, y: 24, width: 2, height: 2, encounterTableId: 'region_grave_south_29_36', tallGrassRate: 0.28 },
       { id: 'grave_moon_grass', name: '月影荒草', x: 24, y: 24, width: 13, height: 6, encounterTableId: 'region_grave_moon_29_36', tallGrassRate: 0.27 },
-      { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: [41, 52] }
+      { id: 'grave_deep_forest', name: '墓园深林', x: 10, y: 28, width: 6, height: 3, encounterTableId: 'region_grave_deep_forest_29_36', tallGrassRate: 0.42, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_grave_deep_forest_29_36') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8534,7 +8535,7 @@ const ALL_REGIONS = [
       { id: 'hex_north_ruins', name: '北遗迹草丛', x: 5, y: 5, width: 10, height: 6, encounterTableId: 'region_ruin_35_42', tallGrassRate: 0.24 },
       { id: 'hex_west_ruins', name: '西遗迹草丛', x: 5, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_west_35_42', tallGrassRate: 0.26 },
       { id: 'hex_east_ruins', name: '东遗迹草丛', x: 25, y: 23, width: 11, height: 7, encounterTableId: 'region_ruin_east_35_42', tallGrassRate: 0.27 },
-      { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: [47, 61] }
+      { id: 'hex_sealed_chamber', name: '封印密室', x: 30, y: 8, width: 6, height: 4, encounterTableId: 'region_ruin_sealed_chamber_35_42', tallGrassRate: 0.36, depth: 'deep', premiumHiddenZone: true, levelRange: getEncounterTableLevelRange('region_ruin_sealed_chamber_35_42') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],
@@ -8725,7 +8726,7 @@ const ALL_REGIONS = [
       { id: 'peak_west_grass', name: '西高地草丛', x: 12, y: 5, width: 5, height: 6, encounterTableId: 'region_peak_52_60', tallGrassRate: 0.27 },
       { id: 'peak_south_grass', name: '南高地草丛', x: 5, y: 23, width: 12, height: 7, encounterTableId: 'region_peak_south_52_60', tallGrassRate: 0.28 },
       { id: 'peak_east_grass', name: '东高地草丛', x: 28, y: 22, width: 10, height: 8, encounterTableId: 'region_peak_east_52_60', tallGrassRate: 0.3 },
-      { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, exclusivePokemonIds: [207, 208, 209], levelRange: [65, 70] }
+      { id: 'peak_starwatch_path', name: '观星秘径', x: 4, y: 5, width: 6, height: 6, encounterTableId: 'region_peak_starwatch_52_60', tallGrassRate: 0.38, depth: 'deep', premiumHiddenZone: true, exclusivePokemonIds: [207, 208, 209], levelRange: getEncounterTableLevelRange('region_peak_starwatch_52_60') }
     ],
     // Focal compositions live in mapEnvironmentDesign.js.
     decorativeObjects: [],

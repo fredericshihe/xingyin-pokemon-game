@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { withViteAuditServer } from './load-vite-module.mjs'
 
-const LIEUTENANT_HIDDEN_CORE_COUNT = 1
-const BOSS_HIDDEN_CORE_COUNT = 3
+const LIEUTENANT_CORE_COUNT = 1
+const BOSS_CORE_COUNT = 3
 const FINAL_BOSS_MAP_ID = 'GodotMapV2_BossHighland'
 const FINAL_BOSS_ACE_POKEMON_ID = 68
 const FINAL_BOSS_ACE_LEVEL_BONUS = 5
@@ -71,86 +71,36 @@ const getBossCoreLevels = (mapId, teamEntries, range) => {
   if (!isFinalBossTerminalAce(mapId, teamEntries)) return coreLevels
 
   const aceLevel = teamEntries[teamEntries.length - 1]?.level
-  const hiddenMax = Math.trunc(Number(range?.[1]))
-  if (!Number.isInteger(aceLevel) || !Number.isInteger(hiddenMax) || aceLevel <= hiddenMax) {
+  const coreMax = Math.trunc(Number(range?.[1]))
+  if (!Number.isInteger(aceLevel) || !Number.isInteger(coreMax) || aceLevel <= coreMax) {
     return coreLevels
   }
   return [...coreLevels, aceLevel].sort((left, right) => left - right)
 }
 
-const resolveBossTargets = (mapId, equivalentRange) => {
-  const targets = distributeTargetsAcrossRange(equivalentRange, BOSS_HIDDEN_CORE_COUNT)
-  if (mapId !== FINAL_BOSS_MAP_ID || targets.length !== BOSS_HIDDEN_CORE_COUNT) return targets
+const resolveBossTargets = (mapId, coreRange) => {
+  const targets = distributeTargetsAcrossRange(coreRange, BOSS_CORE_COUNT)
+  if (mapId !== FINAL_BOSS_MAP_ID || targets.length !== BOSS_CORE_COUNT) return targets
 
-  const hiddenMax = Math.trunc(Number(equivalentRange?.[1]))
-  if (!Number.isInteger(hiddenMax)) return targets
+  const coreMax = Math.trunc(Number(coreRange?.[1]))
+  if (!Number.isInteger(coreMax)) return targets
   return [
     ...targets.slice(0, -1),
-    Math.max(targets[targets.length - 1], hiddenMax + FINAL_BOSS_ACE_LEVEL_BONUS)
+    Math.max(targets[targets.length - 1], coreMax + FINAL_BOSS_ACE_LEVEL_BONUS)
   ]
 }
 
-const collectDeepZoneRange = (map) => {
-  const deepZones = (Array.isArray(map?.encounterZones) ? map.encounterZones : [])
-    .filter((zone) => zone?.depth === 'deep')
-    .filter((zone) => Array.isArray(zone.levelRange) && zone.levelRange.length >= 2)
-
-  if (deepZones.length === 0) return null
-
-  const mins = deepZones.map((zone) => Math.trunc(Number(zone.levelRange[0]))).filter(Number.isFinite)
-  const maxes = deepZones.map((zone) => Math.trunc(Number(zone.levelRange[1]))).filter(Number.isFinite)
-  if (mins.length === 0 || maxes.length === 0) return null
-
-  return {
-    source: 'hidden',
-    zones: deepZones.map((zone) => zone.name || zone.id).filter(Boolean),
-    range: [Math.min(...mins), Math.max(...maxes)]
-  }
-}
-
-const resolveEquivalentRange = (orderedMaps, index) => {
-  const own = collectDeepZoneRange(orderedMaps[index].map)
-  if (own) return own
-
-  const previous = orderedMaps
-    .slice(0, index)
-    .reverse()
-    .map(({ map }) => collectDeepZoneRange(map))
-    .find(Boolean)
-  const next = orderedMaps
-    .slice(index + 1)
-    .map(({ map }) => collectDeepZoneRange(map))
-    .find(Boolean)
-
-  if (previous && next) {
-    const min = previous.range[1] + 1
-    const max = Math.max(min, next.range[0])
-    return {
-      source: 'progression',
-      zones: [],
-      range: [min, max]
-    }
-  }
-
-  if (previous) {
-    const min = previous.range[1] + 1
-    return {
-      source: 'progression',
-      zones: [],
-      range: [min, min + 3]
-    }
-  }
-
-  if (next) {
-    const max = Math.max(1, next.range[0] - 1)
-    return {
-      source: 'progression',
-      zones: [],
-      range: [Math.max(1, max - 3), max]
-    }
-  }
-
-  return null
+// Boss 和部下保留既有难度；秘境现在只比普通草丛上限高 1 级，
+// 不再承担训练家核心等级的基准职责。
+const CAMPAIGN_CORE_LEVEL_RANGES = {
+  GodotMapV2: [17, 19],
+  GodotMapV2_MistLake: [23, 25],
+  GodotMapV2_FarmTown: [29, 31],
+  GodotMapV2_PirateShore: [35, 40],
+  GodotMapV2_Graveyard: [41, 52],
+  GodotMapV2_HexRuins: [47, 61],
+  GodotMapV2_SurvivalRidge: [62, 65],
+  GodotMapV2_BossHighland: [65, 70]
 }
 
 const compareLevels = (actual, expected) => (
@@ -172,7 +122,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const regionalCampaignLastOrder = orderedMaps.find(({ mapId }) => mapId === FINAL_BOSS_MAP_ID)?.order ?? Infinity
   const regionalCampaignMaps = orderedMaps.filter(({ order }) => order <= regionalCampaignLastOrder)
 
-  regionalCampaignMaps.forEach(({ mapId, map }, index) => {
+  regionalCampaignMaps.forEach(({ mapId, map }) => {
     const events = Array.isArray(map?.runtimeEvents) ? map.runtimeEvents : []
     const lieutenants = events
       .filter((event) => event?.type === 'trainer' && getProps(event).role === 'lieutenant')
@@ -183,20 +133,18 @@ await withViteAuditServer(async ({ loadModule }) => {
     const boss = events.find((event) => event?.type === 'boss')
     if (lieutenants.length === 0 && !boss) return
 
-    const equivalent = resolveEquivalentRange(regionalCampaignMaps, index)
-    if (!equivalent) {
-      errors.push(`${mapId}: cannot resolve hidden-equivalent level range`)
+    const coreRange = CAMPAIGN_CORE_LEVEL_RANGES[mapId]
+    if (!coreRange) {
+      errors.push(`${mapId}: missing campaign core level range`)
       return
     }
 
-    const lieutenantTargets = distributeTargetsAcrossRange(equivalent.range, lieutenants.length)
-    const bossTargets = resolveBossTargets(mapId, equivalent.range)
+    const lieutenantTargets = distributeTargetsAcrossRange(coreRange, lieutenants.length)
+    const bossTargets = resolveBossTargets(mapId, coreRange)
     const row = {
       mapId,
       displayName: map?.displayName || mapId,
-      source: equivalent.source,
-      hiddenZones: equivalent.zones,
-      equivalentRange: formatRange(equivalent.range),
+      coreRange: formatRange(coreRange),
       lieutenantTargets,
       lieutenants: [],
       bossTargets,
@@ -206,7 +154,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     lieutenants.forEach((event, lieutenantIndex) => {
       const props = getProps(event)
       const levels = getEventTeamLevels(event)
-      const coreLevels = getCoreLevelsInRange(levels, equivalent.range)
+      const coreLevels = getCoreLevelsInRange(levels, coreRange)
       const expectedCore = [lieutenantTargets[lieutenantIndex]]
       const recommendedLevel = Math.trunc(Number(props.recommendedLevel))
 
@@ -219,9 +167,9 @@ await withViteAuditServer(async ({ loadModule }) => {
         recommendedLevel
       })
 
-      if (coreLevels.length !== LIEUTENANT_HIDDEN_CORE_COUNT) {
+      if (coreLevels.length !== LIEUTENANT_CORE_COUNT) {
         errors.push(
-          `${mapId}/${event.id}: lieutenant should have exactly ${LIEUTENANT_HIDDEN_CORE_COUNT} hidden-equivalent core, got ${coreLevels.length} (${formatLevels(coreLevels)})`
+          `${mapId}/${event.id}: lieutenant should have exactly ${LIEUTENANT_CORE_COUNT} high-level core, got ${coreLevels.length} (${formatLevels(coreLevels)})`
         )
       }
       if (!compareLevels(coreLevels, expectedCore)) {
@@ -242,7 +190,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       const props = getProps(boss)
       const teamEntries = getEventTeamEntries(boss)
       const levels = teamEntries.map((entry) => entry.level)
-      const coreLevels = getBossCoreLevels(mapId, teamEntries, equivalent.range)
+      const coreLevels = getBossCoreLevels(mapId, teamEntries, coreRange)
       const recommendedLevel = Math.trunc(Number(props.recommendedLevel))
       const isTerminalAceBoss = isFinalBossTerminalAce(mapId, teamEntries)
       const terminalAce = teamEntries[teamEntries.length - 1]
@@ -264,9 +212,9 @@ await withViteAuditServer(async ({ loadModule }) => {
           : null
       }
 
-      if (coreLevels.length !== BOSS_HIDDEN_CORE_COUNT) {
+      if (coreLevels.length !== BOSS_CORE_COUNT) {
         errors.push(
-          `${mapId}/${boss.id}: boss should have exactly ${BOSS_HIDDEN_CORE_COUNT} hidden-equivalent cores, got ${coreLevels.length} (${formatLevels(coreLevels)})`
+          `${mapId}/${boss.id}: boss should have exactly ${BOSS_CORE_COUNT} high-level cores, got ${coreLevels.length} (${formatLevels(coreLevels)})`
         )
       }
       if (!compareLevels(coreLevels, bossTargets)) {
@@ -297,11 +245,11 @@ await withViteAuditServer(async ({ loadModule }) => {
 
   console.log(JSON.stringify({
     generatedAt: new Date().toISOString(),
-    rule: 'Regional-campaign lieutenants must carry one hidden-equivalent core; regional bosses must carry three. Maps without a hidden zone use the natural progression range between neighboring hidden zones. Elite Four maps are covered by their dedicated battle audits. The regional final Boss ace may exceed the hidden range and must clearly lead the first five.',
+    rule: 'Regional-campaign lieutenants retain one high-level core and bosses retain three, independently of hidden wild encounter levels. Elite Four maps have dedicated audits. The final Boss ace must clearly lead the first five.',
     summary: {
       mapCount: rows.length,
-      lieutenantHiddenCoreCount: LIEUTENANT_HIDDEN_CORE_COUNT,
-      bossHiddenCoreCount: BOSS_HIDDEN_CORE_COUNT,
+      lieutenantCoreCount: LIEUTENANT_CORE_COUNT,
+      bossCoreCount: BOSS_CORE_COUNT,
       errorCount: errors.length
     },
     rows,

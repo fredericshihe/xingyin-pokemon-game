@@ -1,5 +1,6 @@
 /** 草丛遇敌表：仅基础形态，等级区间与进化阶段一致 */
 import { getSpeciesLevelBounds, pickWildEncounter } from '../../utils/wildEncounterRules'
+import { resolveSpeciesForLevelWithVariety } from '../../utils/pokemonFamilyVariety.js'
 
 export const DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID = 'valley_safe_grass'
 export const LEGACY_UNUSED_ENCOUNTER_TABLE_IDS = new Set([
@@ -295,21 +296,22 @@ export const ENCOUNTER_TABLES = {
       { id: 39, minLevel: 5, maxLevel: 12, weight: 4 }
     ]
   },
-  /** 星音秘境：星光催化出的首领级隐藏生态 */
+  /** 星音秘境：星光催化出的秘境专属生态 */
   region_meadow_hidden_grove_5_12: {
     baseRate: 0.12,
     tallGrassRate: 0.34,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_meadow_5_12', 'region_meadow_south_5_12', 'region_meadow_east_5_12'],
     pokemon: [
-      { id: 154, minLevel: 17, maxLevel: 19, weight: 14 },
-      { id: 156, minLevel: 17, maxLevel: 19, weight: 13 },
-      { id: 169, minLevel: 17, maxLevel: 19, weight: 13 },
-      { id: 111, minLevel: 17, maxLevel: 19, weight: 10 },
-      { id: 178, minLevel: 17, maxLevel: 19, weight: 9 },
-      { id: 165, minLevel: 17, maxLevel: 19, weight: 8 },
-      { id: 189, minLevel: 19, maxLevel: 19, weight: 50 },
-      { id: 190, minLevel: 19, maxLevel: 19, weight: 50 },
-      { id: 191, minLevel: 19, maxLevel: 19, weight: 40 }
+      { id: 154, weight: 14 },
+      { id: 156, weight: 13 },
+      { id: 169, weight: 13 },
+      { id: 111, weight: 10 },
+      { id: 178, weight: 9 },
+      { id: 165, weight: 8 },
+      { id: 189, weight: 50 },
+      { id: 190, weight: 50 },
+      { id: 191, weight: 40 }
     ]
   },
 
@@ -367,17 +369,18 @@ export const ENCOUNTER_TABLES = {
     baseRate: 0.12,
     tallGrassRate: 0.36,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_lake_11_18', 'region_lake_south_11_18', 'region_lake_east_11_18'],
     pokemon: [
-      { id: 14, minLevel: 23, maxLevel: 25, weight: 15 },
-      { id: 77, minLevel: 23, maxLevel: 25, weight: 13 },
-      { id: 78, minLevel: 23, maxLevel: 25, weight: 11 },
-      { id: 80, minLevel: 23, maxLevel: 25, weight: 10 },
-      { id: 181, minLevel: 23, maxLevel: 25, weight: 9 },
-      { id: 183, minLevel: 23, maxLevel: 25, weight: 8 },
-      { id: 186, minLevel: 23, maxLevel: 25, weight: 7 },
-      { id: 192, minLevel: 25, maxLevel: 25, weight: 50 },
-      { id: 193, minLevel: 25, maxLevel: 25, weight: 50 },
-      { id: 194, minLevel: 25, maxLevel: 25, weight: 40 }
+      { id: 14, weight: 15 },
+      { id: 77, weight: 13 },
+      { id: 78, weight: 11 },
+      { id: 80, weight: 10 },
+      { id: 181, weight: 9 },
+      { id: 183, weight: 8 },
+      { id: 186, weight: 7 },
+      { id: 192, weight: 50 },
+      { id: 193, weight: 50 },
+      { id: 194, weight: 40 }
     ]
   },
 
@@ -437,22 +440,24 @@ export const ENCOUNTER_TABLES = {
       { id: 88, minLevel: 17, maxLevel: 24, weight: 4 }
     ]
   },
-  /** 风车塔顶：机械火花、风向鸟影和湿木蘑菇混成的首领级隐藏生态 */
+  /** 风车塔顶：机械火花、风向鸟影和湿木蘑菇混成的秘境专属生态 */
   region_farm_windmill_top_17_24: {
     baseRate: 0.13,
     tallGrassRate: 0.38,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_farm_17_24', 'region_farm_west_17_24', 'region_farm_east_17_24'],
+    // 小磁怪、霹雳电球属于试炼解锁池；降级后改用本图普通生态。
     pokemon: [
-      { id: 155, minLevel: 29, maxLevel: 31, weight: 13 },
-      { id: 171, minLevel: 29, maxLevel: 31, weight: 12 },
-      { id: 38, minLevel: 30, maxLevel: 31, weight: 10 },
-      { id: 45, minLevel: 30, maxLevel: 31, weight: 10 },
-      { id: 157, minLevel: 29, maxLevel: 31, weight: 10 },
-      { id: 179, minLevel: 29, maxLevel: 31, weight: 8 },
-      { id: 11, minLevel: 30, maxLevel: 31, weight: 8 },
-      { id: 195, minLevel: 31, maxLevel: 31, weight: 50 },
-      { id: 196, minLevel: 31, maxLevel: 31, weight: 50 },
-      { id: 197, minLevel: 31, maxLevel: 31, weight: 40 }
+      { id: 155, weight: 13 },
+      { id: 171, weight: 12 },
+      { id: 96, weight: 10 },
+      { id: 88, weight: 10 },
+      { id: 157, weight: 10 },
+      { id: 179, weight: 8 },
+      { id: 11, weight: 8 },
+      { id: 195, weight: 50 },
+      { id: 196, weight: 50 },
+      { id: 197, weight: 40 }
     ]
   },
 
@@ -509,22 +514,23 @@ export const ENCOUNTER_TABLES = {
       { id: 79, minLevel: 23, maxLevel: 30, weight: 10 }
     ]
   },
-  /** 沉船内舱：海雾、化石壳与船舱灵影交错的首领级隐藏生态 */
+  /** 沉船内舱：海雾、化石壳与船舱灵影交错的秘境专属生态 */
   region_shore_wreck_inner_23_30: {
     baseRate: 0.13,
     tallGrassRate: 0.40,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_shore_23_30', 'region_shore_south_23_30', 'region_shore_wreck_23_30'],
     pokemon: [
-      { id: 81, minLevel: 35, maxLevel: 37, weight: 13 },
-      { id: 44, minLevel: 35, maxLevel: 37, weight: 12 },
-      { id: 82, minLevel: 35, maxLevel: 37, weight: 11 },
-      { id: 54, minLevel: 35, maxLevel: 37, weight: 10 },
-      { id: 175, minLevel: 35, maxLevel: 37, weight: 9 },
-      { id: 188, minLevel: 35, maxLevel: 37, weight: 8 },
-      { id: 131, minLevel: 35, maxLevel: 37, weight: 8 },
-      { id: 198, minLevel: 40, maxLevel: 40, weight: 50 },
-      { id: 199, minLevel: 40, maxLevel: 40, weight: 50 },
-      { id: 200, minLevel: 40, maxLevel: 40, weight: 40 }
+      { id: 81, weight: 13 },
+      { id: 44, weight: 12 },
+      { id: 82, weight: 11 },
+      { id: 54, weight: 10 },
+      { id: 175, weight: 9 },
+      { id: 188, weight: 8 },
+      { id: 131, weight: 8 },
+      { id: 198, weight: 50 },
+      { id: 199, weight: 50 },
+      { id: 200, weight: 40 }
     ]
   },
 
@@ -578,22 +584,23 @@ export const ENCOUNTER_TABLES = {
       { id: 159, minLevel: 29, maxLevel: 36, weight: 8 }
     ]
   },
-  /** 墓园深林：月影、毒雾、拟态与恶系回声组成的首领级隐藏生态 */
+  /** 墓园深林：月影、毒雾、拟态与恶系回声组成的秘境专属生态 */
   region_grave_deep_forest_29_36: {
     baseRate: 0.14,
     tallGrassRate: 0.42,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_grave_29_36', 'region_grave_south_29_36', 'region_grave_moon_29_36'],
     pokemon: [
-      { id: 171, minLevel: 41, maxLevel: 43, weight: 12 },
-      { id: 188, minLevel: 41, maxLevel: 43, weight: 11 },
-      { id: 153, minLevel: 41, maxLevel: 43, weight: 10 },
-      { id: 157, minLevel: 41, maxLevel: 43, weight: 9 },
-      { id: 43, minLevel: 41, maxLevel: 43, weight: 8 },
-      { id: 137, minLevel: 41, maxLevel: 43, weight: 8 },
-      { id: 185, minLevel: 41, maxLevel: 43, weight: 8 },
-      { id: 201, minLevel: 50, maxLevel: 50, weight: 50 },
-      { id: 202, minLevel: 50, maxLevel: 50, weight: 50 },
-      { id: 203, minLevel: 52, maxLevel: 52, weight: 40 }
+      { id: 171, weight: 12 },
+      { id: 188, weight: 11 },
+      { id: 153, weight: 10 },
+      { id: 157, weight: 9 },
+      { id: 43, weight: 8 },
+      { id: 137, weight: 8 },
+      { id: 185, weight: 8 },
+      { id: 201, weight: 50 },
+      { id: 202, weight: 50 },
+      { id: 203, weight: 40 }
     ]
   },
 
@@ -649,20 +656,21 @@ export const ENCOUNTER_TABLES = {
       { id: 153, minLevel: 35, maxLevel: 42, weight: 6 }
     ]
   },
-  /** 六角遗迹封印密室：机关核心旁的首领级隐藏生态，偏机械与终局守护者 */
+  /** 六角遗迹封印密室：机关核心旁的秘境专属生态，偏机械与终局守护者 */
   region_ruin_sealed_chamber_35_42: {
     baseRate: 0.14,
     tallGrassRate: 0.36,
     safeStepsAfterBattle: 4,
+    levelReferenceTableIds: ['region_ruin_35_42', 'region_ruin_west_35_42', 'region_ruin_east_35_42'],
     pokemon: [
-      { id: 45, minLevel: 47, maxLevel: 49, weight: 11 },
-      { id: 11, minLevel: 47, maxLevel: 49, weight: 10 },
-      { id: 175, minLevel: 47, maxLevel: 49, weight: 10 },
-      { id: 109, minLevel: 47, maxLevel: 49, weight: 9 },
-      { id: 143, minLevel: 47, maxLevel: 49, weight: 8 },
-      { id: 204, minLevel: 58, maxLevel: 58, weight: 50 },
-      { id: 205, minLevel: 58, maxLevel: 58, weight: 50 },
-      { id: 206, minLevel: 61, maxLevel: 61, weight: 40 }
+      { id: 45, weight: 11 },
+      { id: 11, weight: 10 },
+      { id: 175, weight: 10 },
+      { id: 109, weight: 9 },
+      { id: 143, weight: 8 },
+      { id: 204, weight: 50 },
+      { id: 205, weight: 50 },
+      { id: 206, weight: 40 }
     ]
   },
 
@@ -800,20 +808,21 @@ export const ENCOUNTER_TABLES = {
       { id: 69, minLevel: 58, maxLevel: 60, weight: 4 }
     ]
   },
-  /** 星雾高地观星秘径：终局首领级隐藏区，偏传说/龙/岩的高风险高回报遭遇 */
+  /** 星雾高地观星秘径：终局秘境，偏传说/龙/岩的专属遭遇 */
   region_peak_starwatch_52_60: {
     baseRate: 0.16,
     tallGrassRate: 0.38,
     safeStepsAfterBattle: 5,
+    levelReferenceTableIds: ['region_peak_52_60', 'region_peak_south_52_60', 'region_peak_east_52_60'],
     pokemon: [
-      { id: 25, minLevel: 65, maxLevel: 67, weight: 10 },
-      { id: 26, minLevel: 65, maxLevel: 67, weight: 10 },
-      { id: 27, minLevel: 65, maxLevel: 67, weight: 9 },
-      { id: 109, minLevel: 65, maxLevel: 67, weight: 8 },
-      { id: 143, minLevel: 65, maxLevel: 67, weight: 8 },
-      { id: 207, minLevel: 70, maxLevel: 70, weight: 3 },
-      { id: 208, minLevel: 70, maxLevel: 70, weight: 2 },
-      { id: 209, minLevel: 70, maxLevel: 70, weight: 2 }
+      { id: 25, weight: 10 },
+      { id: 26, weight: 10 },
+      { id: 27, weight: 9 },
+      { id: 109, weight: 8 },
+      { id: 143, weight: 8 },
+      { id: 207, weight: 3 },
+      { id: 208, weight: 2 },
+      { id: 209, weight: 2 }
     ]
   }
 }
@@ -869,6 +878,35 @@ function applyEncounterMinLevelFloor(tableId, minLevelFloor) {
 
 for (const [tableId, minLevelFloor] of Object.entries(REGULAR_ENCOUNTER_MIN_LEVEL_FLOORS)) {
   applyEncounterMinLevelFloor(tableId, minLevelFloor)
+}
+
+// 秘境统一比本地图可遭遇的最强普通草丛野怪高 1 级，且不超过 Lv.100。
+// 在普通草丛等级校正后执行，让遭遇抽取和图鉴共用同一份最终等级。
+for (const [tableId, table] of Object.entries(ENCOUNTER_TABLES)) {
+  if (!Array.isArray(table.levelReferenceTableIds)) continue
+  const ordinaryMaxLevels = table.levelReferenceTableIds.flatMap((referenceId) => (
+    (ENCOUNTER_TABLES[referenceId]?.pokemon || []).flatMap((row) => {
+      const bounds = getSpeciesLevelBounds(row.id)
+      const min = Math.max(row.minLevel, bounds.min)
+      const max = Math.min(row.maxLevel, bounds.max)
+      return min <= max ? [max] : []
+    })
+  ))
+  if (ordinaryMaxLevels.length === 0) throw new Error(`Missing ordinary encounters for ${tableId}`)
+  const level = Math.min(100, Math.max(...ordinaryMaxLevels) + 1)
+  table.pokemon = table.pokemon.map((row) => {
+    // 降级后的普通进化形态回到同族合法阶段，避免抽取时被过滤或回退到新手怪。
+    const id = resolveSpeciesForLevelWithVariety({ preferredIds: [row.id], level })
+    if (!id) throw new Error(`No legal encounter form for ${tableId}/${row.id} at Lv.${level}`)
+    return { ...row, id, minLevel: level, maxLevel: level }
+  })
+}
+
+export function getEncounterTableLevelRange(tableId) {
+  const rows = ENCOUNTER_TABLES[tableId]?.pokemon || []
+  return rows.length > 0
+    ? [Math.min(...rows.map((row) => row.minLevel)), Math.max(...rows.map((row) => row.maxLevel))]
+    : null
 }
 
 export function getEncounterTable(tableId) {

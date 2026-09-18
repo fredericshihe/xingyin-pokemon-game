@@ -76,7 +76,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     STAT_BOOST_ITEMS
   } = await loadModule('/src/utils/gameData.js')
   const { getPokemonAcquisitionInfo } = await loadModule('/src/utils/pokemonAcquisition.js')
-  const { getSpeciesLevelBounds } = await loadModule('/src/utils/wildEncounterRules.js')
+  const { getSpeciesLevelBounds, pickWildEncounter } = await loadModule('/src/utils/wildEncounterRules.js')
   const { normalizeChallengeRarePool } = await loadModule('/src/utils/challengeRareUnlock.js')
 
   const monsterById = new Map(MONSTERS.map((monster) => [Number(monster.id), monster]))
@@ -138,6 +138,18 @@ await withViteAuditServer(async ({ loadModule }) => {
     })
 
     const deepZones = (map.encounterZones || []).filter((zone) => zone?.depth === 'deep')
+    const ordinaryTableIds = [...new Set((map.encounterZones || [])
+      .filter((zone) => zone?.depth !== 'deep')
+      .map((zone) => zone.encounterTableId))]
+    const ordinaryMax = Math.max(...ordinaryTableIds.flatMap((tableId) => (
+      (ENCOUNTER_TABLES[tableId]?.pokemon || []).flatMap((entry) => {
+        const bounds = getSpeciesLevelBounds(entry.id)
+        const min = Math.max(entry.minLevel, bounds.min)
+        const max = Math.min(entry.maxLevel, bounds.max)
+        return min <= max ? [max] : []
+      })
+    )))
+    const expectedHiddenLevel = Math.min(100, ordinaryMax + 1)
     for (const zone of deepZones) {
       const table = ENCOUNTER_TABLES[zone.encounterTableId]
       const entries = Array.isArray(table?.pokemon) ? table.pokemon : []
@@ -145,6 +157,30 @@ await withViteAuditServer(async ({ loadModule }) => {
         errors.push(`${mapId}/${zone.id} missing hidden encounter table ${zone.encounterTableId}`)
         continue
       }
+      const referenceIds = table.levelReferenceTableIds || []
+      if (
+        referenceIds.length !== ordinaryTableIds.length ||
+        ordinaryTableIds.some((tableId) => !referenceIds.includes(tableId))
+      ) {
+        errors.push(`${mapId}/${zone.id} must derive its level from all ordinary grass tables in its own map`)
+      }
+      if (
+        !Number.isInteger(expectedHiddenLevel) ||
+        zone.levelRange?.[0] !== expectedHiddenLevel ||
+        zone.levelRange?.[1] !== expectedHiddenLevel
+      ) {
+        errors.push(`${mapId}/${zone.id} must be ordinary grass maximum ${ordinaryMax} + 1 (capped at 100)`)
+      }
+      entries.forEach((entry) => {
+        // Exercise every possible row through the real picker, including evolved forms.
+        const encounter = pickWildEncounter({ pokemon: [entry] })
+        if (
+          entry.minLevel !== expectedHiddenLevel || entry.maxLevel !== expectedHiddenLevel ||
+          encounter?.id !== entry.id || encounter?.level !== expectedHiddenLevel
+        ) {
+          errors.push(`${mapId}/${zone.id} #${entry.id} must remain encounterable at Lv.${expectedHiddenLevel}`)
+        }
+      })
 
       const expectedExclusiveIds = HIDDEN_EXCLUSIVE_POKEMON_BY_ZONE[zone.id] || []
       const entryIds = entries.map((entry) => Math.trunc(Number(entry.id))).filter(Number.isInteger)
@@ -272,6 +308,8 @@ await withViteAuditServer(async ({ loadModule }) => {
         ))
         if (!hiddenRoute) {
           errors.push(`${mapId}/${zone.id} hidden Pokedex route missing for ${monster?.name || pokemonId}`)
+        } else if (hiddenRoute.levelRange !== `Lv.${expectedHiddenLevel}`) {
+          errors.push(`${mapId}/${zone.id} #${pokemonId} Pokedex must show Lv.${expectedHiddenLevel}`)
         }
       })
 
@@ -279,6 +317,8 @@ await withViteAuditServer(async ({ loadModule }) => {
         mapId,
         zoneId: zone.id,
         zoneName: zone.name,
+        ordinaryMax,
+        hiddenLevel: expectedHiddenLevel,
         treasure: treasures[0] || null,
         exclusive: expectedExclusiveIds
           .map((pokemonId) => `${monsterById.get(pokemonId)?.name || pokemonId}#${pokemonId}`)
@@ -306,7 +346,7 @@ await withViteAuditServer(async ({ loadModule }) => {
 
 console.log('=== 隐藏区奖励与图鉴路线审计 ===')
 summary.forEach((entry) => {
-  console.log(`${entry.mapId}/${entry.zoneId}: treasure=${entry.treasure?.id || 'none'}:${entry.treasure?.itemKey || 'none'}x${entry.treasure?.quantity || 0}=${entry.treasure?.value || 0}; exclusiveShare=${(entry.exclusiveShare * 100).toFixed(1)}%; ordinaryMaxWeight=${entry.ordinaryMaxWeight}; exclusive=${entry.exclusive}; rare=${entry.rareStrong.join(', ')}`)
+  console.log(`${entry.mapId}/${entry.zoneId}: Lv.${entry.ordinaryMax} → Lv.${entry.hiddenLevel}; treasure=${entry.treasure?.id || 'none'}:${entry.treasure?.itemKey || 'none'}x${entry.treasure?.quantity || 0}=${entry.treasure?.value || 0}; exclusiveShare=${(entry.exclusiveShare * 100).toFixed(1)}%; ordinaryMaxWeight=${entry.ordinaryMaxWeight}; exclusive=${entry.exclusive}; rare=${entry.rareStrong.join(', ')}`)
 })
 
 if (errors.length > 0) {
@@ -315,4 +355,4 @@ if (errors.length > 0) {
   process.exit(1)
 }
 
-console.log('\nOK: 每个隐藏区都有高价值宝箱、3只专属强力宝可梦、Boss等级段遭遇，并且图鉴捕获途径包含隐藏区解锁路线。')
+console.log('\nOK: 每个隐藏区都有高价值宝箱、3只专属强力宝可梦、普通草丛最高等级 +1 的遭遇，并且图鉴捕获途径包含隐藏区解锁路线。')

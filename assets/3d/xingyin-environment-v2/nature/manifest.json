@@ -1,0 +1,114 @@
+[
+  {
+    "name": "bush_large",
+    "label": "统一阔叶灌木",
+    "themeTags": [
+      "nature",
+      "bush",
+      "edge"
+    ],
+    "triangles": 432,
+    "file": "/assets/3d/xingyin-environment-v2/nature/bush_large.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "source": "Blender 5.2 original nature assets",
+    "bounds": {
+      "min": [
+        -0.7784654498100281,
+        0,
+        -0.5299999117851257
+      ],
+      "max": [
+        0.7565076947212219,
+        0.92596834897995,
+        0.7100275158882141
+      ]
+    },
+    "heightMetres": 0.92596834897995,
+    "bytes": 4748
+  },
+  {
+    "name": "rock_large",
+    "label": "统一低多边形巨石",
+    "themeTags": [
+      "nature",
+      "rock",
+      "boundary"
+    ],
+    "triangles": 40,
+    "file": "/assets/3d/xingyin-environment-v2/nature/rock_large.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "source": "Blender 5.2 original nature assets",
+    "bounds": {
+      "min": [
+        -0.8528000116348267,
+        0,
+        -0.6588000059127808
+      ],
+      "max": [
+        0.8200000524520874,
+        0.7699801921844482,
+        0.6466232538223267
+      ]
+    },
+    "heightMetres": 0.7699801921844482,
+    "bytes": 1616
+  },
+  {
+    "name": "flower_yellow_cluster",
+    "label": "统一黄花簇",
+    "themeTags": [
+      "nature",
+      "flower",
+      "yellow"
+    ],
+    "triangles": 360,
+    "file": "/assets/3d/xingyin-environment-v2/nature/flower_yellow_cluster.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "source": "Blender 5.2 original nature assets",
+    "bounds": {
+      "min": [
+        -0.5213525295257568,
+        0,
+        -0.19265848398208618
+      ],
+      "max": [
+        0.5499999523162842,
+        0.7818526029586792,
+        0.3826793432235718
+      ]
+    },
+    "heightMetres": 0.7818526029586792,
+    "bytes": 4532
+  },
+  {
+    "name": "flower_red_cluster",
+    "label": "统一红花簇",
+    "themeTags": [
+      "nature",
+      "flower",
+      "red"
+    ],
+    "triangles": 360,
+    "file": "/assets/3d/xingyin-environment-v2/nature/flower_red_cluster.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "source": "Blender 5.2 original nature assets",
+    "bounds": {
+      "min": [
+        -0.5213525295257568,
+        0,
+        -0.19265848398208618
+      ],
+      "max": [
+        0.5499999523162842,
+        0.7818526029586792,
+        0.3826793432235718
+      ]
+    },
+    "heightMetres": 0.7818526029586792,
+    "bytes": 4520
+  }
+]

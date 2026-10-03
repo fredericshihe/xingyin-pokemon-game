@@ -1,0 +1,59 @@
+[
+  {
+    "name": "tree_oak",
+    "label": "成熟阔叶橡树",
+    "kind": "oak",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.25,
+    "heightMetres": 3.545,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.287,
+    "triangles": 572,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_oak.glb",
+    "themeTags": [
+      "forest",
+      "deciduous",
+      "oak"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  },
+  {
+    "name": "tree_default",
+    "label": "层叠阔叶树",
+    "kind": "deciduous",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.1,
+    "heightMetres": 3.195,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.061,
+    "triangles": 468,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_default.glb",
+    "themeTags": [
+      "forest",
+      "deciduous",
+      "default"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  },
+  {
+    "name": "tree_pineTallA_detailed",
+    "label": "高山层叠松树",
+    "kind": "pine",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.85,
+    "heightMetres": 4.105,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.648,
+    "triangles": 682,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_pineTallA_detailed.glb",
+    "themeTags": [
+      "forest",
+      "alpine",
+      "pine"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  }
+]

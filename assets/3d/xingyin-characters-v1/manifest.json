@@ -462,5 +462,23 @@
       "style": "breeder",
       "source": "Blender 5.2 / original Xingyin collection"
     }
+  ],
+  "vehicles": [
+    {
+      "id": "player_sports_car",
+      "name": "旅行跑车",
+      "file": "player_sports_car.glb",
+      "source": "Blender / original Xingyin tourer",
+      "frontAxis": "+Z",
+      "wheelAxis": "X",
+      "wheelNodes": [
+        "frontLeftWheel",
+        "frontRightWheel",
+        "rearLeftWheel",
+        "rearRightWheel"
+      ],
+      "meshes": 5,
+      "materials": 1
+    }
   ]
 }

@@ -1,0 +1,308 @@
+{
+  "version": 2,
+  "locale": "zh-CN",
+  "index_path": "aoci.txt",
+  "exclude_dirs": [
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    "target",
+    ".next",
+    "coverage",
+    "tmp",
+    "uploads",
+    "backup",
+    "backups",
+    "artifacts",
+    ".output",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    ".nox",
+    "htmlcov"
+  ],
+  "exclude_files": [
+    "*.backup.*",
+    "*.bak",
+    ".coverage"
+  ],
+  "exclude_exts": [],
+  "curation_exclude": [],
+  "hook_strict": false,
+  "ledger_enabled": true,
+  "line_ending_tolerance": true,
+  "cognition_refresh_threshold": 30,
+  "overview_delivery": {
+    "chunk_tokens": 8000
+  },
+  "managed_scope": {
+    "version": "managed-scope-policy/v2",
+    "profile": "production",
+    "observe_change_policy": "review_required",
+    "approval_mode": "auto",
+    "approval_thresholds": {
+      "entry_removal_count": 25,
+      "entry_removal_percent": 25
+    },
+    "rules": [
+      {
+        "rule_id": "temporary-builds",
+        "action": "exclude",
+        "pattern": ".tmp*/**",
+        "pattern_kind": "glob",
+        "reason": "临时构建输出是源码的重复副本，不承载独立业务规则",
+        "source": "user",
+        "created_by": "codex",
+        "order": 0,
+        "enabled": true
+      },
+      {
+        "rule_id": "qa-bundle",
+        "action": "exclude",
+        "pattern": "qa/**",
+        "pattern_kind": "glob",
+        "reason": "qa 目录为 Vite 编译和资源拷贝输出",
+        "source": "user",
+        "created_by": "codex",
+        "order": 10,
+        "enabled": true
+      },
+      {
+        "rule_id": "scratch-scripts",
+        "action": "exclude",
+        "pattern": "scripts/.tmp-*",
+        "pattern_kind": "glob",
+        "reason": "本地临时调试脚本不属于维护入口",
+        "source": "user",
+        "created_by": "codex",
+        "order": 20,
+        "enabled": true
+      },
+      {
+        "rule_id": "private-secrets",
+        "action": "exclude",
+        "pattern": "local-secrets/**",
+        "pattern_kind": "glob",
+        "reason": "本机私密配置不进入认知索引",
+        "source": "user",
+        "created_by": "codex",
+        "order": 30,
+        "enabled": true
+      },
+      {
+        "rule_id": "runtime-assets",
+        "action": "observe",
+        "pattern": "public/assets/**",
+        "pattern_kind": "glob",
+        "reason": "运行素材按指纹追踪，行为由资源清单与加载源码描述",
+        "source": "user",
+        "created_by": "codex",
+        "order": 40,
+        "enabled": true
+      },
+      {
+        "rule_id": "source-images",
+        "action": "observe",
+        "pattern": "src/assets/**",
+        "pattern_kind": "glob",
+        "reason": "图片和音效为素材，行为由消费组件描述",
+        "source": "user",
+        "created_by": "codex",
+        "order": 50,
+        "enabled": true
+      },
+      {
+        "rule_id": "art-workfiles",
+        "action": "observe",
+        "pattern": "art/**",
+        "pattern_kind": "glob",
+        "reason": "美术源文件与设计产物保留变更证据",
+        "source": "user",
+        "created_by": "codex",
+        "order": 60,
+        "enabled": true
+      },
+      {
+        "rule_id": "extracted-maps",
+        "action": "observe",
+        "pattern": "extracted_maps/**",
+        "pattern_kind": "glob",
+        "reason": "地图提取中间资源保留变更证据",
+        "source": "user",
+        "created_by": "codex",
+        "order": 70,
+        "enabled": true
+      },
+      {
+        "rule_id": "kenney-source",
+        "action": "observe",
+        "pattern": "kenney_tiles/**",
+        "pattern_kind": "glob",
+        "reason": "第三方原始素材保留来源和变更证据",
+        "source": "user",
+        "created_by": "codex",
+        "order": 80,
+        "enabled": true
+      },
+      {
+        "rule_id": "binary-archive",
+        "action": "observe",
+        "pattern": "*.zip",
+        "pattern_kind": "glob",
+        "reason": "原始素材压缩包按指纹追踪",
+        "source": "user",
+        "created_by": "codex",
+        "order": 90,
+        "enabled": true
+      },
+      {
+        "rule_id": "asset-json",
+        "action": "index",
+        "pattern": "public/assets/**/*.json",
+        "pattern_kind": "glob",
+        "reason": "资源清单是运行资源选择和校验的配置契约",
+        "source": "user",
+        "created_by": "codex",
+        "order": 100,
+        "enabled": true
+      },
+      {
+        "rule_id": "asset-docs",
+        "action": "index",
+        "pattern": "public/assets/**/*.md",
+        "pattern_kind": "glob",
+        "reason": "素材来源和使用约束进入索引",
+        "source": "user",
+        "created_by": "codex",
+        "order": 110,
+        "enabled": true
+      },
+      {
+        "rule_id": "art-docs",
+        "action": "index",
+        "pattern": "art/**/*.md",
+        "pattern_kind": "glob",
+        "reason": "建模与设计说明进入索引",
+        "source": "user",
+        "created_by": "codex",
+        "order": 120,
+        "enabled": true
+      },
+      {
+        "rule_id": "art-config",
+        "action": "index",
+        "pattern": "art/**/*.json",
+        "pattern_kind": "glob",
+        "reason": "美术管线参数和测量清单进入索引",
+        "source": "user",
+        "created_by": "codex",
+        "order": 130,
+        "enabled": true
+      },
+      {
+        "rule_id": "vendor-draco",
+        "action": "exclude",
+        "pattern": "public/draco/**",
+        "pattern_kind": "glob",
+        "reason": "随 three 复制的第三方解码器由依赖版本和复制脚本管理",
+        "source": "user",
+        "created_by": "codex",
+        "order": 140,
+        "enabled": true
+      },
+      {
+        "rule_id": "binary-reports",
+        "action": "observe",
+        "pattern": "reports/**",
+        "pattern_kind": "glob",
+        "reason": "验收报告是特定时点的证据，不作为当前运行规则",
+        "source": "user",
+        "created_by": "codex",
+        "order": 150,
+        "enabled": true
+      }
+    ]
+  },
+  "cognition_budget": {
+    "version": "cognition-budget-policy/v1",
+    "mode": "enforce",
+    "whole_index": {
+      "target_tokens": 200000,
+      "warning_tokens": 300000,
+      "max_tokens": 400000
+    },
+    "r": [
+      {
+        "min_c": 1,
+        "max_c": 4,
+        "target_tokens": 25,
+        "max_tokens": 50
+      },
+      {
+        "min_c": 5,
+        "max_c": 7,
+        "target_tokens": 45,
+        "max_tokens": 90
+      },
+      {
+        "min_c": 8,
+        "max_c": 8,
+        "target_tokens": 70,
+        "max_tokens": 140
+      },
+      {
+        "min_c": 9,
+        "max_c": 9,
+        "target_tokens": 90,
+        "max_tokens": 180
+      }
+    ],
+    "s": [
+      {
+        "min_c": 1,
+        "max_c": 4,
+        "target_tokens": 20,
+        "max_tokens": 40
+      },
+      {
+        "min_c": 5,
+        "max_c": 7,
+        "target_tokens": 40,
+        "max_tokens": 80
+      },
+      {
+        "min_c": 8,
+        "max_c": 8,
+        "target_tokens": 70,
+        "max_tokens": 140
+      },
+      {
+        "min_c": 9,
+        "max_c": 9,
+        "target_tokens": 100,
+        "max_tokens": 200
+      }
+    ]
+  },
+  "installed_agents": [],
+  "automation": {
+    "mode": "auto"
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "openai-compatible",
+    "base_url": "",
+    "model": "",
+    "api_key_env": "",
+    "timeout_seconds": 0,
+    "max_concurrency": 0,
+    "max_input_tokens": 0,
+    "token_accounting": "auto",
+    "prompt_snapshot": "redacted"
+  }
+}

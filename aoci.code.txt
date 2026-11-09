@@ -1,0 +1,856 @@
+#AOCI-CODE-VOLUME: 1
+
+===/Users/shihe/Documents/宝可梦养成/===
+.env.example[FC5S]: F:提供本地与部署环境变量模板及长期功能开关 | R:code:vite.config.js,code:src/utils/primeStudentSession.js,code:.github/workflows/deploy-pages.yml | A:提供本地与部署环境变量模板及长期功能开关 | S:长期功能开关在对应迁移和验证完成前保持关闭
+.gitattributes[FV4S]: F:固定跨平台检出时的文本换行策略供 AOCI 字节基线使用 | R:code:.aoci/baseline.json,code:aoci.code.txt | A:固定跨平台检出时的文本换行策略供 AOCI 字节基线使用 | S:文本文件统一 LF，避免 autocrlf 造成整树漂移
+.gitignore[FV4S]: F:声明依赖、构建产物、环境变量和本地临时文件的忽略范围 | R:code:package.json,code:.env.example | A:声明依赖、构建产物、环境变量和本地临时文件的忽略范围 | S:-
+.nvmrc[FV4T]: F:固定项目开发和构建使用的 Node.js 主版本 | R:code:package.json,code:.github/workflows/deploy-pages.yml | A:固定项目开发和构建使用的 Node.js 主版本 | S:当前版本为 Node 20
+AGENTS.md[SG9L]: F:规定 AOCI 仓库认知、作者化、维护、恢复和收尾合同 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定 AOCI 仓库认知、作者化、维护、恢复和收尾合同 | S:受管对象稳定后只维护一次；必须使用机器签发候选和完整批次，不得猜写索引
+AUDIO_BUGS_ANALYSIS.md[SG5M]: F:记录 BGM 总线、音量、预加载和 AudioContext 问题的根因分析 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:记录 BGM 总线、音量、预加载和 AudioContext 问题的根因分析 | S:BGM 总线必须接入 master，不能直接绕过主增益连接 destination
+AUDIO_DOWNLOAD_PROGRESS.md[SG4M]: F:记录地图 BGM 下载进度、文件大小和待验证资源 | R:code:public/assets/audio/manifest.json,code:public/assets/audio/maps | A:记录地图 BGM 下载进度、文件大小和待验证资源 | S:mist-lake 文件偏小，报告要求额外确认是否完整可播放
+AUDIO_DOWNLOAD_REPORT.md[SG4M]: F:汇总地图 BGM 与技能音效的来源、授权和文件清单 | R:code:public/assets/audio/manifest.json,code:scripts/download-audio.mjs | A:汇总地图 BGM 与技能音效的来源、授权和文件清单 | S:报告中的资源来源标注为 CC0
+AUDIO_FINAL_PROGRESS.md[SG5M]: F:记录音频目录、属性分类音效和代码接入的阶段进度 | R:code:src/utils/gameAudio.js,code:public/assets/audio/manifest.json | A:记录音频目录、属性分类音效和代码接入的阶段进度 | S:技能音效目录按属性划分，运行时查找依赖 manifest 和资源存在性
+AUDIO_FIXES.md[SG6M]: F:汇总音频总线、设置、预加载和音量控制的修复项及测试清单 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:汇总音频总线、设置、预加载和音量控制的修复项及测试清单 | S:音量设置应由统一总线生效，预加载需要超时和可取消机制
+AUDIO_FIXES_SUMMARY.md[SG5M]: F:解释 BGM 总线连接、设置重复应用和预加载问题的修复前后差异 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:解释 BGM 总线连接、设置重复应用和预加载问题的修复前后差异 | S:BGM 通过 master 受统一静音和音量控制
+AUDIO_FIX_COMPLETE.md[SG5M]: F:提供音频修复完成状态、影响和浏览器验证步骤 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:提供音频修复完成状态、影响和浏览器验证步骤 | S:AudioContext 仍受浏览器用户手势策略约束
+AUDIO_PROJECT_SUMMARY.md[SG5M]: F:总结音频下载、压缩、地图 BGM、技能音效和文档交付状态 | R:code:scripts/download-audio.mjs,code:scripts/compress-audio.sh,code:public/assets/audio/manifest.json | A:总结音频下载、压缩、地图 BGM、技能音效和文档交付状态 | S:压缩流程依赖 ffmpeg，资源清单是运行时集成的依据
+AUDIO_QUICKSTART.md[SG4M]: F:提供下载、压缩和验证音频资源的快速操作步骤 | R:code:package.json,code:scripts/download-audio.mjs,code:scripts/compress-audio.sh | A:提供下载、压缩和验证音频资源的快速操作步骤 | S:技能音效链接可能需要逐项人工验证
+AUDIO_README.md[SG4M]: F:概览音频替换项目的自动化脚本、地图 BGM 和技能音效资源 | R:code:scripts/download-audio.mjs,code:scripts/compress-audio.sh,code:public/assets/audio | A:概览音频替换项目的自动化脚本、地图 BGM 和技能音效资源 | S:资源替换包含下载、压缩、清单和运行时接入几个环节
+AUDIO_REPLACEMENT_PLAN.md[SB5M]: F:规划地图 BGM、技能音效、授权和体积优化的整体替换方案 | R:code:AUDIO_RESOURCES_CONFIG.md,code:scripts/download-audio.mjs,code:public/assets/audio/manifest.json | A:规划地图 BGM、技能音效、授权和体积优化的整体替换方案 | S:地图音乐需按场景气质选择，文件应在发布前压缩
+AUDIO_RESOURCES_CONFIG.md[FC5M]: F:保存地图 BGM 和属性技能音效的文件、来源、下载地址与配置 | R:code:scripts/download-audio.mjs,code:public/assets/audio/manifest.json | A:保存地图 BGM 和属性技能音效的文件、来源、下载地址与配置 | S:外部资源授权和下载地址是资源审查的一部分
+AUDIO_TODO_CHECKLIST.md[SG4M]: F:列出音频压缩、地图播放和浏览器测试的剩余检查项 | R:code:AUDIO_QUICKSTART.md,code:package.json,code:src/utils/gameBgm.js | A:列出音频压缩、地图播放和浏览器测试的剩余检查项 | S:清单中的播放验证不能由静态资源存在性替代
+AUDIO_TROUBLESHOOTING.md[SG5M]: F:按浏览器控制台、AudioContext、开关和缓存状态诊断无声问题 | R:code:public/audio-debug.js,code:src/utils/gameAudio.js,code:src/utils/gameBgm.js | A:按浏览器控制台、AudioContext、开关和缓存状态诊断无声问题 | S:AudioContext 可能处于 suspended，必须经过用户手势解锁
+BGM_FIX_PLAN.md[SB5M]: F:分析战斗与地图 BGM 竞态并规划场景切换修复 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBgm.js | A:分析战斗与地图 BGM 竞态并规划场景切换修复 | S:战斗 BGM 判断需要同时考虑 view 和 battleEnvironment
+BGM_FIX_REFRESH_AND_OVERLAP.md[SB5M]: F:记录刷新后 BGM 丢失和快速切换叠加的修复策略 | R:code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:记录刷新后 BGM 丢失和快速切换叠加的修复策略 | S:停止时要清除 pendingScene 与待处理的停止定时器
+BGM_FIX_SUMMARY.md[SG5M]: F:总结战斗期间地图音乐叠加的竞态根因和修复逻辑 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBgm.js | A:总结战斗期间地图音乐叠加的竞态根因和修复逻辑 | S:地图和战斗播放条件必须互斥
+BGM_OVERLAP_FIX_FINAL.md[SG5M]: F:记录强制立即停止旧层、零延迟 teardown 和切换去重方案 | R:code:src/utils/gameBgm.js | A:记录强制立即停止旧层、零延迟 teardown 和切换去重方案 | S:immediate 模式应立即停止 source 并断开 gain，避免旧层残留
+BGM_修复完成.md[SG5M]: F:说明 BGM 叠加问题的条件修复和最终播放判断 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBgm.js | A:说明 BGM 叠加问题的条件修复和最终播放判断 | S:战斗结束时 view 先变更，清理 battleEnvironment 的时序必须保持互斥
+Bug修复完成记录.md[SG5M]: F:汇总经验循环、音频、缓存和其他运行时缺陷的修复记录 | R:code:src/utils/pokemonProgress.js,code:src/utils/gameAudio.js,code:src/components/Game/OriginalGame.jsx | A:汇总经验循环、音频、缓存和其他运行时缺陷的修复记录 | S:经验结算包含每次获得经验的升级安全上限，防止异常循环卡死
+CACHE_CLEAR_GUIDE.md[SG4M]: F:提供 Service Worker、浏览器缓存、开发服务器和无痕窗口的清缓存步骤 | R:code:src/utils/gameAssetBootstrap.js,code:vite.config.js | A:提供 Service Worker、浏览器缓存、开发服务器和无痕窗口的清缓存步骤 | S:地图和模型验证前需清除 Service Worker 与 Cache Storage
+DATABASE_SETUP.md[SB5M]: F:说明 Supabase 表、函数、SQL Editor 和连接方式的初始化与检查 | R:code:SUPABASE_DB_PUSH_RUNBOOK.md,code:supabase/migrations,code:fix-all-rls.sql | A:说明 Supabase 表、函数、SQL Editor 和连接方式的初始化与检查 | S:数据库推送遵循 runbook 的 pooler 连接要求，不能裸跑默认命令
+DECORATION_FILTER_FIX_FINAL.md[SB5S]: F:记录大型装饰被草地过滤器误删及开放填充和道路主题例外 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:记录大型装饰被草地过滤器误删及开放填充和道路主题例外 | S:sourceId 含 _openfill_ 或 corridor_theme 的装饰必须绕过尺寸过滤
+DECORATION_FIX.md[SB4S]: F:记录开放地面大型装饰被草地过滤器误删及按来源标识放行的修复 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:开放地面填充装饰应绕过仅保留草地大型装饰的过滤 | S:文中75%-88%密度是旧配置描述，当前生成概率上限为35%
+FINAL_REPORT.txt[SU3M]: F:汇总音频替换阶段成果、技能音效接口和剩余下载压缩工作 | R:code:src/utils/gameAudio.js,code:scripts/download-audio.mjs,code:scripts/compress-audio.sh | A:记录按技能属性解析音效文件及预加载的调用方式 | S:完成度和待办是当时进度快照，不能证明现时素材齐备
+MAP_BOUNDARY_ANALYSIS.md[SQ4S]: F:对比海岸旧边界和其他区域边界堆叠、尺寸及主题模型并提出调整方案 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:评估堆叠层数、比例及主题模型的边界清晰度 | S:方案选项不是当前地图边界已实施的证明
+MAP_BOUNDARY_IMPROVEMENTS.md[SB4S]: F:记录各地图边界堆叠层数、模型比例及走廊散布密度的阶段调整 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:按地图主题配置边界层数与模型比例 | S:报告数值是历史配置，新增地图和后续调整以当前源码为准
+MAP_CACHE_DIAGNOSIS.md[SP4M]: F:梳理地图改动未显现时PWA资源缓存、浏览器缓存、Three模型缓存及过滤链路 | R:code:vite.config.js,code:src/game/threeLowPolyModelCache.js,code:src/game/data/godotMaps/godot_region_maps.js | A:排查时区分缓存、模型加载失败与生成后过滤 | S:旧文记载缓存30天，当前TTL已变为180天；不能把缓存直接认定为唯一根因
+MAP_COMPLETE_REDESIGN_FINAL.md[SB4M]: F:记录以海岸地图为参照对七张地图压缩地标并统一主题散布的阶段成果 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_COMPLETE_REDESIGN_PLAN.md | A:逐图列出当时的主题焦点、地标坐标和散布目标 | S:地标及散布数是历史报告，不能替代现行地图定义
+MAP_COMPLETE_REDESIGN_PLAN.md[SB4M]: F:提出七张地图单主题、少地标、主题散布与边界重设计方案 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_COMPLETE_REDESIGN_FINAL.md | A:给出逐图配置示例和人工验收标准 | S:示例配置属于方案文本，不能直接视为运行时地图数据
+MAP_COMPREHENSIVE_AUDIT.md[SQ5M]: F:审视地图模型比例、碰撞、事件与遭遇区联通及空地填充并提出实施顺序 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:将路径清理、占地碰撞、联通和填充列为共同验收点 | S:文中的碰撞辅助函数代码块是建议实现，不能视为现有源码
+MAP_DECORATIONS_DETAILED_AUDIT.md[SQ4M]: F:以海岸地图为基线逐图审查地标、散布和边界数量比例 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_DECORATIONS_OPTIMIZATION_REPORT.md | A:逐图提出地标类型、散布与边界调整建议 | S:所引装饰列表是优化前快照，后续地图重设计已改变配置
+MAP_DECORATIONS_OPTIMIZATION_REPORT.md[SB4M]: F:记录增大地标、减少散布、调高边界比例及避让道路的首轮实施结果 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_DECORATIONS_DETAILED_AUDIT.md | A:地标应避让道路，主题散布限于合适地块 | S:地标数和比例仅是首轮报告，后续生成过滤可改变最终对象
+MAP_DECORATION_CHANGES_SUMMARY.md[SB4S]: F:汇总道路旁主题装饰与开放地面填充的密度、类型和避让范围 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_DECORATION_ENHANCEMENT.md | A:填充需避让道路、事件、水域、遭遇区和高草入口 | S:表中75%-88%是旧配置密度，当前生成概率钳至不超过35%
+MAP_DECORATION_ENHANCEMENT.md[SB4S]: F:记录主题走廊散布扩面和开放地面大型阻挡模型的加入 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:填充模型参与路径阻挡且应保留事件、道路和高草可达 | S:文中标称密度受当前源码35%生成概率上限约束
+MAP_FINAL_IMPLEMENTATION_REPORT.md[SQ4M]: F:汇总边界、地标、道路冲突、比例、碰撞和联通优化的阶段结果 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:MAP_BOUNDARY_IMPROVEMENTS.md,code:MAP_DECORATIONS_OPTIMIZATION_REPORT.md | A:附碰撞、联通、视觉和性能人工验收清单 | S:文中全图可达及大型模型碰撞结论不是当前地图自动验证证明
+MAP_FIX_REPORT.md[SB5S]: F:定位装饰类型与模型解析别名不匹配导致岩石灌木木堆未渲染的原因 | R:code:src/game/decorativeModelSpec.js,code:src/game/threeLowPolyModelCache.js,code:src/game/ThreeLowPolyMap.jsx | A:装饰类型必须解析为可加载的模型键 | S:当前别名分支已迁至decorativeModelSpec.js，报告所指缓存文件是历史位置
+MAP_SYSTEM_REBUILD_PLAN.md[SB5L]: F:提出React、Phaser、Tiled和Supabase的大地图重建架构及阶段迁移 | R:code:src/game/GameCanvas.jsx,code:src/components/Game/OriginalGame.jsx,code:src/game/data/mapRegistry.js | A:方案约定Tiled图层、事件桥接和仅保存世界变化 | S:这是未落地的Phaser方案，当前GameCanvas挂载Three地图且package.json无Phaser依赖
+MOBILE_PERFORMANCE_OPTIMIZATION.md[SP5M]: F:记录移动端地图渲染优化、草丛动画剔除和性能探针的阶段方案 | R:code:src/game/ThreeLowPolyMap.jsx | A:提供mapQuality和perf查询参数用于画质及性能检查 | S:文内DPR、抗锯齿及FPS数字为当时预期，现行渲染档参数需以源码和实测为准
+MOVE_SFX_USAGE_GUIDE.md[SU5M]: F:说明按技能键从属性目录加载与预加载OGG音效的调用方式 | R:code:src/utils/gameAudio.js,code:src/utils/gameData.js | A:技能音效路径按属性和技能键组成，预加载返回总数与成功数 | S:示例是接线指南，当前战斗未调用这些接口且对应音效文件未齐备
+NEXT_STEPS.txt[SW3T]: F:列出地图音乐压缩测试及技能音效下载、集成和清单更新的旧执行清单 | R:code:scripts/download-audio.mjs,code:scripts/compress-audio.sh,code:src/utils/gameAudio.js | A:给出音频下载、压缩与测试的人工操作顺序 | S:进度百分比和音效数量是历史快照，不能代表当前覆盖
+PIRATE_SHORE_SUCCESS_ANALYSIS.md[SB4M]: F:以海岸海盗主题、地标、货物散布和边界风格提出其他区域改造准则 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentComposition.js | A:地图设计评审采用主题、地标、散布和边界的一致性 | S:文中沉船坐标及装饰列表不是现行配置，不能按旧坐标直接改图
+POKEMON_MAPS_README.md[SB3S]: F:记录从经典地图数据提取路线和洞穴瓦片的历史方案 | R:code:extract-pokemon-maps.js,code:src/game/data/mapRegistry.js | A:地图素材的来源和教育用途限制需要在复用时核对 | S:该提取链路不是当前运行时地图入口
+PROJECT_PLAN.md[SB5T]: F:规划教师发金币道具宝可梦与学生购买经验药水的早期经济方案 | R:code:src/components/Teacher/Dashboard.jsx,code:src/components/Game/OriginalGame.jsx | A:列出金币调整、奖励发放和领取的交互设计 | S:仅药水加经验及战斗不发金币的旧规则已与当前战斗奖励逻辑矛盾
+PROJECT_STATUS.md[SG4T]: F:记录云端存档、教师奖励和金币商城上线时的项目状态 | R:code:src/components/Teacher/Dashboard.jsx,code:src/components/Game/OriginalGame.jsx | A:描述联网登录、云端读取及关键操作自动保存 | S:战斗不产经验金币的陈述已过时
+QUICK_TEST.md[SQ4T]: F:提供浏览器无声时的控制台诊断步骤及预期指标 | R:code:public/audio-debug.js,code:src/utils/gameAudio.js | A:通过audioDebug诊断、音效和BGM检查定位问题 | S:脚本硬编码旧基础路径，部分测试函数仅输出提示而不实际发声
+README.md[SG8M]: F:提供项目启动、学生教师功能、云存档、经济规则及部署总入口 | R:code:package.json,code:src/components/Game/OriginalGame.jsx,code:src/components/Teacher/Dashboard.jsx,code:docs/DEPLOY_GITHUB_PAGES.md | A:说明开发构建命令、Supabase变量、正式域名与画质调试参数 | S:内容跨多个阶段，数据库部署和画质默认值应核对当前迁移及运行源码
+README_AUDIO.md[SU3T]: F:汇总地图音乐与逐技能音效的调用和下载压缩命令 | R:code:src/utils/gameAudio.js,code:MOVE_SFX_USAGE_GUIDE.md,code:package.json | A:提供技能音效播放、预加载和资源处理命令示例 | S:音效数量与完成度是旧进度，不能证明当前音效素材齐备
+ROAD_DECORATION_CONFLICT_CHECK.md[SQ4S]: F:对区域地图道路中心线和固定装饰坐标作历史碰撞检查 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:提供道路宽度为3时装饰距中心线约2格的人工校正准则 | S:坐标基于旧地图快照，当前装饰及道路生成逻辑已变化
+SFX_INTEGRATION_EXAMPLES.md[SU4M]: F:给出将合成音效替换为文件音效的界面、战斗、状态和事件调用示例 | R:code:src/utils/gameAudio.js,code:src/utils/gameSfxCatalog.js,code:src/components/Game/OriginalGame.jsx | A:展示音效播放、变体和场景测试用法 | S:示例是待接线方案，不证明当前调用链或外部音效文件已就绪
+SFX_SYSTEM_COMPLETE.md[SU4S]: F:记录文件音效加载、目录映射和预加载基础设施的阶段完成情况 | R:code:src/utils/gameAudio.js,code:src/utils/gameSfxCatalog.js,code:src/utils/gameSfxPreload.js | A:说明加载缓存、超时、变体、预加载及失败不中断游戏的接口能力 | S:完成仅指代码基础设施，报告明确音效文件仍需下载
+SFX_USAGE_GUIDE.md[SU5M]: F:说明分类音效目录、清单常量、变体播放和预加载接口的使用方式 | R:code:src/utils/gameSfxCatalog.js,code:src/utils/gameSfxPreload.js,code:src/utils/gameAudio.js | A:给出音效播放、变体和预加载的调用格式 | S:指南声称启动自动预加载，但当前无相应调用且素材未齐备
+SOUND_EFFECTS_PHASE1_COMPLETE.md[SU4S]: F:记录首阶段用Web Audio合成错误、升级、学招、进化及捕捉摇晃提示音 | R:code:src/utils/gameAudio.js,code:src/components/Game/OriginalGame.jsx | A:这些事件音效无需外部文件即可触发 | S:旧调用次数和摇晃时点是当时统计，不能代表现行代码
+SOUND_EFFECTS_PHASE2_COMPLETE.md[SU4S]: F:记录第二阶段界面、商城、道具和宝可梦管理音效接入结果 | R:code:src/utils/gameAudio.js,code:src/components/Game/OriginalGame.jsx | A:按操作成功、失败和资源使用场景核对合成音效调用 | S:阶段报告为历史快照，实际调用范围以当前组件源码为准
+SOUND_EFFECTS_PHASE3_COMPLETE.md[SU4S]: F:记录图鉴、地图交互和系统保存音效接入结果 | R:code:src/utils/gameAudio.js,code:src/components/Game/DeferredGamePanels.jsx,code:src/components/Game/OriginalGame.jsx | A:按图鉴选择、提示交互和云存档结果核对反馈音效 | S:阶段报告为历史快照，不能替代当前调用链审计
+SOUND_EFFECTS_TODO.md[SU4S]: F:列出界面、战斗、状态和系统音效的已完成项与待办项 | R:code:src/utils/gameAudio.js,code:src/components/Game/OriginalGame.jsx | A:以清单核对缺失音效场景和后续文件音效替换 | S:勾选状态是历史记录，不能证明当前所有场景或素材已完成
+SOUND_EFFECTS_UPGRADE_PLAN.md[SU5M]: F:规划按属性技能、伤害、状态和界面音效文件替换的阶段方案 | R:code:src/utils/gameAudio.js,code:src/utils/gameSfxCatalog.js,code:scripts/download-audio.mjs | A:定义属性目录、音效变体、预加载和回退接口 | S:方案中的文件数量和素材完成度需要以manifest及文件存在性复核
+START_HERE.txt[SU3T]: F:提供音频替换项目的启动说明、阶段进度和测试命令 | R:code:AUDIO_README.md,code:NEXT_STEPS.txt,code:package.json | A:引导下载、压缩音频并启动本地预览 | S:55%进度及48个技能音效数量是历史快照
+SUPABASE_DB_PUSH_RUNBOOK.md[SB6M]: F:记录Supabase迁移推送的pooler连接、DNS解析和迁移历史恢复步骤 | R:code:supabase/config.toml,code:supabase/migrations,code:package.json | A:为数据库发布提供连接串、迁移对齐和密码处理约束 | S:数据库密码不得写入仓库，推送需遵循文档指定pooler连接方式
+add-energy.js[OR4S]: F:提供按用户名向Supabase users表增加能量的运维脚本 | R:code:src/supabaseClient.js,code:supabase-setup.sql | A:查询用户后更新energy字段并输出结果 | S:脚本使用公开客户端密钥，只能作为受控开发运维工具运行
+add-password-field.sql[PI6T]: F:为users表增加明文密码字段、索引及教师读取策略 | R:code:supabase-setup.sql,code:src/components/Teacher/Dashboard.jsx | A:扩展用户表并授予教师查看学生密码的RLS策略 | S:明文密码属于高风险数据，执行前必须经过安全评审
+check-energy.js[OR4S]: F:查询Supabase users表并输出所有用户的能量状态和低能量提示 | R:code:src/supabaseClient.js,code:add-energy.js | A:作为开发运维检查脚本定位能量不足账户 | S:脚本会读取用户列表，使用前需确认运行环境和权限范围
+check-setup.sh[OV4T]: F:检查本地Supabase环境变量并输出启动提示 | R:code:.env.example,code:supabase-setup.sql,code:package.json | A:验证VITE_SUPABASE_URL和VITE_SUPABASE_ANON_KEY后引导数据库初始化 | S:脚本会输出匿名密钥前缀，运行日志不得作为密钥存储
+extract-pokemon-maps.js[XR4S]: F:从经典地图块文件提取瓦片、区域和地图图像的辅助脚本 | R:code:src/game/data/mapRegistry.js | A:提供历史地图数据提取和分析入口 | S:提取结果不直接作为当前运行时地图数据
+fix-all-rls.sql[PI6T]: F:批量修复Supabase表和存档相关的RLS策略 | R:code:supabase-setup.sql,code:supabase/migrations | A:为用户、存档和奖励表补齐访问边界 | S:执行前必须核对目标数据库迁移历史和策略影响
+fix-login.sql[PI5T]: F:修复用户登录、角色资料和认证相关的数据库字段或策略 | R:code:supabase-setup.sql,code:src/utils/authService.js | A:保持登录查询与用户资料访问一致 | S:认证字段变更需与现有迁移和RLS一起验证
+fix-rls.sql[PI6T]: F:修复Supabase表的行级安全策略和用户访问条件 | R:code:supabase-setup.sql,code:supabase/migrations | A:限制用户、教师和学生数据的可见范围 | S:RLS变更必须在隔离环境验证，避免扩大读取权限
+index-new.html[EE4T]: F:提供新入口HTML、根挂载节点和页面元数据 | R:code:src/main.jsx,code:vite.config.js | A:作为Vite应用入口的页面壳 | S:入口脚本和资源基路径必须与部署配置一致
+index-original.html[EE3T]: F:保留早期页面入口HTML以供历史对照 | R:code:index.html,code:vite.config.js | A:用于比较旧入口结构和迁移影响 | S:历史入口不应作为生产构建入口
+index.html[EE6T]: F:提供当前Vite应用的HTML入口、根节点和资源基路径容器 | R:code:src/main.jsx,code:vite.config.js | A:挂载React应用并承载部署元数据 | S:根路径发布时所有静态资源必须使用当前base配置
+package-lock.json[FV6L]: F:锁定npm依赖解析结果和可复现安装版本 | R:code:package.json,code:.github/workflows/deploy-pages.yml | A:保证本地与CI安装相同依赖树 | S:package.json变化必须同步更新锁文件
+package.json[FV7S]: F:声明React与Three依赖及开发构建、资源生产和玩法审计命令 | R:code:vite.config.js,code:package-lock.json,code:scripts/audit-fishing-rewards.mjs | A:提供正式构建和钓鱼目录RPC奖励教师渲染审计；要求Node>=20 | S:build:check不触发prebuild；build的prebuild会更新地图和音频清单
+postcss.config.js[FC4S]: F:配置PostCSS处理链和样式构建插件 | R:code:package.json,code:src/index.css | A:为Vite构建提供CSS转换配置 | S:插件版本需与package.json锁定依赖保持一致
+supabase-setup.sql[PI8L]: F:定义用户存档资源奖励日志与账号删除的数据库初始化接口 | R:code:src/supabaseClient.js,code:src/utils/cloudSaveLock.js,code:supabase/migrations/202610110001_teacher_delete_student.sql | A:提供注册审核、资源原子存档、奖励握手与私有删除收据 | S:后续迁移仍覆盖会话和玩法规则，不能以初始化脚本替代完整迁移链；删除采用表密码认证不能只信教师UUID
+tailwind.config.js[FC4S]: F:配置Tailwind内容扫描、主题和插件 | R:code:package.json,code:src/index.css | A:为应用和游戏UI提供构建样式 | S:扫描范围变化需避免发布CSS缺失
+test-accounts.sql[PI3T]: F:提供本地或浏览器测试账号初始化数据 | R:code:supabase-setup.sql,code:scripts/check-setup.sh | A:支持登录、战斗和云存档测试 | S:测试账号不得使用生产密码或真实个人数据
+test-db-connection.js[XQ3T]: F:检查Supabase环境变量和数据库连接可用性 | R:code:src/supabaseClient.js,code:supabase/config.toml | A:在运行集成测试前发现连接问题 | S:输出不得泄露数据库密码
+test-map-decorations.mjs[XQ4S]: F:检查地图装饰模型、类型解析和布局输出 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/decorativeModelSpec.js | A:验证大型元素实际生成 | S:装饰测试需同时检查道路和碰撞
+test-model-urls.mjs[XQ4S]: F:检查模型键到静态GLB URL的解析和文件存在性 | R:code:src/game/threeLowPolyModelCache.js,code:src/game/data/mapModelManifest.generated.js | A:发现发布前模型路径错误 | S:URL测试不能用占位路径代替真实文件
+vite.config.js[FV6M]: F:配置根路径构建、版本守卫、PWA资源缓存和依赖分包 | R:code:package.json,code:scripts/resolve-build-id.mjs,code:scripts/resolve-model-asset-version.mjs,code:public/CNAME | A:注入构建ID与3D资源内容哈希，GLB缓存容量640覆盖独立人物集合，开发只扫描应用入口 | S:生产使用VITE_BASE_PATH=/；大模型音频立绘不进入安装预缓存；资源缓存名固定，仅game-pages随构建变化
+优化总结.md[SG4M]: F:汇总项目地图、战斗、资源和界面优化结果 | R:code:src,code:package.json | A:提供历史优化范围和验证入口索引 | S:报告结论需以当前源码和审计结果为准
+位置优化与视觉模型确认完成报告.md[SQ4M]: F:记录地图对象位置、道路避让和视觉模型确认结果 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:追踪模型显示和可达性修复 | S:历史截图不能替代当前运行测试
+全面优化完成报告.md[SG4M]: F:汇总全项目功能、视觉、性能和资源优化阶段结果 | R:code:src,code:scripts | A:提供跨模块历史验收摘要 | S:完成状态需以最新构建和审计为准
+地图探索性优化完成报告.md[SB4M]: F:记录地图道路、隐藏区域、地标和探索奖励优化 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapProgression.js | A:说明探索路线和内容密度设计 | S:历史地图坐标不能直接覆盖现行配置
+地图探索性全面优化最终报告.md[SB5M]: F:总结地图探索、出口、事件、装饰和性能的阶段最终方案 | R:code:src/game/data/mapCatalog.js,code:src/game/ThreeLowPolyMap.jsx | A:提供地图改造历史依据 | S:必须以当前出口和旧存档审计结果为准
+地图系统全面审查报告.OBSOLETE-错误ID版.md[SQ3M]: F:保留标记为过时的地图系统审查快照 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:供历史问题追溯 | S:文件明确过时，不得作为当前地图规则
+地图道路与探索性分析报告.md[SQ4M]: F:分析地图道路、探索支路、出口和可达性问题 | R:code:src/game/environmentNavigation.js,code:src/game/mapExitRunways.js | A:为道路和出口调整提供历史依据 | S:分析坐标需配合当前地图源复核
+完成报告-初代151补齐+分布优化.md[SB4M]: F:记录初代宝可梦补齐、进化和地图分布阶段成果 | R:code:src/utils/gameData.js,code:src/game/data/encounterTables.js | A:追踪图鉴和生态扩展历史 | S:当前分布以运行时遭遇表和解锁规则为准
+宝可梦全面重构详细方案.OBSOLETE-错误ID版.md[SQ3M]: F:保留标记为过时的宝可梦重构方案 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:供历史方案对照 | S:文件明确过时，不得作为当前成长规则
+宝可梦全面重构详细方案.md[SB5M]: F:规划宝可梦数据、成长、战斗、图鉴和获取系统重构 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js,code:src/utils/pokemonAcquisition.js | A:连接数据和玩法重构目标 | S:方案内容需以当前官方数据和运行实现为准
+宝可梦系统全面优化最终报告.md[SB5M]: F:总结宝可梦数据、进化、技能、捕捉和资源流程优化 | R:code:src/utils/gameData.js,code:src/utils/pokemonProgress.js | A:提供宝可梦系统历史验收摘要 | S:当前规则以代码和专项审计为准
+宝箱位置调整与拾取问题分析报告.md[SQ4S]: F:分析宝箱位置、道路冲突和拾取失败原因 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/environmentNavigation.js | A:指导宝箱可达和事件修复 | S:位置报告是历史快照
+宝箱无法拾取问题修复报告.md[SB4S]: F:记录宝箱事件ID、碰撞和拾取流程修复 | R:code:src/game/data/mapEvents.js,code:src/components/Game/OriginalGame.jsx | A:追踪一次性拾取和云端保存修复 | S:拾取结果必须以当前事件保存链路为准
+宝箱显示问题分析.md[SQ3S]: F:分析宝箱事件到运行时模型的显示映射 | R:code:src/game/data/mapEvents.js,code:src/game/ThreeLowPolyMap.jsx | A:说明宝箱视觉缺失排查路径 | S:静态事件存在不等于模型加载成功
+密林守卫排查指南.md[SU4S]: F:提供密林守卫NPC、阻挡、对话和战斗排查步骤 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/components/Game/OriginalGame.jsx | A:定位新手区域守卫交互问题 | S:排查需同时验证解锁、碰撞和战斗状态
+性能优化README.md[SP5M]: F:概览地图、模型、资源加载和移动端性能优化方法 | R:code:src/game/ThreeLowPolyMap.jsx,code:package.json,code:scripts/audit-mobile-map-performance.mjs | A:提供性能检查入口和预算说明 | S:模拟设备帧率不能替代真机结论
+性能优化快速参考.md[SP4S]: F:提供常见地图帧率、缓存、模型和构建问题的快速检查表 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/threeLowPolyModelCache.js | A:辅助快速定位性能回归 | S:参考数字属于历史环境
+所有地图宝可梦分配与概率说明-审查报告.md[SQ4M]: F:审查全部地图宝可梦分布、等级、概率和隐藏区域 | R:code:src/game/data/encounterTables.js,code:src/game/data/mapCatalog.js | A:追踪地图生态和解锁一致性 | S:当前概率以遭遇表生成结果为准
+所有地图宝可梦分配与概率说明.md[SB4M]: F:说明各地图宝可梦分配、出现概率、等级和主题 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js | A:提供生态分布文档 | S:文档数值是生成快照，不能替代运行配置
+所有新加入内容完整总结.md[SG4M]: F:汇总新增宝可梦、地图、模型、道具和战斗功能 | R:code:src,code:public/assets | A:提供历史新增内容索引 | S:新增内容状态需以当前清单和构建为准
+新功能合理性与隐蔽性审查报告.md[SQ4M]: F:审查隐藏区域、稀有物种、奖励和新功能的合理性 | R:code:src/utils/gameBalance.js,code:src/game/mapProgression.js | A:评估探索惊喜与游戏平衡 | S:审查建议不能绕过解锁和奖励后端约束
+新手村密林守卫添加完成.md[SU3S]: F:记录新手村密林守卫NPC和相关交互的添加结果 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:追踪新手区域特色NPC | S:报告结论需以当前模型和事件审计为准
+新手注册登录链路排查报告.md[SQ5M]: F:分析新手注册、审核、登录、会话和首次进游戏链路 | R:code:src/utils/authService.js,code:src/App.jsx,code:supabase/migrations | A:定位账号进入游戏失败原因 | S:认证和审核状态由后端规则决定
+新手首次加载审查报告-修正版.md[SQ5M]: F:记录首次加载资源、进度、缓存和错误恢复复核 | R:code:src/utils/gameEntryPreload.js,code:src/components/UnifiedBootScreen.jsx | A:追踪首载黑屏和慢加载修复 | S:报告设备结果不能替代当前部署验证
+新手首次加载审查报告.md[SQ4M]: F:分析新手首次进入时的资源预载、模型和地图加载 | R:code:src/utils/gameEntryPreload.js,code:src/utils/gameAssetBootstrap.js | A:提供首载问题历史依据 | S:旧报告状态以修正版和当前源码为准
+新道具系统实现完成报告.md[SB4M]: F:记录冒险道具、商店、背包、战斗限制和云端扣除实现 | R:code:src/utils/adventureItems.js,code:src/utils/inventoryItems.js,code:src/components/Game/OriginalGame.jsx | A:追踪道具系统接入结果 | S:训练联赛道具限制必须以当前战斗入口为准
+核心系统优化进度与计划.md[SB5M]: F:规划核心数据、战斗、经济、地图和存档系统优化阶段 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:提供项目主线优化进度索引 | S:计划文档不能代替当前实现和审计结果
+深度审查报告-分布与可玩性.md[SQ5M]: F:审查地图分布、训练师、奖励、挑战和长期可玩性 | R:code:src/game/data/encounterTables.js,code:src/game/timberLeague.js,code:src/utils/gameBalance.js | A:为后期挑战和经济调整提供历史分析 | S:结论需以最新模拟和运行时规则复核
+游戏Bug修复最终报告.md[SQ5M]: F:汇总游戏核心Bug、战斗、存档、地图和音频修复结果 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/cloudSaveLock.js,code:src/game/ThreeLowPolyMap.jsx | A:提供历史修复和验证索引 | S:报告结论需以当前构建和审计为准
+游戏Bug审查报告.md[SQ5M]: F:记录游戏Bug排查范围、根因、影响和复测建议 | R:code:src,code:scripts | A:帮助定位跨模块回归问题 | S:历史问题状态不能替代当前运行验证
+游戏优化完成报告.md[SG4M]: F:汇总战斗、地图、资源、性能和界面优化成果 | R:code:src,code:public/assets,code:package.json | A:提供阶段交付摘要 | S:发布状态以当前构建和部署校验为准
+游戏核心问题修复完成报告.md[SB5M]: F:记录核心战斗、经济、存档、地图和兼容问题修复 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBalance.js,code:supabase/migrations | A:追踪核心链路修复范围 | S:后端迁移必须与报告描述的版本一致
+游戏核心问题修复方案.md[SB5M]: F:规划游戏核心Bug的战斗、经济、存档和地图修复方案 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/cloudSaveLock.js | A:提供修复设计和验证顺序 | S:方案文本不能替代当前运行实现
+游戏核心问题详细分析报告.md[SQ5M]: F:分析战斗回合、资源同步、地图衔接和前端性能问题根因 | R:code:src/utils/gameBalance.js,code:src/game/mapWarpLandings.js,code:src/utils/cloudSaveLock.js | A:为跨模块修复提供证据 | S:历史分析需结合当前源码复核
+移动端性能优化指南.md[SP5M]: F:说明移动端地图、模型、音频、缓存和帧率优化方法 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/threeLowPolyModelCache.js,code:scripts/audit-mobile-map-performance.mjs | A:提供移动端性能调试入口 | S:模拟帧率不能替代目标真机验证
+阶段2地图分布方案.md[SB4M]: F:规划第二阶段地图、区域、训练师和宝可梦分布 | R:code:src/game/data/mapCatalog.js,code:src/game/data/encounterTables.js | A:记录地图内容扩展计划 | S:分布方案需服从当前地图解锁和官方数据
+音频替换项目总结.txt[SU4M]: F:总结地图音乐、技能音效、下载、压缩和接入阶段 | R:code:src/utils/gameAudio.js,code:public/assets/audio/manifest.json | A:提供音频资源历史进度索引 | S:进度数字不能证明当前音效素材完整
+首次加载优化完成.md[SP5M]: F:记录首次加载进度条、资源预载、缓存和错误恢复优化 | R:code:src/utils/gameEntryPreload.js,code:src/components/UnifiedBootScreen.jsx,code:src/utils/clientUpdate.js | A:追踪首帧加载和旧缓存恢复 | S:当前首载表现需以真实部署和设备测试为准
+
+===/Users/shihe/Documents/宝可梦养成/.claude/plans/===
+pokemon-redistribution-plan.md[SB6M]: F:渐进式分配地图野生池、训练师与区域试炼，覆盖解锁、主题和稀有度设计 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js,code:scripts/audit-pokemon-distribution.mjs | A:渐进式分配地图野生池、训练师与区域试炼，覆盖解锁、主题和稀有度设计 | S:定义地图生态池、训练师阵容和按击败次数递进的解锁批次
+
+===/Users/shihe/Documents/宝可梦养成/.codex/===
+.gitignore[FV4S]: F:声明本地 Codex MCP 配置文件的忽略规则 | R:code:.codex/config.toml | A:声明本地 Codex MCP 配置文件的忽略规则 | S:-
+
+===/Users/shihe/Documents/宝可梦养成/.github/workflows/===
+deploy-pages.yml[OV6S]: F:定义主分支和手动触发的 GitHub Pages 构建发布流程 | R:code:package.json,code:vite.config.js,code:public/CNAME | A:定义主分支和手动触发的 GitHub Pages 构建发布流程 | S:发布任务使用 Node 20、npm ci、根路径构建并将 dist 推到 gh-pages
+
+===/Users/shihe/Documents/宝可梦养成/art/battle-backgrounds/===
+README.md[SU5T]: F:记录44处战斗背景的Blender制作、双尺寸WebP接入及验收，并保留原AI制作计划 | R:code:src/game/data/battleBackgroundCatalog.js,code:scripts/optimize-battle-backgrounds.mjs | A:提供生成与浏览器审计命令，说明地点快照和加载失败回退 | S:当前已接入的是Blender底图；下方AI待办不代表现有图片尚未制作
+map-context.json[FC5S]: F:保存战斗背景生成使用的地图、区域和遇敌上下文 | R:code:src/game/data/battleBackgroundCatalog.js,code:src/game/data/godotMaps/godot_region_maps.js | A:按地图和区域为背景选择提供稳定上下文 | S:上下文导出物需随地图区域变更重新生成
+
+===/Users/shihe/Documents/宝可梦养成/art/battle-vfx/===
+MOVE-DIRECTIONS.json[FC5S]: F:保存技能视觉效果的方向、锚点和表现参数 | R:code:src/utils/battleVfxRecipes.js,code:src/utils/battleVfxRenderer.js | A:按技能方向数据驱动特效编排与渲染 | S:参数变更需同步技能特效审计和运行时回退
+MOVE-DIRECTIONS.md[SU4M]: F:说明技能视觉效果方向、材质和动作设计约定 | R:code:art/battle-vfx/MOVE-DIRECTIONS.json,code:src/utils/battleVfxChoreography.js | A:为技能表现和锚点选择提供设计依据 | S:设计说明不能替代运行时特效配置验证
+README.md[SU4M]: F:概览战斗特效素材、生成脚本和验证文档 | R:code:src/utils/battleVfxRenderer.js,code:scripts | A:说明素材目录与技能特效渲染的对应关系 | S:素材存在性和运行时加载仍需脚本审计确认
+VALIDATION-v3.md[SQ4S]: F:记录战斗特效第三版的方向、锚点和浏览器验收结果 | R:code:src/utils/battleVfxRenderer.js,code:src/components/Game/BattleMoveEffect.jsx | A:按技能类型核对视觉方向和播放时序 | S:验收数字是特定版本快照，不能作为当前性能证明
+VALIDATION-v4.md[SQ4S]: F:记录战斗特效第四版的材质、方向和性能回归结果 | R:code:src/utils/battleVfxRenderer.js,code:src/components/Game/BattleMoveEffect.jsx | A:核对特效播放、清理和移动端渲染表现 | S:结果仅适用于报告对应版本，当前实现需重新实测
+VALIDATION-v5.md[SQ4S]: F:记录战斗特效第五版的表现和性能验收结果 | R:code:src/utils/battleVfxRenderer.js,code:src/components/Game/BattleMoveEffect.jsx | A:验证特效生命周期、技能方向和资源加载 | S:报告中的帧率与调用数量是历史快照
+VALIDATION.md[SQ4S]: F:汇总战斗特效资源、方向映射和浏览器验证标准 | R:code:src/utils/battleVfxRecipes.js,code:src/utils/battleVfxRenderer.js | A:作为技能特效回归检查清单 | S:静态资源通过不等于所有运行时技能都已覆盖
+
+===/Users/shihe/Documents/宝可梦养成/art/characters/===
+README.md[SU4S]: F:说明角色Blender源文件、导出模型和验证流程 | R:code:src/game/data/characterAssets.js,code:scripts/blender/build_character_collection.py | A:维护玩家、自行车和训练家模型资源映射 | S:模型清单与GLB导出后需重新运行角色资源审计
+VALIDATION.md[SQ4S]: F:记录角色模型比例、材质、动画和运行时加载验收 | R:code:src/game/data/characterAssets.js,code:scripts/audit-character-assets.mjs | A:核对角色模型解码、比例和地图显示 | S:验收结果对应报告版本，不能替代当前资源检查
+
+===/Users/shihe/Documents/宝可梦养成/art/environment/===
+README.md[SU4M]: F:概览地图环境Blender源文件、导出模型和生成清单 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/ThreeLowPolyMap.jsx | A:说明环境模型从建模到运行时加载的管线 | S:模型清单变更后必须重新生成并审计
+SCENE-DESIGN-V2.md[SB5M]: F:定义地图环境主题、边界、道路、地标和空地填充的设计规范 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentComposition.js | A:为各地图保持主题密度和可通行性提供布局约束 | S:设计规范中的示例坐标不能直接替代当前地图数据
+VALIDATION-V2.md[SQ4S]: F:记录环境模型第二版的比例、碰撞、道路避让和运行时验收 | R:code:src/game/ThreeLowPolyMap.jsx,code:scripts/audit-map-environment-composition.mjs | A:核对模型显示、阻挡和地图构图 | S:报告性能数字只适用于对应设备模拟和代码版本
+VALIDATION.md[SQ4S]: F:汇总环境模型解码、地图归属、碰撞和性能验证标准 | R:code:src/game/ThreeLowPolyMap.jsx,code:scripts/audit-map-models.mjs | A:作为地图模型发布前的回归检查清单 | S:静态GLB校验不等于运行时地图道路全程可达
+refinement-plan.json[FC5M]: F:保存环境模型精修输入、分类、别名、尺寸和输出路径参数 | R:code:scripts/blender,code:src/game/data/refinedModelAssets.generated.js | A:驱动模型精修、比例校准和运行时资源映射 | S:修改playerHeight或模型输出路径需同步重新生成清单
+
+===/Users/shihe/Documents/宝可梦养成/art/environment/boundaries-v5/===
+README.md[SU4S]: F:说明地图边界第五版模型、导出目录和使用约束 | R:code:src/game/data/mapAssetCatalog.js,code:src/game/ThreeLowPolyMap.jsx | A:按地图主题加载边界模型并控制视野范围 | S:边界模型更新需同步清单和碰撞审计
+
+===/Users/shihe/Documents/宝可梦养成/art/environment/exclusive-v3/===
+README.md[SU5M]: F:说明14张地图专属装饰模型的建模、编排和导出规则 | R:code:src/game/data/mapEnvironmentComposition.js,code:scripts/blender/build_map_exclusive_sets.py | A:约束专属模型归属、真实比例、水陆位置和道路避让 | S:资源库模型未被放置不代表需要强行加入地图
+VALIDATION.md[SQ5M]: F:记录地图专属装饰的几何、归属、碰撞、联通和性能验收 | R:code:src/game/data/mapEnvironmentComposition.js,code:scripts/audit-map-exclusive-assets.mjs | A:核对新增装饰不破坏道路、水域、事件和既有布景 | S:报告为特定本地模拟设备结果，不能代表所有真机帧率
+
+===/Users/shihe/Documents/宝可梦养成/art/environment/refined/===
+refinement-report.json[FC4S]: F:列出精修环境模型的源文件、输出文件、类别和网格处理操作 | R:code:src/game/data/refinedModelAssets.generated.js,code:scripts/generate-refined-model-manifest.mjs | A:为精修模型清单提供可追溯的输入输出映射 | S:报告记录的是生成批次，资源实际可用性以导出文件和清单为准
+
+===/Users/shihe/Documents/宝可梦养成/docs/===
+DEFEAT_SYSTEM_UPGRADE_PLAN.md[SB6M]: F:规划地图扩展完成后的战斗失败、重试、能量和击败状态方案 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBalance.js,code:supabase/migrations | A:定义失败不写击败状态、胜利才提交及重试依赖 | S:文档明确必须先完成100x100地图和地图玩法升级
+DEPLOY_CLOUDFLARE.md[OV5M]: F:说明Git、Cloudflare Pages和Supabase的部署架构及迁移流程 | R:code:vite.config.js,code:package.json,code:supabase/migrations | A:指导静态dist发布、前端环境变量和后端迁移推送 | S:数据库密码不得写入配置或仓库
+DEPLOY_GITHUB_PAGES.md[OV5M]: F:说明GitHub Pages、自定义域名、根路径构建和发布校验 | R:code:.github/workflows/deploy-pages.yml,code:vite.config.js,code:public/CNAME,code:package.json | A:约束VITE_BASE_PATH、gh-pages分支和pokemongame.site入口 | S:根路径部署不能回退到旧项目子路径
+GAME_SYSTEM_AUDIT.md[SQ6M]: F:记录成长、战斗、资源、存档和地图系统的阶段审计结果 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBalance.js,code:supabase/migrations | A:汇总各专项审计脚本、云存档和奖励链路的当前结论 | S:历史分录必须以文档中最新复验结果为准
+GAME_SYSTEM_AUDIT_PLAN.md[SQ6M]: F:规划宝可梦成长、战斗、经济、后端存储和存档同步的全链路排查顺序 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js,code:src/components/Game/OriginalGame.jsx | A:定义数据、成长、战斗、资源和云端验证入口 | S:地图源数据改动后需先生成地图再执行运行时审计
+GIT_WORKFLOW.md[SV4S]: F:说明项目Git日常查看、提交、推送、撤销和恢复流程 | R:code:.gitignore,code:package.json | A:为代码变更提供状态检查和版本发布操作规范 | S:提交前应保留可复现的验证记录
+LONG_TERM_ASSET_MANIFEST.md[SC6M]: F:登记长期内容更新的本地素材、生成方式、用途和审核状态 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/data/characterAssets.js,code:package.json | A:为冒险图册、冠军塔等运行素材提供来源和路径清单 | S:运行时素材必须保存在项目本地并通过资源清单接入
+LONG_TERM_PROGRESSION_AND_CHAMPION_TOWER_UPDATE_PLAN.md[SB6M]: F:规划长期成长、冠军塔章节、奖励和地图内容更新 | R:code:src/utils/longTermProgression.js,code:src/game/data/mapCatalog.js,code:src/components/Game/OriginalGame.jsx | A:连接章节解锁、挑战塔进度和奖励结算 | S:进度字段扩展必须兼容旧存档版本迁移
+MAP_100X100_INTEGRATED_UPGRADE_PLAN.md[SB6L]: F:整合100x100地图扩展的区域、道路、水系、遭遇和资源层设计 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:规定地图扩容与主题构图、可通行性和性能验收关系 | S:扩图不能绕过现有出口、事件和存档坐标约束
+MAP_CATALOG_UNIFICATION.md[SB5M]: F:规划地图目录、运行时注册、解锁顺序和资源清单的单一事实源 | R:code:src/game/data/mapCatalog.js,code:src/game/data/mapRegistry.js,code:src/game/data/mapAssetCatalog.js | A:统一地图ID、显示名、入口和资源索引 | S:新增地图必须同时更新目录、注册表和解锁映射
+MAP_GAMEPLAY_UPGRADE_PLAN.md[SB6L]: F:规划地图道路、训练师、Boss、野生池、机关、存档和解锁的玩法升级 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapProgression.js,code:src/game/eliteRouteBlocker.js | A:定义地图事件、击败状态和区域进度对运行时的影响 | S:地图版本变更必须保留旧存档字段并提供迁移
+MAP_PRODUCTION_PIPELINE.md[SB5M]: F:说明地图从Blender资产、布局数据到生成清单和运行时审计的生产管线 | R:code:scripts/blender,code:src/game/data/mapModelManifest.generated.js,code:src/game/ThreeLowPolyMap.jsx | A:约束模型导出、清单生成、装饰过滤和浏览器验收 | S:源数据修改后必须重新生成清单再发布
+ONBOARDING_CINEMATIC_TWO_SCENE_REDESIGN_V1_2.md[SU5M]: F:设计新手开场双场景过场、镜头、文案和资源预载 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/GameCanvas.jsx,code:src/utils/gameEntryPreload.js | A:安排开场场景切换、加载提示和玩家首次落点 | S:过场不能阻塞旧存档恢复或重复播放
+ONBOARDING_IMMERSIVE_REDESIGN_PLAN.md[SU5M]: F:规划新手引导、首次加载、镜头演出和地图进入的沉浸式流程 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameEntryPreload.js,code:src/game/MapWarpFade.jsx | A:连接首次进入、加载反馈和地图过场 | S:首载资源失败必须提供可恢复路径
+POKEMON_ROSTER_STORAGE_UPGRADE_PLAN.md[SB6M]: F:规划队伍上限、仓库管理、捕捉安置和存档边界升级 | R:code:src/utils/pokemonRoster.js,code:src/components/Game/OriginalGame.jsx,code:src/utils/pokemonBreeder.js | A:定义队伍仓库互换、容量和云存档提交契约 | S:队伍操作必须兼容旧存档中的缺省仓库字段
+PROJECT_FULL_AUDIT_2026-05-22.md[SQ5M]: F:记录2026年项目全量架构、数据、战斗、地图和后端审计快照 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameData.js,code:supabase/migrations | A:提供历史问题、修复项和后续验证索引 | S:日期审计只描述当时状态，不能代替当前运行检查
+THREE_MAIN_DIFFICULTY_BALANCE_PLAN.md[SB5M]: F:规划三档地图和战斗难度的等级、奖励、回合和资源平衡 | R:code:src/utils/trainerBattleScaling.js,code:src/utils/gameBalance.js,code:src/game/timberLeague.js | A:连接对手缩放、战斗能量和奖励配置 | S:方案数值需以当前训练联赛模拟和运行时配置为准
+elite-endgame-balance-2026-09-17.md[SB5M]: F:记录精英路线、Boss、四大天王和冠军塔的后期难度及奖励平衡方案 | R:code:src/game/eliteRouteBlocker.js,code:src/utils/trainerBattleScaling.js,code:src/utils/gameBalance.js | A:连接解锁门槛、对手等级和金币奖励 | S:历史平衡数值需由当前模拟和运行时审计重新确认
+godot-map-v2-layout-preview.svg[SC3S]: F:展示Godot地图V2区域、道路、出口和地标布局预览 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/MapRuntimePreview.jsx | A:作为地图布局和出口衔接的视觉审查依据 | S:SVG是设计预览，不能替代运行时碰撞和出口测试
+map-100x100-asset-material-layer-v6.3.svg[SC3S]: F:展示100x100地图素材层、区域密度和主题落点设计 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentComposition.js | A:为环境模型分层和主题密度提供视觉标注 | S:图纸中的素材位置需以当前生成数据和道路避让规则校验
+map-100x100-density-optimization-v4.svg[SC3S]: F:展示100x100地图装饰密度、过渡带和遭遇区优化建议 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:评估填充密度与可通行区域的视觉关系 | S:密度图为设计审查快照，不能直接作为运行参数
+map-100x100-expansion-plan-v2.svg[SC3S]: F:展示新手山谷100x100扩展的地形、水系、道路和素材分区方案 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapRoadSurface.js | A:为扩图道路和区域主题提供布局参考 | S:示意图坐标不等于当前地图运行坐标
+map-100x100-expansion-plan-v3.svg[SC3S]: F:展示新手山谷扩图的边缘、遭遇区、密度和物理因果关系方案 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapVisualCollision.js | A:审查边界、道路、遭遇区和阻挡模型的布局关系 | S:图纸需配合运行时碰撞和路径审计
+map-100x100-expansion-plan.svg[SC3S]: F:展示新手山谷从旧尺寸扩展到100x100的道路、水体和素材规划 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapRoadSurface.js | A:提供扩图区域和道路层级的早期设计参考 | S:早期规划不能替代现行地图定义
+map-100x100-integrated-upgrade-design-v6.svg[SC4S]: F:展示100x100地图整合后的区域、道路、水系、素材和事件层设计 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentComposition.js | A:作为地图综合布局和密度评审图 | S:设计图不替代当前运行地图和碰撞审计
+map-100x100-master-map-design-v6.5.svg[SC5S]: F:展示世界地图、章节区域、主路线和地图出口的总体设计 | R:code:src/game/data/mapCatalog.js,code:src/game/mapProgression.js | A:审查地图顺序、解锁路线和出口关系 | S:图纸中的路线需以当前解锁配置为准
+map-100x100-pokemon-encounter-plan-v5.md[SB5M]: F:规划100x100地图各区域野生宝可梦池、等级和出现概率 | R:code:src/game/data/encounterTables.js,code:scripts/audit-pokemon-distribution.mjs | A:连接地图区域、遭遇表和解锁进度 | S:遭遇数值必须通过现行分布审计后才能上线
+map-100x100-pokemon-encounter-plan-v5.svg[SC4S]: F:展示100x100地图野生宝可梦区域和等级分布 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js | A:为遭遇规划提供视觉分区依据 | S:图示概率和等级不能替代运行时遭遇表
+map-100x100-professional-director-board-v6.6.svg[SC5S]: F:展示地图导演板中的主题、道路、事件、训练师和资源安排 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapProgression.js | A:用于跨地图流程和可玩性评审 | S:导演板是设计快照，需结合脚本审计验证
+map-100x100-red-team-audit-v6.8.svg[SQ5S]: F:展示100x100地图红队审查的边界、死路、资源密度和玩法风险 | R:code:src/game/mapVisualCollision.js,code:src/game/mapExitRunways.js,code:scripts | A:定位出口、碰撞和空旷区域的回归风险 | S:图示发现必须以运行时测试复现后修复
+map-100x100-route-branches-hidden-v6.4.svg[SC4S]: F:展示地图隐藏支路、入口、捷径和玩家解锁后的路线关系 | R:code:src/game/mapProgression.js,code:src/game/data/godotMaps/godot_region_maps.js | A:审查隐藏路线与地图解锁顺序 | S:隐藏路线不能绕过后端进度门槛
+map-100x100-world-class-optimization-v6.7.svg[SB5S]: F:展示地图达到高品质目标时的主题密度、地标、道路和边界优化建议 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/ThreeLowPolyMap.jsx | A:指导环境构图和视觉层级优化 | S:目标指标需以当前设备性能实测为准
+map-additive-release-2026-09-18.json[FC5S]: F:保存地图增补发布版本、模型清单、布局和性能证据摘要 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/data/mapModelManifest.generated.js | A:追踪地图专属模型与发布构建的对应版本 | S:发布证据只适用于记录日期和对应构建
+map-biome-release-2026-09-18.json[FC5S]: F:保存地图生物群系、主题模型、边界和发布验证摘要 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentComposition.js | A:为地图主题资源和验收提供版本证据 | S:摘要不能替代当前模型清单和地图运行审计
+onboarding-cinematic-two-scene-v1.2.svg[SC4S]: F:展示新手双场景过场、镜头、角色和加载节点设计 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameEntryPreload.js | A:审查首次进入的场景顺序和加载反馈 | S:过场图不替代浏览器中的恢复和跳过测试
+onboarding-immersive-flow-v1.svg[SC4S]: F:展示新手沉浸式流程、引导提示和地图首次进入路径 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/MapWarpFade.jsx | A:核对引导、过场和玩家初始落点 | S:流程图不能证明旧存档兼容性
+FISHING_IMPLEMENTATION.md[SB6M]: F:记录地图钓鱼、命中连击与完美加成、逐件鉴定和教师日志的发布验证 | R:code:supabase/migrations/202610100006_fishing_combo_hit_rewards.sql,code:src/game/fishingRewards.js | A:说明双语界面、3D演出、隔离验证及带RPC前像保护的正式部署 | S:测试仅用合成账号且ROLLBACK；perfectStreak镜像hitStreak供旧客户端；普通重置保留独立钓鱼库存
+CHARACTER_UPGRADE_V2.md[SU6T]: F:记录Blender人物升级、贴地步态、真实NPC介绍和会话恢复验证 | R:code:scripts/audit-character-gait.mjs,code:scripts/audit-playtime-recovery.mjs | A:说明109角色96独立人物、源工程重建、属性上限回归修复及225存档案例 | S:分部件与GPU变形不等于完整蒙皮；模拟性能不代表真机，首次加载仍有WARN
+
+===/Users/shihe/Documents/宝可梦养成/docs/design/===
+caves-6-9-data-evidence-2026-09-18.json[FC5S]: F:保存第6至9章洞窟扩展的数据证据、地图和遭遇配置摘要 | R:code:src/game/data/mapCatalog.js,code:src/game/data/encounterTables.js | A:为洞窟内容扩展提供可追溯的数据输入 | S:该证据文件是指定日期快照，现行解锁规则需以源码为准
+caves-6-9-expansion-plan-2026-09-18.md[SB5M]: F:规划第6至9章洞窟地图、主题、遭遇、奖励和解锁扩展 | R:code:src/game/data/mapCatalog.js,code:src/game/data/encounterTables.js,code:src/game/mapProgression.js | A:连接洞窟章节与地图生态池、事件和奖励 | S:方案中的章节和数值需经过当前地图注册与存档迁移验证
+shop-expansion-2026-09-18.md[SB5M]: F:规划商店后期道具、金币消耗和不破坏平衡的长期玩法 | R:code:src/utils/inventoryItems.js,code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:定义商店物品、价格和战斗外成长入口 | S:道具效果必须遵循训练联赛和能量经济约束
+pokemon-release-compensation.md[SB5T]: F:定义按等级和固定物种档位的放生金币补偿及云端原子提交规则 | R:code:src/utils/pokemonRelease.js,code:src/utils/pokemonReleaseCatalog.json | A:描述三类放生入口、不可逆提示、并发保护和验证范围 | S:不退药水宝石；保留最后一只和图鉴记录；后端已部署不代表前端已发布
+stat-gem-balance-2026-10-06.md[SB5T]: F:记录六种单属性宝石的价格、永久增量、总额与单项额度和存档兼容 | R:code:src/utils/pokemonStats.js,code:src/utils/pokemonProgress.js | A:定义每只总10颗、单项4颗、statGemUses与版本标记的持久化规则 | S:历史statBoosts保留且旧使用次数从0计；探索糖果不占单项宝石额度
+UI_SYSTEM.md[SU6T]: F:规定认证教师与游戏面板的统一尺寸层级、暖色操作主题和删除确认设计 | R:code:src/design/ui-system.css,code:src/components/Teacher/teacherDashboard.css | A:定义字体色彩间距、暖色按钮、响应式布局、按钮选择器状态与验证范围 | S:主按钮统一浅金至琥珀渐变，危险操作仍使用红色；浏览器尺寸模拟不代表实体设备性能；删除保留最小私有操作收据
+
+===/Users/shihe/Documents/宝可梦养成/public/===
+404.html[EE4T]: F:提供GitHub Pages根路径找不到页面时的静态回退入口 | R:code:public/_redirects,code:index.html,code:vite.config.js | A:在静态托管环境回退到单页应用入口 | S:回退路径必须保持根路径资源基准一致
+CNAME[FV4T]: F:声明GitHub Pages自定义域名 | R:code:.github/workflows/deploy-pages.yml,code:docs/DEPLOY_GITHUB_PAGES.md | A:将发布站点绑定到pokemongame.site | S:CNAME内容必须与Pages设置和DNS配置一致
+_headers[FC4T]: F:声明静态托管响应头和资源缓存策略 | R:code:vite.config.js,code:public/assets | A:为发布资源提供缓存和安全响应头 | S:缓存规则变更需验证旧资源和新部署可更新
+_redirects[FC4T]: F:声明静态托管路径重定向和旧入口兼容规则 | R:code:public/404.html,code:vite.config.js,code:docs/DEPLOY_GITHUB_PAGES.md | A:将旧项目路径和错误路径导向当前根入口 | S:重定向不能破坏地图深链接和静态资源路径
+audio-debug.js[SU4S]: F:提供浏览器控制台音频诊断、BGM和SFX测试辅助方法 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js | A:检查AudioContext、总线、资源路径和播放状态 | S:诊断脚本不能绕过浏览器用户手势解锁限制
+favicon.svg[FC3T]: F:提供网站和游戏入口使用的SVG站点图标 | R:code:index.html,code:src/main.jsx | A:作为发布页面的favicon资源 | S:图标修改不应引入运行时网络依赖
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/map-boundaries-v5/===
+authoring-metadata.json[FC5S]: F:保存边界模型资源的作者化来源、尺寸和导出元数据 | R:code:public/assets/3d/map-boundaries-v5/manifest.json,code:src/game/data/mapAssetCatalog.js | A:为地图边界清单提供模型来源和比例依据 | S:元数据和GLB清单必须保持同一批次
+manifest.json[FC6M]: F:登记第五版地图边界模型的键名、路径和可加载资源 | R:code:src/game/data/mapAssetCatalog.js,code:src/game/ThreeLowPolyMap.jsx | A:驱动边界模型按地图主题选择和预加载 | S:路径或键名变更后必须运行模型清单审计
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/map-exclusive-v3/===
+authoring-metadata.json[FC5S]: F:保存地图专属模型套装的作者化来源、类别和导出元数据 | R:code:public/assets/3d/map-exclusive-v3/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:为专属模型清单提供来源和归属依据 | S:元数据与GLB清单需保持同一导出批次
+manifest.json[FC6M]: F:登记各地图专属装饰模型的键名、路径和主题归属 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/ThreeLowPolyMap.jsx | A:驱动地图按主题加载专属模型 | S:新增或替换模型后必须运行专属资产审计
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-characters-v1/===
+manifest.json[FC6L]: F:登记角色与旅行跑车的本地GLB、比例、作者和压缩信息 | R:code:src/game/data/characterAssets.js,code:src/game/playerBicycleVisual.js | A:characters描述训练家身份与高度，vehicles描述跑车模型和轮轴节点 | S:跑车朝向+Z、轮轴为本地X，四个命名轮节点用于运行时独立旋转
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-environment-v1/===
+manifest.json[FC5M]: F:登记第一版环境模型的键名、类别和资源路径 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/ThreeLowPolyMap.jsx | A:为旧地图环境模型提供加载索引 | S:旧模型只作为兼容资源，运行时选择以当前清单为准
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-environment-v2/===
+authoring-metadata.json[FC5S]: F:保存第二版环境模型的作者化来源、尺寸和生成信息 | R:code:public/assets/3d/xingyin-environment-v2/manifest.json,code:src/game/data/mapModelManifest.generated.js | A:为环境模型清单提供可追溯元数据 | S:元数据变更需与模型导出和清单同批更新
+manifest.json[FC6M]: F:登记第二版环境模型的统一键名、类别和路径 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/ThreeLowPolyMap.jsx | A:作为环境模型运行时加载索引 | S:清单必须与生成脚本和实际GLB路径一致
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-environment-v2/forest-trees/===
+authoring-metadata.json[FC5S]: F:保存森林树木模型的来源、类别和尺寸校准元数据 | R:code:public/assets/3d/xingyin-environment-v2/forest-trees/manifest.json,code:src/game/forestWallScenery.js | A:为树木边界和地图植被选择提供比例依据 | S:树木高度调整需重新检查人物相对比例和边界碰撞
+manifest.json[FC6M]: F:登记森林树木模型的键名、路径、类型和比例 | R:code:src/game/forestWallScenery.js,code:src/game/data/mapModelManifest.generated.js | A:驱动地图边界和特色植被的树木加载 | S:树木模型替换后需验证边界高度和可视遮挡
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-environment-v2/nature/===
+authoring-metadata.json[FC5S]: F:保存自然装饰模型的来源、类别、尺寸和作者化信息 | R:code:public/assets/3d/xingyin-environment-v2/nature/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:为自然装饰清单和比例归一化提供依据 | S:自然模型缩放变化需同步地图密度和碰撞审计
+manifest.json[FC6M]: F:登记灌木、花簇、岩石和其他自然装饰模型资源 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/decorativeModelSpec.js | A:按装饰类型解析并加载自然模型 | S:键名别名变化需同步解析器和地图装饰数据
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-refined-v1/===
+manifest.json[FC6M]: F:登记精修环境模型的统一路径、类别、别名和尺寸信息 | R:code:src/game/data/refinedModelAssets.generated.js,code:src/game/data/mapModelManifest.generated.js | A:为精修模型选择和比例归一化提供索引 | S:清单更新后必须运行模型URL和比例审计
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/audio/===
+CREDITS.md[SU4S]: F:记录地图音乐和音效资源的来源、授权与归属 | R:code:public/assets/audio/manifest.json,code:scripts/download-audio.mjs | A:为音频发布提供授权审查依据 | S:资源来源和授权信息必须随替换素材同步更新
+manifest.json[FC5S]: F:记录14条地图战斗OGG音轨的字节来源授权与缓存状态 | R:code:scripts/download-game-audio-tracks.mjs,code:src/utils/gameBgmCatalog.js | A:按相对路径登记曲名作者CC0来源及生成时间 | S:cached只表示下载记录，不证明浏览器解码成功；generatedAt每次prebuild都会改写，仅时间戳变化不代表音轨变化
+
+===/Users/shihe/Documents/宝可梦养成/scripts/===
+add-depth-and-npcs.mjs[XW5M]: F:向地图数据补充纵深装饰、NPC和主题对象的生成脚本 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:scripts/audit-map-environment-composition.mjs | A:批量生成地图装饰和NPC布局 | S:生成后必须检查道路、事件和水域避让
+add-hidden-encounter-zones.mjs[XW5M]: F:向地图添加隐藏遭遇区和相关区域配置的脚本 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/encounterTables.js | A:把隐藏草丛或区域绑定到遭遇表 | S:隐藏区域必须受解锁进度和可达性规则约束
+adjust-wild-weights.mjs[XA4S]: F:调整各地图野生宝可梦出现权重并输出分布结果 | R:code:src/game/data/encounterTables.js,code:scripts/audit-pokemon-distribution.mjs | A:按地图和等级档校准遭遇概率 | S:权重变更后需重新运行官方数据和分布审计
+analyze-all-issues.mjs[XQ4S]: F:汇总项目问题清单并按模块分析风险和待办 | R:code:src,code:scripts | A:提供跨模块审计入口和问题聚合 | S:分析结果是诊断输出，不能直接替代代码修复
+analyze-all-pools.mjs[XA4S]: F:分析宝可梦、训练师和遭遇池的覆盖、重复与等级分布 | R:code:src/game/data/encounterTables.js,code:src/utils/gameData.js | A:输出生态池和阵容平衡的统计依据 | S:统计脚本必须使用当前生成数据而非旧缓存
+analyze-trainers.mjs[XA4S]: F:分析训练师事件、阵容、等级和地图分布 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/trainerBattleScaling.js | A:检查训练师阵容多样性和等级进度 | S:分析不能把报告快照当作运行时阵容
+analyze-treasure-positions.mjs[XQ4S]: F:分析地图宝箱和道具位置的覆盖、可达性和重复 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/environmentNavigation.js | A:检查探索奖励与道路、事件的空间关系 | S:位置调整后需复验碰撞和事件拾取
+apply-baby-forms.mjs[XA4S]: F:把幼年形态数据应用到宝可梦图鉴和成长数据 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:批量补充形态、进化和图鉴关系 | S:应用后必须通过官方宝可梦数据和进化审计
+apply-base-placements.mjs[XW5M]: F:把基础地图装饰和对象位置写入地图布局数据 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:建立初始装饰、事件和道路位置 | S:批量写入后必须检查道路、水域和入口净空
+apply-final-placements.mjs[XW5M]: F:把最终地图装饰、地标和对象位置写入布局数据 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:完成地图布局对象的最终落位 | S:最终落位必须通过地图环境和可达性审计
+apply-new-items.mjs[XW4S]: F:把新增地图道具和拾取点写入地图配置 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/inventoryItems.js | A:建立道具位置、类型和奖励数据 | S:新增拾取点必须绑定唯一事件ID并可同步云端
+apply-position-fixes.mjs[XW5M]: F:批量修正地图装饰、事件和道路对象的位置 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:将位置修复写回地图布局并供后续审计 | S:位置修复后必须复验道路、水域、事件和入口净空
+audit-adventure-items.mjs[TB5S]: F:验证冒险道具、坐骑购买、双语目录、队伍排序和训练赛物品限制 | R:code:src/components/Game/OriginalGame.jsx,code:src/components/Game/DeferredGamePanels.jsx | A:模拟原子回调检查排序伙伴、重复ID、分栏禁用与全部物品英文和素材覆盖 | S:不连接真实玩家；强化不补HP/MP，倒下不重置本场次数
+audit-all-move-signatures.mjs[XQ5S]: F:审计全部技能的属性、威力、命中、分类和学习数据 | R:code:src/utils/gameData.js,code:src/utils/officialMoveMeta.js | A:检查技能元数据与运行时战斗计算一致 | S:官方技能数据变更后需重新生成和审计
+audit-base-gaps.mjs[XQ4S]: F:检查基础宝可梦、技能或地图数据的缺口和未覆盖项 | R:code:src/utils/gameData.js,code:src/game/data/encounterTables.js | A:输出数据完整性缺口供修复 | S:缺口报告必须结合官方数据审计确认
+audit-battle-ai-switching.mjs[XQ5S]: F:审计战斗AI换人条件、次数和属性应对逻辑 | R:code:src/utils/battleAi.js,code:src/components/Game/OriginalGame.jsx | A:验证对手主动换人和首发规则 | S:换人规则必须与训练联赛阵容快照保持一致
+audit-battle-background-selection.mjs[TB5T]: F:遍历地图遇敌区和事件验证战斗背景地点归属、快照稳定与对手主题分类 | R:code:src/game/data/battleBackgroundCatalog.js,code:src/game/data/battleBackgroundPresentation.js | A:覆盖同名区域隔离、远距离不吸附、塔层差异和旧存档中性回退 | S:水系对手不改变地理背景，换人和恢复复用保存的地点
+audit-battle-cinematics.mjs[XQ5S]: F:审计战斗入场、胜利、失败和换人演出时序 | R:code:src/utils/battleCinematics.js,code:src/components/Game/OriginalGame.jsx | A:检查动画生命周期与战斗状态机衔接 | S:演出中断后必须能从云存档检查点恢复
+audit-battle-completion-coverage.mjs[XQ5S]: F:审计各类野生、训练家、Boss和联赛战斗的胜利结算覆盖 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBalance.js | A:核对胜利奖励、经验、金币和地图进度写入 | S:失败不得写入胜利状态或奖励
+audit-battle-contact-materials.mjs[XQ4S]: F:审计接触类技能与战斗材质、命中特效的映射 | R:code:src/utils/battleVfxRecipes.js,code:src/utils/battleDamage.js | A:检查技能表现和伤害材质分类一致 | S:缺少材质时必须走安全回退而不阻塞战斗
+audit-battle-difficulty.mjs[XQ5S]: F:审计野生、普通训练师、部下和Boss的难度递进 | R:code:src/utils/trainerBattleScaling.js,code:src/utils/battleAi.js | A:验证角色强度和等级缩放顺序 | S:难度审计以当前运行配置和模拟结果为准
+audit-battle-effectiveness-hints.mjs[XQ4S]: F:审计战斗界面的属性克制提示和伤害结果显示 | R:code:src/utils/battleDamage.js,code:src/components/Game/OriginalGame.jsx | A:检查提示与实际属性倍率一致 | S:提示只能反映已解析的技能和目标属性
+audit-battle-material-runtime.mjs[XQ4S]: F:审计战斗材质资源在运行时的加载、缓存和回退 | R:code:src/utils/battleVfxRenderer.js,code:src/utils/threeLowPolyModelCache.js | A:验证材质缺失不会造成渲染或战斗中断 | S:资源加载失败必须释放临时对象
+audit-battle-material-semantics.mjs[XQ4S]: F:审计战斗材质名称、属性语义和特效配方的对应关系 | R:code:src/utils/battleVfxRecipes.js,code:src/utils/battleVfxRenderer.js | A:检查材质语义与技能属性映射 | S:名称变化需同步配方和素材清单
+audit-battle-playback-clock.mjs[XQ5S]: F:审计战斗特效播放时钟、延迟、清理和重复触发 | R:code:src/utils/battleVisualPlayback.js,code:src/components/Game/BattleMoveEffect.jsx | A:验证特效时间线不会闪烁或重复执行 | S:播放循环必须在组件卸载和新技能开始时停止
+audit-battle-render-cost.mjs[XQ5S]: F:审计战斗特效和模型的绘制、材质和帧耗时 | R:code:src/utils/battleVfxRenderer.js,code:src/components/Game/BattleMoveEffect.jsx | A:评估移动端战斗渲染预算 | S:性能结果只对记录的设备和构建有效
+audit-battle-replacement-flow.mjs[XQ5S]: F:审计战斗换人、出场、退场和状态继承流程 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/battleAi.js | A:检查换人回合、血量和技能值状态衔接 | S:连战换人不得重置不应恢复的战斗状态
+audit-battle-scene-integration.mjs[XQ5S]: F:审计战斗场景、背景、角色和HUD的集成入口 | R:code:src/game/BattleScenePreview.jsx,code:src/components/Game/OriginalGame.jsx | A:核对场景资源和战斗状态绑定 | S:场景加载失败必须提供可恢复回退
+audit-battle-scenes.mjs[TU5M]: F:审计战斗旧场景与对手主题CSS覆盖、地点快照及地图事件配置 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/data/mapCatalog.js | A:递归读取CSS导入并核对场景类、角色类及稳定环境选择 | S:静态检查不证明背景图片已解码或浏览器演出通过
+audit-battle-turn-recovery.mjs[XQ5S]: F:以源码正则静态审计战斗回合恢复、敌方回合交接、认输失败与瞬间移动能量返还 | R:code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:截取OriginalGame回调片段检查22项断言，含resolving共享恢复、出场后交回玩家及等待游玩租约，失败退出码1 | S:断言依赖函数名与代码形态，重构须同步正则；resolving仅在无在途回合时恢复为玩家回合
+audit-battle-vfx-flow.mjs[XQ5S]: F:审计技能特效从选择、编排到播放和清理的完整流程 | R:code:src/utils/battleVfxChoreography.js,code:src/utils/battleVfxRenderer.js | A:检查特效阶段顺序和资源释放 | S:特效异常不能阻断战斗结算
+audit-battle-visual-flow.mjs[XQ5S]: F:审计战斗视觉反馈、伤害数字、状态和胜负演出 | R:code:src/utils/battleVisualPlayback.js,code:src/components/Game/OriginalGame.jsx | A:验证视觉反馈与战斗事件一一对应 | S:视觉动画不得重复提交奖励或回合
+audit-battle-webkit.mjs[XQ4S]: F:审计Safari和WebKit环境中的战斗渲染、音频和动画兼容性 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameAudio.js | A:检查移动Safari的战斗核心路径 | S:WebKit结果需区分模拟环境和真机
+audit-boss-repeat-guard.mjs[XQ5S]: F:审计Boss击败状态、重复挑战和奖励防重复提交 | R:code:src/game/eliteRouteBlocker.js,code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:验证Boss胜利只结算一次并允许规则内重试 | S:奖励握手必须由后端原子约束保护
+audit-catch-balance.mjs[XQ5S]: F:模拟捕捉率、球种、血量和异常状态的平衡 | R:code:src/utils/battleDamage.js,code:src/utils/gameBalance.js | A:输出不同条件下的捕捉成功率 | S:模拟参数必须与当前运行时捕捉规则一致
+audit-catchability.mjs[XQ5S]: F:审计各宝可梦、等级和状态下的捕捉可行性 | R:code:src/utils/gameBalance.js,code:src/utils/wildEncounterRules.js | A:检查捕捉率计算和野外遭遇配置 | S:捕捉率变更需同步球种和奖励平衡
+audit-character-assets.mjs[TU5T]: F:解码当前版本全部角色，验证注册比例、网格属性与资源预算 | R:code:src/game/data/characterAssets.js,code:src/game/data/mapModelManifest.generated.js | A:校验脚底原点、12个主角部件、单材质NPC、真实面数字节与地图预载 | S:使用版本常量读取清单；静态解码不能证明浏览器动画与着色器通过
+audit-character-runtime.mjs[XQ5S]: F:审计角色模型在地图运行时的加载、显示比例和动画 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/playerFigureVisual.js | A:检查角色落点、朝向和渲染表现 | S:运行时审计不能只依赖静态GLB验证
+audit-cloud-only-guards.mjs[XQ5S]: F:审计必须联网和后端原子提交的关键操作守卫 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:检查奖励、资源和进度不会只在本地生效 | S:云端确认失败时不得继续结算本地结果
+audit-cloud-save-lock.mjs[XQ5S]: F:审计云存档锁、revision和并发写入保护 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:验证旧存档不能覆盖新状态 | S:云端锁失败时必须停止本地结算
+audit-damage-stat-formula.mjs[XQ5S]: F:审计战斗伤害、属性倍率和等级统计公式 | R:code:src/utils/battleDamage.js,code:src/utils/gameData.js | A:核对伤害结果与技能属性和双方等级一致 | S:公式变更需同步战斗模拟
+audit-decoration-gap-walkability.mjs[TB5M]: F:验证前九地图无模型墙的修正、进度门隔离以及植被与设施净空 | R:code:src/game/mapVisualCollision.js,code:src/game/bridgeDeckCollision.js | A:比较修正前后阻挡、连通区域和实测模型脚印，包含合成门及旋转设施案例 | S:桥面收窄后的地形作为基准，开墙不得连接原本由进度门隔离的重要区域
+audit-dex-acquisition.mjs[XQ4S]: F:审计图鉴宝可梦的获取来源、解锁条件和存档记录 | R:code:src/utils/pokemonAcquisition.js,code:src/utils/gameData.js | A:核对解锁状态与捕捉、奖励和地图进度 | S:未解锁宝可梦不得进入饲养家候选
+audit-dex-coverage.mjs[XQ4S]: F:审计图鉴物种、形态、技能和进化覆盖 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:输出图鉴数据缺口和重复 | S:覆盖结果需以官方数据生成器为准
+audit-distribution-map.mjs[XQ5S]: F:审计地图野生池、训练师池和章节分布 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js | A:检查地图主题和解锁进度对应的生态分布 | S:分布调整需重新验证稀有度和重复率
+audit-economy-balance.mjs[XQ5S]: F:审计金币、能量、经验、商店价格和战斗奖励平衡 | R:code:src/utils/gameBalance.js,code:src/utils/inventoryItems.js,code:src/utils/pokemonBreeder.js | A:评估后期金币收入与成长消耗 | S:奖励变更必须同时检查旧存档资源同步
+audit-elite-battle-rules.mjs[XQ5S]: F:审计精英、Boss和四大天王的战斗规则与胜利奖励 | R:code:src/game/eliteRouteBlocker.js,code:src/utils/trainerBattleScaling.js | A:检查解锁、阵容、回合和金币奖励 | S:精英奖励必须由后端防重复结算
+audit-elite-character-models.mjs[TU5M]: F:验证四道馆16人物的独立模型、主题归属和最终显示比例 | R:code:src/game/data/mapCatalog.js,code:src/game/data/characterAssets.js | A:校验事件名与模型键、来源、角色档位、单网格及天王高度差 | S:最终高度由导出尺寸乘装饰缩放得出，不可只比较清单height
+audit-elite-endgame-balance.mjs[XQ5S]: F:审计后期精英路线的等级、奖励、金币和消耗平衡 | R:code:src/game/eliteRouteBlocker.js,code:src/utils/gameBalance.js | A:为后期挑战和商店经济提供模拟依据 | S:结论需区分模拟和真实运行配置
+audit-elite-four-experience.mjs[XQ4S]: F:审计四大天王战斗经验、等级和连续挑战结算 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:核对胜利经验与队伍状态继承 | S:连续战斗不得意外恢复或丢失状态
+audit-elite-map-road-clearance.mjs[XQ5S]: F:审计精英地图道路、入口和大型模型净空 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapExitRunways.js | A:验证道路不会延伸进河流或阻塞出口 | S:道路调整后必须做双向跨地图测试
+audit-elite-objective-visibility.mjs[XQ4S]: F:审计精英地图目标、事件地标和入口的可见性 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/data/godotMaps/godot_region_maps.js | A:确保玩家能看到并到达关键目标 | S:视觉可见不等于事件可交互，需同时验证碰撞
+audit-elite-route-progression.mjs[XQ5S]: F:审计精英路线解锁顺序、地图出口和击败条件 | R:code:src/game/eliteRouteBlocker.js,code:src/game/mapProgression.js | A:核对玩家进度与跨地图跳转一致 | S:旧存档迁移必须保留已解锁节点
+audit-entry-loading-progress.mjs[XQ5S]: F:审计游戏入口加载进度、资源门控和首帧就绪 | R:code:src/utils/gameEntryPreload.js,code:src/utils/bootProgress.js | A:检查加载提示和游戏入口启用时机 | S:资源失败必须显示可恢复状态而非永久黑屏
+audit-entry-preload-assets.mjs[XQ5S]: F:审计入口阶段预加载的模型、图集、音频和地图资源 | R:code:src/utils/gameEntryPreload.js,code:src/utils/gameAssetBootstrap.js | A:验证关键资源按优先级预载 | S:预加载失败不能阻塞非关键资源和旧存档读取
+audit-environment-navigation.mjs[XQ5S]: F:审计地图导航网格、道路、桥梁、水域和装饰碰撞 | R:code:src/game/environmentNavigation.js,code:src/game/mapVisualCollision.js | A:检查玩家从入口到出口的可达性 | S:导航结果必须覆盖每张地图的双向出口
+audit-exp-overflow.mjs[XQ4S]: F:审计经验增长、升级上限和溢出保护 | R:code:src/utils/pokemonProgress.js,code:src/utils/officialExperience.js | A:验证经验药水和战斗经验不会异常循环 | S:升级结算必须有上限和幂等保护
+audit-exp-potions.mjs[XQ5S]: F:审计经验药水价格、等级限制、效果和库存扣除 | R:code:src/utils/inventoryItems.js,code:src/utils/pokemonProgress.js,code:src/components/Game/OriginalGame.jsx | A:核对购买和使用经验药水的完整链路 | S:药水使用必须先完成云端资源提交
+audit-game-data.mjs[XQ6M]: F:审计宝可梦、技能、道具、进化和地图数据的整体一致性 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js,code:src/game/data/encounterTables.js | A:作为核心数据回归入口 | S:官方数据生成和运行时数据必须保持同一版本
+audit-gen1-gap-plan.mjs[XQ4S]: F:分析初代宝可梦和技能数据缺口并生成补齐计划 | R:code:src/utils/gameData.js,code:scripts/audit-official-pokemon-data.mjs | A:输出缺失物种和技能的来源 | S:补齐计划不能直接修改生产数据
+audit-godotmap-roads.mjs[XQ5S]: F:审计Godot地图道路中心线、宽度、出口和水域避让 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapRoadSurface.js,code:src/game/mapExitRunways.js | A:检查道路样式和跨地图衔接 | S:出口道路必须落在地图有效展示范围内
+audit-growth-battle-guards.mjs[XQ5S]: F:审计战斗期间升级、进化、经验和状态写入保护 | R:code:src/utils/pokemonProgress.js,code:src/components/Game/OriginalGame.jsx | A:验证战斗结算和成长事件不会重复或丢失 | S:成长事件需随战斗检查点原子保存
+audit-growth-sim.mjs[XQ5S]: F:模拟不同等级队伍的经验、升级和进化成长曲线 | R:code:src/utils/pokemonGrowth.js,code:src/utils/officialExperience.js | A:为等级和经验药水平衡提供数据 | S:模拟结果需标明使用的当前规则版本
+audit-hidden-zone-boss-overmatch.mjs[XQ5S]: F:审计隐藏区域Boss等级、阵容和玩家队伍的越级风险 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/trainerBattleScaling.js | A:检查隐藏挑战是否异常压制或失去挑战 | S:Boss等级不能因玩家临时换队而随意漂移
+audit-hidden-zone-encounter-rarity.mjs[XQ4S]: F:审计隐藏区域稀有宝可梦出现率和解锁条件 | R:code:src/game/data/encounterTables.js,code:src/utils/hiddenEncounterExclusive.js | A:核对稀有度、地图和玩家进度 | S:未解锁稀有物种不得进入普通商店或饲养家
+audit-hidden-zone-rewards.mjs[XQ4S]: F:审计隐藏区域战斗、道具和金币奖励 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/gameBalance.js | A:检查探索奖励的价值和重复领取保护 | S:奖励结算必须绑定唯一事件ID和云端进度
+audit-hidden-zone-visual-rules.mjs[XQ4S]: F:审计隐藏区域视觉提示、入口遮挡和可见规则 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/data/godotMaps/godot_region_maps.js | A:确保隐藏入口有提示但不破坏探索感 | S:隐藏规则不能阻塞玩家正常导航
+audit-high-risk-battle-penalties.mjs[XQ5S]: F:审计战斗失败扣金币、能量和高风险结算路径 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:核对失败惩罚与胜利奖励的边界 | S:失败结算必须避免重复扣除和本地伪造
+audit-learnset-coverage.mjs[XQ4S]: F:审计宝可梦按等级学习技能的覆盖和缺失 | R:code:src/utils/pokemonGrowth.js,code:src/utils/officialLearnsets.js | A:检查学习技能与官方数据一致 | S:技能数据更新后需重新生成学习表
+audit-long-term-progression.mjs[XQ5S]: F:审计长期章节、冠军塔和成长奖励的解锁与结算 | R:code:src/utils/longTermProgression.js,code:src/components/Game/OriginalGame.jsx | A:验证奖励只在满足进度后发放 | S:奖励领取必须具备后端幂等保护
+audit-long-term-reward-claim.sql[PI5T]: F:审计长期奖励领取函数、唯一性和进度条件 | R:code:supabase/migrations,code:src/utils/longTermProgression.js | A:验证后端奖励领取原子性 | S:SQL变更需在目标数据库迁移链中执行
+audit-long-term-reward-concurrency.mjs[XQ5S]: F:模拟长期奖励并发领取和重复提交 | R:code:supabase/migrations,code:src/utils/longTermProgression.js | A:检查多标签页不能重复领取 | S:并发结果以数据库原子约束为准
+audit-map-boundary-assets.mjs[XQ5S]: F:审计地图边界模型、路径、比例和可加载性 | R:code:src/game/data/mapAssetCatalog.js,code:public/assets/3d/map-boundaries-v5/manifest.json | A:验证边界模型与地图主题和视野范围匹配 | S:模型缺失必须走兼容回退并记录
+audit-map-environment-composition.mjs[XQ5S]: F:审计地图主题构图、地标密度、道路避让和空地填充 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/data/godotMaps/godot_region_maps.js | A:检查每张地图特色元素和可玩空间 | S:构图调整需同步碰撞和性能验证
+audit-map-environments.mjs[XQ5S]: F:审计全部地图环境资源、主题、边界和运行时加载 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/data/mapModelManifest.generated.js | A:汇总地图模型与布局的覆盖 | S:清单和地图源码需同批更新
+audit-map-exclusive-assets.mjs[XQ5S]: F:审计地图专属模型归属、重复、比例和水陆位置 | R:code:src/game/data/mapEnvironmentComposition.js,code:public/assets/3d/map-exclusive-v3/manifest.json | A:确保专属模型只出现在正确地图 | S:模型新增需通过几何和碰撞审计
+audit-map-gameplay-flow.mjs[XQ5S]: F:审计地图入口、道路、事件、战斗、出口和返回流程 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapProgression.js,code:src/game/mapWarpLandings.js | A:验证跨地图衔接、人物落点和进度门槛 | S:双向出口必须保持配对并复用玩家视角
+audit-map-level-progression.mjs[XQ5S]: F:审计地图等级、章节顺序、训练师和解锁进度 | R:code:src/game/mapProgression.js,code:src/utils/trainerBattleScaling.js | A:检查区域难度随玩家进度递进 | S:等级规则不能被临时队伍调整绕过
+audit-map-material-styles.mjs[XQ4S]: F:审计地图地面、水面、道路和边界材质风格 | R:code:src/game/mapShaders.js,code:src/game/mapRoadSurface.js,code:src/game/mapWaterSurface.js | A:保持不同地图主题统一且有辨识度 | S:材质替换需检查移动端回退
+audit-map-panel-lifecycle.mjs[XQ4S]: F:审计地图面板、预览和运行时组件的挂载卸载生命周期 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/ThreeLowPolyMap.jsx | A:检查切图和刷新不会残留渲染器 | S:卸载必须释放renderer、缓存引用和事件监听
+audit-map-pokemon-coverage.mjs[XQ4S]: F:审计地图野生宝可梦覆盖、属性组合和解锁范围 | R:code:src/game/data/encounterTables.js,code:src/utils/hiddenEncounterExclusive.js | A:核对每张地图的生态池和玩家解锁进度 | S:未解锁宝可梦不得进入地图或饲养家
+audit-map-runtime.mjs[XQ5S]: F:审计地图运行时加载、渲染、导航、入口和错误回退 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/ThreeLowPolyMap.jsx | A:作为地图运行回归总入口 | S:黑屏或加载失败必须有可恢复反馈
+audit-map-save-compatibility.mjs[XQ5S]: F:审计地图调整后旧存档的位置、解锁和版本迁移兼容 | R:code:src/utils/gameSessionBootstrap.js,code:src/game/mapProgression.js,code:src/game/mapWarpLandings.js | A:确保旧存档能落到合法入口并保留进度 | S:迁移必须避免把玩家送入森林或无效区域
+audit-map-unlock-progression.mjs[XQ5S]: F:审计地图解锁条件、顺序和后端进度同步 | R:code:src/game/mapProgression.js,code:src/game/eliteRouteBlocker.js,code:supabase/migrations | A:检查入口权限与玩家进度一致 | S:客户端显示解锁不能替代后端校验
+audit-map-warp-connections.mjs[XQ5S]: F:审计所有地图出口配对、目标地图、目标落点和返回路径 | R:code:src/game/mapExitRunways.js,code:src/game/mapWarpLandings.js,code:src/game/data/godotMaps/godot_region_maps.js | A:防止跨图跳到错误树丛或河流 | S:每个出口必须有唯一反向配对和有效道路落点
+audit-master-ball-purchase-limit.mjs[XQ4S]: F:审计大师球购买上限、价格和库存扣除 | R:code:src/utils/inventoryItems.js,code:src/components/Game/OriginalGame.jsx | A:防止稀有道具无限购买 | S:购买限制必须同时在本地界面和后端资源提交中生效
+audit-missing-art.mjs[XQ4S]: F:审计模型、图片、音频和地图资源缺失及引用 | R:code:public/assets,code:src/game/data/mapModelManifest.generated.js | A:在构建前发现不可加载资源 | S:缺失资源需提供兼容回退或阻断发布
+audit-mobile-map-performance.mjs[XQ5S]: F:审计移动端地图帧率、首载、长任务和内存压力 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/MapRuntimePreview.jsx | A:验证lite和high画质档的地图性能 | S:模拟设备结果不能替代真机结论
+audit-model-scale-consistency.mjs[XQ5S]: F:审计人物、树木、建筑和装饰模型的相对比例 | R:code:src/game/modelScaleReference.js,code:src/game/mapModelScaleNormalization.js | A:确保模型高度符合人物和地图主题 | S:比例修改需同步碰撞包围盒
+audit-move-secondary-effects.mjs[XQ4S]: F:审计技能异常、能力变化和附加效果的战斗结算 | R:code:src/utils/battleDamage.js,code:src/utils/gameData.js | A:检查技能副作用与属性和命中结果一致 | S:附加效果不能绕过回合和状态保存
+audit-move-visuals.mjs[XQ4S]: F:审计技能到特效配方、材质和播放时长的映射 | R:code:src/utils/moveVisuals.js,code:src/utils/battleVfxRecipes.js | A:核对技能视觉表现和战斗结果 | S:缺少配方必须使用稳定回退
+audit-moving-camera.mjs[XQ4S]: F:审计地图移动、手动旋转和视角保留行为 | R:code:src/game/mapCameraRig.js,code:src/game/MapRuntimePreview.jsx | A:验证移动中可切换视角且跨地图保留视角 | S:移动时不得强制自动转回角色正前方
+audit-mp-balance.mjs[XQ4S]: F:审计技能值、能量和战斗消耗的平衡 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:检查技能值消耗与药物恢复规则 | S:训练赛限制必须与战斗道具规则一致
+audit-new-features.mjs[XQ4S]: F:汇总新功能入口、资源、存档和审计覆盖 | R:code:src,code:scripts,code:package.json | A:检查新增功能是否接入构建和回归流程 | S:新功能必须具备可重复验证入口
+audit-npc-dialogues.mjs[XQ4S]: F:审计NPC对话、地图事件和提示文本的一致性 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/components/Game/OriginalGame.jsx | A:检查对话触发和事件ID绑定 | S:文本提示不能替代实际解锁或奖励校验
+audit-npc-evolution-levels.mjs[XQ4S]: F:审计NPC和训练家阵容中的宝可梦等级与进化阶段 | R:code:src/utils/pokemonGrowth.js,code:src/game/data/godotMaps/godot_region_maps.js | A:检查NPC队伍等级合理性 | S:等级和进化规则必须来自当前成长配置
+audit-npc-walk-visual.mjs[TU5S]: F:验证12兼容NPC的步态数据、实例隔离及表面阴影变形钩子 | R:code:src/game/npcWalkVisual.js,code:src/game/data/characterAssets.js | A:检查已校正枢轴、法线、运动归属、停止姿态与两个阴影通道 | S:主枢轴CPU参考不能代替贴地求解和GPU属性上限验证
+audit-npc-wander.mjs[TU5S]: F:验证NPC漫游范围、暂停计时、占格与拥堵行为 | R:code:src/game/npcWander.js | A:用可控随机数覆盖11规则，包括1400至1800毫秒步长和相邻玩家让行 | S:长帧最多完成一个已预留格，暂停不能推进模拟时钟
+audit-obtainability.mjs[XQ5S]: F:审计宝可梦和道具的获取条件、来源和玩家解锁状态 | R:code:src/utils/pokemonAcquisition.js,code:src/utils/pokemonBreeder.js,code:src/utils/inventoryItems.js | A:核对商店和地图奖励只提供可获取内容 | S:未解锁宝可梦不得出现在饲养家
+audit-official-evolutions.mjs[XQ5S]: F:审计进化链、进化等级和官方数据对应关系 | R:code:src/utils/pokemonEvolutionRules.js,code:src/utils/pokemonGrowth.js | A:验证运行时进化只使用当前规则 | S:历史进化条件仅作兼容数据不能重新启用
+audit-official-pokemon-data.mjs[XQ6M]: F:审计官方宝可梦名称、属性、种族值和图鉴数据 | R:code:src/utils/gameData.js,code:src/utils/officialLearnsets.js | A:生成运行时数据完整性报告 | S:官方源更新需重新生成并核对本地数据
+audit-one-time-pickups.mjs[XQ4S]: F:审计地图一次性拾取、事件ID和重复领取保护 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/components/Game/OriginalGame.jsx | A:检查道具和金币不会重复领取 | S:拾取结果必须保存到云端事件状态
+audit-party-species-clause.mjs[XQ5S]: F:审计队伍物种重复限制和训练赛阵容约束 | R:code:src/utils/pokemonRoster.js,code:src/game/timberLeague.js | A:检查玩家和对手阵容符合物种规则 | S:阵容限制必须在后端和战斗入口同时生效
+audit-party-species-clause.sql[PI5T]: F:审计后端队伍物种约束、唯一性和保存条件 | R:code:supabase/migrations,code:src/utils/pokemonRoster.js | A:为队伍保存提供数据库级限制 | S:SQL策略变更需随迁移链部署
+audit-playtime-enforcement.sql[PI5T]: F:审计每日游玩时间限制、租约和过期处理 | R:code:supabase/migrations,code:src/utils/cloudSaveLock.js | A:验证时间限制在后端强制执行 | S:客户端计时不能作为唯一限制依据
+audit-playtime-lock.mjs[XQ5S]: F:验证学生每日游玩时长锁、服务端租约生命周期及可见页状态应用，覆盖多标签页、断网、过期与重试场景 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:通过静态断言验证失败关闭、租约心跳与页面生命周期、可见响应应用、断网重试和启动阻塞行为 | S:服务端租约和服务端时间是剩余时长唯一权威，静态审计不能替代数据库与RPC集成测试
+audit-pokemon-art-assets.mjs[XQ5S]: F:审计宝可梦立绘、图标和模型资源的覆盖与路径 | R:code:src/utils/gameAssetBootstrap.js,code:public/assets | A:检查图鉴和战斗资源可加载 | S:缺图需回退或阻断对应展示
+audit-pokemon-breeder.mjs[XQ5S]: F:审计宝可梦饲养家库存、锁定、刷新、价格和解锁过滤 | R:code:src/utils/pokemonBreeder.js,code:src/components/Game/PokemonBreederScreen.jsx | A:验证每日刷新、手动刷新和锁定逻辑 | S:玩家未解锁的宝可梦绝不能进入饲养家候选
+audit-pokemon-distribution.mjs[XQ5S]: F:审计全部地图宝可梦分布、等级、属性和重复率 | R:code:src/game/data/encounterTables.js,code:src/game/data/mapCatalog.js | A:核对地图生态与解锁进度 | S:分布结果必须使用当前地图和图鉴数据
+audit-pokemon-move-correspondence.mjs[XQ4S]: F:审计宝可梦可学习技能、属性和等级对应关系 | R:code:src/utils/officialLearnsets.js,code:src/utils/gameData.js | A:发现技能池和运行时招式不一致 | S:技能来源需保留官方数据证据
+audit-pokemon-name-correspondence.mjs[XQ4S]: F:审计宝可梦内部键、中文名、英文名和资源文件名对应 | R:code:src/utils/gameData.js,code:src/utils/assetUrl.js | A:防止名称映射导致资源或存档错配 | S:名称别名变更需保留旧存档兼容
+audit-refined-model-assets.mjs[XQ5S]: F:审计精修模型文件、清单、尺寸和加载路径 | R:code:src/game/data/refinedModelAssets.generated.js,code:public/assets/3d/xingyin-refined-v1/manifest.json | A:确认Blender精修模型能在运行时使用 | S:清单哈希和模型文件必须同批发布
+audit-refinement-staleness.mjs[XQ4S]: F:审计模型精修计划、输出文件和运行时清单是否过期 | R:code:art/environment/refinement-plan.json,code:src/game/data/refinedModelAssets.generated.js | A:发现建模资源和代码索引漂移 | S:精修输入变化后需重新生成清单
+audit-region-maps.mjs[XQ5S]: F:审计区域地图注册、道路、事件、遭遇和出口配置 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapCatalog.js | A:作为区域地图数据回归入口 | S:地图ID必须在目录和运行时注册中唯一
+audit-region7-dead.mjs[XQ4S]: F:审计第七区域死路、不可达点和出口路径 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/environmentNavigation.js | A:定位区域7的导航断点 | S:修复后需验证双向出口和旧存档落点
+audit-region7-levels.mjs[XQ4S]: F:审计第七区域遭遇和训练师等级分布 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/trainerBattleScaling.js | A:检查区域等级递进和挑战强度 | S:区域等级不能被客户端队伍临时变更
+audit-road-water-seams.mjs[XQ5S]: F:审计道路、水域、桥梁和岸线接缝的几何与碰撞 | R:code:src/game/mapRoadSurface.js,code:src/game/mapWaterSurface.js,code:src/game/mapVisualCollision.js | A:防止道路延伸进河里或出现视觉断层 | S:接缝修复需同时检查玩家可达性
+audit-runtime-assets.mjs[XQ5S]: F:审计运行时模型、音频、图集和地图资源的存在性与加载 | R:code:src/utils/gameAssetBootstrap.js,code:src/game/data/mapModelManifest.generated.js,code:public/assets | A:验证发布构建不引用缺失资源 | S:资源缺失不能靠浏览器缓存掩盖
+audit-shop-item-tiers.mjs[TB5S]: F:检查四档精灵球、伤药、经验药水及六种单项宝石的商店价格和效果展示 | R:code:src/utils/gameData.js,code:src/utils/inventoryItems.js | A:结合Vite运行值与主游戏源检查购买分类、高级物品随机掉落排除和教师提示 | S:神奇糖果不得出售；高级经验药水直接升一级而非固定经验
+audit-special-npc-models.mjs[TU5S]: F:验证饲养家与铁木计时员事件、独立模型和主角参照尺度 | R:code:src/game/data/mapCatalog.js,code:src/game/data/refinedModelAssets.generated.js | A:检查事件装饰、v2来源、可选精修重定向及有限尺寸 | S:新版角色路径与旧精修重定向分离；实际尺寸必须读取最终加载的GLB
+audit-starter-route-feel.mjs[XQ4S]: F:审计新手路线道路、镜头、地标密度和引导节奏 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapCameraRig.js | A:检查首张地图不空旷且可理解 | S:视觉引导不能牺牲道路和事件可达性
+audit-starter-wild-balance.mjs[XQ4S]: F:审计新手区域野生宝可梦等级、属性和出现率 | R:code:src/game/data/encounterTables.js,code:src/utils/gameBalance.js | A:检查新手遭遇难度和奖励 | S:新手池必须遵循解锁顺序和捕捉规则
+audit-stat-growth.mjs[XQ4S]: F:审计宝可梦等级成长、种族值和战斗统计变化 | R:code:src/utils/pokemonStats.js,code:src/utils/pokemonGrowth.js | A:核对等级提升后的战斗能力 | S:成长公式变更需同步经验和战斗模拟
+audit-teacher-resource-rewards.mjs[TB6M]: F:隔离验证教师金币能量广播与学生资源同步和奖励演出 | R:code:src/components/Teacher/Dashboard.jsx,code:src/utils/teacherRewardUpdates.js | A:执行真实回调覆盖混合收入、重复通知、连续奖励、失败及清理 | S:普通收入或能量上限差值不能识别教师奖励；测试客户端使用Dashboard注入的client
+audit-three-main-growth-route.mjs[XQ5S]: F:模拟三条成长路线的等级、资源和奖励差异 | R:code:src/game/timberLeague.js,code:src/utils/gameBalance.js | A:比较路线选择与后期成长 | S:模拟必须使用当前训练联赛能量和奖牌规则
+audit-timber-league-odds.mjs[XQ5S]: F:模拟训练联赛阵容、属性、换人和胜率分布 | R:code:src/game/timberLeague.js,code:src/utils/trainerBattleScaling.js | A:评估普通等级队伍的胜率和奖牌概率 | S:结果需标明是否允许伤药和对手换人
+audit-timber-league-realistic.mjs[XQ5S]: F:按实际玩家操作模拟训练联赛回合、换人、伤药和胜负 | R:code:src/game/timberLeague.js,code:src/utils/gameBalance.js | A:为铜银金回合线提供分布数据 | S:对手阵容在挑战开始时固定，玩家调整不应重抽
+audit-timber-league-switches.mjs[XQ5S]: F:审计训练联赛对手首发、属性互补和主动换人次数 | R:code:src/game/timberLeague.js,code:src/utils/battleAi.js | A:验证前三只阵容互补且每场换人上限生效 | S:首发信息需在战斗前展示，最多主动换人两次
+audit-timber-league-tactics.mjs[XQ5S]: F:审计训练联赛对手属性策略、技能选择和不喝药规则 | R:code:src/game/timberLeague.js,code:src/utils/battleAi.js | A:核对多属性阵容和战斗AI挑战性 | S:训练赛对手不得使用战斗道具
+audit-timber-league.mjs[XQ6M]: F:审计训练联赛六只对手、等级匹配、回合奖牌和金币结算 | R:code:src/game/timberLeague.js,code:src/utils/gameBalance.js,code:src/components/Game/TimberLeagueConfirmModal.jsx | A:作为训练联赛规则总入口 | S:每次挑战消耗两点能量且胜利奖励必须与回合线一致
+audit-trainer-battle.mjs[XQ5S]: F:审计训练家战斗阵容、等级、奖励和地图进度 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/trainerBattleScaling.js | A:检查普通训练家到Boss的战斗链路 | S:失败不能标记击败或发放胜利奖励
+audit-trainer-daily-map-scope.mjs[XQ4S]: F:审计训练家挑战每日范围、地图归属和刷新状态 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/longTermProgression.js | A:核对挑战次数和地图进度边界 | S:每日限制必须由云端状态决定
+audit-trainer-role-difficulty.mjs[XQ5S]: F:审计普通训练家、部下和Boss的AI与难度递进 | R:code:src/utils/battleAi.js,code:src/utils/trainerBattleScaling.js | A:验证角色等级和策略逐级增强 | S:角色名称变化不能绕过难度规则
+audit-trial-balance.mjs[XQ5S]: F:审计区域试炼阵容、回合、奖励和能量消耗 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/gameBalance.js | A:检查试炼挑战价值与平衡 | S:奖励和解锁需绑定胜利状态
+audit-trial-unlock-consistency.mjs[XQ5S]: F:审计区域试炼解锁、地图入口和玩家进度同步 | R:code:src/game/mapProgression.js,code:src/game/eliteRouteBlocker.js | A:验证试炼顺序和入口门槛 | S:客户端解锁状态必须由云端进度确认
+audit-unified-move-loadouts.mjs[XQ4S]: F:审计训练家和野生宝可梦技能配置的统一格式与属性覆盖 | R:code:src/utils/battleAi.js,code:src/utils/gameData.js | A:检查对手阵容和技能池合理 | S:缺失技能配置必须使用稳定默认招式
+audit-warp-continuous-entry.mjs[XQ5S]: F:审计跨地图进入、渐黑渐显、预加载和角色落点连续性 | R:code:src/game/MapWarpFade.jsx,code:src/game/mapWarpLandings.js,code:src/game/mapEntryPreload.js | A:验证过场不会长时间黑屏 | S:过场必须在目标资源就绪后渐显并保留视角
+audit-warp-pairing.mjs[XQ5S]: F:审计地图出口和反向出口的唯一配对及目标落点 | R:code:src/game/mapExitRunways.js,code:src/game/mapWarpLandings.js | A:验证每个Warp都能准确返回对应道路 | S:缺少反向配对必须阻断发布
+audit-warp-round-trips.mjs[XQ5S]: F:审计所有地图出口的双向往返、道路连续和进度限制 | R:code:src/game/mapExitRunways.js,code:src/game/mapProgression.js | A:检查来回进入不会跳到森林或错误节点 | S:往返测试必须覆盖旧存档和新地图
+audit-wild-move-loadouts.mjs[XQ4S]: F:审计野生宝可梦技能配置、属性和等级适配 | R:code:src/utils/wildEncounterRules.js,code:src/utils/gameData.js | A:检查野生战斗的技能合理性 | S:技能配置不能突破当前等级学习规则
+battle-balance-audit.mjs[XQ5S]: F:汇总伤害、等级、属性、奖励和战斗资源的平衡检查 | R:code:src/utils/battleDamage.js,code:src/utils/gameBalance.js | A:提供战斗平衡总审计入口 | S:审计结果需与实际运行配置版本绑定
+battle-balance-samples.mjs[XQ4S]: F:生成不同等级队伍和属性阵容的战斗样本 | R:code:src/utils/battleDamage.js,code:src/utils/trainerBattleScaling.js | A:支持胜率、回合和奖励模拟 | S:样本参数必须明确队伍数量、道具和换人规则
+bootstrap-long-term-reward-audit-db.sql[PI5T]: F:建立长期奖励审计所需的数据库表、索引和测试数据 | R:code:supabase/migrations,code:src/utils/longTermProgression.js | A:为奖励并发和幂等测试提供隔离结构 | S:测试表不得替代生产迁移
+build-map-runtime.mjs[XW5M]: F:生成地图运行时清单、布局和可加载资源 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:把地图源数据构建为运行时使用的索引 | S:地图源改动后必须重新执行该构建
+cache-game-assets.mjs[XW4S]: F:缓存宝可梦立绘、道具和地图运行资源 | R:code:src/utils/gameAssetBootstrap.js,code:public/assets | A:加速本地和构建前资源准备 | S:缓存不能掩盖manifest和实际文件不一致
+calibrate-timber-league-medals.mjs[XQ5S]: F:根据战斗模拟校准训练联赛铜银金奖牌回合线和金币 | R:code:src/game/timberLeague.js,code:src/utils/gameBalance.js | A:使铜牌最多、银牌其次、金牌比例受控 | S:校准参数必须注明队伍等级、伤药和对手AI条件
+check-escape-overlay-browser-test-cleanup.sql[PI4T]: F:清理逃跑覆盖层浏览器测试产生的临时数据库数据 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:保持浏览器测试环境可重复 | S:只允许在测试数据范围执行
+check-heal-points.mjs[XQ4S]: F:检查地图回血点位置、恢复量和事件绑定 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/inventoryItems.js | A:验证回血点可达且奖励正确 | S:回血事件必须有唯一ID并同步存档
+check-new-moves.mjs[XQ4S]: F:检查新增技能的元数据、动画和学习表接入 | R:code:src/utils/gameData.js,code:src/utils/moveVisuals.js | A:发现新增技能缺少运行时配置 | S:新技能必须同时通过数据和视觉审计
+check-recovery-browser-test-cleanup.sql[PI4T]: F:清理恢复流程浏览器测试的临时存档和租约 | R:code:supabase/migrations,code:src/utils/cloudSaveLock.js | A:保持恢复测试环境无残留 | S:不能删除生产用户存档
+check-region7-pool.mjs[XQ4S]: F:检查第七区域野生池物种、等级和稀有度 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js | A:验证区域7生态配置 | S:池配置必须符合解锁和地图主题
+check-remaining.mjs[XQ4S]: F:汇总项目剩余审计、资源和功能缺口 | R:code:package.json,code:scripts | A:提供发布前剩余项检查 | S:检查清单不能代替功能验证
+classify-gaps.mjs[XQ4S]: F:按模块和风险分类项目缺口与审计发现 | R:code:scripts,code:src | A:帮助确定修复和验证优先级 | S:分类结果需回到实际源码确认
+cleanup-escape-overlay-browser-test.sql[PI4T]: F:清理逃跑覆盖层浏览器测试数据和临时状态 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:恢复测试环境干净状态 | S:仅操作隔离测试记录
+cleanup-potion-turn-browser-test.sql[PI4T]: F:清理战斗用药回合浏览器测试的临时记录 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:支持伤药和回合规则的重复测试 | S:不能影响正式玩家战斗状态
+cleanup-recovery-browser-test.sql[PI4T]: F:清理云存档恢复浏览器测试的临时数据 | R:code:supabase/migrations,code:src/utils/cloudSaveLock.js | A:保持恢复测试可重复 | S:测试清理必须限定测试账号和记录
+complete-remaining-maps.mjs[XW5M]: F:补齐剩余地图的布局、装饰、道路和资源配置 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:批量完成地图生产数据 | S:补齐后必须执行全图运行时和出口审计
+comprehensive-audit.mjs[XQ6M]: F:串联数据、战斗、地图、资源和部署的综合审计 | R:code:package.json,code:scripts,code:src | A:作为全项目发布前回归入口 | S:综合通过仍需核对外部后端迁移状态
+compress-audio.sh[OV4S]: F:压缩地图BGM和音效资源并整理发布目录 | R:code:public/assets/audio/manifest.json,code:package.json | A:降低音频体积并保持清单路径 | S:压缩后需做实际播放和授权检查
+compress-map-models.mjs[XW4S]: F:压缩地图GLB模型并生成运行时资源 | R:code:public/assets/3d,code:src/game/data/mapModelManifest.generated.js | A:降低地图模型加载体积 | S:压缩结果需通过GLB、路径和性能审计
+copy-draco-decoders.mjs[OV4S]: F:复制Three.js Draco解码器到发布资源目录 | R:code:vite.config.js,code:src/game/threeLowPolyModelCache.js | A:保证压缩GLB在部署站点可解码 | S:解码器版本需与Three依赖匹配
+download-audio-resources.mjs[OV4S]: F:下载并整理地图音乐和技能音效资源 | R:code:public/assets/audio/manifest.json,code:scripts/compress-audio.sh | A:准备音频资源进入本地发布包 | S:下载来源和授权必须记录，运行时不能依赖外网
+download-audio.mjs[OV4S]: F:下载地图BGM和技能音效并写入本地音频目录 | R:code:public/assets/audio/manifest.json,code:scripts/compress-audio.sh | A:按音频资源配置、授权和目标路径准备发布素材 | S:下载来源和授权必须记录，运行时不能依赖外网
+download-game-audio-tracks.mjs[OV4S]: F:下载游戏音轨、校验OGG或WAV文件并更新音频清单 | R:code:scripts/game-audio-track-manifest.mjs,code:public/assets/audio/manifest.json | A:验证音频文件头、大小和回退生成 | S:无效音频必须回退或阻断发布
+download-missing-gen1-art.mjs[OV4S]: F:下载缺失初代宝可梦官方立绘并生成WebP | R:code:public/assets/pokemon/official-artwork,code:src/utils/gameAssetBootstrap.js | A:补齐图鉴和战斗展示资源 | S:外部资源下载后需核对官方来源和本地文件存在
+download-sfx-helper.mjs[SU3T]: F:输出分类音效推荐、目录和下载提示 | R:code:public/assets/audio/manifest.json,code:src/utils/gameAudio.js | A:辅助准备UI和战斗音效文件 | S:推荐链接不能视为已授权或已接入资源
+early-version-guard-snippet.mjs[FR5S]: F:生成入口版本校验、缓存清理和刷新脚本 | R:code:index.html,code:src/utils/clientUpdate.js,code:public/_headers | A:检测entryHash和buildId并清理旧缓存 | S:刷新最多重试两次，不能形成无限刷新循环
+enhance-boss-support.mjs[XQ4S]: F:分析各区域Boss稀有宝可梦和支援队伍的主题互补 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/gameData.js | A:输出Boss支援阵容优化建议 | S:分析报告不直接修改Boss运行配置
+export-battle-vfx-directions.mjs[XA5M]: F:从当前技能数据和特效配置导出技能表现方向清单 | R:code:src/utils/gameData.js,code:src/utils/battleVfxRecipes.js,code:art/battle-vfx/MOVE-DIRECTIONS.json | A:把技能机制映射到材质、动作和方向 | S:导出清单是覆盖依据，不能替代运行时验证
+final-item-verification.mjs[XQ4S]: F:验证常用精灵球、药剂和进化道具是否存在于游戏数据 | R:code:src/utils/gameData.js,code:src/utils/inventoryItems.js | A:发现道具键缺失或名称不一致 | S:验证输出不能自动改变生产道具定义
+find-evo-targets.mjs[XQ4S]: F:查询指定图鉴编号的内部ID、名称和进化目标 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:辅助补齐进化链映射 | S:查询结果需经过官方进化规则审计
+fix-heal-names-and-summary.mjs[XW4S]: F:统一地图治疗点名称并输出治疗点清单 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:保持地图交互名称和设计文档一致 | S:名称修复不能改变治疗点坐标和事件ID
+fix-item-keys.mjs[XW4S]: F:修正地图和背包中的道具键名与显示名称 | R:code:src/utils/inventoryItems.js,code:src/game/data/godotMaps/godot_region_maps.js | A:避免拾取和商店引用无效道具 | S:键名修改需兼容旧存档物品字段
+fix-treasure-positions.mjs[XW5M]: F:修正地图宝箱和道具位置以避让道路、水域和装饰 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/environmentNavigation.js | A:提高拾取可达性和空间合理性 | S:位置修改后必须复验事件和碰撞
+fix-trial-pools.mjs[XW5M]: F:修正区域试炼稀有池、训练师池和Boss池配置 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/encounterTables.js | A:避免所有区域误用同一试炼阵容 | S:每个区域池必须符合地图主题和解锁顺序
+game-audio-track-manifest.mjs[FC5S]: F:声明地图和系统音轨的URL、文件名、授权与目标路径 | R:code:public/assets/audio/manifest.json,code:scripts/download-game-audio-tracks.mjs | A:为音频下载、校验和播放提供单一配置 | S:清单来源和授权需与实际文件一致
+gen-new-monsters.mjs[XA5M]: F:根据新增图鉴和进化数据生成宝可梦运行时定义 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:补充物种、属性、技能和进化关系 | S:生成结果必须通过官方数据和图鉴审计
+generate-battle-vfx-atlas.mjs[XA5M]: F:生成技能战斗特效图集和运行时索引 | R:code:src/utils/battleVfxAtlas.generated.js,code:src/utils/battleVfxRenderer.js | A:减少特效资源查找和重复绘制 | S:图集更新需同步技能配方和缓存版本
+generate-game-audio-loops.mjs[XA4S]: F:生成缺失音频的本地循环回退文件 | R:code:public/assets/audio/manifest.json,code:src/utils/gameAudio.js | A:在外部素材缺失时提供可播放的安全回退 | S:回退音频不能冒充原始授权素材
+generate-map-environment-layouts.mjs[XW6M]: F:从地图源数据生成装饰、边界、道路和环境布局索引 | R:code:src/game/data/mapEnvironmentLayouts.generated.js,code:src/game/data/godotMaps/godot_region_maps.js | A:把地图编排转换为运行时布局 | S:源数据修改后必须重新生成并审计道路和碰撞
+generate-map-model-manifest.mjs[XW6M]: F:扫描地图模型资源并生成模型清单和路径映射 | R:code:src/game/data/mapModelManifest.generated.js,code:public/assets/3d | A:保证运行时模型键与实际GLB一致 | S:模型清单必须和发布资源同批更新
+generate-map.mjs[XW5M]: F:生成地图网格、道路、水域、事件和出口的基础布局数据 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:建立地图可运行的逻辑和视觉底图 | S:生成结果需通过出口、碰撞和进度审计
+generate-model-canonical-scales.mjs[XA5M]: F:统计模型实际渲染尺寸并生成统一标准比例 | R:code:src/game/data/modelCanonicalScales.generated.js,code:src/game/modelScaleReference.js | A:统一人物、树木、建筑和装饰的相对大小 | S:标准比例变化需同步地图碰撞和人物参照
+generate-official-economy-data.mjs[XA5M]: F:从官方接口生成经验、技能元数据和经济计算输入 | R:code:src/utils/officialExperience.js,code:src/utils/officialMoveMeta.js | A:为成长和战斗平衡提供官方数据 | S:外部数据更新后需锁定版本并运行完整审计
+generate-official-extra-moves.mjs[XA5M]: F:从官方技能学习数据生成额外技能映射 | R:code:src/utils/officialExtraMoves.js,code:src/utils/gameData.js | A:补充宝可梦技能池和战斗配置 | S:生成技能必须通过学习表和技能签名审计
+generate-official-learnsets.mjs[XA5M]: F:从官方资料生成宝可梦等级学习表 | R:code:src/utils/officialLearnsets.js,code:src/utils/pokemonGrowth.js | A:驱动等级学招和战斗技能合法性 | S:学习表生成必须保持版本组优先级和名称解析一致
+generate-pokemon-distribution-doc.mjs[XA4S]: F:从当前地图和遭遇表生成宝可梦分布说明文档 | R:code:src/game/data/encounterTables.js,code:src/game/data/godotMaps/godot_region_maps.js | A:展示地图、等级、概率和隐藏区域分布 | S:文档是生成快照，不能替代运行时配置
+generateForestMap.mjs[XW4M]: F:生成早期森林地图网格、道路、树木、出口和交互点 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:提供历史森林地图布局生成入口 | S:早期网格不能绕过当前地图注册和出口配对
+inspect-small-trees.mjs[XQ4S]: F:统计各地图树木、灌木模型数量和实际显示高度 | R:code:src/game/data/mapCatalog.js,code:src/game/mapModelScaleNormalization.js,code:src/game/decorativeModelSpec.js | A:发现矮树和比例异常并支持树木优化 | S:统计高度需结合人物模型和当前标准比例
+issue-analysis.mjs[XQ4S]: F:读取区域地图配置并输出试炼池、训练师池和Boss配置问题分析 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/gameData.js | A:定位区域配置解析或重复问题 | S:分析输出不直接代表运行时真实配置
+load-vite-module.mjs[FR5S]: F:启动无HMR的Vite审计服务器并加载项目模块 | R:code:package.json,code:vite.config.js | A:为地图、战斗和数据审计提供一致模块运行环境 | S:审计服务器必须在finally中关闭避免端口和WebSocket残留
+measure-original-environment.mjs[XA5M]: F:读取运行时GLB边界并生成原始环境模型尺寸测量 | R:code:src/game/data/environmentOriginalMeasurements.generated.js,code:src/game/threeLowPolyModelCache.js | A:为模型比例和碰撞归一化提供真实尺寸 | S:测量必须来自当前可加载GLB而非设计尺寸
+monsters-baseline.json[FC4M]: F:保存宝可梦基础物种、属性和进化关系的历史基线 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:用于数据缺口和回归比较 | S:基线是审计参照，不应直接作为运行时数据
+move-treasures-to-grass.mjs[XW4S]: F:把地图宝箱从道路调整到高草或安全区域 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:减少道路阻塞并保持探索奖励 | S:位置调整后必须复验可达性和事件ID
+official-pokemon-name-resolver.mjs[XA5M]: F:规范化宝可梦名称并解析官方物种接口 | R:code:scripts/generate-official-learnsets.mjs,code:scripts/generate-official-extra-moves.mjs | A:为官方数据生成器提供名称、请求和重试工具 | S:外部接口失败需有限重试，不能写入不完整数据
+optimize-battle-backgrounds.mjs[XW5M]: F:校验战斗背景源图并生成带哈希的WebP资源清单 | R:code:src/game/data/battleBackgroundCatalog.js,code:src/game/data/battleBackgroundAssets.generated.js | A:控制背景尺寸、质量和传输预算 | S:源图缺失或尺寸不足时不得生成发布清单
+optimize-bicycle-model.mjs[XW4S]: F:对自行车GLB执行去重、焊接和Draco压缩并生成报告 | R:code:public/assets/3d/xingyin-characters-v1/player_bicycle.glb,code:src/game/playerBicycleVisual.js | A:降低自行车加载成本 | S:压缩后必须重新读取导出文件验证网格
+optimize-character-assets.mjs[XW5M]: F:对角色GLB执行简化、去重和Draco压缩并更新manifest | R:code:public/assets/3d/xingyin-characters-v1/manifest.json,code:src/game/data/characterAssets.js | A:控制角色资源体积和运行时性能 | S:已压缩角色不得重复简化造成质量累积损失
+optimize-game-assets.mjs[XW4M]: F:把宝可梦和道具PNG转换为受尺寸限制的WebP | R:code:public/assets/pokemon/official-artwork,code:public/assets/items/official-artwork | A:降低图鉴和商店资源传输体积 | S:转换不能删除源图或改变资源键
+plan-baby-forms.mjs[XQ4S]: F:规划缺失前置形态的等级范围、区域和进化落点 | R:code:src/utils/gameData.js,code:src/utils/wildEncounterRules.js | A:为补齐进化链和地图分布提供建议 | S:规划输出不直接修改运行时数据
+plan-base-placements.mjs[XW5M]: F:规划初代宝可梦根形态的地图区域和合法等级落点 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/utils/wildEncounterRules.js | A:保证生态分布与等级范围相交 | S:空等级交集必须在写入前修正
+plan-new-ids.mjs[XQ4S]: F:列出缺失图鉴物种、类型、官方进化目标和等级 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:为新增宝可梦生成和ID分配提供计划 | S:新ID不能与现有运行时ID冲突
+prepare-battle-background-prompts.mjs[SU4M]: F:根据战斗背景目录生成统一风格和构图提示词 | R:code:src/game/data/battleBackgroundCatalog.js,code:art/battle-backgrounds/prompts.jsonl | A:为背景生成保留战斗站位和HUD留白 | S:提示词清单不代表图片已生成或接入
+prepare-boundary-environment-assets.mjs[XW5M]: F:准备地图边界模型输入、输出和清单元数据 | R:code:public/assets/3d/map-boundaries-v5/manifest.json,code:src/game/data/mapAssetCatalog.js | A:把边界建模资源接入环境管线 | S:准备阶段不能替代GLB解码和碰撞审计
+prepare-environment-assets.mjs[XW5M]: F:准备环境模型分类、路径、别名和导出任务 | R:code:art/environment/refinement-plan.json,code:src/game/data/mapModelManifest.generated.js | A:连接环境源文件到运行时清单 | S:输入变化需重新生成清单和比例报告
+prepare-exclusive-environment-assets.mjs[XW5M]: F:准备各地图专属环境模型的输入、归属和导出元数据 | R:code:public/assets/3d/map-exclusive-v3/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:确保专属模型按地图主题生成 | S:归属和路径必须在导出前唯一
+prepare-model-refinement.mjs[XW5M]: F:准备精修模型集合、Blender输入和比例校准任务 | R:code:art/environment/refinement-plan.json,code:scripts/blender/refine_model_collection.py | A:统一环境模型精修工作流 | S:精修任务完成后必须生成新的资源清单
+render-map-preview.mjs[XW4S]: F:启动地图预览并生成截图或性能证据 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/ThreeLowPolyMap.jsx | A:辅助视觉检查地图道路、边界和特色元素 | S:截图证据不替代运行时流程和碰撞测试
+replace-invalid-items.mjs[XW4S]: F:查找并替换地图或数据中的无效道具键 | R:code:src/utils/inventoryItems.js,code:src/game/data/godotMaps/godot_region_maps.js | A:避免拾取和商店引用不存在道具 | S:替换需保留旧存档物品兼容映射
+report-timber-league-realistic.mjs[XQ5S]: F:汇总训练联赛真实操作模拟的胜率、回合和奖牌分布 | R:code:src/game/timberLeague.js,code:reports/timber-league | A:为奖牌回合线和奖励设定提供证据 | S:报告需标明对手换人、玩家伤药和固定阵容条件
+resolve-build-id.mjs[OV4T]: F:解析显式构建ID或Git版本并为未提交发布生成唯一时间后缀 | R:code:vite.config.js,code:scripts/early-version-guard-snippet.mjs | A:优先环境变量，干净仓库用短SHA，脏仓库加时间避免复用缓存版本 | S:无Git时回退时间ID，不阻断本地构建
+review-all-move-semantics.mjs[XQ5M]: F:在移动端浏览器逐技能审阅战斗特效机制、可见像素和绘制预算 | R:code:src/utils/gameData.js,code:src/utils/battleVfxRecipes.js,code:src/utils/battleVfxRenderer.js | A:发现技能特效空白、重复或超预算 | S:审阅结果属于指定设备和构建的证据
+review-battle-contact-vfx.mjs[XQ4S]: F:在手机和平板审阅接触类技能特效、材质和绘制表现 | R:code:src/utils/battleVfxRenderer.js,code:src/components/Game/BattleMoveEffect.jsx | A:验证接触技能视觉反馈完整 | S:特效失败不得阻断战斗结算
+review-battle-vfx.mjs[XQ5M]: F:按设备和技能集合审阅战斗特效可见性、绘制次数和异常 | R:code:src/utils/battleVfxRenderer.js,code:src/game/BattleVfxLab.jsx | A:回归战斗特效不闪烁不卡顿 | S:性能结论需绑定浏览器设备参数
+review-environment-navigation.mjs[XQ5M]: F:在地图运行时验证装饰碰撞、道路移动和逃离路径 | R:code:src/game/environmentNavigation.js,code:src/game/ThreeLowPolyMap.jsx | A:确保大型模型不会堵住玩家道路 | S:测试必须覆盖地图集合和指定障碍样本
+review-map-environments.mjs[XQ5M]: F:逐图打开地图预览并检查模型、性能、截图和运行时错误 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/ThreeLowPolyMap.jsx | A:提供地图环境发布前视觉回归 | S:预览通过不等于跨地图出口和旧存档通过
+seed-capture-sequence-failure-browser-test.sql[PI4T]: F:写入捕捉失败动画恢复浏览器测试账号和战斗存档 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:复现捕捉失败后留在战斗并交回回合 | S:仅限临时测试账号，测试后必须清理
+seed-capture-sequence-success-browser-test.sql[PI4T]: F:写入捕捉成功动画恢复浏览器测试账号和战斗存档 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:复现捕捉成功后返回地图并加入队伍 | S:仅限临时测试账号，测试后必须清理
+seed-escape-overlay-refund-eligible.sql[PI4T]: F:写入逃跑覆盖层可退款浏览器测试账号和战斗存档 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:复现符合条件的野外逃跑能量退款 | S:仅限临时测试账号，测试后必须清理
+seed-escape-overlay-refund-ineligible.sql[PI4T]: F:写入逃跑覆盖层不可退款浏览器测试状态 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:复现不满足资格时能量保持不变 | S:仅限临时测试账号，测试后必须清理
+seed-growth-evolution-browser-test.sql[PI4T]: F:写入进化弹窗浏览器测试账号和待处理成长事件 | R:code:supabase/migrations,code:src/utils/pokemonProgress.js | A:复现确认进化后提交新形态并消费事件 | S:仅限临时测试账号，测试后必须清理
+seed-growth-learn-move-browser-test.sql[PI4T]: F:写入满技能栏学招浏览器测试账号和待处理成长事件 | R:code:supabase/migrations,code:src/utils/pokemonProgress.js | A:复现忘记旧招并学习新招 | S:仅限临时测试账号，测试后必须清理
+seed-potion-turn-browser-test.sql[PI4T]: F:写入战斗用药回合浏览器测试账号和战斗状态 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:验证伤药动画结束后敌方只行动一次并交回控制 | S:仅限临时测试账号，测试后必须清理
+sliceRoute102Map.mjs[XW4M]: F:切分Route102地图图片为瓦片、图集和碰撞区域数据 | R:code:public/assets/maps/route102,code:src/game/data/route102MapData.js | A:把外部地图图像转换为可加载地图资源 | S:源图缺失时必须明确失败，不能生成假数据
+snapshot-monsters.mjs[XQ4S]: F:把当前宝可梦运行时定义导出为基线快照 | R:code:src/utils/gameData.js,code:scripts/monsters-baseline.json | A:支持数据安全回归和ID属性比较 | S:快照只作审计参照
+split-css.mjs[XW4S]: F:按认证、教师和游戏区域拆分全局CSS | R:code:src/index.css,code:src/game.css | A:减少入口样式加载并保持各功能样式边界 | S:拆分必须保留原有选择器顺序和关键样式
+timber-league-runtime.mjs[XQ6M]: F:在保持生产战斗回调的前提下加载训练联赛运行时并替换动画音效持久化 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/timberLeague.js | A:支持训练联赛规则的可重复模拟和断言 | S:运行时模拟不得绕过生产战斗状态机
+updateMapConfig.mjs[XW3S]: F:生成早期地图难度、推荐等级和野生池配置模板 | R:code:src/game/data/mapCatalog.js,code:src/game/data/encounterTables.js | A:提供历史地图配置迁移参考 | S:早期ForestMap配置不应覆盖当前Godot地图
+validate-map-layout.mjs[XQ5M]: F:校验地图源尺寸、水体、道路、边界、事件和模型位置 | R:code:src/game/data/mapSources/godotMapV2.source.json,code:src/game/data/mapAssetCatalog.js | A:阻断越界、道路进水和无效地标布局 | S:布局校验通过后仍需运行时导航测试
+verify-baseline-unchanged.mjs[XQ4S]: F:比较当前宝可梦定义与基线的ID、图鉴号、名称和属性 | R:code:scripts/monsters-baseline.json,code:src/utils/gameData.js | A:防止已有宝可梦数据被意外改写 | S:新增数据不应改变基线物种字段
+verify-cloud-save-atomic-and-reward-rpcs.sql[PI6M]: F:验证云存档原子保存、资源更新、奖励握手和登录RPC | R:code:supabase/migrations,code:src/utils/cloudSaveLock.js | A:检查同revision冲突、资源幂等和教师奖励流程 | S:SQL测试在失败时应整体回滚并清理临时行
+verify-deployed-version.mjs[OV5M]: F:访问正式站点校验version.json、首页入口、早期守卫、Service Worker与本地dist一致 | R:code:scripts/resolve-build-id.mjs,code:vite.config.js,code:scripts/early-version-guard-snippet.mjs | A:默认pokemongame.site，fetch三次失败改用curl；错误退出码1，缓存偏长和资源缓存名不固定只告警 | S:game-pages缓存名须带构建ID，资源缓存名须固定，否则每次发版玩家重下资源
+verify-escape-refund-rpc-guard.sql[PI5T]: F:验证逃跑能量退款RPC只接受上一份云存档的退款资格 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:防止客户端伪造退款标记 | S:数据库测试完成后必须删除临时用户和存档
+verify-items.mjs[XQ4S]: F:检查地图和商店使用的道具键是否存在于运行时数据 | R:code:src/utils/gameData.js,code:src/utils/inventoryItems.js | A:发现无效道具引用 | S:检查结果不自动修改道具定义
+verify-new-evolutions.mjs[XQ4S]: F:验证新增宝可梦进化目标、等级和内部ID有效 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:确保进化链目标存在 | S:报告失败时不得发布新增物种
+verify-new-runtime.mjs[XQ4S]: F:验证新增宝可梦种族值和等级技能解析可运行 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:防止新物种进入战斗时无技能或异常属性 | S:运行时校验需覆盖全部新增ID
+verify-trainer-completion-rpc-guard.sql[PI5T]: F:验证训练家和Boss胜利奖励RPC单调保存击败状态并防重复 | R:code:supabase/migrations,code:src/components/Game/OriginalGame.jsx | A:检查旧快照不能移除已击败状态 | S:数据库级奖励和进度约束优先于客户端状态
+verify-visual-models.mjs[XQ4S]: F:检查地图宝箱和NPC事件是否拥有运行时视觉模型 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:验证事件位置能渲染正确对象和交互提示 | S:视觉模型存在不等于道路和碰撞可达
+audit-battle-background-assets.mjs[TU5T]: F:验证44处背景的WebP尺寸、内容哈希、文件字节与布景占地不重叠 | R:code:src/game/data/battleBackgroundAssets.generated.js | A:检查960和1536两档图片并读取Blender placement报告，失败退出非零 | S:运行需要output目录中的逐场景placement.json证据
+audit-battle-background-runtime.mjs[TU5T]: F:使用Playwright检查桌面手机战斗背景解码、层级、非空画面与加载失败回退 | R:code:src/components/Game/BattleBackgroundPlate.jsx | A:遍历桌面全地点和手机代表场景，保存截图及verification.json | S:浏览器结束在finally清理；结果限于所测浏览器和视口
+audit-fishing-actions.mjs[TB5S]: F:验证钓鱼RPC回调的钱包竞态重试与登录会话就绪门控 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/fishingRules.js | A:执行真实回调与库存effect，覆盖在途购买、账号切换、慢时钟、初始化延期和服务端拒绝 | S:不挂载真实账户；重试保留原地图与请求编号，未就绪不得触发全局会话失效
+audit-fishing-catalog.mjs[TB5S]: F:验证51鱼获独立素材英文、水域概率、解锁与指针时间边界 | R:code:src/game/fishingCatalog.js,code:src/game/fishingRules.js | A:检查双语名称唯一性、三次截止、旧状态过滤及完整饵包余饵折算 | S:淡水海水池隔离，未知字段和每日次数字段不得进入标准状态
+audit-fishing.mjs[TB5T]: F:汇总钓鱼目录与时间判定测试，并验证六钓点三鱼商在最终地图上的可达性 | R:code:scripts/audit-fishing-catalog.mjs,code:src/game/data/mapCatalog.js | A:从各地图出生点遍历可走格，核对事件邻接与浮漂落在水面瓦片11 | S:静态网格可达不代替实际3D取景与动画测试
+audit-pokemon-release.mjs[TB5T]: F:验证全物种全等级放生核价、前后端目录、旧格式身份与三类移除操作 | R:code:src/utils/pokemonRelease.js,code:src/utils/pokemonReleaseCatalog.json | A:检查失败保留原快照、战斗和最后一只限制、不在前端提前发钱 | S:使用本地夹具，数据库事务与权限需另行SQL验证
+audit-pokemon-release.sql[TB6S]: F:在回滚事务中验证服务端放生核价、身份约束、原子金币和请求幂等 | R:code:supabase/migrations/202610100001_pokemon_release_compensation.sql | A:创建合成玩家和游玩租约，覆盖伪造报价、旧版本、错误会话及重复放生 | S:最终ROLLBACK删除账号与日志；仅供已具备迁移依赖的隔离测试库
+audit-sports-car-model.mjs[TU5T]: F:解码跑车GLB验证四轮节点轴心、地面贴合、尺寸和渲染资源预算 | R:code:public/assets/3d/xingyin-characters-v1/manifest.json | A:断言一车身四轮、单材质、文件小于100KB且清单引用匹配 | S:轮节点旋转需为单位四元数以保留本地X轴滚动
+audit-stat-gem-training.sql[TB5S]: F:用合成存档验证属性宝石额度、库存扣除、旧加成保留及版本防降级 | R:code:supabase/migrations/202610060003_stat_gem_training_limits.sql | A:运行验证函数与临时触发器，检查单项4颗总10颗、战斗限制和失败原子性 | S:整笔事务ROLLBACK；未采用新规则的旧客户端保存是有意兼容
+audit-stat-gems.mjs[TB5S]: F:验证六种属性宝石的价格、等级面板增量、额度与成长存档兼容 | R:code:src/utils/pokemonStats.js,code:src/utils/pokemonProgress.js | A:覆盖全物种50/80/100级、单项4次总10次、旧加成、糖果及真实商店渲染 | S:旧加成不反推计数，宝石不改变MP
+audit-vehicle-equipment.mjs[TB4T]: F:验证坐骑装备选择按实际库存回退并兼容未加载库存的旧存档 | R:code:src/game/vehicleRules.js | A:覆盖两种坐骑、无效值和仅剩一种坐骑的七个断言 | S:-
+generate-fishing-assets.mjs[XU5S]: F:根据逐物种轮廓、花纹与装备造型生成58张本地钓鱼SVG | R:code:src/game/fishingCatalog.js | A:输出51鱼获、永久竿、五种饵及鱼篓；每图包含名称和可编辑矢量形状 | S:鱼获差异包含几何轮廓而非仅变色，重新生成会覆盖对应SVG
+optimize-sports-car-model.mjs[XP4T]: F:对跑车GLB去重焊接并Draco压缩，重新解码统计尺寸和轮轴 | R:code:scripts/audit-sports-car-model.mjs | A:原位写回GLB并输出sports-car-asset.json资源报告 | S:会覆盖输入模型
+render-fishing-contact-sheet.mjs[XU4T]: F:将51鱼获和7件渔具素材栅格化拼为带中文名的PNG联系表 | R:code:src/game/fishingCatalog.js | A:接受输出路径，默认写临时目录，以8列展示每个素材 | S:只生成审阅图，不改变运行素材
+review-fishing-experience.mjs[TU5S]: F:使用Chrome验证真实地图取景、动态浮漂、鱼获纹理和五档庆祝 | R:code:src/game/FishingPreview.jsx,code:scripts/audit-mobile-map-performance.mjs | A:运行六钓点与九鱼获样本的桌面手机30例，保存截图和探针报告 | S:使用内存夹具和CPU节流模拟手机；不是实体设备帧率保证
+verify-fishing-system.sql[TB6S]: F:验证钓鱼购买判定、会话幂等、逐件鉴定出售与时长权限 | R:code:supabase/migrations/202610100005_fishing_combo_treasure_logs.sql | A:覆盖无日限、15秒门槛、固定目标、请求重放和保存随机价出售 | S:修改合成会话时钟和库存后回滚；禁止用于生产玩家
+verify-timber-bank-setup.sql[TQ4T]: F:建立银行SQL测试所需最小用户、日志、角色和游玩会话桩 | R:code:scripts/verify-timber-bank.sql | A:供独立空数据库承载银行迁移验证 | S:时长与租约是固定测试桩，不能代表生产认证
+verify-timber-bank.sql[TB5T]: F:用合成玩家核验银行存款锁期、重复请求、市场买卖、利息和到期处理 | R:code:scripts/verify-timber-bank-setup.sql | A:覆盖三日存款到期续存、无上限追加市场投资及不足一金币持仓清仓 | S:会修改行情并留下测试记录；仅适用于隔离库，文件自身没有ROLLBACK
+audit-fishing-rewards.mjs[TB6T]: F:验证命中与完美奖励档位、隐藏宝藏价格、逐件库存及教师记录渲染 | R:code:src/game/fishingRewards.js,code:src/game/fishingRules.js,code:src/components/Teacher/Dashboard.jsx | A:断言普通10连击44金币和完美档位、概率桶、独立报价、整篓核价与记录组件 | S:Supabase配置为隔离占位值；不调用真实账户，SQL事务另用隔离验证
+verify-fishing-rewards.sql[TB6S]: F:隔离验证命中连击幂等、完美加成、随机鉴定售鱼与教师日志归属 | R:code:supabase/migrations/202610100006_fishing_combo_hit_rewards.sql | A:覆盖10次完美68金币、普通命中不断连击、取消超时清零及逐件鉴定防重放 | S:合成老师学生与时钟仅用于隔离库，最终ROLLBACK；不得对生产玩家运行
+audit-character-upgrade-v2.mjs[TU6S]: F:验证109角色96地图人物的独立形体、关节、材质与导出预算 | R:code:src/game/data/mapCatalog.js,code:public/assets/3d/xingyin-characters-v2/manifest.json | A:解码全部资产，检查握持插槽父子关节及地图事件映射，输出资产报告 | S:形体签名按去重排序坐标忽略颜色缝与顶点顺序，换色不能满足唯一性
+optimize-character-upgrade-v2.mjs[XP5T]: F:压缩v2角色与载具并回读登记实际尺寸面数和字节 | R:code:public/assets/3d/xingyin-characters-v2/manifest.json | A:按主角首领与普通角色分档简化焊接，保留表面属性并Draco压缩 | S:已有compression记录即跳过，避免反复减面；会原位覆盖GLB与清单
+audit-character-gait.mjs[TU6S]: F:验证全部83漫游NPC和主角的支撑脚、步态及介绍模型绑定 | R:code:src/game/npcWalkVisual.js,code:src/game/playerFigureVisual.js,code:src/game/characterPortrait.js | A:解码最终GLB采样地面高度、支撑脚滑移、膝角和主角头部稳定，核对96事件形象 | S:CPU计算不证明GPU编译成功，必须另做真实浏览器渲染检查
+audit-playtime-recovery.mjs[TB6S]: F:隔离验证时长重试、心跳恢复、启动保存与战斗恢复门控 | R:code:src/utils/playtimeRecovery.js,code:src/components/Game/OriginalGame.jsx | A:执行真实回调验证确认租约后才保存、延后重试、旧响应隔离及到期权限边界 | S:合成refs不连接账号；后台保存须有已确认租约，待开始ID无效
+audit-teacher-delete-student.mjs[TI6T]: F:隔离执行真实教师删除回调与列表读取验证失败保护和竞态 | R:code:src/components/Teacher/Dashboard.jsx | A:断言精确目标、错误拒绝、重复点击、超时、缺少RPC及旧列表响应 | S:使用VM和合成客户端，不连接真实账号或数据库；跨VM对象需归一化后比较
+verify-teacher-delete-student.sql[TI7S]: F:以合成账号验证教师删除权限15类数据清理及事务回滚 | R:code:supabase/migrations/202610110001_teacher_delete_student.sql | A:覆盖身份目标、外键失败、私有收据、幂等重试与同名新账号保护 | S:测试整体ROLLBACK并含临时审计表；线上存档须先建立租约并写入_sync.playtimeSessionId
+verify-fishing-playtime-lease.sql[XQ5S]: F:在回滚事务中验证钓鱼会话与游玩时长租约的绑定及跨租约结算拦截 | R:code:supabase/migrations/202610170001_bind_fishing_to_playtime_lease.sql,code:supabase/migrations/202610170002_secure_teacher_playtime_limit.sql | A:用合成师生账号覆盖结束租约、换租约、旧鱼竿收杆和新鱼竿恢复路径 | S:测试数据必须在外层事务中回滚，不能连接或修改真实学生账号
+resolve-model-asset-version.mjs[OV4T]: F:按public/assets/3d全部文件路径与字节计算模型资源内容哈希版本 | R:code:vite.config.js,code:src/game/threeLowPolyModelCache.js | A:导出resolveModelAssetVersion，排序递归并跳过点文件，返回m加12位sha256，读取失败返回null | S:任一模型或贴图文件变化都会让全部模型URL换版本
+
+===/Users/shihe/Documents/宝可梦养成/scripts/blender/===
+build_biome_boundaries.py[XW5M]: F:用Blender生成地图生物群系边界模型 | R:code:public/assets/3d/map-boundaries-v5/manifest.json,code:src/game/data/mapAssetCatalog.js | A:构建按地图主题区分的边界资源 | S:边界高度和碰撞需按人物比例校准
+build_character_collection.py[XW5M]: F:用Blender生成玩家、自行车、训练家和特殊NPC角色模型 | R:code:public/assets/3d/xingyin-characters-v1/manifest.json,code:src/game/data/characterAssets.js | A:构建具有角色身份差异的专属模型集合 | S:模型导出后需更新清单并通过角色审计
+build_environment_biomes.py[XW5M]: F:用Blender生成地图主题环境、植被和边界模型 | R:code:public/assets/3d/xingyin-environment-v2/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:构建统一风格且按地图区分的环境资源 | S:模型比例、材质和性能需一并验证
+build_environment_landmarks.py[XW5M]: F:用Blender生成地图地标、设施和特色大型元素 | R:code:public/assets/3d/map-exclusive-v3/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:为无树地图提供主题地标和视野填充 | S:地标必须避开道路、事件和水域
+build_map_exclusive_sets.py[XW5M]: F:用Blender批量生成14张地图专属装饰模型套装 | R:code:public/assets/3d/map-exclusive-v3/manifest.json,code:src/game/data/mapEnvironmentComposition.js | A:保持各地图模型主题和归属独立 | S:每个模型的实际放置需经过几何和道路净空审计
+build_nature_assets.py[XW5M]: F:用Blender生成树木、灌木、花簇和岩石自然模型 | R:code:public/assets/3d/xingyin-environment-v2/nature/manifest.json,code:src/game/decorativeModelSpec.js | A:提供地图自然装饰和森林边界资源 | S:树木高度和灌木比例必须以人物模型为参照
+build_nature_assets_fallback.mjs[XW4S]: F:在Blender不可用时生成自然模型的兼容资源或清单回退 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/threeLowPolyModelCache.js | A:保证自然装饰资源缺失时仍能加载安全回退 | S:回退模型不能覆盖真实精修模型
+build_player_bicycle.py[XW4S]: F:用Blender生成玩家自行车模型和展示资源 | R:code:src/game/playerBicycleVisual.js,code:public/assets/3d/xingyin-characters-v1/manifest.json | A:提供自行车按钮和地图显示使用的模型 | S:模型高度和碰撞需与玩家角色一致
+build_tree_assets.py[XW5M]: F:用Blender生成不同高度、树冠和风格的树木模型 | R:code:public/assets/3d/xingyin-environment-v2/forest-trees/manifest.json,code:src/game/forestWallScenery.js | A:提供森林边界和地图树木资源 | S:树木高度需按人物比例和地图视野校准
+build_tree_assets_fallback.mjs[XW4S]: F:生成树木资源缺失时的兼容清单和回退模型 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/threeLowPolyModelCache.js | A:避免树木加载失败造成边界空洞 | S:回退树木不能覆盖新精修资源
+environment_modeling.py[XW5M]: F:提供环境模型的Blender基础建模、材质和导出函数 | R:code:scripts/blender/build_environment_biomes.py,code:scripts/blender/build_environment_landmarks.py | A:统一地图环境模型风格和尺寸 | S:基础几何修改需同步所有调用脚本
+exclusive_landscapes.py[XW5M]: F:定义14张地图专属景观模型和主题参数 | R:code:scripts/blender/build_map_exclusive_sets.py,code:src/game/data/mapEnvironmentComposition.js | A:保证各地图大型元素具有辨识度 | S:专属模型需保持地图归属和道路净空
+refine_model_collection.py[XW5M]: F:精修、清理、归一化和导出环境模型集合 | R:code:art/environment/refinement-plan.json,code:src/game/data/refinedModelAssets.generated.js | A:统一模型网格、材质和比例 | S:精修结果必须重新生成manifest并检查源输出对应
+render_exclusive_gallery.py[XW4S]: F:渲染地图专属模型预览图和模型画廊 | R:code:public/assets/3d/map-exclusive-v3/manifest.json,code:reports/model-refinement | A:辅助视觉检查模型风格和细节 | S:画廊图片不作为运行时资源来源
+build_player_sports_car.py[XU5S]: F:使用Blender构建带现有主角驾驶员的敞篷旅行跑车和独立轮节点 | R:code:scripts/blender/build_character_collection.py,code:scripts/optimize-sports-car-model.mjs | A:导出可编辑场景与运行GLB，复用角色脸部衣帽并替换坐姿四肢 | S:导出Y朝上、+Z朝前，四轮命名节点的轴心必须保留本地X方向
+build_timber_bank.py[XU5T]: F:生成铁木营地银行的木石建筑、绿色屋顶、金色招牌和门廊 | R:code:scripts/blender/environment_modeling.py | A:保存timber-bank.blend并导出timber_bank.glb供地图加载 | S:-
+render_battle_backgrounds.py[XU5L]: F:用项目本地地图模型和固定镜头批量渲染各地点战斗底图与占地证据 | R:code:art/battle-backgrounds/prompts.jsonl,code:scripts/optimize-battle-backgrounds.mjs | A:支持--only场景筛选，输出PNG和placement.json并保存示例Blender场景 | S:大型地标优先占地，植被避让中央角色区域和已放置模型，固定种子保持可复现
+assemble_character_upgrade_scene.py[XU5T]: F:将最新NPC步态与主角工程合并为完整可编辑人物场景 | R:code:scripts/blender/build_character_upgrade_v2.py | A:替换旧角色根及子对象，布局109人物并设置主角视图和场景元数据 | S:只保存完整blend，不重新导出或修改已验证的运行GLB
+build_character_upgrade_v2.py[XU6L]: F:在Blender构建109角色的身份造型、表面分区和轻量关节 | R:code:src/game/data/characterIdentityProfiles.json,code:src/game/npcWalkVisual.js | A:导出Y朝上GLB与源工程，作者化膝肘踝点及脚部权重，支持局部重建 | S:自定义向量须显式Y朝上且与模型同时扣除地面偏移；部分导出重置压缩记录并保留其他角色载具
+build_player_bicycle_v2.py[XU5S]: F:用v2主角造型构建拟合骑姿、自行车及可动双腿与轮轴 | R:code:scripts/blender/build_character_upgrade_v2.py,code:src/game/playerBicycleVisual.js | A:复用衣帽头脸，重建手握车把和踏板动作部件，导出GLB与源工程 | S:轮原点在轴心，朝前为+Z；骑行双腿段长元数据供运行时求解
+build_player_sports_car_v2.py[XU5S]: F:用v2主角构建驾驶姿态和带四个可动轮节点的敞篷跑车 | R:code:scripts/blender/build_character_upgrade_v2.py,code:src/game/playerBicycleVisual.js | A:导出车身单网格与四轮、源工程并合并车辆清单 | S:Y朝上+Z朝前，轮轴为本地X；替换步行四肢时需删除其全部关节子节点
+
+===/Users/shihe/Documents/宝可梦养成/src/===
+App.jsx[AU7M]: F:编排认证教师学生入口游戏预载与开发预览，并在内存中传递教师特权凭据 | R:code:src/utils/authService.js,code:src/components/Teacher/Dashboard.jsx | A:登录教师时暂存密码供限时管理RPC验证，登出时清除并传入教师工作台 | S:教师密码只能驻留内存，不能写入localStorage、云存档或URL
+game.css[AU7L]: F:定义地图战斗管理面板、双语商店背包和响应式界面样式 | R:code:src/components/Game/OriginalGame.jsx,code:src/components/Game/DeferredGamePanels.jsx | A:提供卡片分类及主题叠层，NPC介绍采用居中纵向布局和独立入场动画 | S:主题水纹只动画装饰子层；NPC纵向布局不能叠加旧百分比平移，须检查最终级联
+index.css[FC6L]: F:定义认证、应用壳和首次进入页面的基础样式 | R:code:src/App.jsx,code:src/shell.css | A:提供登录注册和应用启动视觉基础 | S:游戏样式由懒加载模块继续覆盖
+main.jsx[EE7T]: F:创建React入口加载统一设计样式并启动版本检查 | R:code:src/App.jsx,code:src/design/ui-system.css,code:src/design/game-ui.css | A:恢复Pages深链、规范部署base并安排PWA更新 | S:保持单一React挂载；统一样式需在shell后载入且通过作用域抵御后续游戏样式
+shell.css[AU5L]: F:定义基础字体、认证壳、教师后台、滚动条和旧界面公共样式 | R:code:src/index.css,code:src/App.jsx | A:提供基础视觉与响应式覆盖，供启动及登录教师页面使用 | S:全局选择器可能覆盖游戏布局，修改须检查游戏样式后续级联
+supabaseClient.js[IN6S]: F:创建Supabase客户端并读取前端环境变量 | R:code:src/utils/authService.js,code:src/utils/cloudSaveLock.js | A:提供认证、存档和资源RPC连接 | S:前端只使用公开匿名配置，敏感数据库密码不得进入此文件
+
+===/Users/shihe/Documents/宝可梦养成/src/components/===
+AppLoadingScreen.jsx[AU4S]: F:显示应用准备、首次缓存和慢加载提示 | R:code:src/App.jsx,code:src/utils/gameEntryPreload.js | A:在入口资源准备期间阻止空白页面 | S:提示组件不能阻塞旧存档恢复
+LazyRouteErrorBoundary.jsx[AR5S]: F:捕获懒路由资源错误并提供清缓存或重新加载操作 | R:code:src/utils/recoverStaleClient.js,code:src/utils/clientUpdate.js | A:恢复部署后旧chunk和缓存不匹配 | S:清缓存操作不能误删用户云存档
+UnifiedBootScreen.jsx[AU5M]: F:显示统一启动进度、资源阶段、慢加载提示和可恢复错误 | R:code:src/utils/gameEntryPreload.js,code:src/utils/gameAssetBootstrap.js | A:避免首次加载黑屏并给出重试入口 | S:关键资源失败必须暂停进入游戏而不是显示空场景
+
+===/Users/shihe/Documents/宝可梦养成/src/components/Auth/===
+Login.jsx[AU5M]: F:提供登录表单、认证提交、图片回退和学生会话预热 | R:code:src/utils/authService.js,code:src/utils/primeStudentSession.js | A:完成登录并进入云端游戏流程 | S:认证失败必须保留表单并显示可理解错误
+Register.jsx[AU5M]: F:提供学生或教师注册表单、密码确认和教师关联 | R:code:src/utils/authService.js,code:src/utils/primeStudentSession.js | A:提交注册申请并显示审核结果 | S:注册状态和角色由后端认证规则决定
+
+===/Users/shihe/Documents/宝可梦养成/src/components/Game/===
+BattleDialogueTypewriter.jsx[DU4S]: F:以逐字动画显示战斗对话并在文本变化时重置计时 | R:code:src/utils/battlePacing.js,code:src/components/Game/OriginalGame.jsx | A:提供可取消的战斗文字反馈 | S:每帧更新只影响对话节点，不能拖慢战斗渲染
+BattleMoveEffect.jsx[DU6M]: F:加载技能特效图集并按战斗阶段渲染技能材质、动作和命中反馈 | R:code:src/utils/battleVfxRenderer.js,code:src/utils/battleVisualPlayback.js,code:src/utils/battlePacing.js | A:驱动战斗技能特效生命周期 | S:组件卸载或新技能开始时必须停止旧播放并释放资源
+DeferredGamePanels.jsx[AU7L]: F:提供图鉴进度、双语分类商店背包、单件回收与队伍仓库 | R:code:src/utils/inventoryItems.js,code:src/utils/pokemonRelease.js,code:src/utils/pokemonStats.js | A:复用键盘分类和中英文物品卡片，嵌入渔具，展示宝石额度与坐骑装备 | S:背包按inventoryType分类，战斗不显示渔具且保留用药限制；放生保留最后一只，资源不先在本地生效
+EliteFourCeremonyOverlay.jsx[AU5M]: F:播放四天王胜利后的分阶段仪式并提交完成事件 | R:code:src/utils/longTermProgression.js,code:src/components/Game/OriginalGame.jsx | A:提供可跳过且支持减少动画的终局演出 | S:完成回调必须幂等，避免重复推进章节
+EliteUnlockMinigameOverlay.jsx[AU5M]: F:显示精英路线解锁小游戏、符号选择和音频反馈 | R:code:src/utils/longTermProgression.js,code:src/utils/gameAudio.js | A:把解锁进度转成可理解的交互流程 | S:解锁结果必须由后端进度确认
+GameEntryLoadingScreen.jsx[AU4S]: F:兼容旧入口的游戏加载屏并转发到统一启动界面 | R:code:src/components/UnifiedBootScreen.jsx,code:src/utils/gameEntryPreload.js | A:保持旧调用方的加载错误和重试接口 | S:该兼容组件不应创建第二套加载状态机
+GameWrapper.jsx[AU5M]: F:加载游戏样式、标记应用就绪并挂载主游戏和懒路由边界 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/clientUpdate.js | A:提供登录后全屏游戏容器 | S:主游戏卸载时必须释放地图和战斗资源
+PokemonBreederScreen.jsx[AU6M]: F:显示饲养家报价、锁定、刷新、购买和金币信息 | R:code:src/utils/pokemonBreeder.js,code:src/utils/pokemonAcquisition.js | A:让玩家直观看懂锁定和手动刷新的规则 | S:候选必须先按玩家解锁状态过滤，手动刷新解除锁定
+StarterSelection.jsx[AU5S]: F:显示初始妙蛙种子、小火龙和杰尼龟并提交选择 | R:code:src/utils/gameData.js,code:src/utils/pokemonRoster.js | A:完成新玩家首只宝可梦选择 | S:选择结果必须进入云存档且不可重复覆盖已有队伍
+TimberLeagueConfirmModal.jsx[AU6M]: F:显示训练联赛固定六只对手、首发属性、等级、奖牌线和金币预览 | R:code:src/game/timberLeague.js,code:src/utils/gameBalance.js | A:在战斗前让玩家调整队伍并理解本场规则 | S:玩家队伍调整不能重抽对手阵容，只能影响等级匹配
+battleMoveCanvas.css[DU5S]: F:定义战斗技能材质画布的层级、尺寸和合成行为 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battleVfxRenderer.js | A:保持单画布复用和战斗角色层级 | S:画布必须避免触发重复布局和多余动画
+battleMoveFeedback.css[DU4S]: F:定义技能值不足提示、闪光和战斗按钮反馈样式 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/components/Game/OriginalGame.jsx | A:显示技能值消耗和操作反馈 | S:减少动画模式下提示不得持续闪烁
+dynamax.css[DU4S]: F:定义战斗强化形态缩放、变身提示和减少动画样式 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/dynamax.js | A:表现强化形态而不改变战斗锚点 | S:变身动画结束后必须清理临时类和覆盖层
+gameUiPrimitives.jsx[AU5M]: F:提供游戏卡片、集合网格、按钮和类型徽章等共享UI原语 | R:code:src/components/Game/DeferredGamePanels.jsx,code:src/components/Game/TimberLeagueConfirmModal.jsx | A:统一游戏面板的可视化和交互语义 | S:禁用状态必须阻断操作而不丢失可访问文本
+pokemonBreeder.css[AU5M]: F:定义饲养家标题、工具栏、报价卡和锁定状态样式 | R:code:src/components/Game/PokemonBreederScreen.jsx,code:src/utils/pokemonBreeder.js | A:突出价格等级和锁定规则 | S:锁定和已购买状态必须有清晰的视觉区分
+BattleBackgroundPlate.jsx[AU5T]: F:按视口选择战斗背景WebP并在解码成功后显示图片层 | R:code:src/game/data/battleBackgroundAssets.generated.js,code:src/utils/localAssetPreloader.js | A:导出URL解析、当前地图串行预载、解码hook和图片组件 | S:切换地点时旧解码URL不匹配即隐藏，失败保持旧场景回退
+FishingOverlay.jsx[AU7M]: F:提供真实地图选饵买竿、计时收杆、双语结果和命中连击提示 | R:code:src/game/fishingRules.js,code:src/game/fishingSceneVisual.js,code:src/game/fishingCelebration.js | A:服务端结果驱动分级庆祝、第二次起连击金币及完美额外奖励，宝藏仅待鉴定 | S:elapsedMs含等待且点击冻结供重试；时钟不确定暂停收杆；连击结果留足2200ms，不由动画发钱
+FishingPanel.jsx[AU6S]: F:展示双语渔具、鱼篓饵包图鉴以及地图鱼商逐件随机鉴定交易 | R:code:src/game/fishingRules.js,code:src/game/fishingRewards.js,code:src/game/data/mapCatalog.js | A:按次买卖、内联筛选、整篓总价与出售；分组显示逐件报价，品相动画粘在滚动区顶部 | S:未鉴定没有报价，鉴定出售传实例UUID；整篓跳过未鉴定和商人不收宝藏；鱼饵包数仅由剩余次数折算
+PokemonReleaseSummary.jsx[AU5T]: F:展示待放生伙伴、固定报价、稀有度及不可找回警告 | R:code:src/utils/pokemonRelease.js | A:按报价决定珍稀提醒，图片失败调用统一回退；无合法报价显示错误 | S:只展示补偿，不移除伙伴也不支付金币
+TimberBankScreen.jsx[AU6M]: F:展示铁木银行定期存款、商队行情、买卖、预约单和交易记录 | R:code:src/components/Game/timberBank.css,code:src/components/Game/OriginalGame.jsx | A:接收服务端state，按余额与预留份额限制输入并委托交易、撤单、刷新回调 | S:到期展示用本地时钟仅作提示，实际解锁和交易由后端判断；预留份额不可重复卖出
+battleBackground.css[AU4T]: F:定义战斗图片底层、旧场景装饰隐藏、对手主题叠层和渐显 | R:code:src/components/Game/BattleBackgroundPlate.jsx | A:图片cover裁切且不接收指针，减少动画时停用渐显 | S:只有ready类才隐藏旧地形
+fishing.css[AU5M]: F:统一钓鱼HUD双语卡片、内联筛选、连击和鉴定动画的商店样式 | R:code:src/components/Game/FishingOverlay.jsx,code:src/components/Game/FishingPanel.jsx | A:提供手机双列、连击分级星芒、粘性鉴定结果与减少动画适配 | S:地图HUD外层不接收指针，仅卡片交互；筛选不遮挡卡片，减少动画不改变指针判定
+pokemonRelease.css[AU4T]: F:定义放生确认中的伙伴、档位、金币报价和珍稀警告样式 | R:code:src/components/Game/PokemonReleaseSummary.jsx | A:区分普通稀有珍稀档位并提供按钮旁报价样式 | S:-
+timberBank.css[AU4S]: F:定义银行双产品页签、余额、趋势图、输入、预约单和历史记录布局 | R:code:src/components/Game/TimberBankScreen.jsx | A:提供桌面手机布局与交易状态视觉区分 | S:-
+NpcBattlePortrait.jsx[AU5T]: F:在对战介绍显示当前NPC模型生成的透明形象 | R:code:src/game/characterPortrait.js,code:src/game/threeLowPolyModelCache.js | A:优先使用已缓存模型图，缺失时严格有限加载，按模型键隔离异步结果 | S:不能拿其他人物充当缺图；卸载和换人物后不得写回旧结果
+
+===/Users/shihe/Documents/宝可梦养成/src/components/Teacher/===
+Dashboard.jsx[AU6L]: F:管理学生审核资源奖励记录及账号时长密码与删除，并为时长修改提交教师验证凭据 | R:code:src/components/ui/ConfirmDialog.jsx,code:src/utils/teacherRewardUpdates.js,code:src/utils/gameplayLogs.js,code:supabase/migrations/202610170002_secure_teacher_playtime_limit.sql | A:统一教师工作台操作与学生记录读取，限时修改必须使用当前登录教师密码 | S:教师密码缺失或过期时拒绝修改限时并提示重新登录
+teacherDashboard.css[AU6S]: F:应用统一教师布局、表单、分栏、学生列表与账号危险区域的暖色操作样式 | R:code:src/components/Teacher/Dashboard.jsx,code:src/design/ui-system.css | A:提供1360宽桌面、44px控件、奶油色分栏与760以下列表详情互斥布局 | S:以#root提高优先级抵御旧shell与懒加载游戏样式；摘要头像须清除旧grid-row跨行；主操作色由ui-system统一维护
+
+===/Users/shihe/Documents/宝可梦养成/src/data/maps/===
+mapConfig.js[AD5S]: F:为旧地图调用方提供当前地图目录和遭遇配置兼容导出 | R:code:src/game/data/mapCatalog.js,code:src/game/data/encounterTables.js | A:保持旧API读取当前地图链和野生池 | S:旧ForestMap回退不能绕过当前地图解锁规则
+
+===/Users/shihe/Documents/宝可梦养成/src/game/===
+AdventureItemsPreview.jsx[AU5S]: F:提供商店宝石、强化战斗、坐骑模型、联赛、饲养家与放生的开发预览 | R:code:src/components/Game/DeferredGamePanels.jsx,code:src/game/playerBicycleVisual.js | A:用本地夹具模拟购买使用，调用真实界面，独立Three展示自行车跑车 | S:不写云端存档；模型预览卸载清理帧循环和渲染器
+BattleScenePreview.jsx[AU5S]: F:用正式战斗组件预览地点技能连击与指定NPC开战介绍 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/data/mapCatalog.js | A:提供背景玩法和技能模拟，intro查询参数绑定地图事件与真实人物模型 | S:仅本地伙伴夹具，不写账户或奖励；演出令牌取消旧序列
+BattleVfxLab.jsx[AU5M]: F:展示全部技能特效、材质、方向和动画阶段的开发实验台 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battleVfxRecipes.js | A:帮助发现战斗特效闪烁、空白和绘制过高 | S:实验台结果必须结合移动端审计解释
+GameCanvas.jsx[AU6S]: F:按地图目录挂载统一Three地图并提供加载错误边界 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/data/mapCatalog.js | A:传递移动事件、坐骑装备、门锁、云端阻塞和钓鱼活动到地图 | S:不支持的渲染模式直接显示错误；不静默改用其他地图
+MapRuntimePreview.jsx[AU5M]: F:提供地图移动、出口过场、事件跳点和进度演出的本地预览 | R:code:src/game/MapSceneLayer.jsx,code:src/game/MapWarpFade.jsx | A:支持地图及坐骑查询参数、目标首帧回调、地图统计和事件日志 | S:预览切图保留视角并在首帧后渐显；超时解除黑屏，地图状态不写真实账号
+MapSceneLayer.jsx[AU5S]: F:保留地图场景并在面板切换时控制显示和活动状态 | R:code:src/game/GameCanvas.jsx,code:src/game/ThreeLowPolyMap.jsx | A:避免面板打开导致WebGL场景反复销毁 | S:只有地图身份改变或离开游戏才释放场景上下文
+MapWarpFade.jsx[AU6M]: F:在跨地图时执行快速全黑、目标首帧等待和渐显过场 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/mapWarpLandings.js | A:消除长时间黑屏并保持玩家视角 | S:目标加载超时必须显示可恢复状态，不能无限黑屏
+ThreeLowPolyMap.jsx[AP8L]: F:渲染地图环境独立NPC、玩家坐骑、导航交互和3D钓鱼 | R:code:src/game/npcWalkVisual.js,code:src/game/playerFigureVisual.js,code:src/game/fishingSceneVisual.js | A:统一相机资源画质探针，NPC按实际位移累计步频，移除主角每格整体上抬 | S:实例步态和阴影属性须同步且按批次隔离；renderer lease防重上下文，旅行姿态后施加钓鱼动作，先销毁钓鱼controller再清场景
+bicycle.css[AU4T]: F:定义地图坐骑操作按钮、位置、键盘提示与骑行选中样式 | R:code:src/game/ThreeLowPolyMap.jsx | A:区分自行车与跑车，兼容桌面指针和手机操作栏 | S:-
+bicycleRules.js[DB5T]: F:计算自行车1.6倍与跑车4倍速度及草地步行退速 | R:code:src/game/ThreeLowPolyMap.jsx | A:导出草地判定和按载具计算步长时间的纯函数 | S:从或到草地任一成立即不加速，模型草丛与逻辑遭遇瓦片均算草地
+bridgeDeckCollision.js[AD5S]: F:把桥面可走范围限制到桥模型甲板并恢复桥外水面碰撞 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/mapVisualCollision.js | A:防止玩家从桥侧直接走进河里 | S:桥边事件需保留可接近的侧向格
+decorativeModelSpec.js[DD6T]: F:把地图装饰类型及角色别名解析为模型键和默认比例 | R:code:src/game/data/mapAssetCatalog.js,code:src/game/threeLowPolyModelCache.js | A:导出getDecorativeModel与旧模型键，供目录归一化和运行加载共同使用 | S:不导入模型缓存以避免目录装配循环依赖；未知非程序化类型返回null
+eliteFourCharacterVisual.js[AU5S]: F:提供四天王和冠军角色的专属模型显示配置 | R:code:src/game/data/characterAssets.js,code:src/game/ThreeLowPolyMap.jsx | A:让后期关键NPC具有醒目身份 | S:角色模型键必须存在于清单
+eliteRouteBlocker.js[AD6M]: F:校验精英路线、四天王和冠军塔的解锁门槛与完成状态 | R:code:src/game/mapProgression.js,code:src/utils/longTermProgression.js | A:阻止未满足进度进入后期挑战 | S:客户端门控不能替代云端击败状态
+environmentGroundPatches.js[AD4S]: F:生成地图地面、草地和主题过渡补丁 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/mapMaterialStyle.js | A:填充地图空地并保持主题材质连续 | S:地面补丁不能覆盖道路、水域和事件
+environmentNavigation.js[AD7M]: F:计算地图环境阻挡、可行走格、生成落点和道路导航 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/mapVisualCollision.js | A:保证人物、NPC和出口道路可达 | S:大型模型碰撞和出口落点必须统一使用此规则
+forestWallScenery.js[AD5M]: F:生成森林墙、树木边界和特色植被屏障 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/ThreeLowPolyMap.jsx | A:避免地图一眼望尽并控制树墙高度 | S:树墙高度需按人物比例校准且不能遮挡出口
+mapCameraRig.js[AD6M]: F:管理地图相机、手动旋转、移动跟随和视角保存 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/MapRuntimePreview.jsx | A:允许移动中切换视角并跨地图保留视角 | S:移动时不得强制自动转回角色正前方
+mapExitRunways.js[AD7M]: F:生成地图出口道路、入口净空和双向出口配对 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/mapWarpLandings.js | A:保证出口道路停留在地图有效展示范围内 | S:每个出口必须有唯一反向配对
+mapHorizonScenery.js[AD5M]: F:生成没有森林墙地图的主题地平线和大型元素背景 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/ThreeLowPolyMap.jsx | A:填充远景并保持地图特色 | S:远景元素不能成为可穿越碰撞或遮挡出口
+mapMaterialStyle.js[AD5M]: F:按地图主题提供地面、道路、边界和装饰材质风格 | R:code:src/game/mapShaders.js,code:src/game/ThreeLowPolyMap.jsx | A:统一低多边形视觉并改善暗地图亮度 | S:材质亮度调整需兼顾移动端性能
+mapModelScaleNormalization.js[AP6M]: F:按测量和主题规则归一化装饰模型显示比例 | R:code:src/game/data/modelCanonicalScales.generated.js,code:src/game/mapVisualCollision.js | A:修正矮树和人物、建筑相对比例 | S:归一化必须同步旋转包围盒和道路净空
+mapProgression.js[AD7M]: F:维护地图解锁、击败状态、章节进度和旧存档迁移 | R:code:src/game/data/mapCatalog.js,code:src/game/eliteRouteBlocker.js,code:src/utils/gameSessionBootstrap.js | A:控制地图入口顺序和后端进度同步 | S:迁移不得把旧玩家送入错误地图或森林模型
+mapRoadSurface.js[AD5M]: F:生成道路表面、边缘、出口跑道和主题路面材质 | R:code:src/game/mapExitRunways.js,code:src/game/mapVisualCollision.js | A:保持道路连续、可见和不伸入河流 | S:道路宽度和出口净空必须通过运行时审计
+mapShaders.js[AP5M]: F:提供地图地面、水面、道路和边界的Three材质与着色器 | R:code:src/game/mapMaterialStyle.js,code:src/game/mapWaterSurface.js | A:统一主题光照、颜色和性能回退 | S:着色器失败必须回退到可见材质
+mapVisualCollision.js[DB7L]: F:按真实模型旋转占地和角色半径对齐地图阻挡并清理无模型墙 | R:code:src/game/environmentNavigation.js,code:src/game/bridgeDeckCollision.js | A:导出占地距离、设施植被净空、保护格、连通区守卫和最终碰撞归一化 | S:开墙不能连接进度门隔开的重要区域；不足6格且无事件草地的空隙不视为区域；渲染植被偏移参与净空
+mapWarpFade.css[AU4S]: F:定义跨地图快速全黑、保持黑屏和渐显动画 | R:code:src/game/MapWarpFade.jsx | A:提供短暂且稳定的切图过场 | S:动画时长必须受目标首帧和超时逻辑控制
+mapWarpLandings.js[AD6M]: F:解析出口目标地图、入口道路、玩家落点和视角继承 | R:code:src/game/mapExitRunways.js,code:src/game/MapWarpFade.jsx | A:防止跨地图后出现在树里或错误道路 | S:目标落点必须可走且与反向出口成对
+mapWaterSurface.js[AD5S]: F:生成地图水面、岸线和水域材质 | R:code:src/game/mapShaders.js,code:src/game/mapVisualCollision.js | A:表现地图水体并保持道路接缝 | S:水域边界必须与碰撞和桥面规则一致
+modelScaleReference.js[AP5M]: F:提供人物、树木、建筑和自然模型的标准尺寸参照 | R:code:src/game/mapModelScaleNormalization.js,code:public/assets/3d/xingyin-environment-v2/forest-trees/manifest.json | A:支持统一模型比例和树墙高度 | S:人物高度是比例校准基准
+npcWalkVisual.js[DU6S]: F:驱动实例NPC的贴地腿部求解、平脚补偿与摆臂 | R:code:src/game/characterGait.js,code:src/game/ThreeLowPolyMap.jsx | A:从导出枢轴膝踝数据求角度，将脚部姿态同步到表面与两个阴影通道 | S:三个顶点权重合一，实例摆幅髋移合一以守显卡属性上限；批次缓冲不可污染模板，近零摆权须钳零
+npcWander.js[DU5S]: F:模拟普通NPC的连通漫游区域、停顿转向和占格移动 | R:code:src/game/ThreeLowPolyMap.jsx | A:限制两格半径并逐步核验动态占用，单格耗时1400至1800毫秒 | S:只按活跃时间推进，暂停不补帧；长帧最多落一格，天王地图和首领不漫游
+playerBicycleVisual.js[DU6S]: F:创建步行骑行驾驶共用玩家容器并驱动踏板和轮轴动作 | R:code:src/game/playerFigureVisual.js,code:src/game/characterSurfaceMaterial.js | A:克隆独立几何材质与表面分区，附加载具、切换可见实体并求解骑行两段腿长 | S:跑车需四个Wheel才可附加且沿本地X旋转；切载具不改变玩家容器位置
+playerFigureVisual.js[DU6L]: F:创建主角实体与画像，驱动稳定上半身和12部件贴地步态 | R:code:src/game/characterGait.js,code:src/game/characterSurfaceMaterial.js | A:按实际位移推进步频，补偿腿部初始角度与脚踝，严格画像模式只展示当前作者化角色 | S:地图行走不整体上下抬升；预览不可销毁共享GPU模板，requireAuthored缺资产时返回null防止传送换脸
+proceduralModelScales.js[AP4S]: F:提供程序化模型的默认尺寸和比例 | R:code:src/game/mapModelScaleNormalization.js,code:src/game/modelScaleReference.js | A:为缺少GLB的装饰提供稳定尺寸 | S:程序化回退不能覆盖真实模型测量
+threeLowPolyModelCache.js[AP7L]: F:加载缓存版本化本地GLB与Draco并按地图清单并发预载 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/data/characterAssets.js,code:vite.config.js | A:提供模型URL、缓存场景、必要键、网络分档重试与严格多轮预载；URL版本取3D资源内容哈希 | S:可选null或undefined不能覆盖默认重试配置；缓存Promise按键去重且失败可重试；缺失占位不是严格成功
+timberLeague.js[AD8L]: F:定义训练联赛固定对手六只、等级匹配、首发、换人、回合、奖牌、金币和凭证 | R:code:src/components/Game/TimberLeagueConfirmModal.jsx,code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:作为训练联赛规则和状态机单一事实源 | S:对手阵容在挑战开始时固定，最多主动换人两次且不喝战斗药，胜利消耗两点能量
+FishingPreview.jsx[AU5M]: F:提供真实地图及商店背包鱼商的本地钓鱼、命中连击和鉴定试玩 | R:code:src/game/fishingRewards.js,code:src/components/Game/FishingPanel.jsx,code:src/components/Game/DeferredGamePanels.jsx | A:内存模拟基础奖励与完美加成、逐件报价出售，支持连击鱼获品相及断网夹具 | S:仅DEV入口；不连接认证或Supabase，预览报价不是正式核价
+PokemonReleasePreview.jsx[AU4T]: F:使用真实队伍和待安置界面模拟放生补偿确认与失败保护 | R:code:src/utils/pokemonRelease.js | A:提供伙伴夹具、模拟战斗同步失败、待安置和重置示例 | S:仅本地内存
+TimberBankPreview.jsx[AU4T]: F:用内存余额、定期存款和商队行情展示真实银行界面 | R:code:src/components/Game/TimberBankScreen.jsx | A:模拟存入、到期续存、撤出和市场买卖，提供历史曲线夹具 | S:不连接云端；价格和利息示例不代表服务端实际行情
+fishingCatalog.js[DB7S]: F:定义双语渔具51鱼获、六水域三商人、鱼饵概率与五档难度 | R:code:src/game/fishingRules.js,code:supabase/migrations/202610100005_fishing_combo_treasure_logs.sql | A:提供独立图片、中英文名称、普通售价重量及解锁，宝藏不携带客户端固定价 | S:服务端目录与难度须同步迁移；无日次数限；重量和完美不改鱼售价，宝藏价值只由逐件鉴定决定
+fishingMapEvents.js[DB6T]: F:在最终地图数据加入六个岸边钓点和三位收购鉴定鱼商 | R:code:src/game/data/mapCatalog.js,code:src/game/fishingCatalog.js | A:导出陆地交互与水中浮漂坐标，复用info和merchant事件并添加唯一商人模型 | S:必须在碰撞归一化后调用；事件ID去重，浮漂落点应是水瓦片11
+fishingRules.js[KB7S]: F:规范钓鱼库存与命中连击、逐件宝藏、鱼饵折算、解锁概率和指针判定 | R:code:src/game/fishingCatalog.js,code:src/game/fishingRewards.js,code:src/components/Game/FishingOverlay.jsx | A:按报价品相分组实例与核算商人总价，计算三次截止和中心完美区 | S:perfectStreak兼容镜像hitStreak；v2宝藏数量以去重实例为准；判定elapsedMs不含等待而RPC含等待；高档概率下移不扩目标区
+fishingSceneVisual.js[DU7L]: F:在地图演出持竿抛线浮漂水花、立体鱼获和分级连击庆祝 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/playerFigureVisual.js,code:src/game/fishingCelebration.js | A:随帧循环更新关节姿态、握持插槽、纹理光环及2/5/8连击金币粒子 | S:仅视觉不发钱；优先rightGrip后回退手臂；关闭恢复姿态朝向，晚到纹理和实例缓冲须释放
+vehicleRules.js[DB4T]: F:规范自行车与跑车装备选择并按所有权选择可用回退 | R:code:src/game/bicycleRules.js | A:导出合法载具键、装备规范化和显示名称 | S:未传库存时保留旧选择
+fishingCelebration.js[DU5T]: F:定义五档鱼获的地图庆祝样式颜色时长和资源数量 | R:code:src/game/fishingSceneVisual.js,code:src/components/Game/FishingOverlay.jsx | A:按等级返回光点涟漪星芒螺旋冠环配置，未知等级回退普通 | S:-
+fishingRewards.js[DB6T]: F:定义命中连击基础奖励、完美额外奖励和鉴定品相概率及隔离抽价 | R:code:src/game/FishingPreview.jsx,code:supabase/migrations/202610100006_fishing_combo_hit_rewards.sql | A:第二次命中起加1至8封顶；完美在2/4/6/8连击分别加1/2/3/4，返回拆分金额 | S:正式金币与宝藏价格只接受服务端RPC；预览函数不用于客户端支付
+CharacterUpgradePreview.jsx[AU5S]: F:提供109角色筛选、四面旋转与主角NPC步态图册 | R:code:src/game/playerFigureVisual.js,code:src/game/npcWalkVisual.js | A:严格加载模型，克隆资源并用单实例演示NPC贴地步态，显示身份地图入口 | S:不写云存档；取消旧加载后不得附加其模型，清理不可释放共享模板
+characterGait.js[KU5T]: F:求解贴地支撑、抬脚及两段腿长的关节角度 | R:code:src/game/npcWalkVisual.js,code:src/game/playerFigureVisual.js | A:按支撑相位求髋部接触弧，返回大腿小腿角度与脚轨迹 | S:腿长含初始深度偏移，旋转须补偿小腿初始角度，否则支撑脚随摆动浮起
+characterMapIdentity.js[DU6T]: F:为最终地图人物替换独立视觉身份并校准道馆总高 | R:code:src/game/data/characterAssets.js,code:src/game/data/mapCatalog.js | A:按地图事件匹配人物档案，更新装饰及事件模型字段，保留玩法位置和角色 | S:原height字段是地面抬升不可清除；道馆缩放需抵消源模型高度，避免叠乘成巨人
+characterSurfaceMaterial.js[DU5T]: F:用每顶点表面分区驱动角色粗糙金属度及实例呼吸 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/playerBicycleVisual.js | A:组合已有编译钩子、绑定共享时钟并设置独立着色器缓存身份 | S:GLTF自定义属性运行时为小写_char_surface；仅标准材质且有该属性时启用
+characterUpgradePreview.css[AU4T]: F:定义人物图册的检索列表、3D舞台、视角按钮与手机布局 | R:code:src/game/CharacterUpgradePreview.jsx | A:提供选中禁用状态和窄屏双区布局 | S:-
+characterPortrait.js[DU6T]: F:解析对战NPC身份并从地图同一GLB生成透明形象 | R:code:src/game/data/mapCatalog.js,code:src/game/threeLowPolyModelCache.js | A:优先保存模型键，旧记录按地图事件恢复；独立渲染缓存人物图并以躯干轴居中 | S:配件外框不能决定姓名对齐；克隆后清理不得销毁缓存源，缺模型时不生成假图
+
+===/Users/shihe/Documents/宝可梦养成/src/game/data/===
+battleBackgroundCatalog.js[DB6S]: F:定义战斗地点目录和按地图区域事件解析稳定背景ID的规则 | R:code:src/game/data/mapCatalog.js,code:src/components/Game/BattleBackgroundPlate.jsx | A:导出44地点、区域映射、地图默认背景和开战对手快照 | S:已有合法ID优先复用；无坐标匹配时只就近1.5格，水系对手仅在真实雾湖岸边细化背景
+characterAssets.js[FC6T]: F:登记v2角色键和独立人物身份的地图事件索引 | R:code:src/game/data/characterIdentityProfiles.json,code:src/game/data/mapAssetCatalog.js | A:合并31基础模型与78独立档案，提供路径角色解析及身份查询 | S:身份以地图ID加事件ID绑定；逻辑键保持稳定，版本只改变资产目录
+eliteFourCeremony.js[AD5S]: F:定义四天王仪式、章节和冠军挑战演出数据 | R:code:src/components/Game/EliteFourCeremonyOverlay.jsx,code:src/utils/longTermProgression.js | A:连接终局胜利与长期进度 | S:仪式完成只能推进一次
+encounterTables.js[AD7L]: F:定义地图野生池、等级、权重、隐藏区域和属性生态 | R:code:src/game/data/mapCatalog.js,code:src/utils/wildEncounterRules.js,code:src/game/data/godotMaps/godot_region_maps.js | A:驱动地图遭遇和解锁内容 | S:未解锁物种不得进入普通遭遇或饲养家
+encounterTables.js.backup[FC3M]: F:保留遭遇表历史备份以便回归比较 | R:code:src/game/data/encounterTables.js | A:支持遭遇配置回退和差异审查 | S:备份不能作为运行时数据源
+environmentBiomeAssets.js[FC5M]: F:登记地图生物群系主题模型、边界和自然装饰资源 | R:code:src/game/data/mapAssetCatalog.js,code:src/game/ThreeLowPolyMap.jsx | A:按地图主题选择环境资源 | S:模型清单必须与实际GLB路径一致
+environmentModelFootprints.generated.js[FC5M]: F:保存环境模型实际占地和碰撞脚印测量 | R:code:src/game/mapVisualCollision.js,code:src/game/environmentNavigation.js | A:用于道路净空和装饰碰撞 | S:模型尺寸变化需重新生成脚印
+environmentOriginalMeasurements.generated.js[FC5M]: F:保存原始GLB模型高度和占地测量 | R:code:src/game/mapModelScaleNormalization.js,code:src/game/modelScaleReference.js | A:提供模型比例归一化的真实输入 | S:测量文件只能由当前资源生成
+environmentSceneryMeasurements.generated.js[FC5M]: F:保存地图场景装饰的高度、宽度和密度测量 | R:code:src/game/mapEnvironmentComposition.js,code:src/game/ThreeLowPolyMap.jsx | A:支持树木和大型元素相对比例检查 | S:测量变化需同步构图和碰撞审计
+fastTravel.js[AD5S]: F:定义地图快速旅行节点、解锁和目标落点 | R:code:src/game/mapProgression.js,code:src/game/mapWarpLandings.js | A:提供已解锁节点间的安全传送 | S:快速旅行必须落在合法道路并保留视角约定
+longTermProgression.js[AD6M]: F:定义章节、精英路线、冠军塔、奖励和长期解锁状态 | R:code:src/utils/longTermProgression.js,code:src/components/Game/EliteUnlockMinigameOverlay.jsx | A:连接地图进度、仪式和奖励领取 | S:长期奖励必须后端幂等且兼容旧存档
+mapAssetCatalog.js[FC7L]: F:登记地图模型逻辑路径、地图归属、占地、阻挡和材质参数 | R:code:src/game/threeLowPolyModelCache.js,code:src/game/data/mapBoundaryAssets.generated.js | A:合并人物生物群系专属边界资产，提供按ID和状态查询 | S:路径不预拼部署base，由加载器统一处理；timber_bank_building归属营地且默认阻挡
+mapBoundaryAssets.generated.js[FC5M]: F:保存地图边界模型清单和主题映射 | R:code:src/game/data/mapAssetCatalog.js,code:src/game/forestWallScenery.js | A:为森林墙和特色边界提供资源索引 | S:边界高度需与人物比例和视野测试同步
+mapCatalog.js[DB7M]: F:构造统一地图目录、章节链、最终运行数据和查询接口 | R:code:src/game/characterMapIdentity.js,code:src/game/fishingMapEvents.js,code:src/game/mapWarpLandings.js | A:按桥面环境比例碰撞顺序归一化，再注入钓鱼和独立人物，导出网格事件遭遇与源码元信息 | S:人物身份在钓鱼注入后应用；未知ID回退新手谷；重叠遇敌区按深度及较小面积排序
+mapEnvironmentComposition.js[AD7M]: F:定义各地图主题地标、散布、边界、密度和专属模型编排 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/data/mapAssetCatalog.js | A:让无树地图也有特色大型元素和层次 | S:装饰必须避让道路、水域、事件并保持性能预算
+mapEnvironmentDesign.js[SC5M]: F:保存地图环境主题、地标和视觉设计规则 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/data/mapCatalog.js | A:提供地图风格和密度设计依据 | S:设计规则不能替代当前布局和运行时审计
+mapEnvironmentLayouts.generated.js[FC6M]: F:保存生成后的地图环境对象、边界和道路布局索引 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/ThreeLowPolyMap.jsx | A:驱动运行时批量实例化地图环境 | S:必须由当前地图源生成，禁止手工与源数据漂移
+mapEnvironmentObjectKey.js[FC5S]: F:规范地图装饰对象到模型键和环境类别的映射 | R:code:src/game/decorativeModelSpec.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:防止装饰类型与模型解析别名不一致 | S:新增别名需同步清单和装饰数据
+mapEnvironmentVignettes.js[SC4M]: F:定义地图入口、地标和主题区域的视觉小景编排 | R:code:src/game/data/mapEnvironmentComposition.js,code:src/game/ThreeLowPolyMap.jsx | A:为地图关键位置提供有层次的特色景观 | S:小景不能遮挡道路和事件交互
+mapEventTypes.js[FC6S]: F:定义地图事件类型、交互字段和运行时分类 | R:code:src/game/data/mapEvents.js,code:src/game/ThreeLowPolyMap.jsx | A:统一治疗、NPC、战斗、道具和出口事件解析 | S:新增事件类型必须有可保存的唯一ID
+mapEvents.js[AD6M]: F:定义地图事件位置、文本、奖励、战斗和传送行为 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/components/Game/OriginalGame.jsx,code:src/game/mapExitRunways.js | A:连接地图交互、战斗和跨地图跳转 | S:事件结果和玩家位置必须云端保存
+mapExclusiveAssets.generated.js[FC6M]: F:保存地图专属模型的键名、路径和地图归属 | R:code:src/game/data/mapEnvironmentComposition.js,code:public/assets/3d/map-exclusive-v3/manifest.json | A:驱动每张地图的独占模型资源 | S:跨地图复用需明确归属并通过几何审计
+mapManagement.js[AD5M]: F:提供地图状态、事件完成、位置保存和版本迁移管理 | R:code:src/game/mapProgression.js,code:src/utils/gameSessionBootstrap.js | A:保持地图探索状态和旧存档兼容 | S:地图版本迁移必须把非法落点修正到合法道路
+mapModelManifest.generated.js[FC5L]: F:保存各地图人物地标自然边界的最终模型预载键集合 | R:code:scripts/generate-map-model-manifest.mjs,code:src/game/threeLowPolyModelCache.js | A:包含主角及96人物按地图归属的独立模型，供入口和切图预载 | S:必须由最终地图重新生成，手改不能替代资源与身份映射更新
+mapRegistry.js[AD6M]: F:提供地图ID、显示名、配置和运行时注册兼容层 | R:code:src/game/data/mapCatalog.js,code:src/data/maps/mapConfig.js | A:让旧调用方读取当前地图链 | S:注册表不能创建绕过解锁的隐含地图
+modelCanonicalScales.generated.js[FC6M]: F:保存各环境模型统一标准渲染比例 | R:code:src/game/mapModelScaleNormalization.js,code:src/game/modelScaleReference.js | A:统一人物、树木和地标相对尺寸 | S:比例表必须由当前测量生成且与碰撞一致
+overworldMaps.js[AD6M]: F:提供冒险地图链、区域信息、网格加载和遭遇区查询 | R:code:src/game/MapRuntimePreview.jsx,code:src/game/GameCanvas.jsx | A:连接地图预览、导航、解锁和事件 | S:地图链顺序必须与目录和旧存档迁移一致
+refinedModelAssets.generated.js[FC6M]: F:登记精修模型资源、类别、别名和输出路径 | R:code:src/game/data/mapModelManifest.generated.js,code:src/game/threeLowPolyModelCache.js | A:为精修环境模型提供运行时索引 | S:精修清单必须与导出模型同批生成
+battleBackgroundAssets.generated.js[FC5L]: F:登记44处战斗背景的双尺寸本地WebP内容哈希路径与字节数 | R:code:src/components/Game/BattleBackgroundPlate.jsx | A:按背景ID提供960与1536两档可发布图片索引 | S:由真实图像生成；变更须同步图片及内容哈希
+battleBackgroundPresentation.js[DU5T]: F:规范开战对手快照并生成属性、战斗角色、稀有度与阶段CSS类 | R:code:src/game/data/battleBackgroundCatalog.js | A:归一化物种队伍属性，按首个适用属性选择主题，旧快照回退neutral | S:主题来自开战快照，不随当前换出的对手变化
+characterIdentityProfiles.json[FC6T]: F:保存78位地图人物的独立年龄体型衣装发型与职业道具档案 | R:code:src/game/data/characterAssets.js,code:scripts/blender/build_character_upgrade_v2.py | A:以地图事件绑定名称角色及设计参数，地图默认主题供个体覆盖 | S:配置控制视觉身份，不改变玩法事件ID、奖励和首领规则
+
+===/Users/shihe/Documents/宝可梦养成/src/game/data/godotMaps/===
+godot_map_v2.generated.js[FC5M]: F:保存Godot地图V2的生成网格和布局数据 | R:code:src/game/data/godotMaps/godot_region_maps.js,code:src/game/data/mapEnvironmentLayouts.generated.js | A:提供地图运行时生成输入 | S:生成文件修改后需执行地图出口和碰撞审计
+godot_region_maps.js[DB8L]: F:生成区域地图的网格、道路桥水域、地标、进度事件、战斗池和出口配置 | R:code:src/game/data/mapCatalog.js,code:src/game/mapVisualCollision.js,code:src/game/data/mapEnvironmentComposition.js | A:导出地图、ID配置及主题占地辅助，生成事件净空和遇敌区域访问通路 | S:roadPaths同时驱动可走网格和视觉路面；装饰落位顺序影响碰撞，银行建筑由商人事件生成，bankTrigger避免重复人物
+godot_region_maps.js.backup[FC4L]: F:保留区域地图历史布局和事件配置备份 | R:code:src/game/data/godotMaps/godot_region_maps.js | A:支持地图变更回归和恢复 | S:备份不能绕过当前地图注册和存档迁移
+my_first_map.js[FC4S]: F:保存早期新手地图布局和装饰配置 | R:code:src/game/data/mapCatalog.js,code:src/game/GameCanvas.jsx | A:为旧入口兼容和历史对照提供数据 | S:运行时优先使用当前地图链
+
+===/Users/shihe/Documents/宝可梦养成/src/game/data/mapSources/===
+godotMapV2.source.json[FC6M]: F:保存Godot地图V2的原始尺寸、水域、道路和事件源数据 | R:code:scripts/validate-map-layout.mjs,code:src/game/data/godotMaps/godot_map_v2.generated.js | A:作为地图生成和布局校验输入 | S:源数据变更后必须重建所有生成文件
+
+===/Users/shihe/Documents/宝可梦养成/src/game/world/===
+LegacyGridAdapter.js[AD5M]: F:把旧地图逻辑网格适配到当前Three地图导航和碰撞 | R:code:src/game/ThreeLowPolyMap.jsx,code:src/game/world/constants.js | A:兼容旧存档和旧地图瓦片规则 | S:适配不能绕过当前地图出口和进度门槛
+TextureFactory.js[AC4S]: F:提供旧地图和玩家预览所需的兼容纹理工厂 | R:code:src/game/GameCanvas.jsx,code:src/game/playerFigureVisual.js | A:支持旧入口的视觉回退 | S:当前冒险地图主路径使用Three模型而非旧整图纹理
+constants.js[FC5S]: F:定义旧地图瓦片、阻挡、遭遇和交互类型常量 | R:code:src/game/world/LegacyGridAdapter.js,code:src/game/ThreeLowPolyMap.jsx | A:统一旧存档和地图适配器的基础判定 | S:常量变更需检查旧地图迁移
+
+===/Users/shihe/Documents/宝可梦养成/src/utils/===
+adventureItems.js[DB5T]: F:定义双语战斗强化糖果与永久旅行坐骑的价格素材和效果 | R:code:src/utils/inventoryItems.js,code:src/utils/dynamax.js | A:导出BATTLE_ITEMS和KEY_ITEMS的中英文名称供商店背包展示 | S:目录不授权使用；训练赛限制和云端扣除由调用方执行
+assetUrl.js[FC4S]: F:规范本地静态资源和部署base路径的URL | R:code:vite.config.js,code:src/utils/mediaAssetUrl.js | A:保证根路径和Pages发布资源可加载 | S:资源URL不能依赖旧项目子路径
+authService.js[IN6M]: F:提供登录、注册、用户资料和会话认证服务 | R:code:src/supabaseClient.js,code:src/App.jsx,code:supabase/migrations | A:连接前端身份和后端用户状态 | S:密码和角色权限必须由后端策略保护
+battleAi.js[AD7M]: F:决定野生、训练家、Boss和训练联赛对手的技能、换人、治疗和属性策略 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/timberLeague.js,code:src/utils/trainerBattleScaling.js | A:提供递进且可审计的对手行为 | S:训练联赛对手禁止喝药并受主动换人次数上限
+battleCinematics.js[AU5M]: F:定义战斗入场、技能、换人、胜利和失败演出时长与阶段 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/battlePacing.js | A:保持战斗动画与回合结算同步 | S:演出中断必须能从检查点恢复
+battleDamage.js[AA7M]: F:计算技能伤害、属性克制、等级、暴击和状态影响 | R:code:src/utils/gameBalance.js,code:src/utils/battleAi.js | A:提供战斗结果的数值核心 | S:提示、模拟和实际战斗必须使用同一倍率规则
+battleEffectAnchors.js[FC4S]: F:定义战斗双方角色和技能特效的屏幕锚点 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battleVfxRenderer.js | A:保持特效命中位置稳定 | S:锚点变化需检查手机和平板裁切
+battlePacing.js[AD5S]: F:统一技能、对话、命中、换人和回合等待时长 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/battleCinematics.js | A:保证战斗节奏和回合数统计一致 | S:视觉等待不能额外增加隐藏回合
+battleVfxAtlas.generated.js[FC5M]: F:保存生成的战斗特效图集索引和帧资源 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battleVfxRenderer.js | A:驱动技能材质快速查找 | S:图集更新需同步资源哈希和清理逻辑
+battleVfxChoreography.js[AD5M]: F:根据技能机制编排特效阶段、动作和命中时刻 | R:code:src/utils/battleVfxRecipes.js,code:src/components/Game/BattleMoveEffect.jsx | A:把战斗数据映射到可播放演出 | S:编排必须可取消且不得重复结算
+battleVfxRecipes.js[AD6M]: F:定义技能技术、材质、方向、动作和强度配方 | R:code:src/utils/battleVfxRenderer.js,code:src/utils/moveVisuals.js | A:保持各属性技能视觉风格统一 | S:缺少配方必须走稳定回退
+battleVfxRenderer.js[AP7M]: F:在复用画布上渲染技能材质、粒子、命中反馈和清理 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battleVisualPlayback.js | A:控制战斗特效性能和生命周期 | S:旧特效必须在新技能或卸载时停止，避免闪烁叠加
+battleVisualPlayback.js[AD6M]: F:管理战斗帧时钟、角色动作、暂停、命中和完成回调 | R:code:src/components/Game/BattleMoveEffect.jsx,code:src/utils/battlePacing.js | A:让动画时序与战斗状态一致 | S:视觉完成回调不得重复触发战斗结算
+bootProgress.js[FC5S]: F:维护应用和游戏入口的加载阶段、进度和错误信息 | R:code:src/components/UnifiedBootScreen.jsx,code:src/utils/gameEntryPreload.js | A:向玩家显示直观加载状态 | S:失败阶段必须提供重试或继续路径
+challengeRareUnlock.js[AD5S]: F:处理挑战稀有宝可梦的解锁条件和奖励状态 | R:code:src/game/mapProgression.js,code:src/utils/pokemonAcquisition.js | A:限制隐藏和试炼稀有物种的获取 | S:未解锁物种不得进入商店或饲养家
+clientUpdate.js[AR5S]: F:维护客户端构建ID、入口哈希、远端版本检查与PWA静默更新 | R:code:scripts/early-version-guard-snippet.mjs,code:src/utils/recoverStaleClient.js,code:src/main.jsx | A:5分钟后及每小时比对version.json，变化时激活新SW、清非资源缓存并刷新；启动30秒后清理旧带构建号资源缓存 | S:刷新用会话标记限一次且保留模型音频立绘缓存，不影响云存档
+cloudSaveLock.js[IR7M]: F:提供云存档revision、并发锁、租约和原子提交辅助 | R:code:src/components/Game/OriginalGame.jsx,code:supabase/migrations | A:防止旧快照覆盖新战斗和资源状态 | S:云端确认失败时不得继续本地结算
+constants.js[FC4S]: F:保存队伍、仓库、战斗和系统使用的共享常量 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/pokemonRoster.js | A:统一跨模块边界和数量限制 | S:常量变更需检查旧存档默认值
+dynamax.js[AD5S]: F:管理战斗强化形态的激活、使用次数和运行时归一化 | R:code:src/components/Game/OriginalGame.jsx,code:src/components/Game/dynamax.css | A:提供强化形态规则和视觉状态 | S:每场使用限制必须随云存档保存
+ecologySurveyBalance.js[AD4S]: F:定义生态调查、发现度和奖励平衡 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/gameBalance.js | A:连接地图探索和长期奖励 | S:调查奖励不能绕过地图解锁
+gameAssetBootstrap.js[AP6M]: F:按优先级预加载图鉴、道具、模型、音频和地图资源 | R:code:src/utils/gameEntryPreload.js,code:src/components/UnifiedBootScreen.jsx | A:控制首屏资源就绪和失败回退 | S:关键资源失败必须可重试且不能永久黑屏
+gameAudio.js[AP6L]: F:维护统一Web Audio总线、设置、文件播放及游戏界面战斗钓鱼合成音效 | R:code:src/utils/gameBgm.js,code:src/components/Game/FishingOverlay.jsx | A:提供解锁静音音量、预加载及抛竿咬钩收杆成功失败音色 | S:全部音效经过master并遵从用户手势；钓鱼声音不提交结果或推进游戏时钟
+gameAudioPreload.js[AP5S]: F:预加载核心音效并报告加载结果 | R:code:src/utils/gameAudio.js,code:src/utils/gameEntryPreload.js | A:减少战斗和界面首次播放延迟 | S:失败资源必须可跳过且不能阻塞启动
+gameBalance.js[AD8L]: F:定义经验、金币、能量、伤害、捕捉、商店和战斗奖励平衡 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/timberLeague.js,code:src/utils/battleDamage.js | A:作为核心经济和战斗数值事实源 | S:训练赛胜利金币、奖牌回合和能量消耗必须与后端结算一致
+gameBgm.js[AP5M]: F:管理地图、战斗和界面BGM场景切换、淡入淡出和停止 | R:code:src/utils/gameBgmCatalog.js,code:src/components/Game/OriginalGame.jsx | A:保持地图与战斗音乐互斥 | S:切换必须清理旧source和pending停止计时器
+gameBgmCatalog.js[FC5S]: F:登记地图和战斗BGM键、路径和主题 | R:code:public/assets/audio/manifest.json,code:src/utils/gameBgm.js | A:驱动场景音乐选择 | S:清单存在不等于浏览器已成功解码
+gameData.js[DB9L]: F:定义宝可梦物种技能与双语物品、官方映射和等级招式规则 | R:code:src/utils/pokemonStats.js,code:src/utils/pokemonGrowth.js,code:src/utils/officialLearnsets.js | A:导出球药剂经验药水属性宝石及历史进化道具的中英文目录，关联本地立绘 | S:内部物种id不同于官方dexNo；旧进化道具只兼容库存；超级经验药水需训练凭证，神奇糖果不出售
+gameData.js.backup[FC4L]: F:保存游戏数据历史备份供差异和回归比较 | R:code:src/utils/gameData.js | A:支持数据恢复审查 | S:备份不能作为运行时数据源
+gameEntryPreload.js[AP6M]: F:编排入口阶段资源预载、进度、超时和错误恢复 | R:code:src/utils/gameAssetBootstrap.js,code:src/utils/bootProgress.js | A:避免地图和模型跨图加载长时间黑屏 | S:首帧未就绪前不得揭示空场景
+gameEntryPreloadMarks.js[FC4S]: F:记录入口预载阶段和性能标记 | R:code:src/utils/gameEntryPreload.js,code:src/utils/bootProgress.js | A:提供加载诊断和性能测量 | S:标记不能改变资源加载结果
+gameSessionBootstrap.js[AD6M]: F:加载、迁移和保存玩家云端游戏会话 | R:code:src/utils/cloudSaveLock.js,code:src/game/mapProgression.js | A:兼容旧存档、地图版本和资源状态 | S:迁移后必须落到合法地图和有效队伍
+gameSfxCatalog.js[FC5S]: F:登记分类UI、战斗、状态和道具音效资源 | R:code:src/utils/gameAudio.js,code:src/utils/gameSfxPreload.js | A:为按键和场景解析音效URL | S:缺失素材必须静默回退而不阻断操作
+gameSfxPreload.js[AP4S]: F:预加载核心和完整音效目录并返回成功统计 | R:code:src/utils/gameSfxCatalog.js,code:src/utils/gameAudio.js | A:降低音效首次播放延迟 | S:预加载失败不能阻塞进入游戏
+gameplayLogs.js[DO5S]: F:规范学生事件与教师记录并格式化钓鱼命中连击、完美加成、鉴定和出售 | R:code:src/components/Teacher/Dashboard.jsx,code:src/supabaseClient.js,code:src/game/fishingRewards.js | A:提供钓鱼分类和结构化金额详情、非阻断通用记录及个人全班分页读取 | S:正式钓鱼日志由RPC原子写入；全班每页最多1000条至100页，日志不是资源结算凭据
+hiddenEncounterExclusive.js[AD5S]: F:判断隐藏遭遇区、稀有宝可梦和玩家解锁条件 | R:code:src/game/data/encounterTables.js,code:src/utils/pokemonAcquisition.js | A:限制隐藏物种按进度出现 | S:未解锁隐藏物种不得进入饲养家和普通遭遇
+inventoryItems.js[DB7M]: F:规范背包物品分类、别名、数量、效果、排序及常用物品回售价 | R:code:src/utils/gameData.js,code:src/utils/adventureItems.js | A:导出库存合并扣除、类型解析和球药水宝石展示工具 | S:只球回复药经验药水可卖且默认原价六分之一；永久坐骑不可卖，旧进化道具不进入活跃库存
+itemSprites.js[FC4S]: F:解析道具图标和本地回退资源 | R:code:src/components/Game/DeferredGamePanels.jsx,code:src/utils/mediaAssetUrl.js | A:保证商店和背包道具可视化 | S:图标缺失必须使用占位资源
+lazyWithRetry.js[AR5S]: F:为懒加载路由提供有限重试、chunk失败识别和刷新 | R:code:src/components/LazyRouteErrorBoundary.jsx,code:src/utils/clientUpdate.js | A:恢复部署后旧chunk问题 | S:重试次数必须有限且不能无限刷新
+levelUpCelebrations.js[AU4S]: F:定义升级、进化和成长事件的界面庆祝配置 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/pokemonProgress.js | A:提供成长反馈和待处理事件 | S:动画完成后才消费成长事件
+loadGameStyles.js[AP4S]: F:懒加载游戏主样式并避免重复插入 | R:code:src/game.css,code:src/components/Game/GameWrapper.jsx | A:减少认证首屏样式负担 | S:样式加载失败需保留基础可用界面
+localAssetPreloader.js[AP5M]: F:预加载本地图片、图鉴和占位资源并处理图片回退 | R:code:src/utils/mediaAssetUrl.js,code:src/components/Auth/Login.jsx | A:减少界面图片闪烁和破图 | S:本地资源失败不能阻止登录
+longTermProgression.js[AD6M]: F:管理章节、长期任务、冠军塔和奖励领取状态 | R:code:src/game/data/longTermProgression.js,code:src/components/Game/EliteUnlockMinigameOverlay.jsx | A:连接后期解锁和奖励 | S:奖励必须云端幂等并兼容旧存档
+mapSystem.js[AD5M]: F:提供旧地图系统、地图切换和事件兼容工具 | R:code:src/game/data/mapCatalog.js,code:src/game/mapProgression.js | A:兼容旧入口和地图状态 | S:当前地图主路径不得绕过统一地图目录
+mediaAssetUrl.js[FC4S]: F:生成宝可梦、道具和通用媒体资源URL及PNG回退 | R:code:src/utils/assetUrl.js,code:src/components/Auth/Login.jsx | A:统一媒体资源解析 | S:URL必须服从部署base路径
+moveVisuals.js[AD5M]: F:定义技能视觉效果配置、动作、颜色和回退 | R:code:src/utils/battleVfxRecipes.js,code:src/components/Game/BattleMoveEffect.jsx | A:把技能数据映射到视觉表现 | S:配置缺失必须保持战斗可完成
+officialExperience.js[FC5M]: F:保存官方经验曲线和升级所需经验 | R:code:src/utils/pokemonProgress.js,code:scripts/generate-official-economy-data.mjs | A:驱动等级和经验药水计算 | S:经验曲线变更需重新校准成长和奖励
+officialExtraMoves.js[FC5M]: F:保存官方补充技能和宝可梦技能映射 | R:code:src/utils/gameData.js,code:src/utils/pokemonGrowth.js | A:补充运行时可用技能池 | S:技能键必须通过名称和学习表审计
+officialLearnsets.js[FC6M]: F:保存官方宝可梦等级学习技能表 | R:code:src/utils/pokemonGrowth.js,code:src/utils/gameData.js | A:驱动等级学招和战斗技能合法性 | S:生成版本必须与官方资料和技能键保持一致
+officialMoveMeta.js[FC5M]: F:保存官方技能属性、威力、命中和分类元数据 | R:code:src/utils/battleDamage.js,code:src/utils/gameData.js | A:为战斗伤害和技能审计提供输入 | S:元数据缺失必须使用安全默认值
+pokemonAcquisition.js[AD6M]: F:判断宝可梦获取来源、解锁条件和玩家已解锁物种 | R:code:src/utils/pokemonBreeder.js,code:src/utils/hiddenEncounterExclusive.js,code:src/utils/gameData.js | A:统一捕捉、奖励、商店和饲养家过滤 | S:未解锁宝可梦不得显示或购买
+pokemonBreeder.js[AD7M]: F:管理饲养家每日刷新、锁定、手动刷新、价格和购买 | R:code:src/components/Game/PokemonBreederScreen.jsx,code:src/utils/pokemonAcquisition.js,code:src/utils/gameBalance.js | A:提供按宝可梦等级定价的后期商店 | S:每日刷新保留锁定，手动刷新解除锁定且只能出现已解锁物种
+pokemonEvolutionRules.js[AD5S]: F:定义宝可梦按等级进化的目标和分支规则 | R:code:src/utils/pokemonGrowth.js,code:src/utils/gameData.js | A:统一运行时进化判定 | S:历史道具或交易条件不能被意外重新启用
+pokemonFamilyVariety.js[AD4S]: F:提供宝可梦家族、形态和阵容多样性辅助 | R:code:src/utils/gameData.js,code:src/game/timberLeague.js | A:减少训练联赛和地图阵容重复 | S:多样性选择不能违反解锁和等级规则
+pokemonGrowth.js[AD7M]: F:计算等级经验、学习技能、进化目标和成长事件 | R:code:src/utils/pokemonProgress.js,code:src/utils/gameData.js | A:统一宝可梦成长流程 | S:成长事件必须可恢复、幂等并兼容旧存档
+pokemonProgress.js[DB7L]: F:归一化伙伴经验、等级属性和招式，模拟升级进化并生成去重成长事件 | R:code:src/utils/pokemonStats.js,code:src/utils/pokemonGrowth.js | A:保留实例身份、基础加成、statGemUses与当前HP/MP比例，修复旧队伍经验状态 | S:每次经验结算有升级安全上限；进化重建需保留宝石计数，不能根据加成反推使用次数
+pokemonRoster.js[AD6M]: F:管理六只队伍、仓库容量、交换和队伍校验 | R:code:src/components/Game/OriginalGame.jsx,code:src/utils/pokemonAcquisition.js | A:支持训练联赛前调整队伍 | S:队伍变更不能重抽已生成的对手阵容
+pokemonStats.js[KB6S]: F:计算等级HP战斗属性和项目MP，规范永久基础加成与单属性宝石额度 | R:code:src/utils/pokemonProgress.js,code:src/utils/gameData.js | A:导出属性别名、宝石使用准备、总10单项4额度及等级属性公式 | S:历史statBoosts不反推次数；全属性糖果不占宝石额度；MP使用独立公式不受基础属性宝石影响
+primeStudentSession.js[IN5S]: F:预热学生登录会话、用户资料和云存档读取 | R:code:src/utils/authService.js,code:src/utils/gameSessionBootstrap.js | A:减少进入游戏后的认证等待 | S:会话预热失败不能覆盖已有本地或云端进度
+recoverStaleClient.js[AR5T]: F:识别旧chunk错误并清理客户端缓存、Service Worker与预载标记以安全恢复 | R:code:src/utils/clientUpdate.js,code:src/components/LazyRouteErrorBoundary.jsx,code:vite.config.js | A:默认保留game-glb等运行时资源缓存；pruneLegacyRuntimeCaches删除名称带构建号的旧资源缓存 | S:固定缓存名集合须与vite.config.js的runtimeCaching同步；清缓存不得触碰云存档数据
+safeJson.js[FC4S]: F:提供安全JSON解析、序列化和默认值辅助 | R:code:src/utils/gameSessionBootstrap.js,code:src/utils/cloudSaveLock.js | A:防止损坏存档或响应中断游戏 | S:解析失败必须回退到明确默认值并记录
+shopPurchaseLimits.js[AD5S]: F:定义大师球、经验药水和稀有物品的购买限制 | R:code:src/utils/inventoryItems.js,code:src/components/Game/DeferredGamePanels.jsx | A:控制后期商店经济和稀有道具供给 | S:购买限制必须与后端库存提交同时生效
+teacherRewardUpdates.js[AD6M]: F:构造教师奖励更新、广播和学生资源同步消息 | R:code:src/components/Teacher/Dashboard.jsx,code:src/utils/gameplayLogs.js | A:保持教师发放金币能量道具的可追踪性 | S:训练赛金币奖励必须使用独立战斗奖励来源
+trainerBattleScaling.js[AD7M]: F:按地图、角色和玩家等级缩放训练家、部下和Boss阵容 | R:code:src/components/Game/OriginalGame.jsx,code:src/game/timberLeague.js,code:src/utils/gameData.js | A:提供固定等级规则和难度递进 | S:玩家临时调整队伍不能改变已生成阵容，只能按规则匹配等级
+wildEncounterRules.js[AD6M]: F:计算野生宝可梦合法等级、地图池和出现条件 | R:code:src/game/data/encounterTables.js,code:src/utils/pokemonAcquisition.js | A:限制地图和隐藏区域的遭遇 | S:未解锁物种和越级等级不得进入遭遇池
+pokemonRelease.js[DB6T]: F:按固定物种档位计算放生报价并构造三类来源的精确移除快照 | R:code:src/utils/pokemonReleaseCatalog.json,code:src/components/Game/PokemonReleaseSummary.jsx | A:验证真实物种等级、报价变化、战斗状态和最后一只，返回报价及新快照 | S:实例id不能作物种id；前端不发金币，正式补偿由服务端原子事务确认
+pokemonReleaseCatalog.json[FC6L]: F:为209个物种登记固定放生经济档位及四档倍率 | R:code:src/utils/pokemonRelease.js,code:supabase/migrations/202610100001_pokemon_release_compensation.sql | A:以baseId和dexNo对应物种，提供规则版本与常见少见稀有珍稀档位 | S:分类不随遭遇权重或种族值变化，调整必须同步后端目录
+playtimeRecovery.js[DR6T]: F:识别游玩时长传输故障并提供有界请求重试 | R:code:src/components/Game/OriginalGame.jsx,code:scripts/audit-playtime-recovery.mjs | A:识别网络中断、超时和临时HTTP失败，允许一次400毫秒延迟后重试 | S:权限和失效租约不当作网络重试；重连须由调用方重新取得服务端有效状态
+
+===/Users/shihe/Documents/宝可梦养成/supabase/===
+config.toml[FC4S]: F:保存Supabase项目绑定和本地迁移配置 | R:code:supabase/migrations,code:SUPABASE_DB_PUSH_RUNBOOK.md | A:为数据库迁移和部署提供项目上下文 | S:配置不能包含数据库密码
+
+===/Users/shihe/Documents/宝可梦养成/supabase/migrations/===
+20250325120000_profiles_redeem.sql[PI4T]: F:创建早期用户资料和兑换码相关数据库对象 | R:code:supabase-setup.sql | A:提供历史用户兑换兼容结构 | S:迁移按版本顺序执行，不得单独回滚历史依赖
+20251206_fix_signup_trigger.sql[PI4T]: F:修复注册触发器和用户资料初始化 | R:code:supabase-setup.sql,code:src/utils/authService.js | A:保证注册用户资料完整 | S:触发器修改需兼容已有用户
+20260325223000_seed_redeem_codes.sql[PI3T]: F:写入初始兑换码测试或种子数据 | R:code:supabase-setup.sql | A:提供兑换流程初始化数据 | S:种子码必须受唯一性和禁用迁移保护
+20260325224000_profiles_backfill_columns.sql[PI4T]: F:为旧用户资料回填新增字段 | R:code:supabase-setup.sql | A:保持历史用户读写兼容 | S:回填必须可重复且不覆盖有效值
+20260326001000_admin_panel_support.sql[PI5T]: F:增加教师后台和管理员面板所需字段及策略 | R:code:src/components/Teacher/Dashboard.jsx,code:supabase-setup.sql | A:支持教师查看和管理学生资源 | S:教师权限必须由RLS和角色同时限制
+20260326002000_bootstrap_admin_user.sql[PI4T]: F:初始化管理员或教师账号支持数据 | R:code:supabase-setup.sql | A:为后台管理入口提供初始状态 | S:初始化账号不得暴露生产密码
+20260326120000_redeem_codes_enable_rls.sql[PI5T]: F:为兑换码表启用行级安全和兑换访问策略 | R:code:supabase-setup.sql,code:src/utils/authService.js | A:限制兑换码读取和使用范围 | S:兑换码只能按授权用户和一次性规则使用
+20260326130000_disable_seed_codes.sql[PI4T]: F:禁用或清理初始兑换码种子并保留迁移历史 | R:code:supabase-setup.sql | A:防止种子兑换码继续被领取 | S:迁移必须保留已兑换记录
+20260327190000_sim_trade_stats.sql[PI4T]: F:增加模拟交易统计数据表或字段 | R:code:supabase-setup.sql | A:保存相关模拟功能统计 | S:统计数据不能影响玩家核心资源
+20260327200000_sim_trades_dedup_unique.sql[PI4T]: F:为模拟交易统计增加去重唯一约束 | R:code:supabase-setup.sql | A:防止同一模拟交易重复写入 | S:约束变更需兼容已有重复数据清理
+20260401120000_tv_mtf_signals.sql[PI3T]: F:增加交易信号统计或配置表结构 | R:code:supabase-setup.sql | A:保存相关分析数据 | S:该数据不参与游戏核心资源结算
+20260401140000_redeem_code_once_per_user.sql[PI5T]: F:限制每个用户兑换码只能成功使用一次 | R:code:supabase-setup.sql,code:src/utils/authService.js | A:保护兑换奖励唯一性 | S:唯一性必须由数据库约束或原子函数保证
+202604190930_update_coin_adjustment_types.sql[PI5T]: F:统一金币调整记录的类型和约束 | R:code:supabase-setup.sql,code:src/utils/teacherRewardUpdates.js | A:区分教师、战斗和系统金币来源 | S:历史日志迁移必须保留来源语义
+202604191000_recalculate_semester_earned_from_adjustments.sql[PI4T]: F:按金币调整记录重算学期累计收入 | R:code:supabase-setup.sql | A:修复历史统计不一致 | S:重算不得改变当前金币余额
+20260422110000_redeem_codes_soft_delete.sql[PI5T]: F:为兑换码增加软删除和禁用状态 | R:code:supabase-setup.sql | A:保留兑换历史并停止旧码使用 | S:软删除记录不能再次兑换
+202605111200_fix86_anti_grind_score_rollout.sql[PI5T]: F:部署反刷分数和奖励限制相关字段或函数 | R:code:supabase-setup.sql,code:src/utils/gameBalance.js | A:限制重复低风险收益 | S:限制必须兼容能量和战斗奖励规则
+202605111330_apply_fix86_score_rollout.sql[PI5T]: F:应用反刷分数修复并回填已有用户状态 | R:code:supabase-setup.sql | A:让反刷规则对存量数据生效 | S:回填需可重复且不覆盖有效进度
+202605170001_energy_system.sql[PI6M]: F:建立能量、上限、日志和消耗相关字段与函数 | R:code:src/utils/gameBalance.js,code:supabase-setup.sql | A:支持地图战斗和训练联赛能量经济 | S:能量扣除和退款必须由后端原子函数保护
+202605180001_cloud_save_revision.sql[PI7M]: F:为云存档增加revision和版本提交函数 | R:code:src/utils/cloudSaveLock.js,code:supabase-setup.sql | A:防止旧存档覆盖新进度 | S:同revision不同内容必须拒绝
+202605180002_reject_same_revision_overwrite.sql[PI7M]: F:拒绝同revision不同存档内容覆盖 | R:code:src/utils/cloudSaveLock.js | A:强化并发存档一致性 | S:相同内容重试可幂等接受
+202605180003_teacher_reward_claim_handshake.sql[PI6M]: F:增加教师奖励预留和确认握手 | R:code:src/utils/teacherRewardUpdates.js,code:src/components/Teacher/Dashboard.jsx | A:防止教师奖励重复领取 | S:预留和确认必须原子且可恢复
+202605180004_atomic_resource_save.sql[PI7M]: F:实现资源、战斗状态和云存档的原子提交 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:保证金币、能量、背包和战斗状态一致 | S:任一资源更新失败必须整体回滚
+202605190001_teacher_reward_evolution_items.sql[PI5T]: F:扩展教师奖励对进化道具或成长物品的支持 | R:code:src/utils/teacherRewardUpdates.js,code:src/utils/inventoryItems.js | A:保存教师奖励物品类型 | S:历史奖励领取必须兼容新增字段
+202605190002_student_registration_approval.sql[PI5T]: F:增加学生注册审核状态和教师关联约束 | R:code:src/utils/authService.js,code:src/components/Teacher/Dashboard.jsx | A:控制学生账号进入游戏的审核流程 | S:未审核账号不能获得游戏资源
+202605190003_allow_escape_energy_refund.sql[PI5T]: F:增加符合资格的野外逃跑能量退款 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:区分直接逃跑和已行动战斗 | S:退款必须绑定云存档中的资格标记
+202605200001_require_escape_energy_refund_eligibility.sql[PI6M]: F:强制退款函数检查上一份存档的逃跑资格 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:防止客户端伪造能量退款 | S:资格为假时能量保持不变
+202605200002_reset_student_game_progress.sql[PI5T]: F:提供重置学生游戏进度并保留账户状态的函数 | R:code:src/components/Teacher/Dashboard.jsx | A:支持受控测试或教学重置 | S:重置必须明确目标用户并记录审计
+202605200003_new_students_start_with_500_gold.sql[PI4T]: F:设置新学生初始金币默认值 | R:code:supabase-setup.sql,code:src/utils/gameBalance.js | A:统一新账号经济起点 | S:只影响新注册用户，不覆盖已有余额
+202605220001_enforce_boss_completion_on_save.sql[PI6M]: F:在存档时强制保存Boss完成状态和进度 | R:code:src/game/eliteRouteBlocker.js,code:src/utils/cloudSaveLock.js | A:防止Boss胜利后状态丢失 | S:旧快照不能移除已完成Boss
+202605220002_harden_boss_completion_reward_save.sql[PI6M]: F:强化Boss奖励与完成状态的原子保存 | R:code:src/game/eliteRouteBlocker.js,code:src/utils/gameBalance.js | A:防止Boss金币重复或漏发 | S:奖励支付和击败标记必须同一事务
+202605220003_harden_trainer_completion_reward_save.sql[PI6M]: F:强化训练家胜利奖励和完成状态的原子保存 | R:code:src/utils/trainerBattleScaling.js,code:src/utils/gameBalance.js | A:防止训练家奖励重复结算 | S:失败不得写入完成状态
+202605240001_atomic_cloud_load.sql[PI6M]: F:提供云存档与资源快照的原子读取 | R:code:src/utils/gameSessionBootstrap.js,code:src/utils/cloudSaveLock.js | A:保证登录恢复时存档和资源一致 | S:读取必须返回同一版本快照
+202605240002_reduce_password_exposure.sql[PI6M]: F:减少登录和教师接口返回的明文密码暴露 | R:code:supabase-setup.sql,code:src/utils/authService.js | A:保护认证数据并改用受控密码流程 | S:客户端和普通用户查询不得读取明文密码
+202605240003_remove_public_users_reads.sql[PI6M]: F:移除公开users读取并改用受保护资料RPC | R:code:src/utils/authService.js,code:src/components/Teacher/Dashboard.jsx | A:收紧用户数据访问边界 | S:教师和学生查询必须经过角色校验
+202605240004_fix_teacher_profile_rpc_aliases.sql[PI5T]: F:修复教师资料和学生列表RPC别名 | R:code:src/components/Teacher/Dashboard.jsx,code:supabase-setup.sql | A:保持教师后台读取稳定 | S:RPC别名变更需兼容已有客户端
+202605280001_daily_energy_refill.sql[PI6M]: F:增加每日能量回满、时区和懒刷新逻辑 | R:code:src/utils/gameBalance.js,code:src/components/Game/OriginalGame.jsx | A:支持能量驱动的每日游玩循环 | S:回满不能覆盖战斗中或云端更新后的新状态
+202606020001_preserve_hidden_gate_flags.sql[PI5T]: F:保存隐藏入口和长期解锁标记的迁移兼容 | R:code:src/game/mapProgression.js,code:src/utils/gameSessionBootstrap.js | A:避免旧存档丢失隐藏门状态 | S:迁移必须保留已有true标记
+202606040001_allow_teacher_lower_energy_cap.sql[PI4T]: F:允许教师调整学生能量上限的安全范围 | R:code:src/components/Teacher/Dashboard.jsx,code:src/utils/gameBalance.js | A:支持教学管理中的能量配置 | S:上限调整不得产生负能量或绕过每日规则
+202606080001_student_gameplay_logs.sql[PI5T]: F:建立学生游戏行为日志结构和访问策略 | R:code:src/utils/gameplayLogs.js,code:src/components/Teacher/Dashboard.jsx | A:支持战斗和资源操作审计 | S:日志写入失败不能伪造资源结算
+202606090001_daily_playtime_limits.sql[PI6M]: F:建立每日游玩时长限制、会话和剩余时间字段 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:提供后端强制的游玩时间边界 | S:客户端计时不能替代服务端租约
+202607040001_fix_daily_playtime_rpc_ambiguity.sql[PI5T]: F:修复每日游玩时间RPC参数或返回歧义 | R:code:supabase-setup.sql,code:src/utils/cloudSaveLock.js | A:保证计时接口稳定调用 | S:旧客户端参数需保持兼容
+202607170001_harden_daily_playtime_enforcement.sql[PI6M]: F:强化每日游玩时间的服务端扣减和超时判断 | R:code:supabase-setup.sql,code:src/utils/cloudSaveLock.js | A:防止客户端跳过时长限制 | S:时间判断以服务端时钟为准
+202607180001_fix_playtime_session_lifecycle.sql[PI6M]: F:修复游玩会话开始、心跳和结束生命周期 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:保持活跃会话租约准确 | S:结束或过期必须释放租约
+202607180002_enforce_live_playtime_lease.sql[PI6M]: F:强制实时游玩租约和过期会话拦截 | R:code:src/utils/cloudSaveLock.js | A:阻止过期页面继续消耗资源 | S:租约验证必须发生在后端
+202607180003_return_expired_playtime_status.sql[PI5T]: F:让过期游玩接口返回明确状态和剩余信息 | R:code:src/utils/cloudSaveLock.js,code:src/components/Game/OriginalGame.jsx | A:显示可理解的时间到期反馈 | S:过期状态不能继续提交战斗结算
+202607200001_enforce_party_species_clause.sql[PI6M]: F:在后端强制队伍物种重复限制 | R:code:src/utils/pokemonRoster.js,code:src/game/timberLeague.js | A:防止客户端绕过队伍物种规则 | S:保存队伍前必须拒绝非法重复
+202607200002_preserve_long_term_progression.sql[PI6M]: F:迁移时保留长期章节、冠军塔和隐藏进度 | R:code:src/utils/longTermProgression.js,code:src/game/mapProgression.js | A:保证旧存档长期成长不回退 | S:迁移只能追加或保留进度，不能清零
+202607210001_claim_long_term_progression_rewards.sql[PI6M]: F:提供长期成长奖励的原子领取函数 | R:code:src/utils/longTermProgression.js | A:防止章节奖励重复领取 | S:奖励领取必须具备唯一批次和幂等重试
+202607210002_repair_legacy_plpgsql_lint_blockers.sql[PI4T]: F:修复历史PLpgSQL迁移中的语法和lint阻塞 | R:code:supabase-setup.sql | A:保证迁移链可继续执行 | S:修复不得改变既有业务字段语义
+202608060001_reset_preserves_daily_energy_and_playtime.sql[PI5T]: F:修复重置学生进度时保留每日能量和游玩时间状态 | R:code:src/utils/gameSessionBootstrap.js,code:src/utils/cloudSaveLock.js | A:避免测试重置绕过每日资源限制 | S:重置只影响明确允许的成长字段
+202610050001_timber_bank.sql[PB7M]: F:建立独立银行行情、存款持仓与账本及读状态和交易RPC | R:code:src/components/Game/TimberBankScreen.jsx,code:supabase/migrations/202610060001_timber_bank_session_only.sql | A:按上海日期生成行情与利息，钱包和持仓锁定后一事务结算并记录请求唯一性 | S:这是初版7天存款和2万市场上限，后续迁移覆盖；直接表与内部函数禁客户端访问，原版还验证明文密码
+202610050002_teacher_gameplay_overview.sql[PO5T]: F:增加教师范围的全班最近游玩记录RPC | R:code:src/utils/gameplayLogs.js | A:校验教师审核角色与学生归属，返回学生名称和行为详情，按时间ID倒序最多1000条 | S:此旧入口有总量上限，完整历史需后续分页接口
+202610050003_teacher_gameplay_pagination.sql[PO5T]: F:提供全班游玩记录按limit和offset分页的教师RPC | R:code:src/utils/gameplayLogs.js | A:校验教师角色、审核和学生归属，按时间及ID降序，每页最多1000条 | S:offset不得为负，前端需持续请求才能读取超过一页的历史
+202610060001_timber_bank_session_only.sql[PI6T]: F:为银行增加只传学生与游玩会话的状态和交易兼容入口 | R:code:supabase/migrations/202610050001_timber_bank.sql | A:校验学生、剩余时间和有效租约，必要时服务端获取旧签名密码再委托交易 | S:保留旧密码签名且只在新交易签名缺失时创建兼容函数，不复制整个交易实现
+202610060002_timber_bank_market_4h.sql[PB6L]: F:改造银行为上海时区四小时行情、无持仓投入上限和成本盈亏快照 | R:code:supabase/migrations/202610050001_timber_bank.sql,code:src/components/Game/TimberBankScreen.jsx | A:建立市场时点表、行情信号波动字段，更新买卖及部分售出成本分摊 | S:旧日利率表继续用于储蓄；市场字段先回填再加NOT NULL；旧20,000约束必须移除
+202610060003_stat_gem_training_limits.sql[PB7S]: F:在game_saves写入触发器验证属性宝石额度、增量、库存与成长版本 | R:code:src/utils/pokemonStats.js,code:scripts/audit-stat-gem-training.sql | A:规范属性别名和库存计数，限制单项4总10、次数不回退及战斗外使用 | S:历史加成保留且不反推次数；首次采用版本1后不能降级；未采用新规则的旧客户端仍可保存
+202610060004_timber_bank_limit_orders.sql[PB7L]: F:建立银行限价预约单、预留金币份额、行情触发成交与撤单RPC | R:code:supabase/migrations/202610060002_timber_bank_market_4h.sql,code:src/components/Game/TimberBankScreen.jsx | A:按四小时新行情撮合，提供最多5笔开放单、请求幂等及包含预留份额的快照 | S:买单先扣资金、卖单锁份额，即时卖出不能触及预留；撮合与撤单需共享advisory锁
+202610070001_fix_timber_bank_stable_interest.sql[PB6M]: F:以完整储蓄余额计息、取消旧本金收益上限并统一三日存款期 | R:code:supabase/migrations/202610060004_timber_bank_limit_orders.sql | A:按上海日边界累计利息，到期结算尾段，补充收益历史并更新交易锁期 | S:计息时间截到期日防超期收益；本迁移显式开放accrue和snapshot给客户端，不能假定它们仍是内部权限
+202610070002_recalculate_existing_stable_deposits.sql[PB6M]: F:一次性重算存量活跃储蓄的三日期限及完整本金应得利息 | R:code:supabase/migrations/202610070001_fix_timber_bank_stable_interest.sql | A:按原存入续存账本回放日利率，仅补缺少收益，修正当前计息游标 | S:数据库版本标记避免重复补偿；只加不减已发利息，源本金通过扣除本期已记利息恢复
+202610100001_pokemon_release_compensation.sql[PB7M]: F:建立固定物种放生价格目录和请求收据，并原子删除伙伴支付补偿 | R:code:src/utils/pokemonReleaseCatalog.json,code:src/utils/pokemonRelease.js | A:提供三类来源放生RPC，服务端核价重建快照、验证revision会话并写金币行为日志 | S:用户行先锁存档后锁；不信任客户端物种余额或删除快照；重复实例拒绝、最后一只保留且战斗禁用
+202610100002_fishing_system.sql[PB8M]: F:建立独立钓鱼目录库存会话收据及唯一fishing_action原子操作RPC | R:code:src/game/fishingCatalog.js,code:src/components/Game/OriginalGame.jsx | A:实现永久竿有限鱼饵、固定目标判定、保护鉴定与售鱼金币，按当前存档地图和进度门控 | S:先锁钱包；elapsedMs含等待，未来容差100ms送达1800ms不扩目标；一次活跃竿，重试同ID同参数，取消不返饵；无日次数限；表及内部快照禁止直接访问
+202610100003_remove_fishing_collection.sql[PB7M]: F:移除钓鱼收藏动作自动保护与旧保护字段，允许全部鱼获出售 | R:code:supabase/migrations/202610100002_fishing_system.sql,code:scripts/verify-fishing-system.sql | A:替换快照和原子RPC，清理旧locked而保留鱼获记录及钱包账务 | S:沿用先锁钱包与幂等会话；旧请求重放用新快照，未鉴定和商人不收宝藏仍跳过；表和内部快照不开放
+202610100004_fishing_double_difficulty.sql[PB6T]: F:将五档钓鱼收杆宽度与单程时间减半 | R:code:src/game/fishingCatalog.js,code:supabase/migrations/202610100003_remove_fishing_collection.sql | A:事务更新服务端tiers，使指针速度加倍且每次命中时长约为原来四分之一 | S:只影响新抛竿；在途会话沿用存储的宽度速度与目标
+202610100005_fishing_combo_treasure_logs.sql[PB8M]: F:实现完美连击金币、逐件宝藏随机鉴定和原子教师钓鱼日志 | R:code:src/game/fishingRewards.js,code:scripts/verify-fishing-rewards.sql,code:src/utils/gameplayLogs.js | A:迁移旧宝藏实例，五档抽价只执行一次，钱包鱼获会话日志同事务结算并微调高档难度 | S:先锁钱包，重放不重复奖励日志；旧物种鉴定重置为逐件待鉴定；UUID按玩家归属，表与随机函数私有；未鉴定不卖，在途目标保留
+202610100006_fishing_combo_hit_rewards.sql[PB8M]: F:将钓鱼奖金改为连续命中奖励与完美额外加成并保留原子鉴定出售日志 | R:code:src/game/fishingRewards.js,code:supabase/migrations/202610100005_fishing_combo_treasure_logs.sql,code:scripts/verify-fishing-rewards.sql | A:迁移命中初值；第二次命中起基础加1至8，完美额外加1至4，普通命中保留连击 | S:先锁钱包后锁钓鱼账户；重复会话或请求不重复奖励日志；取消超时失手清零；perfectStreak镜像hitStreak供旧客户端；私有目录与逐件宝藏核价不变
+202610110001_teacher_delete_student.sql[PI7T]: F:建立教师密码与归属校验的原子学生删除RPC及私有幂等收据 | R:code:src/components/Teacher/Dashboard.jsx,code:scripts/verify-teacher-delete-student.sql | A:锁定并核对目标用户名，清理旧表及级联学生数据，重试只匹配原教师和目标 | S:表认证不可只信UUID；先锁教师再锁学生，四个旧表显式删，其余靠既有外键级联；收据禁止客户端直读
+202610170001_bind_fishing_to_playtime_lease.sql[PI8S]: F:将进行中的鱼竿绑定到创建它的游玩时长租约并在租约改变时失效 | R:code:supabase/migrations/202610100002_fishing_system.sql,code:supabase/migrations/202607180002_enforce_live_playtime_lease.sql,code:scripts/verify-fishing-playtime-lease.sql | A:为钓鱼会话写入租约标识，结束、过期或换租约时自动结束活动鱼竿，阻止跨租约收杆结算 | S:租约结束会使已消耗鱼饵的进行中鱼竿失效且不返还，避免暂停计时后继续获得鱼获
+202610170002_secure_teacher_playtime_limit.sql[PI7S]: F:收紧教师修改学生每日游玩时长的安全函数并要求教师密码 | R:code:supabase/migrations/202606090001_daily_playtime_limits.sql,code:src/components/Teacher/Dashboard.jsx | A:撤销无密码三参数函数权限，新增四参数密码校验函数并保留教师归属校验 | S:不能只信调用者提供的教师UUID，学生可从自身资料获知关联教师ID
+
+===/Users/shihe/Documents/宝可梦养成/public/assets/3d/xingyin-characters-v2/===
+manifest.json[FC6L]: F:登记v2角色与载具的身份来源尺寸面数字节和压缩信息 | R:code:src/game/data/characterAssets.js,code:scripts/optimize-character-upgrade-v2.mjs | A:109角色记录地图事件与表面分区，车辆记录自行车跑车及轮轴节点 | S:height为导出尺寸而非最终地图身高；部分重建保留未修改记录和载具
+
+===/Users/shihe/Documents/宝可梦养成/src/components/ui/===
+ConfirmDialog.jsx[AU6T]: F:提供带可选输入错误和忙碌状态的原生确认弹窗 | R:code:src/components/Teacher/Dashboard.jsx,code:src/design/ui-system.css | A:Portal至body，原生modal约束焦点，默认取消并恢复之前焦点 | S:忙碌时禁止提交关闭Escape与背景取消；背景点击须在弹窗矩形外才关闭
+
+===/Users/shihe/Documents/宝可梦养成/src/design/===
+UiDesignPreview.jsx[AU5T]: F:以真实教师认证组件展示统一界面及尺寸色彩样例 | R:code:src/components/Teacher/Dashboard.jsx,code:src/App.jsx | A:提供内存学生审核奖励删除模拟和登录注册标准切换 | S:仅DEV路由；client与日志夹具阻止真实数据写入，demo123只是内存删除演示密码
+game-ui.css[AU6T]: F:统一游戏功能页商店、背包、渔具、鱼商与银行的表面排版、分栏和暖色主题 | R:code:src/design/ui-system.css,code:src/components/Game/DeferredGamePanels.jsx | A:规定14px名称、12px英文、卡片间距、奶油色筛选底、暖色选中状态与手机44px控件 | S:用#root保持晚到旧样式不能覆盖标准；只约束信息界面，不能更改场景构图和游戏时钟
+ui-preview.css[AU4T]: F:排列本地设计预览导航标准样例及页面容器 | R:code:src/design/UiDesignPreview.jsx | A:提供可滚动标准卡片与手机预览布局 | S:-
+ui-system.css[AU6T]: F:定义全项目字体、暖色品牌、尺寸间距以及按钮认证弹窗样式 | R:code:src/main.jsx,code:src/components/ui/ConfirmDialog.jsx | A:提供浅金至琥珀主按钮、奶油色次按钮、暖色焦点轮廓、44px控件与禁用错误状态 | S:Portal弹窗在body，共用规则同时覆盖.ui-dialog；认证壳自动竖向边距避免长表单顶部被居中裁掉

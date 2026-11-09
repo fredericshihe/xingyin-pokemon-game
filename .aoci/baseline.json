@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-09-30T07:24:04Z",
-  "updated_at": "2026-11-09T14:35:32Z",
+  "updated_at": "2026-11-09T15:08:07Z",
   "files": {
     ".claude/plans/pokemon-redistribution-plan.md": {
       "role": "index",
@@ -34,10 +34,9 @@
       "normalized_sha256": "07e81e3b829f96be2af888fd2c4d7bb1fd3cc722f4076a3ee5960339a77a226c"
     },
     ".gitignore": {
-      "role": "index",
-      "sha256": "d044092013e0b42221cedebac77f8bfc40287f597ea4a6d4d70b7aae5189728d",
-      "size": 594,
-      "normalized_sha256": "d044092013e0b42221cedebac77f8bfc40287f597ea4a6d4d70b7aae5189728d"
+      "sha256": "93def8f17530fd8052cf227006da38e0b423a621d57bacca15540a810b10fc3e",
+      "size": 620,
+      "normalized_sha256": "93def8f17530fd8052cf227006da38e0b423a621d57bacca15540a810b10fc3e"
     },
     ".nvmrc": {
       "role": "index",
@@ -418,9 +417,9 @@
       "normalized_sha256": "6231f524fbb8a189f0517c4604cf0c23aacfa0ab6436db2f965779d1a6999845"
     },
     "aoci.code.txt": {
-      "sha256": "a08d450f198fb355c80f2d428229d49feb3d084a71e9d0b1bc491ef81c19dc7e",
-      "size": 237510,
-      "normalized_sha256": "a08d450f198fb355c80f2d428229d49feb3d084a71e9d0b1bc491ef81c19dc7e"
+      "sha256": "2e12f64034b3e02f89eab270769dd177d8838d6a9a1a98409810b40ea95556d2",
+      "size": 238374,
+      "normalized_sha256": "2e12f64034b3e02f89eab270769dd177d8838d6a9a1a98409810b40ea95556d2"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -18333,10 +18332,9 @@
       "normalized_sha256": "ae6ea3f6e130d6f83982c2449335b2b37b7c7c86659babb1ea6644d51faf3b4c"
     },
     "src/components/Game/OriginalGame.jsx": {
-      "role": "index",
-      "sha256": "5dc4809af00042b8d459133ae863ae3b1dfc28d3e8238665a0ac180527867932",
-      "size": 1053545,
-      "normalized_sha256": "5dc4809af00042b8d459133ae863ae3b1dfc28d3e8238665a0ac180527867932"
+      "sha256": "f667d1d566766ce389e76f0c508385de4ff5b03b47adc27aa4d485ca48b5199b",
+      "size": 1118534,
+      "normalized_sha256": "f667d1d566766ce389e76f0c508385de4ff5b03b47adc27aa4d485ca48b5199b"
     },
     "src/components/Game/PokemonBreederScreen.jsx": {
       "role": "index",

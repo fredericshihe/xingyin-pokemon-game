@@ -3,7 +3,7 @@
 ===/Users/shihe/Documents/宝可梦养成/===
 .env.example[FC5S]: F:提供本地与部署环境变量模板及长期功能开关 | R:code:vite.config.js,code:src/utils/primeStudentSession.js,code:.github/workflows/deploy-pages.yml | A:提供本地与部署环境变量模板及长期功能开关 | S:长期功能开关在对应迁移和验证完成前保持关闭
 .gitattributes[FV4S]: F:固定跨平台检出时的文本换行策略供 AOCI 字节基线使用 | R:code:.aoci/baseline.json,code:aoci.code.txt | A:固定跨平台检出时的文本换行策略供 AOCI 字节基线使用 | S:文本文件统一 LF，避免 autocrlf 造成整树漂移
-.gitignore[FV4S]: F:声明依赖、构建产物、环境变量和本地临时文件的忽略范围 | R:code:package.json,code:.env.example | A:声明依赖、构建产物、环境变量和本地临时文件的忽略范围 | S:-
+.gitignore[FV4T]: F:声明依赖、构建产物、环境变量、本地私密配置和临时文件的Git忽略范围 | R:code:package.json,code:.env.example,code:.aoci/config.json | A:忽略dist、.tmp-build-check与qa构建副本、local-secrets、Blender自动备份blend1和__pycache__ | S:qa与dist是可重建的构建输出；local-secrets和.env.local不得入库
 .nvmrc[FV4T]: F:固定项目开发和构建使用的 Node.js 主版本 | R:code:package.json,code:.github/workflows/deploy-pages.yml | A:固定项目开发和构建使用的 Node.js 主版本 | S:当前版本为 Node 20
 AGENTS.md[SG9L]: F:规定 AOCI 仓库认知、作者化、维护、恢复和收尾合同 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定 AOCI 仓库认知、作者化、维护、恢复和收尾合同 | S:受管对象稳定后只维护一次；必须使用机器签发候选和完整批次，不得猜写索引
 AUDIO_BUGS_ANALYSIS.md[SG5M]: F:记录 BGM 总线、音量、预加载和 AudioContext 问题的根因分析 | R:code:src/utils/gameAudio.js,code:src/utils/gameBgm.js,code:src/components/Game/OriginalGame.jsx | A:记录 BGM 总线、音量、预加载和 AudioContext 问题的根因分析 | S:BGM 总线必须接入 master，不能直接绕过主增益连接 destination
@@ -591,6 +591,7 @@ fishing.css[AU5M]: F:统一钓鱼HUD双语卡片、内联筛选、连击和鉴�
 pokemonRelease.css[AU4T]: F:定义放生确认中的伙伴、档位、金币报价和珍稀警告样式 | R:code:src/components/Game/PokemonReleaseSummary.jsx | A:区分普通稀有珍稀档位并提供按钮旁报价样式 | S:-
 timberBank.css[AU4S]: F:定义银行双产品页签、余额、趋势图、输入、预约单和历史记录布局 | R:code:src/components/Game/TimberBankScreen.jsx | A:提供桌面手机布局与交易状态视觉区分 | S:-
 NpcBattlePortrait.jsx[AU5T]: F:在对战介绍显示当前NPC模型生成的透明形象 | R:code:src/game/characterPortrait.js,code:src/game/threeLowPolyModelCache.js | A:优先使用已缓存模型图，缺失时严格有限加载，按模型键隔离异步结果 | S:不能拿其他人物充当缺图；卸载和换人物后不得写回旧结果
+OriginalGame.jsx[AB9L]: F:主游戏状态机，编排地图探索、跨图传送与快速旅行、战斗回合、捕捉成长、背包队伍、钓鱼银行饲养家及云存档 | R:code:src/utils/cloudSaveLock.js,code:src/game/MapSceneLayer.jsx,code:src/components/Game/DeferredGamePanels.jsx,code:src/utils/battleAi.js,code:src/game/mapProgression.js,code:scripts/audit-battle-turn-recovery.mjs | A:默认导出OriginalGame({user,onLogout})并导出BattleScene；资源与进度经commitCloudSnapshot分配revision、绑定游玩租约后原子提交，冲突返回requiresReload | S:云端提交成功前不得在本地结算奖励资源或进度；约2.7万行，战斗恢复审计正则依赖函数名与代码形态
 
 ===/Users/shihe/Documents/宝可梦养成/src/components/Teacher/===
 Dashboard.jsx[AU6L]: F:管理学生审核资源奖励记录及账号时长密码与删除，并为时长修改提交教师验证凭据 | R:code:src/components/ui/ConfirmDialog.jsx,code:src/utils/teacherRewardUpdates.js,code:src/utils/gameplayLogs.js,code:supabase/migrations/202610170002_secure_teacher_playtime_limit.sql | A:统一教师工作台操作与学生记录读取，限时修改必须使用当前登录教师密码 | S:教师密码缺失或过期时拒绝修改限时并提示重新登录

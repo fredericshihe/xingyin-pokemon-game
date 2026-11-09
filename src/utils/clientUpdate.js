@@ -1,4 +1,4 @@
-import { clearClientCaches } from './recoverStaleClient'
+import { clearClientCaches, pruneLegacyRuntimeCaches } from './recoverStaleClient'
 
 export const APP_BUILD_ID = typeof __APP_BUILD_ID__ !== 'undefined' ? __APP_BUILD_ID__ : 'dev'
 
@@ -9,6 +9,7 @@ const UPDATE_OVERLAY_ID = 'app-update-overlay'
 
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
 const REMOTE_CHECK_DELAY_MS = 5 * 60 * 1000
+const LEGACY_CACHE_PRUNE_DELAY_MS = 30 * 1000
 
 let pwaUpdateInitialized = false
 
@@ -171,6 +172,9 @@ export function initPwaUpdates() {
   })
 
   scheduleRemoteVersionChecks()
+  window.setTimeout(() => {
+    void pruneLegacyRuntimeCaches()
+  }, LEGACY_CACHE_PRUNE_DELAY_MS)
 }
 
 export function markAppReady() {

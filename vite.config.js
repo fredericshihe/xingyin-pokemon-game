@@ -5,8 +5,10 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { buildEarlyVersionGuardScript } from './scripts/early-version-guard-snippet.mjs'
 import { resolveBuildId } from './scripts/resolve-build-id.mjs'
+import { resolveModelAssetVersion } from './scripts/resolve-model-asset-version.mjs'
 
 const appBuildId = resolveBuildId()
+const appModelAssetVersion = resolveModelAssetVersion() || appBuildId
 
 // 生产：https://pokemongame.site/（根路径）
 const normalizeBasePath = (value) => {
@@ -21,7 +23,8 @@ const base = normalizeBasePath(process.env.VITE_BASE_PATH)
 export default defineConfig({
   base,
   define: {
-    __APP_BUILD_ID__: JSON.stringify(appBuildId)
+    __APP_BUILD_ID__: JSON.stringify(appBuildId),
+    __APP_MODEL_ASSET_VERSION__: JSON.stringify(appModelAssetVersion)
   },
   plugins: [
     react(),
@@ -109,6 +112,8 @@ export default defineConfig({
           '**/assets/maps/**',
           '**/assets/tiles/**'
         ],
+        // 资源缓存名不带构建号：每次发版换缓存名会让玩家重新下载全部模型、音频和立绘。
+        // 旧的带构建号缓存由 pruneLegacyRuntimeCaches 清理。
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
@@ -126,7 +131,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.endsWith('.glb'),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-glb-${appBuildId}`,
+              cacheName: 'game-glb',
               expiration: {
                 // Independent NPCs add 78 GLBs; retain the complete map asset set.
                 maxEntries: 640,
@@ -138,7 +143,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/(characters|items\/official-artwork|tiles|maps)\/.+\.(png|webp|svg)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-static-art-${appBuildId}`,
+              cacheName: 'game-static-art',
               expiration: {
                 maxEntries: 260,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -149,7 +154,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/audio\/.+\.(ogg|wav|mp3|webm)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-audio-${appBuildId}`,
+              cacheName: 'game-audio',
               expiration: {
                 maxEntries: 220,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -160,7 +165,7 @@ export default defineConfig({
             urlPattern: ({ url }) => /\/assets\/pokemon\/official-artwork\/.+\.(webp|png)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-pokemon-art-${appBuildId}`,
+              cacheName: 'game-pokemon-art',
               expiration: {
                 maxEntries: 900,
                 maxAgeSeconds: 60 * 60 * 24 * 180
@@ -171,7 +176,7 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.includes('/assets/'),
             handler: 'CacheFirst',
             options: {
-              cacheName: `game-static-${appBuildId}`,
+              cacheName: 'game-static',
               expiration: {
                 maxEntries: 800,
                 maxAgeSeconds: 60 * 60 * 24 * 60

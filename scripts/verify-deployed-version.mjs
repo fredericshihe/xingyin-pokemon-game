@@ -166,10 +166,10 @@ const parseEntryScript = (html) => {
 
 const parseSwBuildIds = (swText) => {
   const pageMatch = swText.match(/game-pages-([A-Za-z0-9_-]+)/)
-  const staticMatch = swText.match(/cacheName:["']game-static-(?!art-)([^"']+)["']/)
   return {
     pageBuildId: pageMatch?.[1] || null,
-    staticBuildId: staticMatch?.[1] || null
+    // 资源缓存名不带构建号，发版后玩家已下载的模型、音频和立绘继续可用
+    hasStableStaticCache: /cacheName:["']game-static["']/.test(swText)
   }
 }
 
@@ -288,16 +288,16 @@ const main = async () => {
   }
 
   const swBuildIds = parseSwBuildIds(swResult.text)
-  if (!swBuildIds.pageBuildId || !swBuildIds.staticBuildId) {
-    addError(
-      'Service Worker 缺少构建版本缓存名',
-      `game-pages=${formatValue(swBuildIds.pageBuildId)} game-static=${formatValue(swBuildIds.staticBuildId)}`
-    )
+  if (!swBuildIds.pageBuildId) {
+    addError('Service Worker 缺少构建版本缓存名', 'game-pages=无')
   } else {
-    addOk(
-      'Service Worker 构建缓存名存在',
-      `game-pages=${swBuildIds.pageBuildId} game-static=${swBuildIds.staticBuildId}`
-    )
+    addOk('Service Worker 构建缓存名存在', `game-pages=${swBuildIds.pageBuildId}`)
+  }
+
+  if (!swBuildIds.hasStableStaticCache) {
+    addWarning('Service Worker 资源缓存名不是固定名称', '未找到 game-static；资源缓存名带构建号时，每次发版玩家都要重新下载资源。')
+  } else {
+    addOk('Service Worker 资源缓存名固定', 'game-static')
   }
 
   if (remoteVersion?.buildId && swBuildIds.pageBuildId && remoteVersion.buildId !== swBuildIds.pageBuildId) {

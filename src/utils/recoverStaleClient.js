@@ -16,6 +16,27 @@ const shouldPreserveRuntimeCache = (cacheName) => (
   PRESERVED_RUNTIME_CACHE_PATTERNS.some((pattern) => pattern.test(cacheName))
 )
 
+// vite.config.js 的资源缓存名，之前带构建号（如 game-glb-<buildId>），每次发版都会新增一套
+const STABLE_RUNTIME_CACHE_NAMES = new Set([
+  'game-glb',
+  'game-static-art',
+  'game-static',
+  'game-audio',
+  'game-pokemon-art'
+])
+
+export async function pruneLegacyRuntimeCaches() {
+  if (typeof window === 'undefined' || !('caches' in window)) return
+  try {
+    const keys = await caches.keys()
+    await Promise.all(keys
+      .filter((key) => shouldPreserveRuntimeCache(key) && !STABLE_RUNTIME_CACHE_NAMES.has(key))
+      .map((key) => caches.delete(key)))
+  } catch (error) {
+    console.warn('[recover] legacy runtime cache prune failed', error)
+  }
+}
+
 export function getExpectedGameUrl() {
   const base = import.meta.env.BASE_URL || '/'
   const origin = typeof window !== 'undefined' ? window.location.origin : ''

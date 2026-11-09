@@ -9,6 +9,9 @@ import { assetUrl, versionedAssetUrl } from '../utils/assetUrl'
 import { LEGACY_MODEL_KEYS, getDecorativeModel } from './decorativeModelSpec.js'
 import { REFINED_MODEL_ASSETS } from './data/refinedModelAssets.generated.js'
 
+// public/assets/3d 的内容哈希（vite.config.js 注入）：只有模型文件变化才换 URL，纯代码发版不让玩家重下模型
+const MODEL_ASSET_VERSION = typeof __APP_MODEL_ASSET_VERSION__ !== 'undefined' ? __APP_MODEL_ASSET_VERSION__ : null
+
 const MODEL_BASE = assetUrl('/assets/3d/kenney-nature/')
 const ORIGINAL_FOREST_TREE_BASE = assetUrl('/assets/3d/xingyin-environment-v2/forest-trees/')
 const ORIGINAL_NATURE_BASE = assetUrl('/assets/3d/xingyin-environment-v2/nature/')
@@ -59,7 +62,7 @@ const MODEL_URLS = Object.fromEntries(
   Object.entries(MODEL_URLS_RAW).map(([key, url]) => {
     const logicalPath = url.slice(url.indexOf('/assets/'))
     const refinedPath = REFINED_MODEL_ASSETS[logicalPath]
-    return [key, versionedAssetUrl(refinedPath ? assetUrl(refinedPath) : url)]
+    return [key, versionedAssetUrl(refinedPath ? assetUrl(refinedPath) : url, MODEL_ASSET_VERSION)]
   })
 )
 if (import.meta.env?.DEV) {

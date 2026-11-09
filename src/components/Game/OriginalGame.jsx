@@ -22897,6 +22897,14 @@ const handleEncounter = useCallback(async (encounterPayload) => {
       renderMode: getAdventureMapInfo(currentMapName)?.renderMode || getAdventureMapInfo(targetMapName)?.renderMode || null,
       travelDirection: 'right'
     };
+    // Fast travel targets are usually not adjacent, so nothing warmed them up;
+    // start downloading during the departure animation and cloud sync.
+    void preloadThreeLowPolyMapModelsOnDemand(targetMapName).catch((error) => {
+      console.warn(`[OriginalGame] Failed to warm up map models for ${targetMapName}:`, error);
+      return null;
+    });
+    const [primaryAmbientUrl, ...alternateAmbientUrls] = getMapAmbientTrackLoadUrls(targetMapName);
+    void gameBgm.preloadUrl(primaryAmbientUrl, { alternateUrls: alternateAmbientUrls });
     let latestGoldForFailure = knownGold;
     let travelCommitted = false;
     setFastTravelBusy(true);

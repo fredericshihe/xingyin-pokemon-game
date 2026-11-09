@@ -1,0 +1,82 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "device": "phone",
+      "mpClickFeedback": true,
+      "keyboardMpFeedback": true,
+      "blockedAttackCount": 0,
+      "affordableMoveWorks": true,
+      "dynamaxGlowOnly": {
+        "scale": "1.35",
+        "filter": "drop-shadow(rgb(255, 240, 247) 0px 0px 2px) drop-shadow(rgb(255, 38, 123) 0px 0px 5px) drop-shadow(rgb(194, 43, 131) 0px 0px 13px)"
+      }
+    },
+    {
+      "device": "desktop",
+      "mpClickFeedback": true,
+      "keyboardMpFeedback": true,
+      "blockedAttackCount": 0,
+      "affordableMoveWorks": true,
+      "dynamaxGlowOnly": {
+        "scale": "1.35",
+        "filter": "drop-shadow(rgb(255, 240, 247) 0px 0px 2px) drop-shadow(rgb(255, 38, 123) 0px 0px 5px) drop-shadow(rgb(194, 43, 131) 0px 0px 13px)"
+      }
+    },
+    {
+      "fourFixedButtons": [
+        {
+          "name": "背包",
+          "x": 1245,
+          "y": 780,
+          "width": 52,
+          "height": 52
+        },
+        {
+          "name": "宝可梦",
+          "x": 1303,
+          "y": 780,
+          "width": 52,
+          "height": 52
+        },
+        {
+          "name": "图鉴",
+          "x": 1245,
+          "y": 838,
+          "width": 52,
+          "height": 52
+        },
+        {
+          "name": "商店",
+          "x": 1303,
+          "y": 838,
+          "width": 52,
+          "height": 52
+        }
+      ],
+      "rideButtonAbove": true,
+      "mobileLayout": true,
+      "rShortcut": true,
+      "repeatIgnored": true,
+      "modifierIgnored": true,
+      "typingIgnored": true,
+      "modalIgnored": true,
+      "grassIgnored": true,
+      "pedal": {
+        "before": {
+          "y": 0.35,
+          "z": 0.02500000000000001,
+          "wheel": 0
+        },
+        "after": {
+          "y": 0.335586678140105,
+          "z": 0.02409319065116497,
+          "wheel": 0.1884955592153876
+        },
+        "sum": 0.7,
+        "idleY": 0.335586678140105
+      }
+    }
+  ],
+  "ok": true
+}

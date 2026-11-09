@@ -1,0 +1,32 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "device": "phone",
+      "shopPrices": true,
+      "permanentPurchase": true,
+      "goldDelta": 3000,
+      "itemConsumedOnce": true,
+      "animationLocksControls": true,
+      "visualScale": 1.3500000346790662,
+      "attackImmediately": true,
+      "repeatUseBlocked": true,
+      "faintClearsForm": true,
+      "newBattleAvailable": true
+    },
+    {
+      "device": "desktop",
+      "shopPrices": true,
+      "permanentPurchase": true,
+      "goldDelta": 3000,
+      "itemConsumedOnce": true,
+      "animationLocksControls": true,
+      "visualScale": 1.3500001301447773,
+      "attackImmediately": true,
+      "repeatUseBlocked": true,
+      "faintClearsForm": true,
+      "newBattleAvailable": true
+    }
+  ],
+  "ok": true
+}

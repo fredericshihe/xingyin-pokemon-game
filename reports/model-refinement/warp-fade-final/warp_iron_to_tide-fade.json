@@ -1,0 +1,924 @@
+[
+  {
+    "time": 3626.9000000953674,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3627.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3627.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3644.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3661,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3677.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3694.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3710.9000000953674,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3727.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3744.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3761,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3778.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3795,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3811.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3828.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3845,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3861.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3878.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3895.0999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3911,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3927.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3944.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3961.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3977.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3994.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4011.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4027.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4044.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4061.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4077.5999999046326,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4094.9000000953674,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4111.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4128.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4144.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4161.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4177.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4194.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4211.900000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4228.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4245,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4261.900000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4277.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4295,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4310.900000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4327.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4345,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4361.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4377.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4394.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4411.900000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4427.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4444.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4461,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4477.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4494.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4511,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4528.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4544.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4561.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4577.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4594.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4611,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4628.5,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4644.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4661.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4677.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4694.400000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4710.800000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4728.099999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4745,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 4761.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.149119
+  },
+  {
+    "time": 4777.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.286593
+  },
+  {
+    "time": 4794.300000190735,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.415435
+  },
+  {
+    "time": 4811.699999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.534796
+  },
+  {
+    "time": 4827.599999904633,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.643522
+  },
+  {
+    "time": 4844.400000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742004
+  },
+  {
+    "time": 4860.900000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.828222
+  },
+  {
+    "time": 4878.400000095367,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900312
+  },
+  {
+    "time": 4895.199999809265,
+    "map": "GodotMapV2_IronDojo",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.955394
+  },
+  {
+    "time": 4961,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5002.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5011.599999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5058.199999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5058.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5061.699999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5077.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5186.400000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 5194.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 5211.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.987966
+  },
+  {
+    "time": 5227.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.955636
+  },
+  {
+    "time": 5244.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.906606
+  },
+  {
+    "time": 5261,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.843785
+  },
+  {
+    "time": 5277.599999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.769645
+  },
+  {
+    "time": 5295,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.684756
+  },
+  {
+    "time": 5310.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.590626
+  },
+  {
+    "time": 5328.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488058
+  },
+  {
+    "time": 5345.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.378282
+  },
+  {
+    "time": 5361.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.26025
+  },
+  {
+    "time": 5377.599999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.135241
+  },
+  {
+    "time": 5394.199999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.000180708
+  },
+  {
+    "time": 5412.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 5428.400000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5444.199999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5460.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5477.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5494.199999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5511.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5527.599999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5545,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5561.599999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5577.800000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5594.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5611.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5627.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5644.199999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5661.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5678.300000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5694.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5711.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5727.800000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5744.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5761.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5777.5,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5794.699999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5810.800000190735,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5827.699999809265,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5844.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5860.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5877.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5894.099999904633,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5911.400000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5927.900000095367,
+    "map": "GodotMapV2_TideDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  }
+]

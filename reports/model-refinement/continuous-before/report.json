@@ -1,0 +1,28 @@
+[
+  {
+    "id": "GodotMapV2_PirateShore",
+    "warp": "warp_shore_to_lake",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "expected": {
+      "mapName": "GodotMapV2_MistLake",
+      "position": {
+        "x": 36,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_MistLake",
+      "tile": {
+        "x": 20,
+        "y": 2
+      },
+      "yaw": 0,
+      "ready": true
+    },
+    "ok": false
+  }
+]

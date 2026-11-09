@@ -1,0 +1,57 @@
+{
+  "startedAt": "2026-09-05T14:37:22.117Z",
+  "args": {
+    "baseUrl": "http://127.0.0.1:4173/xingyin-pokemon-game",
+    "durationMs": 1500,
+    "warmupMs": 500,
+    "readyTimeoutMs": 15000,
+    "mapQuality": "high",
+    "mapSet": "all",
+    "maps": [
+      "GodotMap"
+    ],
+    "devices": [
+      "ipad_mini"
+    ],
+    "cpuThrottle": false,
+    "outDir": "/Users/shihe/Documents/文稿 - SHIHE的MacBook Pro/宝可梦养成/reports/mobile-map-performance"
+  },
+  "maps": [
+    "GodotMap"
+  ],
+  "devices": [
+    {
+      "id": "ipad_mini",
+      "label": "iPad Mini 768x1024 DPR2 CPUx3",
+      "width": 768,
+      "height": 1024,
+      "dpr": 2,
+      "cpuThrottle": 3
+    }
+  ],
+  "results": [
+    {
+      "mapId": "GodotMap",
+      "mapName": "新手山谷",
+      "deviceId": "ipad_mini",
+      "deviceLabel": "iPad Mini 768x1024 DPR2 CPUx3",
+      "width": 768,
+      "height": 1024,
+      "dpr": 2,
+      "cpuThrottle": 1,
+      "mapQuality": "high",
+      "error": "Map canvas/performance probe did not become ready",
+      "browserErrors": [],
+      "networkFailures": [],
+      "assetFailures": [],
+      "diagnostics": {
+        "href": "chrome-error://chromewebdata/",
+        "title": "127.0.0.1",
+        "bodyText": "无法访问此网站\n\n127.0.0.1 拒绝了我们的连接请求。\n\n请试试以下办法：\n\n检查网络连接\n检查代理服务器和防火墙\nERR_CONNECTION_REFUSED\n重新加载\n详情",
+        "canvas": null,
+        "perfProbe": null
+      },
+      "status": "FAIL"
+    }
+  ]
+}

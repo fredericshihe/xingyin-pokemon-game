@@ -1,0 +1,138 @@
+[
+  {
+    "id": "GodotMapV2_PirateShore",
+    "warp": "warp_shore_to_lake",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_MistLake",
+      "position": {
+        "x": 36,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_MistLake",
+      "tile": {
+        "x": 36,
+        "y": 29
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  }
+]

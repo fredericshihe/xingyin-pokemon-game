@@ -1,0 +1,838 @@
+[
+  {
+    "mapId": "GodotMapV2_FarmTown",
+    "name": "风车农庄",
+    "viewport": {
+      "width": 1440,
+      "height": 1080
+    },
+    "sampledColors": 884,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 20,
+        "y": 29
+      },
+      "moving": false,
+      "facing": "up",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_a",
+        "blocky_character_b",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "farmtown_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 18,
+            "y": 10
+          },
+          "x": 18,
+          "y": 10,
+          "interactionTile": {
+            "x": 18,
+            "y": 10
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 10
+            }
+          ],
+          "area": [
+            "18,10",
+            "18,9",
+            "18,11",
+            "18,8",
+            "18,12",
+            "17,11",
+            "17,12",
+            "16,11",
+            "16,12"
+          ]
+        },
+        {
+          "eventId": "farmtown_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 26,
+            "y": 12
+          },
+          "x": 26,
+          "y": 12,
+          "interactionTile": {
+            "x": 26,
+            "y": 12
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 26,
+              "y": 12
+            }
+          ],
+          "area": [
+            "26,12",
+            "26,11",
+            "26,13",
+            "25,12",
+            "25,11",
+            "26,14",
+            "25,13",
+            "24,12",
+            "24,11",
+            "25,14",
+            "24,13"
+          ]
+        },
+        {
+          "eventId": "farmtown_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 13,
+            "y": 20
+          },
+          "x": 13,
+          "y": 20,
+          "interactionTile": {
+            "x": 13,
+            "y": 20
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 13,
+              "y": 20
+            }
+          ],
+          "area": [
+            "13,20",
+            "13,19",
+            "13,21",
+            "12,20",
+            "14,20",
+            "13,18",
+            "12,19",
+            "14,19",
+            "13,22",
+            "12,21",
+            "14,21",
+            "15,20",
+            "12,18",
+            "14,18",
+            "11,19",
+            "15,19",
+            "12,22",
+            "14,22",
+            "15,21",
+            "11,22",
+            "15,22"
+          ]
+        },
+        {
+          "eventId": "farmtown_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 31,
+            "y": 18
+          },
+          "x": 31,
+          "y": 18,
+          "interactionTile": {
+            "x": 31,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 31,
+              "y": 18
+            }
+          ],
+          "area": [
+            "31,18",
+            "31,19",
+            "30,18",
+            "32,18",
+            "31,20",
+            "30,19",
+            "32,19",
+            "33,18",
+            "30,20",
+            "32,20",
+            "33,19",
+            "33,20"
+          ]
+        },
+        {
+          "eventId": "farmtown_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 8,
+            "y": 14
+          },
+          "x": 8,
+          "y": 14,
+          "interactionTile": {
+            "x": 8,
+            "y": 14
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 8,
+              "y": 14
+            }
+          ],
+          "area": [
+            "8,14",
+            "8,13",
+            "7,14",
+            "9,14",
+            "7,13",
+            "9,13",
+            "6,14",
+            "10,14",
+            "6,13",
+            "10,13",
+            "6,12"
+          ]
+        },
+        {
+          "eventId": "farmtown_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 18,
+            "y": 25
+          },
+          "x": 18,
+          "y": 25,
+          "interactionTile": {
+            "x": 18,
+            "y": 25
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 25
+            }
+          ],
+          "area": [
+            "18,25",
+            "18,24",
+            "18,26",
+            "18,27"
+          ]
+        },
+        {
+          "eventId": "farmtown_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 25,
+            "y": 25
+          },
+          "x": 25,
+          "y": 25,
+          "interactionTile": {
+            "x": 25,
+            "y": 25
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 25,
+              "y": 25
+            }
+          ],
+          "area": [
+            "25,25",
+            "25,24",
+            "25,26",
+            "24,25",
+            "26,25",
+            "25,23",
+            "24,24",
+            "26,24",
+            "25,27",
+            "24,26",
+            "26,26",
+            "27,25",
+            "24,23",
+            "26,23",
+            "27,24",
+            "24,27",
+            "26,27",
+            "27,26",
+            "27,23",
+            "27,27"
+          ]
+        },
+        {
+          "eventId": "farmtown_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 35,
+            "y": 12
+          },
+          "x": 35,
+          "y": 12,
+          "interactionTile": {
+            "x": 35,
+            "y": 12
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 35,
+              "y": 12
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_FarmTown",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 1440,
+      "canvasHeight": 1080,
+      "cssWidth": 1440,
+      "cssHeight": 1080,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 380,
+      "triangles": 540672,
+      "points": 64,
+      "lines": 0,
+      "geometries": 259,
+      "textures": 27,
+      "sceneChildren": 5,
+      "rootChildren": 57,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2",
+    "name": "星音草径",
+    "viewport": {
+      "width": 1440,
+      "height": 1080
+    },
+    "sampledColors": 889,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 20,
+        "y": 29
+      },
+      "moving": false,
+      "facing": "up",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_b",
+        "blocky_character_a",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "npc_meadow_hermit_reward",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 18,
+            "y": 4
+          },
+          "x": 18,
+          "y": 4,
+          "interactionTile": {
+            "x": 18,
+            "y": 4
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 4
+            }
+          ],
+          "area": [
+            "18,4",
+            "18,5",
+            "17,4",
+            "18,6",
+            "17,5",
+            "16,4",
+            "17,6",
+            "16,5",
+            "16,6"
+          ]
+        },
+        {
+          "eventId": "region_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 7,
+            "y": 18
+          },
+          "x": 7,
+          "y": 18,
+          "interactionTile": {
+            "x": 7,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 7,
+              "y": 18
+            }
+          ],
+          "area": [
+            "7,18",
+            "7,19",
+            "6,18",
+            "8,18",
+            "7,20",
+            "6,19",
+            "8,19",
+            "5,18",
+            "9,18",
+            "6,20",
+            "8,20",
+            "5,19",
+            "9,19",
+            "5,20",
+            "9,20"
+          ]
+        },
+        {
+          "eventId": "region_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 26,
+            "y": 8
+          },
+          "x": 26,
+          "y": 8,
+          "interactionTile": {
+            "x": 26,
+            "y": 8
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 26,
+              "y": 8
+            }
+          ],
+          "area": [
+            "26,8",
+            "26,7",
+            "26,9",
+            "25,8",
+            "27,8",
+            "26,6",
+            "25,7",
+            "27,7",
+            "26,10",
+            "25,9",
+            "27,9",
+            "24,8",
+            "28,8",
+            "25,6",
+            "27,6",
+            "24,7",
+            "28,7",
+            "25,10",
+            "27,10",
+            "24,9",
+            "28,9",
+            "24,6",
+            "28,6",
+            "24,10",
+            "28,10"
+          ]
+        },
+        {
+          "eventId": "region_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 18,
+            "y": 27
+          },
+          "x": 18,
+          "y": 27,
+          "interactionTile": {
+            "x": 18,
+            "y": 27
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 27
+            }
+          ],
+          "area": [
+            "18,27",
+            "18,26",
+            "18,28",
+            "17,27",
+            "18,25",
+            "17,26",
+            "18,29",
+            "17,28",
+            "17,25",
+            "17,29",
+            "16,29"
+          ]
+        },
+        {
+          "eventId": "region_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 33,
+            "y": 18
+          },
+          "x": 33,
+          "y": 18,
+          "interactionTile": {
+            "x": 33,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 33,
+              "y": 18
+            }
+          ],
+          "area": [
+            "33,18",
+            "33,19",
+            "32,18",
+            "34,18",
+            "32,19",
+            "34,19",
+            "31,18",
+            "35,18",
+            "31,19",
+            "35,19",
+            "35,20"
+          ]
+        },
+        {
+          "eventId": "region_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 8,
+            "y": 7
+          },
+          "x": 8,
+          "y": 7,
+          "interactionTile": {
+            "x": 8,
+            "y": 7
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 8,
+              "y": 7
+            }
+          ],
+          "area": [
+            "8,7",
+            "8,6",
+            "8,8",
+            "7,7",
+            "9,7",
+            "8,5",
+            "7,6",
+            "9,6",
+            "8,9",
+            "7,8",
+            "9,8",
+            "6,7",
+            "10,7",
+            "7,5",
+            "9,5",
+            "6,6",
+            "10,6",
+            "7,9",
+            "9,9",
+            "6,8",
+            "10,8",
+            "6,5",
+            "10,5",
+            "6,9",
+            "10,9"
+          ]
+        },
+        {
+          "eventId": "region_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 12,
+            "y": 22
+          },
+          "x": 12,
+          "y": 22,
+          "interactionTile": {
+            "x": 12,
+            "y": 22
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 12,
+              "y": 22
+            }
+          ],
+          "area": [
+            "12,22",
+            "12,23",
+            "11,22",
+            "13,22",
+            "12,24",
+            "11,23",
+            "13,23",
+            "10,22",
+            "14,22",
+            "11,24",
+            "13,24",
+            "10,23",
+            "14,23",
+            "10,24",
+            "14,24"
+          ]
+        },
+        {
+          "eventId": "region_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 36,
+            "y": 12
+          },
+          "x": 36,
+          "y": 12,
+          "interactionTile": {
+            "x": 36,
+            "y": 12
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 36,
+              "y": 12
+            }
+          ],
+          "area": [
+            "36,12",
+            "36,13",
+            "35,12",
+            "37,12",
+            "36,14",
+            "35,13",
+            "37,13",
+            "34,12",
+            "38,12",
+            "35,14",
+            "37,14",
+            "34,13",
+            "38,13",
+            "34,14",
+            "38,14"
+          ]
+        },
+        {
+          "eventId": "region_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 17,
+            "y": 10
+          },
+          "x": 17,
+          "y": 10,
+          "interactionTile": {
+            "x": 17,
+            "y": 10
+          },
+          "rotation": -1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 17,
+              "y": 10
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 1440,
+      "canvasHeight": 1080,
+      "cssWidth": 1440,
+      "cssHeight": 1080,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 389,
+      "triangles": 654702,
+      "points": 64,
+      "lines": 0,
+      "geometries": 228,
+      "textures": 19,
+      "sceneChildren": 5,
+      "rootChildren": 59,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  }
+]

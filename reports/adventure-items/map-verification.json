@@ -1,0 +1,21 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "road": true,
+      "ridingDuration": 178,
+      "walkingDuration": 285
+    },
+    {
+      "grassEdge": {
+        "x": 33,
+        "y": 6
+      },
+      "autoDismount": true,
+      "grassButtonDisabled": true,
+      "exitTransitionDisabled": true,
+      "rerideAfterExit": true
+    }
+  ],
+  "ok": true
+}

@@ -1,0 +1,1087 @@
+[
+  {
+    "mapId": "GodotMapV2_HexRuins",
+    "name": "六角遗迹",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "sampledColors": 892,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 3,
+        "y": 16
+      },
+      "moving": false,
+      "facing": "right",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "trainer_merchant",
+        "blocky_character_b",
+        "blocky_character_a",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "npc_hex_relic_buyer",
+          "type": "merchant",
+          "role": "merchant",
+          "home": {
+            "x": 14,
+            "y": 14
+          },
+          "x": 14,
+          "y": 14,
+          "interactionTile": {
+            "x": 14,
+            "y": 14
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 14,
+              "y": 14
+            }
+          ],
+          "area": [
+            "14,14",
+            "14,13",
+            "13,14",
+            "15,14",
+            "14,12",
+            "13,13",
+            "15,13",
+            "12,14",
+            "16,14",
+            "13,12",
+            "12,13"
+          ]
+        },
+        {
+          "eventId": "npc_hex_researcher_reward",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 37,
+            "y": 12
+          },
+          "x": 37,
+          "y": 12,
+          "interactionTile": {
+            "x": 37,
+            "y": 12
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 37,
+              "y": 12
+            }
+          ],
+          "area": [
+            "37,12",
+            "37,13",
+            "36,12",
+            "38,12",
+            "37,14",
+            "36,13",
+            "38,13",
+            "36,14",
+            "35,13",
+            "35,14"
+          ]
+        },
+        {
+          "eventId": "hexruins_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 16,
+            "y": 10
+          },
+          "x": 16,
+          "y": 10,
+          "interactionTile": {
+            "x": 16,
+            "y": 10
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 16,
+              "y": 10
+            }
+          ],
+          "area": [
+            "16,10",
+            "16,9",
+            "16,11",
+            "15,10",
+            "17,10",
+            "16,8",
+            "15,9",
+            "17,9",
+            "16,12",
+            "15,11",
+            "17,11",
+            "18,10",
+            "15,8",
+            "17,8",
+            "18,9",
+            "17,12",
+            "14,11",
+            "18,11",
+            "18,8",
+            "18,12",
+            "14,12"
+          ]
+        },
+        {
+          "eventId": "hexruins_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 10,
+            "y": 18
+          },
+          "x": 10,
+          "y": 18,
+          "interactionTile": {
+            "x": 10,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 10,
+              "y": 18
+            }
+          ],
+          "area": [
+            "10,18",
+            "10,19",
+            "9,18",
+            "10,20",
+            "9,19",
+            "8,18",
+            "9,20",
+            "8,20"
+          ]
+        },
+        {
+          "eventId": "hexruins_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 24,
+            "y": 18
+          },
+          "x": 24,
+          "y": 18,
+          "interactionTile": {
+            "x": 24,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 24,
+              "y": 18
+            }
+          ],
+          "area": [
+            "24,18",
+            "24,19",
+            "23,18",
+            "25,18",
+            "24,20",
+            "23,19",
+            "25,19",
+            "22,18",
+            "23,20",
+            "25,20",
+            "22,19",
+            "26,19",
+            "22,20"
+          ]
+        },
+        {
+          "eventId": "hexruins_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 27,
+            "y": 24
+          },
+          "x": 27,
+          "y": 24,
+          "interactionTile": {
+            "x": 27,
+            "y": 24
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 27,
+              "y": 24
+            }
+          ],
+          "area": [
+            "27,24",
+            "26,24",
+            "28,24",
+            "25,24",
+            "29,24",
+            "29,23"
+          ]
+        },
+        {
+          "eventId": "hexruins_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 9,
+            "y": 10
+          },
+          "x": 9,
+          "y": 10,
+          "interactionTile": {
+            "x": 9,
+            "y": 10
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 9,
+              "y": 10
+            }
+          ],
+          "area": [
+            "9,10",
+            "9,9",
+            "8,10",
+            "10,10",
+            "9,8",
+            "8,9",
+            "10,9",
+            "7,10",
+            "11,10",
+            "8,8",
+            "10,8",
+            "7,9",
+            "11,9",
+            "7,8",
+            "11,8"
+          ]
+        },
+        {
+          "eventId": "hexruins_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 10,
+            "y": 26
+          },
+          "x": 10,
+          "y": 26,
+          "interactionTile": {
+            "x": 10,
+            "y": 26
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 10,
+              "y": 26
+            }
+          ],
+          "area": [
+            "10,26",
+            "10,25",
+            "10,27",
+            "9,26",
+            "11,26",
+            "10,24",
+            "9,25",
+            "11,25",
+            "10,28",
+            "9,27",
+            "11,27",
+            "8,26",
+            "12,26",
+            "9,24",
+            "11,24",
+            "8,25",
+            "12,25",
+            "9,28",
+            "11,28",
+            "8,27",
+            "12,27",
+            "8,24",
+            "12,24",
+            "8,28",
+            "12,28"
+          ]
+        },
+        {
+          "eventId": "hexruins_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 33,
+            "y": 27
+          },
+          "x": 33,
+          "y": 27,
+          "interactionTile": {
+            "x": 33,
+            "y": 27
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 33,
+              "y": 27
+            }
+          ],
+          "area": [
+            "33,27",
+            "33,26",
+            "33,28",
+            "32,27",
+            "34,27",
+            "33,25",
+            "32,26",
+            "34,26",
+            "33,29",
+            "32,28",
+            "34,28",
+            "31,27",
+            "35,27",
+            "32,25",
+            "34,25",
+            "31,26",
+            "35,26",
+            "32,29",
+            "34,29",
+            "31,28",
+            "35,28",
+            "31,25",
+            "35,25",
+            "31,29",
+            "35,29"
+          ]
+        },
+        {
+          "eventId": "hexruins_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 21,
+            "y": 28
+          },
+          "x": 21,
+          "y": 28,
+          "interactionTile": {
+            "x": 21,
+            "y": 28
+          },
+          "rotation": 3.141592653589793,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 21,
+              "y": 28
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_HexRuins",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 1440,
+      "canvasHeight": 900,
+      "cssWidth": 1440,
+      "cssHeight": 900,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 586,
+      "triangles": 651645,
+      "points": 64,
+      "lines": 0,
+      "geometries": 456,
+      "textures": 28,
+      "sceneChildren": 4,
+      "rootChildren": 246,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2_IronDojo",
+    "name": "铁壁道馆",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "sampledColors": 825,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 14,
+        "y": 20
+      },
+      "moving": false,
+      "facing": "up",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "elite_iron_smith",
+        "elite_iron_engineer",
+        "elite_iron_royal_guard",
+        "elite_iron_master"
+      ],
+      "npcs": [
+        {
+          "eventId": "elite_iron_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 5,
+            "y": 18
+          },
+          "x": 5,
+          "y": 18,
+          "interactionTile": {
+            "x": 5,
+            "y": 18
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 5,
+              "y": 18
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_iron_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 22,
+            "y": 14
+          },
+          "x": 22,
+          "y": 14,
+          "interactionTile": {
+            "x": 22,
+            "y": 14
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 22,
+              "y": 14
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_iron_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 7,
+            "y": 10
+          },
+          "x": 7,
+          "y": 10,
+          "interactionTile": {
+            "x": 7,
+            "y": 10
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 7,
+              "y": 10
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_iron_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 17,
+            "y": 4
+          },
+          "x": 17,
+          "y": 4,
+          "interactionTile": {
+            "x": 17,
+            "y": 4
+          },
+          "rotation": 1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 17,
+              "y": 4
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_IronDojo",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 1440,
+      "canvasHeight": 900,
+      "cssWidth": 1440,
+      "cssHeight": 900,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 716,
+      "triangles": 162532,
+      "points": 64,
+      "lines": 0,
+      "geometries": 267,
+      "textures": 7,
+      "sceneChildren": 4,
+      "rootChildren": 108,
+      "visibleChunks": 4,
+      "totalChunks": 4,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2_PirateShore",
+    "name": "贝壳海岸",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "sampledColors": 879,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 3,
+        "y": 16
+      },
+      "moving": false,
+      "facing": "right",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_b",
+        "blocky_character_a",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "npc_shore_pirate_reward",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 29,
+            "y": 9
+          },
+          "x": 29,
+          "y": 9,
+          "interactionTile": {
+            "x": 29,
+            "y": 9
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 29,
+              "y": 9
+            }
+          ],
+          "area": [
+            "29,9",
+            "29,10",
+            "28,9",
+            "30,9",
+            "29,11",
+            "28,10",
+            "30,10",
+            "27,9",
+            "28,11",
+            "30,11",
+            "27,10",
+            "31,10",
+            "27,11",
+            "31,11"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 7,
+            "y": 18
+          },
+          "x": 7,
+          "y": 18,
+          "interactionTile": {
+            "x": 7,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 7,
+              "y": 18
+            }
+          ],
+          "area": [
+            "7,18",
+            "7,19",
+            "8,18",
+            "7,20",
+            "8,19",
+            "9,18",
+            "8,20",
+            "9,19",
+            "9,20"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 18,
+            "y": 10
+          },
+          "x": 18,
+          "y": 10,
+          "interactionTile": {
+            "x": 18,
+            "y": 10
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 10
+            }
+          ],
+          "area": [
+            "18,10",
+            "18,9",
+            "18,11",
+            "17,10",
+            "18,8",
+            "17,9",
+            "17,11",
+            "17,8",
+            "16,11",
+            "16,12"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 24,
+            "y": 18
+          },
+          "x": 24,
+          "y": 18,
+          "interactionTile": {
+            "x": 24,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 24,
+              "y": 18
+            }
+          ],
+          "area": [
+            "24,18",
+            "24,19",
+            "23,18",
+            "25,18",
+            "23,19",
+            "25,19",
+            "22,18",
+            "26,18",
+            "22,19",
+            "22,20"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 26,
+            "y": 24
+          },
+          "x": 26,
+          "y": 24,
+          "interactionTile": {
+            "x": 26,
+            "y": 24
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 26,
+              "y": 24
+            }
+          ],
+          "area": [
+            "26,24",
+            "26,25",
+            "25,24",
+            "27,24",
+            "26,26",
+            "25,25",
+            "27,25",
+            "24,24",
+            "28,24",
+            "25,26",
+            "27,26",
+            "24,25",
+            "28,25",
+            "24,26",
+            "28,26"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 8,
+            "y": 10
+          },
+          "x": 8,
+          "y": 10,
+          "interactionTile": {
+            "x": 8,
+            "y": 10
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 8,
+              "y": 10
+            }
+          ],
+          "area": [
+            "8,10",
+            "8,9",
+            "7,10",
+            "9,10",
+            "8,8",
+            "7,9",
+            "9,9",
+            "6,10",
+            "10,10",
+            "7,8",
+            "9,8",
+            "6,9",
+            "10,9",
+            "6,8",
+            "10,8"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 11,
+            "y": 23
+          },
+          "x": 11,
+          "y": 23,
+          "interactionTile": {
+            "x": 11,
+            "y": 23
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 11,
+              "y": 23
+            }
+          ],
+          "area": [
+            "11,23",
+            "11,24",
+            "10,23",
+            "12,23",
+            "11,25",
+            "10,24",
+            "12,24",
+            "9,23",
+            "13,23",
+            "10,25",
+            "12,25",
+            "9,24",
+            "13,24",
+            "9,25",
+            "13,25"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 33,
+            "y": 20
+          },
+          "x": 33,
+          "y": 20,
+          "interactionTile": {
+            "x": 33,
+            "y": 20
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 33,
+              "y": 20
+            }
+          ],
+          "area": [
+            "33,20",
+            "33,19",
+            "33,21",
+            "34,20",
+            "33,18",
+            "34,19",
+            "34,18",
+            "35,19",
+            "35,18"
+          ]
+        },
+        {
+          "eventId": "pirateshore_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 35,
+            "y": 13
+          },
+          "x": 35,
+          "y": 13,
+          "interactionTile": {
+            "x": 35,
+            "y": 13
+          },
+          "rotation": -1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 35,
+              "y": 13
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_PirateShore",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 1440,
+      "canvasHeight": 900,
+      "cssWidth": 1440,
+      "cssHeight": 900,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 617,
+      "triangles": 475439,
+      "points": 64,
+      "lines": 0,
+      "geometries": 519,
+      "textures": 29,
+      "sceneChildren": 4,
+      "rootChildren": 292,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  }
+]

@@ -1,0 +1,1838 @@
+[
+  {
+    "id": "GodotMap",
+    "warp": "warp_valley_to_region_chain",
+    "start": {
+      "x": 36,
+      "y": 14
+    },
+    "input": "keyboard",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2",
+    "warp": "warp_meadow_back_valley",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMap",
+      "position": {
+        "x": 37,
+        "y": 14,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMap",
+      "tile": {
+        "x": 37,
+        "y": 14
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMap",
+          "position": {
+            "x": 37,
+            "y": 14,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMap",
+          "tile": {
+            "x": 37,
+            "y": 14
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2",
+    "warp": "warp_meadow_to_lake",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_MistLake",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_MistLake",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2",
+    "warp": "warp_meadow_to_farm",
+    "start": {
+      "x": 20,
+      "y": 28
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_FarmTown",
+      "position": {
+        "x": 20,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_FarmTown",
+      "tile": {
+        "x": 20,
+        "y": 2
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_FarmTown",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_FarmTown",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_MistLake",
+    "warp": "warp_lake_to_meadow",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_MistLake",
+    "warp": "warp_lake_to_shore",
+    "start": {
+      "x": 36,
+      "y": 28
+    },
+    "input": "touch",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_PirateShore",
+      "position": {
+        "x": 20,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_PirateShore",
+      "tile": {
+        "x": 20,
+        "y": 2
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_FarmTown",
+    "warp": "warp_farm_to_meadow",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2",
+      "position": {
+        "x": 20,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2",
+      "tile": {
+        "x": 20,
+        "y": 29
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2",
+          "position": {
+            "x": 20,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2",
+          "tile": {
+            "x": 20,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_FarmTown",
+    "warp": "warp_farm_to_shore",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_PirateShore",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_PirateShore",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_FarmTown",
+    "warp": "warp_farm_to_grave",
+    "start": {
+      "x": 20,
+      "y": 28
+    },
+    "input": "keyboard",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_Graveyard",
+      "position": {
+        "x": 20,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_Graveyard",
+      "tile": {
+        "x": 20,
+        "y": 2
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_Graveyard",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_Graveyard",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_PirateShore",
+    "warp": "warp_shore_to_farm",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_FarmTown",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_FarmTown",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_FarmTown",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_FarmTown",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_PirateShore",
+    "warp": "warp_shore_to_lake",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_MistLake",
+      "position": {
+        "x": 36,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_MistLake",
+      "tile": {
+        "x": 36,
+        "y": 29
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      },
+      {
+        "expected": {
+          "mapName": "GodotMapV2_MistLake",
+          "position": {
+            "x": 36,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_MistLake",
+          "tile": {
+            "x": 36,
+            "y": 29
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_PirateShore",
+    "warp": "warp_shore_to_hex",
+    "start": {
+      "x": 31,
+      "y": 28
+    },
+    "input": "touch",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_HexRuins",
+      "position": {
+        "x": 20,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_HexRuins",
+      "tile": {
+        "x": 20,
+        "y": 2
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_HexRuins",
+          "position": {
+            "x": 20,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_HexRuins",
+          "tile": {
+            "x": 20,
+            "y": 2
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_Graveyard",
+    "warp": "warp_grave_to_farm",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_FarmTown",
+      "position": {
+        "x": 20,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_FarmTown",
+      "tile": {
+        "x": 20,
+        "y": 29
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_FarmTown",
+          "position": {
+            "x": 20,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_FarmTown",
+          "tile": {
+            "x": 20,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_Graveyard",
+    "warp": "warp_grave_to_hex",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_HexRuins",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_HexRuins",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_HexRuins",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_HexRuins",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_HexRuins",
+    "warp": "warp_hex_to_grave",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_Graveyard",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_Graveyard",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_Graveyard",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_Graveyard",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_HexRuins",
+    "warp": "warp_hex_to_shore",
+    "start": {
+      "x": 20,
+      "y": 3
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_PirateShore",
+      "position": {
+        "x": 31,
+        "y": 29,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_PirateShore",
+      "tile": {
+        "x": 31,
+        "y": 29
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_PirateShore",
+          "position": {
+            "x": 31,
+            "y": 29,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_PirateShore",
+          "tile": {
+            "x": 31,
+            "y": 29
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_HexRuins",
+    "warp": "warp_hex_to_ridge",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_SurvivalRidge",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_SurvivalRidge",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_SurvivalRidge",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_SurvivalRidge",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_SurvivalRidge",
+    "warp": "warp_ridge_to_hex",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_HexRuins",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_HexRuins",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_HexRuins",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_HexRuins",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_SurvivalRidge",
+    "warp": "warp_ridge_to_peak",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_BossHighland",
+      "position": {
+        "x": 2,
+        "y": 16,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_BossHighland",
+      "tile": {
+        "x": 2,
+        "y": 16
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_BossHighland",
+          "position": {
+            "x": 2,
+            "y": 16,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_BossHighland",
+          "tile": {
+            "x": 2,
+            "y": 16
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_BossHighland",
+    "warp": "warp_peak_to_ridge",
+    "start": {
+      "x": 3,
+      "y": 16
+    },
+    "input": "touch",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_SurvivalRidge",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_SurvivalRidge",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_SurvivalRidge",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_SurvivalRidge",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_BossHighland",
+    "warp": "warp_peak_to_frost_dojo",
+    "start": {
+      "x": 36,
+      "y": 16
+    },
+    "input": "keyboard",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_FrostDojo",
+      "position": {
+        "x": 14,
+        "y": 21,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_FrostDojo",
+      "tile": {
+        "x": 14,
+        "y": 21
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_FrostDojo",
+          "position": {
+            "x": 14,
+            "y": 21,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_FrostDojo",
+          "tile": {
+            "x": 14,
+            "y": 21
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_FrostDojo",
+    "warp": "warp_frost_to_peak",
+    "start": {
+      "x": 14,
+      "y": 20
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_BossHighland",
+      "position": {
+        "x": 37,
+        "y": 16,
+        "direction": "left"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_BossHighland",
+      "tile": {
+        "x": 37,
+        "y": 16
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_BossHighland",
+          "position": {
+            "x": 37,
+            "y": 16,
+            "direction": "left"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_BossHighland",
+          "tile": {
+            "x": 37,
+            "y": 16
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_FrostDojo",
+    "warp": "warp_frost_to_tide",
+    "start": {
+      "x": 14,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_TideDojo",
+      "position": {
+        "x": 14,
+        "y": 21,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_TideDojo",
+      "tile": {
+        "x": 14,
+        "y": 21
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_TideDojo",
+          "position": {
+            "x": 14,
+            "y": 21,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_TideDojo",
+          "tile": {
+            "x": 14,
+            "y": 21
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_TideDojo",
+    "warp": "warp_tide_to_frost",
+    "start": {
+      "x": 14,
+      "y": 20
+    },
+    "input": "touch",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_FrostDojo",
+      "position": {
+        "x": 14,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_FrostDojo",
+      "tile": {
+        "x": 14,
+        "y": 2
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_FrostDojo",
+          "position": {
+            "x": 14,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_FrostDojo",
+          "tile": {
+            "x": 14,
+            "y": 2
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_TideDojo",
+    "warp": "warp_tide_to_iron",
+    "start": {
+      "x": 10,
+      "y": 18
+    },
+    "input": "keyboard",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_IronDojo",
+      "position": {
+        "x": 14,
+        "y": 21,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_IronDojo",
+      "tile": {
+        "x": 14,
+        "y": 21
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_IronDojo",
+          "position": {
+            "x": 14,
+            "y": 21,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_IronDojo",
+          "tile": {
+            "x": 14,
+            "y": 21
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_IronDojo",
+    "warp": "warp_iron_to_tide",
+    "start": {
+      "x": 14,
+      "y": 20
+    },
+    "input": "touch",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_TideDojo",
+      "position": {
+        "x": 9,
+        "y": 18,
+        "direction": "right"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_TideDojo",
+      "tile": {
+        "x": 9,
+        "y": 18
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_TideDojo",
+          "position": {
+            "x": 9,
+            "y": 18,
+            "direction": "right"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_TideDojo",
+          "tile": {
+            "x": 9,
+            "y": 18
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_IronDojo",
+    "warp": "warp_iron_to_dragon",
+    "start": {
+      "x": 14,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_DragonDojo",
+      "position": {
+        "x": 14,
+        "y": 21,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_DragonDojo",
+      "tile": {
+        "x": 14,
+        "y": 21
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_DragonDojo",
+          "position": {
+            "x": 14,
+            "y": 21,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_DragonDojo",
+          "tile": {
+            "x": 14,
+            "y": 21
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_DragonDojo",
+    "warp": "warp_dragon_to_iron",
+    "start": {
+      "x": 14,
+      "y": 20
+    },
+    "input": "touch",
+    "initialYaw": -1.5707963267948966,
+    "expected": {
+      "mapName": "GodotMapV2_IronDojo",
+      "position": {
+        "x": 14,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_IronDojo",
+      "tile": {
+        "x": 14,
+        "y": 2
+      },
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_IronDojo",
+          "position": {
+            "x": 14,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_IronDojo",
+          "tile": {
+            "x": 14,
+            "y": 2
+          },
+          "yaw": -1.5707963267948966,
+          "actualYaw": -1.5707963267948966,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_DragonDojo",
+    "warp": "warp_dragon_to_champion_tower",
+    "start": {
+      "x": 14,
+      "y": 3
+    },
+    "input": "keyboard",
+    "initialYaw": -3.141592653589793,
+    "expected": {
+      "mapName": "GodotMapV2_ChampionTower",
+      "position": {
+        "x": 14,
+        "y": 24,
+        "direction": "up"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_ChampionTower",
+      "tile": {
+        "x": 14,
+        "y": 24
+      },
+      "yaw": -3.141592653589793,
+      "actualYaw": -3.141592653589793,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_ChampionTower",
+          "position": {
+            "x": 14,
+            "y": 24,
+            "direction": "up"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_ChampionTower",
+          "tile": {
+            "x": 14,
+            "y": 24
+          },
+          "yaw": -3.141592653589793,
+          "actualYaw": -3.141592653589793,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  },
+  {
+    "id": "GodotMapV2_ChampionTower",
+    "warp": "warp_champion_tower_to_dragon",
+    "start": {
+      "x": 14,
+      "y": 23
+    },
+    "input": "touch",
+    "initialYaw": -4.71238898038469,
+    "expected": {
+      "mapName": "GodotMapV2_DragonDojo",
+      "position": {
+        "x": 14,
+        "y": 2,
+        "direction": "down"
+      }
+    },
+    "arrival": {
+      "map": "GodotMapV2_DragonDojo",
+      "tile": {
+        "x": 14,
+        "y": 2
+      },
+      "yaw": -4.71238898038469,
+      "actualYaw": -4.71238898038469,
+      "pitch": 21,
+      "distance": 9.6,
+      "fov": 54,
+      "ready": true
+    },
+    "crossings": [
+      {
+        "expected": {
+          "mapName": "GodotMapV2_DragonDojo",
+          "position": {
+            "x": 14,
+            "y": 2,
+            "direction": "down"
+          }
+        },
+        "arrival": {
+          "map": "GodotMapV2_DragonDojo",
+          "tile": {
+            "x": 14,
+            "y": 2
+          },
+          "yaw": -4.71238898038469,
+          "actualYaw": -4.71238898038469,
+          "pitch": 21,
+          "distance": 9.6,
+          "fov": 54,
+          "ready": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true
+  }
+]

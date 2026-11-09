@@ -1,0 +1,924 @@
+[
+  {
+    "time": 3714.1000003814697,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3714.5,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3728,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3744.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3761,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3777.6000003814697,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3794.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3810.9000000953674,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3827.6000003814697,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3844.300000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3860.800000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3877.5,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3894.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3910.800000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3927.5,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3944.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3960.9000000953674,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3977.5,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 3994.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4010.9000000953674,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4027.6000003814697,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4044.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4060.9000000953674,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4077.5,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4094.2000002861023,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4110.900000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4127.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4144.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4161.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4178,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4194.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4211.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4228,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4244.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4261.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4278,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4294.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4311.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4328.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4344.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4361.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4378,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4394.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4411.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4428.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4444.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4461.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4478,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4494.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4511.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4528,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4544.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4561.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4578,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4594.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4611.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4628,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4644.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4661.300000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4678.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4694.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4711.300000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4728.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4744.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4761.300000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4778.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4794.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4811.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4828.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4844.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 4861.60000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.149454
+  },
+  {
+    "time": 4878.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.287704
+  },
+  {
+    "time": 4894.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.415725
+  },
+  {
+    "time": 4911.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.535063
+  },
+  {
+    "time": 4928,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.643765
+  },
+  {
+    "time": 4944.800000190735,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742221
+  },
+  {
+    "time": 4961.400000095367,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.827931
+  },
+  {
+    "time": 4978.10000038147,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900077
+  },
+  {
+    "time": 4994.700000286102,
+    "map": "GodotMapV2_BossHighland",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.955502
+  },
+  {
+    "time": 5061.700000286102,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5096.10000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5111.60000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5149.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5149.60000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5161.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5269.900000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 5278,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 5294.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.987959
+  },
+  {
+    "time": 5311.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.955624
+  },
+  {
+    "time": 5328,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.906589
+  },
+  {
+    "time": 5344.60000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.844177
+  },
+  {
+    "time": 5361.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.769621
+  },
+  {
+    "time": 5378,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.684729
+  },
+  {
+    "time": 5394.800000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.591186
+  },
+  {
+    "time": 5411.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488664
+  },
+  {
+    "time": 5428,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.378248
+  },
+  {
+    "time": 5444.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.260943
+  },
+  {
+    "time": 5461.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.134424
+  },
+  {
+    "time": 5478,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.00013786
+  },
+  {
+    "time": 5495,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 5511.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5528,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5544.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5561.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5578,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5594.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5611.5,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5628,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5644.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5661.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5678.10000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5694.800000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5711.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5728,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5744.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5761.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5778.10000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5794.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5811.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5828,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5844.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5861.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5878,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5894.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5911.400000095367,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5928,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5944.700000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5961.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5978.10000038147,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5994.200000286102,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6011.300000190735,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6028,
+    "map": "GodotMapV2_FrostDojo",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  }
+]

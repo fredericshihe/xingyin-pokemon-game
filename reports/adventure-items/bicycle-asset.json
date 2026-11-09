@@ -1,0 +1,21 @@
+{
+  "bytes": 87620,
+  "materials": 1,
+  "meshes": 9,
+  "triangles": 16888,
+  "nodes": [
+    "bicycleFrame",
+    "body",
+    "frontWheel",
+    "head",
+    "leftShin",
+    "leftShoe",
+    "leftThigh",
+    "rearWheel",
+    "riderArms",
+    "rightShin",
+    "rightShoe",
+    "rightThigh",
+    "player_bicycle"
+  ]
+}

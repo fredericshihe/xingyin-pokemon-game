@@ -12,6 +12,7 @@ output/
 build
 dist
 .tmp-build-check
+qa/
 
 # Environment variables
 .env
@@ -31,6 +32,8 @@ b2,*
 boss,*
 j,*
 *.backup-*
+*.blend1
+__pycache__/
 
 # Logs
 npm-debug.log*

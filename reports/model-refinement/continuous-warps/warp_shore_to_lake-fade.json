@@ -1,0 +1,2330 @@
+[
+  {
+    "time": 4383.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4383.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4386.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4419.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4453.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4486.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4519.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4552.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4586.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4619.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4652.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4686.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4719.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4752.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4786.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4819.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4852.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4886.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4919.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4953,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 4986.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5019.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5053,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5086.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5119.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5152.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5186.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5219.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5253,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5286.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5319.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5352.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5386.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5419.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5452.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5486.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5519.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5553,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5586.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 5619.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 5653.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.287784
+  },
+  {
+    "time": 5686.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.534446
+  },
+  {
+    "time": 5719.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742276
+  },
+  {
+    "time": 5752.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.9005
+  },
+  {
+    "time": 5824.300000190735,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5860.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5929.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5929.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 5952.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": false,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 6104.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 6119.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 6152.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.95551
+  },
+  {
+    "time": 6186.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.843574
+  },
+  {
+    "time": 6220.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.685019
+  },
+  {
+    "time": 6254,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.48837
+  },
+  {
+    "time": 6286.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.259878
+  },
+  {
+    "time": 6319.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 6352.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6386.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6419.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6453.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6486.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6519.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6552.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6586.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6619.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6653,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6686.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6719.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6753,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6786.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6819.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6852.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6886.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6919.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6952.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 6986.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7019.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7053,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7086.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7119.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7153,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7186.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7219.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7253,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7286.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7319.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7352.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7386.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7419.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7452.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7486.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7519.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7552.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7586.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7619.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7652.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7686.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7719.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7752.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7786.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7819.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7853,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7886.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7919.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7953.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 7986.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8019.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8052.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 8086.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.287496
+  },
+  {
+    "time": 8119.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.5342
+  },
+  {
+    "time": 8153.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742631
+  },
+  {
+    "time": 8186.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900362
+  },
+  {
+    "time": 8296.5,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 8430.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 8452.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 8486.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.955609
+  },
+  {
+    "time": 8519.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.84374
+  },
+  {
+    "time": 8552.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.684697
+  },
+  {
+    "time": 8586.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488625
+  },
+  {
+    "time": 8619.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.26017
+  },
+  {
+    "time": 8653,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.0000860459
+  },
+  {
+    "time": 8686.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 8719.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8752.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8786.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8819.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8852.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8886.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8919.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8952.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 8986.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9019.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9052.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9086.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9119.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9152.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9186.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9219.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9253.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9286.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9319.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9352.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9386.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9419.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9453,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9486.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9520.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9552.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9586.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9619.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9652.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9686.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9719.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9752.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9786.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9819.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9852.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9886.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9919.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9952.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 9986.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10020.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10052.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10086.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10119.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10152.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10186.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10219.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10252.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10286.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10319.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10352.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 10386.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 10419.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.287177
+  },
+  {
+    "time": 10453,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.534611
+  },
+  {
+    "time": 10486.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742409
+  },
+  {
+    "time": 10519.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900208
+  },
+  {
+    "time": 10622,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 10769.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 10786.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 10819.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.955708
+  },
+  {
+    "time": 10852.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.843492
+  },
+  {
+    "time": 10886.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.684375
+  },
+  {
+    "time": 10919.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488881
+  },
+  {
+    "time": 10952.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.260462
+  },
+  {
+    "time": 10986.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 11019.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11053,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11086.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11119.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11152.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11186.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11219.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11253,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11286.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11319.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11352.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11386.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11419.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11452.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11486.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11519.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11552.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11586.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11619.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11652.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11686.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11719.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11752.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11786.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11819.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11852.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11886.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11919.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11952.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 11986.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12019.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12052.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12086.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12119.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12153,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12186.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12219.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12253.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12286.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12319.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12352.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12386.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12419.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12452.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12486.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12519.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12552.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12586.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12619.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12652.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12686.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 12719.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 12752.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.287656
+  },
+  {
+    "time": 12786.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.535022
+  },
+  {
+    "time": 12819.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742187
+  },
+  {
+    "time": 12852.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900439
+  },
+  {
+    "time": 12949.800000190735,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 13083.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 13087.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 13119.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.95548
+  },
+  {
+    "time": 13152.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.843938
+  },
+  {
+    "time": 13186.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.684955
+  },
+  {
+    "time": 13219.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488932
+  },
+  {
+    "time": 13253.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.26052
+  },
+  {
+    "time": 13286.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.000498492
+  },
+  {
+    "time": 13319.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 13352.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13386.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13420.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13453.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13486.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13519.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13552.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13586.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13620.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13653.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13686.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13719.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13752.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13786.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13819.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13852.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13886.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13919.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13952.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 13986.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14019.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14052.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14086.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14119.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14153,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14186.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14219.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14252.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14286.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14319.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14352.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14386.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14419.400000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14452.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14486.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14519.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14552.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14586.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14619.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14652.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14686.099999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14719.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14752.699999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14786.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14819.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14852.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14886.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14919.599999904633,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14953,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 14986.300000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15019.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0
+  },
+  {
+    "time": 15053.5,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.286793
+  },
+  {
+    "time": 15086.199999809265,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.534967
+  },
+  {
+    "time": 15119.800000190735,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.742143
+  },
+  {
+    "time": 15152.900000095367,
+    "map": "GodotMapV2_PirateShore",
+    "ready": true,
+    "phase": "departing",
+    "opacity": 0.900023
+  },
+  {
+    "time": 15253.599999904633,
+    "phase": "loading",
+    "opacity": 1
+  },
+  {
+    "time": 15403.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 15436.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 1
+  },
+  {
+    "time": 15469.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.955495
+  },
+  {
+    "time": 15502.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.843963
+  },
+  {
+    "time": 15536.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.68445
+  },
+  {
+    "time": 15569.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.488332
+  },
+  {
+    "time": 15602.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0.260564
+  },
+  {
+    "time": 15636.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": "arriving",
+    "opacity": 0
+  },
+  {
+    "time": 15669.5,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15703.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15736.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15769.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15802.900000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15836.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15869.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15903,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15936.199999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 15969.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16002.800000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16036.300000190735,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16069.599999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16103,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16136.099999904633,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16169.400000095367,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  },
+  {
+    "time": 16202.699999809265,
+    "map": "GodotMapV2_MistLake",
+    "ready": true,
+    "phase": null,
+    "opacity": 0
+  }
+]

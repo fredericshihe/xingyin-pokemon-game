@@ -1,0 +1,669 @@
+[
+  {
+    "mapId": "GodotMapV2_Graveyard",
+    "name": "月影墓园",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "sampledColors": 671,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 20,
+        "y": 3
+      },
+      "moving": false,
+      "facing": "down",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_b",
+        "blocky_character_a",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "npc_grave_keeper_reward",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 31,
+            "y": 25
+          },
+          "x": 31,
+          "y": 25,
+          "interactionTile": {
+            "x": 31,
+            "y": 25
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 31,
+              "y": 25
+            }
+          ],
+          "area": [
+            "31,25",
+            "31,24",
+            "31,26",
+            "30,25",
+            "32,25",
+            "30,24",
+            "32,24",
+            "31,27",
+            "30,26",
+            "32,26",
+            "29,25",
+            "33,25",
+            "29,24",
+            "33,24",
+            "30,27",
+            "32,27",
+            "29,26",
+            "33,26",
+            "29,27",
+            "33,27"
+          ]
+        },
+        {
+          "eventId": "graveyard_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 15,
+            "y": 10
+          },
+          "x": 15,
+          "y": 10,
+          "interactionTile": {
+            "x": 15,
+            "y": 10
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 15,
+              "y": 10
+            }
+          ],
+          "area": [
+            "15,10",
+            "15,11",
+            "14,10",
+            "16,10",
+            "15,12",
+            "14,11",
+            "16,11",
+            "17,10",
+            "14,12",
+            "16,12",
+            "17,11",
+            "17,12"
+          ]
+        },
+        {
+          "eventId": "graveyard_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 6,
+            "y": 18
+          },
+          "x": 6,
+          "y": 18,
+          "interactionTile": {
+            "x": 6,
+            "y": 18
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 6,
+              "y": 18
+            }
+          ],
+          "area": [
+            "6,18",
+            "6,17",
+            "6,19",
+            "5,18",
+            "6,16",
+            "5,17",
+            "6,20",
+            "5,19",
+            "5,16",
+            "5,20"
+          ]
+        },
+        {
+          "eventId": "graveyard_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 24,
+            "y": 18
+          },
+          "x": 24,
+          "y": 18,
+          "interactionTile": {
+            "x": 24,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 24,
+              "y": 18
+            }
+          ],
+          "area": [
+            "24,18",
+            "24,19",
+            "23,18",
+            "25,18",
+            "24,20",
+            "23,19",
+            "25,19",
+            "22,18",
+            "26,18",
+            "23,20",
+            "25,20",
+            "22,19",
+            "26,19",
+            "26,20"
+          ]
+        },
+        {
+          "eventId": "graveyard_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 34,
+            "y": 18
+          },
+          "x": 34,
+          "y": 18,
+          "interactionTile": {
+            "x": 34,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 34,
+              "y": 18
+            }
+          ],
+          "area": [
+            "34,18",
+            "34,19",
+            "33,18",
+            "35,18",
+            "34,20",
+            "33,19",
+            "35,19",
+            "32,18",
+            "36,18",
+            "33,20",
+            "35,20",
+            "32,19",
+            "36,19",
+            "32,20",
+            "36,20"
+          ]
+        },
+        {
+          "eventId": "graveyard_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 8,
+            "y": 7
+          },
+          "x": 8,
+          "y": 7,
+          "interactionTile": {
+            "x": 8,
+            "y": 7
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 8,
+              "y": 7
+            }
+          ],
+          "area": [
+            "8,7",
+            "8,6",
+            "8,8",
+            "7,7",
+            "9,7",
+            "8,5",
+            "7,6",
+            "9,6",
+            "8,9",
+            "7,8",
+            "9,8",
+            "6,7",
+            "10,7",
+            "7,5",
+            "9,5",
+            "6,6",
+            "10,6",
+            "7,9",
+            "9,9",
+            "6,8",
+            "10,8",
+            "6,5",
+            "10,5",
+            "6,9",
+            "10,9"
+          ]
+        },
+        {
+          "eventId": "graveyard_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 6,
+            "y": 25
+          },
+          "x": 6,
+          "y": 25,
+          "interactionTile": {
+            "x": 6,
+            "y": 25
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 6,
+              "y": 25
+            }
+          ],
+          "area": [
+            "6,25",
+            "6,24",
+            "5,25",
+            "5,24"
+          ]
+        },
+        {
+          "eventId": "graveyard_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 25,
+            "y": 26
+          },
+          "x": 25,
+          "y": 26,
+          "interactionTile": {
+            "x": 25,
+            "y": 26
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 25,
+              "y": 26
+            }
+          ],
+          "area": [
+            "25,26",
+            "25,25",
+            "25,27",
+            "24,26",
+            "26,26",
+            "25,24",
+            "24,25",
+            "26,25",
+            "25,28",
+            "24,27",
+            "26,27",
+            "27,26",
+            "24,24",
+            "26,24",
+            "27,25",
+            "24,28",
+            "26,28",
+            "27,27",
+            "27,24",
+            "27,28"
+          ]
+        },
+        {
+          "eventId": "graveyard_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 30,
+            "y": 12
+          },
+          "x": 30,
+          "y": 12,
+          "interactionTile": {
+            "x": 30,
+            "y": 12
+          },
+          "rotation": -1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 30,
+              "y": 12
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_Graveyard",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 390,
+      "canvasHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 844,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 121,
+      "triangles": 186661,
+      "points": 64,
+      "lines": 0,
+      "geometries": 97,
+      "textures": 25,
+      "sceneChildren": 5,
+      "rootChildren": 367,
+      "visibleChunks": 2,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2_DragonDojo",
+    "name": "龙穹道馆",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "sampledColors": 943,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 14,
+        "y": 20
+      },
+      "moving": false,
+      "facing": "up",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "elite_dragon_examiner",
+        "elite_dragon_hunter",
+        "elite_dragon_gatekeeper",
+        "elite_dragon_master"
+      ],
+      "npcs": [
+        {
+          "eventId": "elite_dragon_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 14,
+            "y": 19
+          },
+          "x": 14,
+          "y": 19,
+          "interactionTile": {
+            "x": 14,
+            "y": 19
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 14,
+              "y": 19
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_dragon_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 14,
+            "y": 15
+          },
+          "x": 14,
+          "y": 15,
+          "interactionTile": {
+            "x": 14,
+            "y": 15
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 14,
+              "y": 15
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_dragon_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 14,
+            "y": 11
+          },
+          "x": 14,
+          "y": 11,
+          "interactionTile": {
+            "x": 14,
+            "y": 11
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 14,
+              "y": 11
+            }
+          ],
+          "area": []
+        },
+        {
+          "eventId": "elite_dragon_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 14,
+            "y": 5
+          },
+          "x": 14,
+          "y": 5,
+          "interactionTile": {
+            "x": 14,
+            "y": 5
+          },
+          "rotation": 0,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 14,
+              "y": 5
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_DragonDojo",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 390,
+      "canvasHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 844,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 669,
+      "triangles": 167716,
+      "points": 64,
+      "lines": 0,
+      "geometries": 303,
+      "textures": 7,
+      "sceneChildren": 5,
+      "rootChildren": 133,
+      "visibleChunks": 4,
+      "totalChunks": 4,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2_ChampionTower",
+    "name": "冠军挑战塔",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "sampledColors": 914,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 14,
+        "y": 23
+      },
+      "moving": false,
+      "facing": "up",
+      "cameraYaw": 0,
+      "cameraYawTarget": 0,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer"
+      ],
+      "npcs": [],
+      "mapName": "GodotMapV2_ChampionTower",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 390,
+      "canvasHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 844,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 321,
+      "triangles": 117732,
+      "points": 64,
+      "lines": 0,
+      "geometries": 136,
+      "textures": 11,
+      "sceneChildren": 5,
+      "rootChildren": 98,
+      "visibleChunks": 4,
+      "totalChunks": 4,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  }
+]

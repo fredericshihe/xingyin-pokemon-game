@@ -1,0 +1,332 @@
+[
+  {
+    "riding": false,
+    "method": "keyboard",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": false
+    },
+    "rotated": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -0.4829686992799174,
+      "riding": false
+    },
+    "continued": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5686594656784272,
+      "riding": false
+    },
+    "stopped": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "nextPress": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "ok": true
+  },
+  {
+    "riding": false,
+    "method": "touch-button",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": false
+    },
+    "rotated": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -0.8166111093868409,
+      "riding": false
+    },
+    "continued": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5663457309529936,
+      "riding": false
+    },
+    "stopped": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "nextPress": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "ok": true
+  },
+  {
+    "riding": false,
+    "method": "touch-drag",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": false
+    },
+    "rotated": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.7339704709221453,
+      "riding": false
+    },
+    "continued": {
+      "tile": {
+        "x": 12,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "stopped": {
+      "tile": {
+        "x": 12,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "nextPress": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": false
+    },
+    "ok": true
+  },
+  {
+    "riding": true,
+    "method": "keyboard",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": true
+    },
+    "rotated": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -0.481771430512549,
+      "riding": true
+    },
+    "continued": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5515111263723442,
+      "riding": true
+    },
+    "stopped": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5686571138379237,
+      "riding": true
+    },
+    "nextPress": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": true
+    },
+    "ok": true
+  },
+  {
+    "riding": true,
+    "method": "touch-button",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": true
+    },
+    "rotated": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -0.8166111093868409,
+      "riding": true
+    },
+    "continued": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5306296392411967,
+      "riding": true
+    },
+    "stopped": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5663506239167961,
+      "riding": true
+    },
+    "nextPress": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": true
+    },
+    "ok": true
+  },
+  {
+    "riding": true,
+    "method": "touch-drag",
+    "before": {
+      "tile": {
+        "x": 9,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": 0,
+      "actualYaw": 0,
+      "riding": true
+    },
+    "rotated": {
+      "tile": {
+        "x": 10,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.7339704709221444,
+      "riding": true
+    },
+    "continued": {
+      "tile": {
+        "x": 12,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5833312424067458,
+      "riding": true
+    },
+    "stopped": {
+      "tile": {
+        "x": 12,
+        "y": 16
+      },
+      "moving": false,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5721852350344947,
+      "riding": true
+    },
+    "nextPress": {
+      "tile": {
+        "x": 11,
+        "y": 16
+      },
+      "moving": true,
+      "yaw": -1.5707963267948966,
+      "actualYaw": -1.5707963267948966,
+      "riding": true
+    },
+    "ok": true
+  }
+]

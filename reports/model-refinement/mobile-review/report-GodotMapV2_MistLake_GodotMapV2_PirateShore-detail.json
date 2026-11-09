@@ -1,0 +1,817 @@
+[
+  {
+    "mapId": "GodotMapV2_MistLake",
+    "name": "雾湖苇岸",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "sampledColors": 773,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 3,
+        "y": 16
+      },
+      "moving": false,
+      "facing": "right",
+      "cameraYaw": -1.5707963267948966,
+      "cameraYawTarget": -1.5707963267948966,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_a",
+        "blocky_character_b",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "mistlake_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 6,
+            "y": 18
+          },
+          "x": 6,
+          "y": 18,
+          "interactionTile": {
+            "x": 6,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 6,
+              "y": 18
+            }
+          ],
+          "area": [
+            "6,18",
+            "6,19",
+            "7,18",
+            "6,20",
+            "7,19",
+            "8,18"
+          ]
+        },
+        {
+          "eventId": "mistlake_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 22,
+            "y": 5
+          },
+          "x": 22,
+          "y": 5,
+          "interactionTile": {
+            "x": 22,
+            "y": 5
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 22,
+              "y": 5
+            }
+          ],
+          "area": [
+            "22,5",
+            "22,6",
+            "21,5",
+            "23,5",
+            "22,7",
+            "21,6",
+            "23,6",
+            "21,4",
+            "20,5",
+            "23,4",
+            "24,5",
+            "23,7",
+            "20,6",
+            "24,6",
+            "20,4",
+            "24,4"
+          ]
+        },
+        {
+          "eventId": "mistlake_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 24,
+            "y": 26
+          },
+          "x": 24,
+          "y": 26,
+          "interactionTile": {
+            "x": 24,
+            "y": 26
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 24,
+              "y": 26
+            }
+          ],
+          "area": [
+            "24,26",
+            "24,27",
+            "23,26",
+            "25,26",
+            "24,28",
+            "23,27",
+            "25,27",
+            "22,26",
+            "26,26",
+            "23,28",
+            "25,28",
+            "22,27",
+            "26,27",
+            "26,28"
+          ]
+        },
+        {
+          "eventId": "mistlake_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 38,
+            "y": 16
+          },
+          "x": 38,
+          "y": 16,
+          "interactionTile": {
+            "x": 38,
+            "y": 16
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 38,
+              "y": 16
+            }
+          ],
+          "area": [
+            "38,16",
+            "38,15",
+            "38,17",
+            "38,14",
+            "37,15",
+            "38,18",
+            "37,14",
+            "36,14"
+          ]
+        },
+        {
+          "eventId": "mistlake_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 9,
+            "y": 7
+          },
+          "x": 9,
+          "y": 7,
+          "interactionTile": {
+            "x": 9,
+            "y": 7
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 9,
+              "y": 7
+            }
+          ],
+          "area": [
+            "9,7",
+            "9,6",
+            "9,8",
+            "8,7",
+            "10,7",
+            "9,5",
+            "8,6",
+            "10,6",
+            "9,9",
+            "8,8",
+            "10,8",
+            "7,7",
+            "11,7",
+            "8,5",
+            "10,5",
+            "7,6",
+            "11,6",
+            "8,9",
+            "10,9",
+            "7,8",
+            "11,8",
+            "7,5",
+            "11,5",
+            "7,9",
+            "11,9"
+          ]
+        },
+        {
+          "eventId": "mistlake_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 11,
+            "y": 22
+          },
+          "x": 11,
+          "y": 22,
+          "interactionTile": {
+            "x": 11,
+            "y": 22
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 11,
+              "y": 22
+            }
+          ],
+          "area": [
+            "11,22",
+            "11,23",
+            "10,22",
+            "12,22",
+            "11,24",
+            "10,23",
+            "12,23",
+            "9,22",
+            "13,22",
+            "10,24",
+            "12,24",
+            "9,23",
+            "13,23",
+            "9,24",
+            "13,24"
+          ]
+        },
+        {
+          "eventId": "mistlake_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 33,
+            "y": 26
+          },
+          "x": 33,
+          "y": 26,
+          "interactionTile": {
+            "x": 33,
+            "y": 26
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 33,
+              "y": 26
+            }
+          ],
+          "area": [
+            "33,26",
+            "33,27",
+            "32,26",
+            "34,26",
+            "33,28",
+            "32,27",
+            "34,27",
+            "31,26",
+            "32,28",
+            "34,28",
+            "31,27",
+            "31,28"
+          ]
+        },
+        {
+          "eventId": "mistlake_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 12,
+            "y": 14
+          },
+          "x": 12,
+          "y": 14,
+          "interactionTile": {
+            "x": 12,
+            "y": 14
+          },
+          "rotation": 1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 12,
+              "y": 14
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_MistLake",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 390,
+      "canvasHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 844,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 327,
+      "triangles": 589892,
+      "points": 64,
+      "lines": 0,
+      "geometries": 203,
+      "textures": 20,
+      "sceneChildren": 5,
+      "rootChildren": 59,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  },
+  {
+    "mapId": "GodotMapV2_PirateShore",
+    "name": "贝壳海岸",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "sampledColors": 691,
+    "probe": {
+      "worldReady": true,
+      "playerModel": "xingyin-player",
+      "playerTile": {
+        "x": 3,
+        "y": 16
+      },
+      "moving": false,
+      "facing": "right",
+      "cameraYaw": -1.5707963267948966,
+      "cameraYawTarget": -1.5707963267948966,
+      "riding": false,
+      "movementDuration": 285,
+      "characterModelKeys": [
+        "player_child_adventurer",
+        "blocky_character_b",
+        "blocky_character_a",
+        "blocky_character_c",
+        "blocky_character_d",
+        "trainer_lieutenant",
+        "trainer_boss"
+      ],
+      "npcs": [
+        {
+          "eventId": "npc_shore_pirate_reward",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 29,
+            "y": 9
+          },
+          "x": 29,
+          "y": 9,
+          "interactionTile": {
+            "x": 29,
+            "y": 9
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 29,
+              "y": 9
+            }
+          ],
+          "area": [
+            "29,9",
+            "29,10",
+            "28,9",
+            "30,9",
+            "29,11",
+            "28,10",
+            "30,10",
+            "27,9",
+            "28,11",
+            "30,11",
+            "27,10",
+            "31,10",
+            "27,11",
+            "31,11"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_1",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 7,
+            "y": 18
+          },
+          "x": 7,
+          "y": 18,
+          "interactionTile": {
+            "x": 7,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 7,
+              "y": 18
+            }
+          ],
+          "area": [
+            "7,18",
+            "7,19",
+            "8,18",
+            "7,20",
+            "8,19",
+            "9,18",
+            "8,20",
+            "9,19",
+            "9,20"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_2",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 18,
+            "y": 10
+          },
+          "x": 18,
+          "y": 10,
+          "interactionTile": {
+            "x": 18,
+            "y": 10
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 18,
+              "y": 10
+            }
+          ],
+          "area": [
+            "18,10",
+            "18,9",
+            "18,11",
+            "17,10",
+            "18,8",
+            "17,9",
+            "17,11",
+            "17,8",
+            "16,11",
+            "16,12"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_3",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 24,
+            "y": 18
+          },
+          "x": 24,
+          "y": 18,
+          "interactionTile": {
+            "x": 24,
+            "y": 18
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 24,
+              "y": 18
+            }
+          ],
+          "area": [
+            "24,18",
+            "24,19",
+            "23,18",
+            "25,18",
+            "23,19",
+            "25,19",
+            "22,18",
+            "26,18",
+            "22,19",
+            "22,20"
+          ]
+        },
+        {
+          "eventId": "pirateshore_trainer_4",
+          "type": "trainer",
+          "role": "normal",
+          "home": {
+            "x": 26,
+            "y": 24
+          },
+          "x": 26,
+          "y": 24,
+          "interactionTile": {
+            "x": 26,
+            "y": 24
+          },
+          "rotation": 1.5707963267948966,
+          "direction": "right",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 26,
+              "y": 24
+            }
+          ],
+          "area": [
+            "26,24",
+            "26,25",
+            "25,24",
+            "27,24",
+            "26,26",
+            "25,25",
+            "27,25",
+            "24,24",
+            "28,24",
+            "25,26",
+            "27,26",
+            "24,25",
+            "28,25",
+            "24,26",
+            "28,26"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_1",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 8,
+            "y": 10
+          },
+          "x": 8,
+          "y": 10,
+          "interactionTile": {
+            "x": 8,
+            "y": 10
+          },
+          "rotation": 3.141592653589793,
+          "direction": "up",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 8,
+              "y": 10
+            }
+          ],
+          "area": [
+            "8,10",
+            "8,9",
+            "7,10",
+            "9,10",
+            "8,8",
+            "7,9",
+            "9,9",
+            "6,10",
+            "10,10",
+            "7,8",
+            "9,8",
+            "6,9",
+            "10,9",
+            "6,8",
+            "10,8"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_2",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 11,
+            "y": 23
+          },
+          "x": 11,
+          "y": 23,
+          "interactionTile": {
+            "x": 11,
+            "y": 23
+          },
+          "rotation": 0,
+          "direction": "down",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 11,
+              "y": 23
+            }
+          ],
+          "area": [
+            "11,23",
+            "11,24",
+            "10,23",
+            "12,23",
+            "11,25",
+            "10,24",
+            "12,24",
+            "9,23",
+            "13,23",
+            "10,25",
+            "12,25",
+            "9,24",
+            "13,24",
+            "9,25",
+            "13,25"
+          ]
+        },
+        {
+          "eventId": "pirateshore_lieutenant_3",
+          "type": "trainer",
+          "role": "lieutenant",
+          "home": {
+            "x": 33,
+            "y": 20
+          },
+          "x": 33,
+          "y": 20,
+          "interactionTile": {
+            "x": 33,
+            "y": 20
+          },
+          "rotation": -1.5707963267948966,
+          "direction": "left",
+          "wanderEnabled": true,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": true,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 33,
+              "y": 20
+            }
+          ],
+          "area": [
+            "33,20",
+            "33,19",
+            "33,21",
+            "34,20",
+            "33,18",
+            "34,19",
+            "34,18",
+            "35,19",
+            "35,18"
+          ]
+        },
+        {
+          "eventId": "pirateshore_boss",
+          "type": "boss",
+          "role": "boss",
+          "home": {
+            "x": 35,
+            "y": 13
+          },
+          "x": 35,
+          "y": 13,
+          "interactionTile": {
+            "x": 35,
+            "y": 13
+          },
+          "rotation": -1.5707963267948966,
+          "direction": null,
+          "wanderEnabled": false,
+          "moving": false,
+          "walkStride": 0,
+          "limbAnimation": false,
+          "paused": true,
+          "occupiedTiles": [
+            {
+              "x": 35,
+              "y": 13
+            }
+          ],
+          "area": []
+        }
+      ],
+      "mapName": "GodotMapV2_PirateShore",
+      "mapVisualQuality": "high",
+      "isMobile": true,
+      "renderMode": "idle",
+      "idleFrameMs": 42,
+      "canvasWidth": 390,
+      "canvasHeight": 844,
+      "cssWidth": 390,
+      "cssHeight": 844,
+      "devicePixelRatio": 1,
+      "pixelRatio": 1,
+      "drawCalls": 514,
+      "triangles": 465815,
+      "points": 64,
+      "lines": 0,
+      "geometries": 416,
+      "textures": 29,
+      "sceneChildren": 5,
+      "rootChildren": 293,
+      "visibleChunks": 6,
+      "totalChunks": 6,
+      "avgFps": "N/A"
+    },
+    "errors": []
+  }
+]

@@ -1,0 +1,3586 @@
+[
+  {
+    "scenario": "starter-coverage/all-80/damage/p2/cap2",
+    "sample": 37,
+    "seed": 4202751341,
+    "variant": 0,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 80
+      },
+      {
+        "id": 76,
+        "level": 80
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 80
+      },
+      {
+        "id": 35,
+        "level": 80
+      },
+      {
+        "id": 153,
+        "level": 80
+      }
+    ],
+    "leadId": 72,
+    "outcome": "win",
+    "turns": 13,
+    "potionsUsed": 1,
+    "playerSwitches": 3,
+    "playerForcedSwitches": 1,
+    "enemySwitches": 0,
+    "enemyForcedSwitches": 5,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 0,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 214,
+        "mp": 69,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 135,
+        "mp": 58,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 100,
+        "mp": 60,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 14,
+        "mp": 79,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 64,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 222,
+        "mp": 97,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 34,
+        "hp": 0,
+        "mp": 68,
+        "status": null
+      },
+      {
+        "id": 58,
+        "hp": 0,
+        "mp": 48,
+        "status": null
+      },
+      {
+        "id": 46,
+        "hp": 0,
+        "mp": 81,
+        "status": null
+      },
+      {
+        "id": 139,
+        "hp": 0,
+        "mp": 91,
+        "status": null
+      },
+      {
+        "id": 29,
+        "hp": 0,
+        "mp": 79,
+        "status": null
+      },
+      {
+        "id": 55,
+        "hp": 0,
+        "mp": 44,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 72,
+        "playerHp": 218,
+        "playerMp": 94,
+        "enemy": 34,
+        "enemyHp": 234,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 花瓣舞！",
+          "敌方 怪力 受到了伤害！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "妙蛙花 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 72,
+        "playerHp": 100,
+        "playerMp": 77,
+        "enemy": 34,
+        "enemyHp": 71,
+        "enemyMp": 68,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 花瓣舞！",
+          "敌方 怪力 受到了伤害！",
+          "怪力 倒下了！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 3,
+        "player": 72,
+        "playerHp": 100,
+        "playerMp": 60,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 92,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 35,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "上吧，隆隆岩！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "普通属性不太占优。"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 4,
+        "player": 35,
+        "playerHp": 185,
+        "playerMp": 81,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 70,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "敌方 电击兽 速度更快，率先行动！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "命中了要害！ 普通属性不太占优。",
+          "隆隆岩 使用了 地震！",
+          "地面属性击中了弱点！",
+          "电击兽 倒下了！",
+          "对手派出了 椰蛋树！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 5,
+        "player": 35,
+        "playerHp": 140,
+        "playerMp": 64,
+        "enemy": 46,
+        "enemyHp": 242,
+        "enemyMp": 102,
+        "playerAction": "move",
+        "move": "explosion",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leaf_storm",
+        "logs": [
+          "敌方 椰蛋树 速度更快，率先行动！",
+          "敌方 椰蛋树 使用了 飞叶风暴！",
+          "草属性正中弱点，效果非常好！",
+          "隆隆岩 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，喷火龙！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 6,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 97,
+        "enemy": 46,
+        "enemyHp": 242,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "heat_wave",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 热风！",
+          "火属性击中了弱点！",
+          "椰蛋树 倒下了！",
+          "对手派出了 大钢蛇！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 7,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 83,
+        "enemy": 139,
+        "enemyHp": 210,
+        "enemyMp": 91,
+        "playerAction": "move",
+        "move": "heat_wave",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "rock_slide",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 热风！",
+          "火属性击中了弱点！",
+          "大钢蛇 倒下了！",
+          "对手派出了 九尾！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 8,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 69,
+        "enemy": 29,
+        "enemyHp": 206,
+        "enemyMp": 89,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 76,
+        "enemyAction": "move",
+        "enemyMove": "tail_whip",
+        "logs": [
+          "上吧，水箭龟！",
+          "敌方 九尾 使用了 摇尾巴！",
+          "水箭龟 的防御降低了！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 9,
+        "player": 76,
+        "playerHp": 216,
+        "playerMp": 92,
+        "enemy": 29,
+        "enemyHp": 206,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "tail_whip",
+        "logs": [
+          "敌方 九尾 速度更快，率先行动！",
+          "敌方 九尾 使用了 摇尾巴！",
+          "水箭龟 的防御降低了！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "九尾 倒下了！",
+          "对手派出了 宝石海星！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 10,
+        "player": 76,
+        "playerHp": 216,
+        "playerMp": 75,
+        "enemy": 55,
+        "enemyHp": 186,
+        "enemyMp": 94,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 波动冲！",
+          "命中了要害！ 水属性不太占优。"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 11,
+        "player": 76,
+        "playerHp": 135,
+        "playerMp": 58,
+        "enemy": 55,
+        "enemyHp": 95,
+        "enemyMp": 81,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 28,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "上吧，雷丘！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "雷丘 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 12,
+        "player": 28,
+        "playerHp": 87,
+        "playerMp": 92,
+        "enemy": 55,
+        "enemyHp": 95,
+        "enemyMp": 68,
+        "playerAction": "potion",
+        "move": null,
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "power_gem",
+        "logs": [
+          "雷丘 使用了 超级伤药！",
+          "敌方 宝石海星 使用了 力量宝石！",
+          "雷丘 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 13,
+        "player": 28,
+        "playerHp": 120,
+        "playerMp": 92,
+        "enemy": 55,
+        "enemyHp": 95,
+        "enemyMp": 57,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "雷丘 受到了伤害！",
+          "雷丘 使用了 十万伏特！",
+          "命中了要害！ 电属性击中了弱点！",
+          "宝石海星 倒下了！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 0
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/all-80/type/p0/cap2",
+    "sample": 1,
+    "seed": 626551985,
+    "variant": 0,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 80
+      },
+      {
+        "id": 76,
+        "level": 80
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 80
+      },
+      {
+        "id": 35,
+        "level": 80
+      },
+      {
+        "id": 153,
+        "level": 80
+      }
+    ],
+    "leadId": 74,
+    "outcome": "loss",
+    "turns": 21,
+    "potionsUsed": 0,
+    "playerSwitches": 2,
+    "playerForcedSwitches": 5,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 5,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 0,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 49,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 0,
+        "mp": 58,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 0,
+        "mp": 43,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 92,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 64,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 0,
+        "mp": 57,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 34,
+        "hp": 0,
+        "mp": 68,
+        "status": null
+      },
+      {
+        "id": 58,
+        "hp": 0,
+        "mp": 13,
+        "status": null
+      },
+      {
+        "id": 46,
+        "hp": 0,
+        "mp": 59,
+        "status": null
+      },
+      {
+        "id": 139,
+        "hp": 0,
+        "mp": 76,
+        "status": null
+      },
+      {
+        "id": 29,
+        "hp": 0,
+        "mp": 84,
+        "status": null
+      },
+      {
+        "id": 55,
+        "hp": 135,
+        "mp": 48,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 97,
+        "enemy": 34,
+        "enemyHp": 234,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "喷火龙 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 74,
+        "playerHp": 42,
+        "playerMp": 81,
+        "enemy": 34,
+        "enemyHp": 66,
+        "enemyMp": 68,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "怪力 倒下了！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 3,
+        "player": 74,
+        "playerHp": 21,
+        "playerMp": 65,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 92,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 35,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "上吧，隆隆岩！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "普通属性不太占优。"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 4,
+        "player": 35,
+        "playerHp": 189,
+        "playerMp": 81,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 70,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 46,
+        "logs": [
+          "对手察觉到危险，准备换上 椰蛋树 承受攻势。",
+          "对手收回了 电击兽！",
+          "对手派出了 椰蛋树！",
+          "隆隆岩 使用了 地震！",
+          "地面属性不太占优。"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 5,
+        "player": 35,
+        "playerHp": 189,
+        "playerMp": 64,
+        "enemy": 46,
+        "enemyHp": 172,
+        "enemyMp": 102,
+        "playerAction": "move",
+        "move": "explosion",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leaf_storm",
+        "logs": [
+          "敌方 椰蛋树 速度更快，率先行动！",
+          "敌方 椰蛋树 使用了 飞叶风暴！",
+          "草属性正中弱点，效果非常好！",
+          "隆隆岩 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，大比鸟！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 6,
+        "player": 153,
+        "playerHp": 222,
+        "playerMp": 97,
+        "enemy": 46,
+        "enemyHp": 172,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "大比鸟 的 暴风 没有命中！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "大比鸟 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 7,
+        "player": 153,
+        "playerHp": 85,
+        "playerMp": 77,
+        "enemy": 46,
+        "enemyHp": 172,
+        "enemyMp": 70,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "大比鸟 的 暴风 没有命中！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "大比鸟 受到了伤害！",
+          "大比鸟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，喷火龙！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 8,
+        "player": 74,
+        "playerHp": 21,
+        "playerMp": 65,
+        "enemy": 46,
+        "enemyHp": 172,
+        "enemyMp": 59,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "火属性击中了弱点！",
+          "喷火龙 受到了反作用力伤害！",
+          "喷火龙 倒下了！",
+          "椰蛋树 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，雷丘！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 9,
+        "player": 28,
+        "playerHp": 186,
+        "playerMp": 92,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 70,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunderbolt",
+        "logs": [
+          "雷丘 的 电光一闪 优先级更高，率先行动！",
+          "雷丘 使用了 电光一闪！",
+          "敌方 电击兽 受到了伤害！",
+          "敌方 电击兽 使用了 十万伏特！",
+          "电属性不太占优。"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 10,
+        "player": 28,
+        "playerHp": 137,
+        "playerMp": 92,
+        "enemy": 58,
+        "enemyHp": 156,
+        "enemyMp": 57,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "雷丘 的 电光一闪 优先级更高，率先行动！",
+          "雷丘 使用了 电光一闪！",
+          "敌方 电击兽 受到了伤害！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "对手稳住了。"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 11,
+        "player": 28,
+        "playerHp": 17,
+        "playerMp": 92,
+        "enemy": 58,
+        "enemyHp": 118,
+        "enemyMp": 35,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "quickattack",
+        "logs": [
+          "雷丘 速度更快，率先行动！",
+          "雷丘 使用了 电光一闪！",
+          "敌方 电击兽 受到了伤害！",
+          "敌方 电击兽 使用了 电光一闪！",
+          "雷丘 受到了伤害！",
+          "雷丘 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 12,
+        "player": 72,
+        "playerHp": 218,
+        "playerMp": 94,
+        "enemy": 58,
+        "enemyHp": 81,
+        "enemyMp": 35,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "敌方 电击兽 速度更快，率先行动！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "妙蛙花 受到了伤害！",
+          "妙蛙花 使用了 花瓣舞！",
+          "对手稳住了。",
+          "电击兽 倒下了！",
+          "对手派出了 大钢蛇！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 13,
+        "player": 72,
+        "playerHp": 127,
+        "playerMp": 77,
+        "enemy": 139,
+        "enemyHp": 210,
+        "enemyMp": 91,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "iron_tail",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 花瓣舞！",
+          "对手稳住了。",
+          "敌方 大钢蛇 使用了 铁尾！",
+          "妙蛙花 受到了伤害！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 14,
+        "player": 72,
+        "playerHp": 24,
+        "playerMp": 60,
+        "enemy": 139,
+        "enemyHp": 74,
+        "enemyMp": 76,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 29,
+        "logs": [
+          "对手察觉到危险，准备换上 九尾 承受攻势。",
+          "对手收回了 大钢蛇！",
+          "对手派出了 九尾！",
+          "妙蛙花 使用了 花瓣舞！",
+          "草属性不太占优。"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 15,
+        "player": 72,
+        "playerHp": 24,
+        "playerMp": 43,
+        "enemy": 29,
+        "enemyHp": 146,
+        "enemyMp": 89,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 76,
+        "enemyAction": "move",
+        "enemyMove": "tail_whip",
+        "logs": [
+          "上吧，水箭龟！",
+          "敌方 九尾 使用了 摇尾巴！",
+          "水箭龟 的防御降低了！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 16,
+        "player": 76,
+        "playerHp": 216,
+        "playerMp": 92,
+        "enemy": 29,
+        "enemyHp": 146,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "quickattack",
+        "logs": [
+          "敌方 九尾 的 电光一闪 优先级更高，率先行动！",
+          "敌方 九尾 使用了 电光一闪！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "九尾 倒下了！",
+          "对手派出了 大钢蛇！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 17,
+        "player": 76,
+        "playerHp": 185,
+        "playerMp": 75,
+        "enemy": 139,
+        "enemyHp": 74,
+        "enemyMp": 76,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "rock_slide",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "大钢蛇 倒下了！",
+          "对手派出了 宝石海星！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 18,
+        "player": 76,
+        "playerHp": 185,
+        "playerMp": 58,
+        "enemy": 55,
+        "enemyHp": 186,
+        "enemyMp": 94,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 19,
+        "player": 76,
+        "playerHp": 96,
+        "playerMp": 58,
+        "enemy": 55,
+        "enemyHp": 161,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 20,
+        "player": 76,
+        "playerHp": 17,
+        "playerMp": 58,
+        "enemy": 55,
+        "enemyHp": 135,
+        "enemyMp": 68,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psybeam",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 幻象光线！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 1,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 21,
+        "player": 72,
+        "playerHp": 24,
+        "playerMp": 43,
+        "enemy": 55,
+        "enemyHp": 135,
+        "enemyMp": 58,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psybeam",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 幻象光线！",
+          "超能属性击中了弱点！",
+          "妙蛙花 倒下了！"
+        ],
+        "playerRemaining": 0,
+        "enemyRemaining": 1
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/all-80/type/p2/cap2",
+    "sample": 1,
+    "seed": 626551985,
+    "variant": 0,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 80
+      },
+      {
+        "id": 76,
+        "level": 80
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 80
+      },
+      {
+        "id": 35,
+        "level": 80
+      },
+      {
+        "id": 153,
+        "level": 80
+      }
+    ],
+    "leadId": 74,
+    "outcome": "win",
+    "turns": 18,
+    "potionsUsed": 2,
+    "playerSwitches": 3,
+    "playerForcedSwitches": 3,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 5,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 0,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 81,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 118,
+        "mp": 24,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 109,
+        "mp": 60,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 92,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 187,
+        "mp": 64,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 0,
+        "mp": 77,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 34,
+        "hp": 0,
+        "mp": 36,
+        "status": null
+      },
+      {
+        "id": 58,
+        "hp": 0,
+        "mp": 41,
+        "status": null
+      },
+      {
+        "id": 46,
+        "hp": 0,
+        "mp": 91,
+        "status": null
+      },
+      {
+        "id": 139,
+        "hp": 0,
+        "mp": 71,
+        "status": null
+      },
+      {
+        "id": 29,
+        "hp": 0,
+        "mp": 89,
+        "status": null
+      },
+      {
+        "id": 55,
+        "hp": 0,
+        "mp": 55,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 97,
+        "enemy": 34,
+        "enemyHp": 234,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "喷火龙 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 74,
+        "playerHp": 42,
+        "playerMp": 81,
+        "enemy": 34,
+        "enemyHp": 66,
+        "enemyMp": 68,
+        "playerAction": "potion",
+        "move": null,
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 使用了 超级伤药！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "喷火龙 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 3,
+        "player": 74,
+        "playerHp": 94,
+        "playerMp": 97,
+        "enemy": 34,
+        "enemyHp": 27,
+        "enemyMp": 52,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 55,
+        "logs": [
+          "对手察觉到危险，准备换上 宝石海星 承受攻势。",
+          "对手收回了 怪力！",
+          "对手派出了 宝石海星！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "火属性不太占优。",
+          "喷火龙 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 4,
+        "player": 74,
+        "playerHp": 75,
+        "playerMp": 81,
+        "enemy": 55,
+        "enemyHp": 126,
+        "enemyMp": 94,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 28,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "上吧，雷丘！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "雷丘 受到了伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 5,
+        "player": 28,
+        "playerHp": 79,
+        "playerMp": 92,
+        "enemy": 55,
+        "enemyHp": 126,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "thunder",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "雷丘 受到了伤害！",
+          "雷丘 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 6,
+        "player": 72,
+        "playerHp": 218,
+        "playerMp": 94,
+        "enemy": 55,
+        "enemyHp": 126,
+        "enemyMp": 68,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "超能属性击中了弱点！",
+          "妙蛙花 使用了 花瓣舞！",
+          "草属性击中了弱点！",
+          "宝石海星 倒下了！",
+          "对手派出了 怪力！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 7,
+        "player": 72,
+        "playerHp": 48,
+        "playerMp": 77,
+        "enemy": 34,
+        "enemyHp": 27,
+        "enemyMp": 52,
+        "playerAction": "potion",
+        "move": null,
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "妙蛙花 使用了 超级伤药！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "妙蛙花 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！",
+          "怪力 倒下了！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 8,
+        "player": 72,
+        "playerHp": 109,
+        "playerMp": 94,
+        "enemy": 58,
+        "enemyHp": 194,
+        "enemyMp": 92,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunder",
+        "logs": [
+          "敌方 电击兽 速度更快，率先行动！",
+          "敌方 电击兽 使用了 打雷！",
+          "敌方 电击兽 的 打雷 没有命中！",
+          "妙蛙花 使用了 花瓣舞！",
+          "敌方 电击兽 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 9,
+        "player": 72,
+        "playerHp": 109,
+        "playerMp": 77,
+        "enemy": 58,
+        "enemyHp": 69,
+        "enemyMp": 76,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 46,
+        "logs": [
+          "对手察觉到危险，准备换上 椰蛋树 承受攻势。",
+          "对手收回了 电击兽！",
+          "对手派出了 椰蛋树！",
+          "妙蛙花 使用了 花瓣舞！",
+          "草属性不太占优。"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 10,
+        "player": 72,
+        "playerHp": 109,
+        "playerMp": 60,
+        "enemy": 46,
+        "enemyHp": 171,
+        "enemyMp": 102,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 153,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "上吧，大比鸟！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "大比鸟 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 11,
+        "player": 153,
+        "playerHp": 79,
+        "playerMp": 97,
+        "enemy": 46,
+        "enemyHp": 171,
+        "enemyMp": 91,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "命中了要害！ 飞行属性击中了弱点！",
+          "椰蛋树 倒下了！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 12,
+        "player": 153,
+        "playerHp": 79,
+        "playerMp": 77,
+        "enemy": 58,
+        "enemyHp": 69,
+        "enemyMp": 76,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunderbolt",
+        "logs": [
+          "大比鸟 的 电光一闪 优先级更高，率先行动！",
+          "大比鸟 使用了 电光一闪！",
+          "敌方 电击兽 受到了伤害！",
+          "敌方 电击兽 使用了 十万伏特！",
+          "电属性击中了弱点！",
+          "大比鸟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，隆隆岩！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 13,
+        "player": 35,
+        "playerHp": 218,
+        "playerMp": 81,
+        "enemy": 58,
+        "enemyHp": 12,
+        "enemyMp": 63,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "敌方 电击兽 速度更快，率先行动！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "普通属性不太占优。",
+          "隆隆岩 使用了 地震！",
+          "地面属性击中了弱点！",
+          "电击兽 倒下了！",
+          "对手派出了 大钢蛇！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 14,
+        "player": 35,
+        "playerHp": 187,
+        "playerMp": 64,
+        "enemy": 139,
+        "enemyHp": 210,
+        "enemyMp": 91,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 74,
+        "enemyAction": "move",
+        "enemyMove": "rock_slide",
+        "logs": [
+          "上吧，喷火龙！",
+          "敌方 大钢蛇 使用了 岩崩！",
+          "岩石属性正中弱点，效果非常好！",
+          "喷火龙 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，水箭龟！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 15,
+        "player": 76,
+        "playerHp": 216,
+        "playerMp": 92,
+        "enemy": 139,
+        "enemyHp": 210,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "tackle",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "敌方 大钢蛇 使用了 撞击！",
+          "水箭龟 受到了伤害！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 16,
+        "player": 76,
+        "playerHp": 192,
+        "playerMp": 75,
+        "enemy": 139,
+        "enemyHp": 105,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "bulldoze",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "敌方 大钢蛇 使用了 重踏！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 的速度降低了！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 17,
+        "player": 76,
+        "playerHp": 138,
+        "playerMp": 58,
+        "enemy": 139,
+        "enemyHp": 12,
+        "enemyMp": 71,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "bulldoze",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "大钢蛇 倒下了！",
+          "对手派出了 九尾！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 18,
+        "player": 76,
+        "playerHp": 138,
+        "playerMp": 41,
+        "enemy": 29,
+        "enemyHp": 206,
+        "enemyMp": 89,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "quickattack",
+        "logs": [
+          "敌方 九尾 的 电光一闪 优先级更高，率先行动！",
+          "敌方 九尾 使用了 电光一闪！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "九尾 倒下了！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 0
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/all-80/damage/p0/cap2",
+    "sample": 3,
+    "seed": 825229727,
+    "variant": 2,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 80
+      },
+      {
+        "id": 76,
+        "level": 80
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 80
+      },
+      {
+        "id": 35,
+        "level": 80
+      },
+      {
+        "id": 153,
+        "level": 80
+      }
+    ],
+    "leadId": 74,
+    "outcome": "win",
+    "turns": 16,
+    "potionsUsed": 0,
+    "playerSwitches": 2,
+    "playerForcedSwitches": 4,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 5,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 1,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 27,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 49,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 0,
+        "mp": 41,
+        "status": "poison"
+      },
+      {
+        "id": 72,
+        "hp": 82,
+        "mp": 77,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 53,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 59,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 72,
+        "mp": 77,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 23,
+        "hp": 0,
+        "mp": 39,
+        "status": null
+      },
+      {
+        "id": 17,
+        "hp": 0,
+        "mp": 78,
+        "status": null
+      },
+      {
+        "id": 33,
+        "hp": 0,
+        "mp": 72,
+        "status": null
+      },
+      {
+        "id": 7,
+        "hp": 0,
+        "mp": 62,
+        "status": null
+      },
+      {
+        "id": 6,
+        "hp": 0,
+        "mp": 83,
+        "status": null
+      },
+      {
+        "id": 10,
+        "hp": 0,
+        "mp": 72,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 74,
+        "playerHp": 214,
+        "playerMp": 97,
+        "enemy": 23,
+        "enemyHp": 202,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 33,
+        "logs": [
+          "对手察觉到危险，准备换上 蚊香泳士 承受攻势。",
+          "对手收回了 飞天螳螂！",
+          "对手派出了 蚊香泳士！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "火属性不太占优。",
+          "喷火龙 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 74,
+        "playerHp": 199,
+        "playerMp": 81,
+        "enemy": 33,
+        "enemyHp": 187,
+        "enemyMp": 84,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 72,
+        "enemyAction": "move",
+        "enemyMove": "bodyslam",
+        "logs": [
+          "上吧，妙蛙花！",
+          "敌方 蚊香泳士 使用了 泰山压顶！",
+          "妙蛙花 受到了伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 3,
+        "player": 72,
+        "playerHp": 160,
+        "playerMp": 94,
+        "enemy": 33,
+        "enemyHp": 187,
+        "enemyMp": 72,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "bodyslam",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 花瓣舞！",
+          "草属性击中了弱点！",
+          "蚊香泳士 倒下了！",
+          "对手派出了 飞天螳螂！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 4,
+        "player": 72,
+        "playerHp": 160,
+        "playerMp": 77,
+        "enemy": 23,
+        "enemyHp": 202,
+        "enemyMp": 81,
+        "playerAction": "move",
+        "move": "take_down",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "air_slash",
+        "logs": [
+          "敌方 飞天螳螂 速度更快，率先行动！",
+          "敌方 飞天螳螂 使用了 空气斩！",
+          "飞行属性击中了弱点！",
+          "妙蛙花 畏缩了，本回合难以行动！",
+          "妙蛙花 畏缩了，无法行动！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 5,
+        "player": 72,
+        "playerHp": 82,
+        "playerMp": 77,
+        "enemy": 23,
+        "enemyHp": 202,
+        "enemyMp": 70,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 74,
+        "enemyAction": "move",
+        "enemyMove": "slash",
+        "logs": [
+          "上吧，喷火龙！",
+          "敌方 飞天螳螂 使用了 劈开！",
+          "喷火龙 受到了伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 6,
+        "player": 74,
+        "playerHp": 134,
+        "playerMp": 81,
+        "enemy": 23,
+        "enemyHp": 202,
+        "enemyMp": 61,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 10,
+        "logs": [
+          "对手察觉到危险，准备换上 卡比兽 承受攻势。",
+          "对手收回了 飞天螳螂！",
+          "对手派出了 卡比兽！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 卡比兽 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 7,
+        "player": 74,
+        "playerHp": 86,
+        "playerMp": 65,
+        "enemy": 10,
+        "enemyHp": 200,
+        "enemyMp": 84,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "bodyslam",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 卡比兽 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 卡比兽 使用了 泰山压顶！",
+          "喷火龙 受到了伤害！",
+          "喷火龙 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，隆隆岩！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 8,
+        "player": 35,
+        "playerHp": 218,
+        "playerMp": 81,
+        "enemy": 10,
+        "enemyHp": 57,
+        "enemyMp": 72,
+        "playerAction": "move",
+        "move": "explosion",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "隆隆岩 速度更快，率先行动！",
+          "隆隆岩 使用了 大爆炸！",
+          "对手稳住了。",
+          "隆隆岩 用尽了全部体力！",
+          "隆隆岩 倒下了！",
+          "卡比兽 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，水箭龟！",
+          "对手派出了 飞天螳螂！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 9,
+        "player": 76,
+        "playerHp": 216,
+        "playerMp": 92,
+        "enemy": 23,
+        "enemyHp": 202,
+        "enemyMp": 61,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "air_slash",
+        "logs": [
+          "敌方 飞天螳螂 速度更快，率先行动！",
+          "敌方 飞天螳螂 使用了 空气斩！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 波动冲！",
+          "敌方 飞天螳螂 受到了伤害！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 10,
+        "player": 76,
+        "playerHp": 175,
+        "playerMp": 75,
+        "enemy": 23,
+        "enemyHp": 80,
+        "enemyMp": 50,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "air_slash",
+        "logs": [
+          "敌方 飞天螳螂 速度更快，率先行动！",
+          "敌方 飞天螳螂 使用了 空气斩！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 波动冲！",
+          "敌方 飞天螳螂 受到了伤害！",
+          "飞天螳螂 倒下了！",
+          "对手派出了 尼多王！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 11,
+        "player": 76,
+        "playerHp": 136,
+        "playerMp": 58,
+        "enemy": 17,
+        "enemyHp": 219,
+        "enemyMp": 89,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "poison_jab",
+        "logs": [
+          "敌方 尼多王 速度更快，率先行动！",
+          "敌方 尼多王 使用了 毒击！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 中毒了，会持续损失体力！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "水箭龟 因中毒损失了体力！",
+          "尼多王 倒下了！",
+          "对手派出了 风速狗！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 12,
+        "player": 76,
+        "playerHp": 28,
+        "playerMp": 41,
+        "enemy": 7,
+        "enemyHp": 234,
+        "enemyMp": 94,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flare_blitz",
+        "logs": [
+          "敌方 风速狗 速度更快，率先行动！",
+          "敌方 风速狗 使用了 闪焰冲锋！",
+          "火属性不太占优。",
+          "敌方 风速狗 受到了反作用力伤害！",
+          "水箭龟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，雷丘！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 13,
+        "player": 28,
+        "playerHp": 186,
+        "playerMp": 92,
+        "enemy": 7,
+        "enemyHp": 225,
+        "enemyMp": 78,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flare_blitz",
+        "logs": [
+          "雷丘 速度更快，率先行动！",
+          "雷丘 使用了 十万伏特！",
+          "命中了要害！",
+          "敌方 风速狗 使用了 闪焰冲锋！",
+          "对手稳住了。",
+          "敌方 风速狗 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 14,
+        "player": 28,
+        "playerHp": 66,
+        "playerMp": 79,
+        "enemy": 7,
+        "enemyHp": 29,
+        "enemyMp": 62,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "fire_fang",
+        "logs": [
+          "雷丘 速度更快，率先行动！",
+          "雷丘 使用了 十万伏特！",
+          "敌方 风速狗 受到了伤害！",
+          "风速狗 倒下了！",
+          "对手派出了 耿鬼！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 15,
+        "player": 28,
+        "playerHp": 66,
+        "playerMp": 66,
+        "enemy": 6,
+        "enemyHp": 186,
+        "enemyMp": 105,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "shadowball",
+        "logs": [
+          "双方速度相同，雷丘 抢先行动！",
+          "雷丘 使用了 十万伏特！",
+          "敌方 耿鬼 受到了伤害！",
+          "敌方 耿鬼 使用了 暗影球！",
+          "雷丘 受到了伤害！",
+          "雷丘 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，大比鸟！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 16,
+        "player": 153,
+        "playerHp": 222,
+        "playerMp": 97,
+        "enemy": 6,
+        "enemyHp": 91,
+        "enemyMp": 94,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "dark_pulse",
+        "logs": [
+          "敌方 耿鬼 速度更快，率先行动！",
+          "敌方 耿鬼 使用了 恶之波动！",
+          "命中了要害！",
+          "大比鸟 使用了 暴风！",
+          "命中了要害！",
+          "耿鬼 倒下了！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 0
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/mixed/type/p0/cap2",
+    "sample": 1,
+    "seed": 3893041902,
+    "variant": 0,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 100
+      },
+      {
+        "id": 76,
+        "level": 85
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 70
+      },
+      {
+        "id": 35,
+        "level": 65
+      },
+      {
+        "id": 153,
+        "level": 60
+      }
+    ],
+    "leadId": 74,
+    "outcome": "loss",
+    "turns": 12,
+    "potionsUsed": 0,
+    "playerSwitches": 2,
+    "playerForcedSwitches": 5,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 3,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 0,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 63,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 0,
+        "mp": 83,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 0,
+        "mp": 58,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 70,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 55,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 0,
+        "mp": 83,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 34,
+        "hp": 0,
+        "mp": 80,
+        "status": null
+      },
+      {
+        "id": 58,
+        "hp": 0,
+        "mp": 95,
+        "status": null
+      },
+      {
+        "id": 46,
+        "hp": 0,
+        "mp": 17,
+        "status": null
+      },
+      {
+        "id": 139,
+        "hp": 185,
+        "mp": 84,
+        "status": null
+      },
+      {
+        "id": 29,
+        "hp": 0,
+        "mp": 61,
+        "status": null
+      },
+      {
+        "id": 55,
+        "hp": 142,
+        "mp": 80,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 74,
+        "playerHp": 266,
+        "playerMp": 111,
+        "enemy": 34,
+        "enemyHp": 290,
+        "enemyMp": 96,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "喷火龙 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 74,
+        "playerHp": 71,
+        "playerMp": 95,
+        "enemy": 34,
+        "enemyHp": 91,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 58,
+        "logs": [
+          "对手察觉到危险，准备换上 电击兽 承受攻势。",
+          "对手收回了 怪力！",
+          "对手派出了 电击兽！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 电击兽 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "电击兽 倒下了！",
+          "对手派出了 怪力！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 3,
+        "player": 74,
+        "playerHp": 4,
+        "playerMp": 79,
+        "enemy": 34,
+        "enemyHp": 91,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "喷火龙 倒下了！",
+          "怪力 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！",
+          "对手派出了 椰蛋树！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 4,
+        "player": 72,
+        "playerHp": 218,
+        "playerMp": 94,
+        "enemy": 46,
+        "enemyHp": 242,
+        "enemyMp": 102,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 153,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "上吧，大比鸟！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "大比鸟 受到了伤害！",
+          "大比鸟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，雷丘！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 5,
+        "player": 28,
+        "playerHp": 164,
+        "playerMp": 85,
+        "enemy": 46,
+        "enemyHp": 242,
+        "enemyMp": 91,
+        "playerAction": "move",
+        "move": "iron_tail",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leaf_storm",
+        "logs": [
+          "雷丘 速度更快，率先行动！",
+          "雷丘 使用了 铁尾！",
+          "敌方 椰蛋树 受到了伤害！",
+          "敌方 椰蛋树 使用了 飞叶风暴！",
+          "雷丘 受到了伤害！",
+          "雷丘 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，水箭龟！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 6,
+        "player": 76,
+        "playerHp": 229,
+        "playerMp": 95,
+        "enemy": 46,
+        "enemyHp": 188,
+        "enemyMp": 70,
+        "playerAction": "move",
+        "move": "flash_cannon",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leaf_storm",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 加农光炮！",
+          "敌方 椰蛋树 受到了伤害！",
+          "敌方 椰蛋树 使用了 飞叶风暴！",
+          "草属性击中了弱点！",
+          "水箭龟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 7,
+        "player": 72,
+        "playerHp": 218,
+        "playerMp": 94,
+        "enemy": 46,
+        "enemyHp": 121,
+        "enemyMp": 49,
+        "playerAction": "move",
+        "move": "take_down",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 猛撞！",
+          "敌方 椰蛋树 受到了伤害！",
+          "妙蛙花 受到了反作用力伤害！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "超能属性击中了弱点！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 8,
+        "player": 72,
+        "playerHp": 6,
+        "playerMp": 82,
+        "enemy": 46,
+        "enemyHp": 65,
+        "enemyMp": 38,
+        "playerAction": "move",
+        "move": "take_down",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 29,
+        "logs": [
+          "对手察觉到危险，准备换上 九尾 承受攻势。",
+          "对手收回了 椰蛋树！",
+          "对手派出了 九尾！",
+          "妙蛙花 使用了 猛撞！",
+          "妙蛙花 的 猛撞 没有命中！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 9,
+        "player": 72,
+        "playerHp": 6,
+        "playerMp": 70,
+        "enemy": 29,
+        "enemyHp": 169,
+        "enemyMp": 79,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 35,
+        "enemyAction": "move",
+        "enemyMove": "tail_whip",
+        "logs": [
+          "上吧，隆隆岩！",
+          "敌方 九尾 使用了 摇尾巴！",
+          "隆隆岩 的防御降低了！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 10,
+        "player": 35,
+        "playerHp": 179,
+        "playerMp": 72,
+        "enemy": 29,
+        "enemyHp": 169,
+        "enemyMp": 74,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flamethrower",
+        "logs": [
+          "敌方 九尾 速度更快，率先行动！",
+          "敌方 九尾 使用了 喷射火焰！",
+          "火属性不太占优。",
+          "隆隆岩 使用了 地震！",
+          "地面属性击中了弱点！",
+          "九尾 倒下了！",
+          "对手派出了 椰蛋树！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 11,
+        "player": 35,
+        "playerHp": 134,
+        "playerMp": 55,
+        "enemy": 46,
+        "enemyHp": 65,
+        "enemyMp": 38,
+        "playerAction": "move",
+        "move": "explosion",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leaf_storm",
+        "logs": [
+          "敌方 椰蛋树 速度更快，率先行动！",
+          "敌方 椰蛋树 使用了 飞叶风暴！",
+          "草属性正中弱点，效果非常好！",
+          "隆隆岩 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 1,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 12,
+        "player": 72,
+        "playerHp": 6,
+        "playerMp": 70,
+        "enemy": 46,
+        "enemyHp": 65,
+        "enemyMp": 17,
+        "playerAction": "move",
+        "move": "take_down",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "妙蛙花 速度更快，率先行动！",
+          "妙蛙花 使用了 猛撞！",
+          "命中了要害！",
+          "妙蛙花 受到了反作用力伤害！",
+          "妙蛙花 倒下了！",
+          "椰蛋树 倒下了！"
+        ],
+        "playerRemaining": 0,
+        "enemyRemaining": 2
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/mixed/type/p2/cap2",
+    "sample": 1,
+    "seed": 3893041902,
+    "variant": 0,
+    "levelRotation": 0,
+    "team": [
+      {
+        "id": 74,
+        "level": 100
+      },
+      {
+        "id": 76,
+        "level": 85
+      },
+      {
+        "id": 72,
+        "level": 80
+      },
+      {
+        "id": 28,
+        "level": 70
+      },
+      {
+        "id": 35,
+        "level": 65
+      },
+      {
+        "id": 153,
+        "level": 60
+      }
+    ],
+    "leadId": 74,
+    "outcome": "win",
+    "turns": 16,
+    "potionsUsed": 2,
+    "playerSwitches": 2,
+    "playerForcedSwitches": 1,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 5,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 0,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 95,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 91,
+        "mp": 61,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 218,
+        "mp": 94,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 164,
+        "mp": 85,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 135,
+        "mp": 38,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 169,
+        "mp": 83,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 34,
+        "hp": 0,
+        "mp": 80,
+        "status": null
+      },
+      {
+        "id": 58,
+        "hp": 0,
+        "mp": 51,
+        "status": null
+      },
+      {
+        "id": 46,
+        "hp": 0,
+        "mp": 91,
+        "status": null
+      },
+      {
+        "id": 139,
+        "hp": 0,
+        "mp": 62,
+        "status": null
+      },
+      {
+        "id": 29,
+        "hp": 0,
+        "mp": 79,
+        "status": null
+      },
+      {
+        "id": 55,
+        "hp": 0,
+        "mp": 44,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 74,
+        "playerHp": 266,
+        "playerMp": 111,
+        "enemy": 34,
+        "enemyHp": 290,
+        "enemyMp": 96,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 怪力 使用了 舍身冲撞！",
+          "喷火龙 受到了伤害！",
+          "敌方 怪力 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 74,
+        "playerHp": 71,
+        "playerMp": 95,
+        "enemy": 34,
+        "enemyHp": 91,
+        "enemyMp": 80,
+        "playerAction": "potion",
+        "move": null,
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 58,
+        "logs": [
+          "喷火龙 使用了 超级伤药！",
+          "对手察觉到危险，准备换上 电击兽 承受攻势。",
+          "对手收回了 怪力！",
+          "对手派出了 电击兽！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 3,
+        "player": 74,
+        "playerHp": 266,
+        "playerMp": 111,
+        "enemy": 58,
+        "enemyHp": 205,
+        "enemyMp": 95,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 35,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "上吧，隆隆岩！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "敌方 电击兽 的 终极冲击 没有命中！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 4,
+        "player": 35,
+        "playerHp": 179,
+        "playerMp": 72,
+        "enemy": 58,
+        "enemyHp": 205,
+        "enemyMp": 73,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "giga_impact",
+        "logs": [
+          "敌方 电击兽 速度更快，率先行动！",
+          "敌方 电击兽 使用了 终极冲击！",
+          "普通属性不太占优。",
+          "隆隆岩 使用了 地震！",
+          "地面属性击中了弱点！",
+          "电击兽 倒下了！",
+          "对手派出了 怪力！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 5,
+        "player": 35,
+        "playerHp": 135,
+        "playerMp": 55,
+        "enemy": 34,
+        "enemyHp": 91,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "earthquake",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 46,
+        "logs": [
+          "对手察觉到危险，准备换上 椰蛋树 承受攻势。",
+          "对手收回了 怪力！",
+          "对手派出了 椰蛋树！",
+          "隆隆岩 使用了 地震！",
+          "地面属性不太占优。"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 6,
+        "player": 35,
+        "playerHp": 135,
+        "playerMp": 38,
+        "enemy": 46,
+        "enemyHp": 195,
+        "enemyMp": 102,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 74,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "上吧，喷火龙！",
+          "敌方 椰蛋树 使用了 神通力！",
+          "喷火龙 受到了伤害！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 7,
+        "player": 74,
+        "playerHp": 179,
+        "playerMp": 111,
+        "enemy": 46,
+        "enemyHp": 195,
+        "enemyMp": 91,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "extrasensory",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "火属性击中了弱点！",
+          "喷火龙 受到了反作用力伤害！",
+          "椰蛋树 倒下了！",
+          "对手派出了 怪力！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 8,
+        "player": 74,
+        "playerHp": 115,
+        "playerMp": 95,
+        "enemy": 34,
+        "enemyHp": 91,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "double_edge",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "敌方 怪力 受到了伤害！",
+          "喷火龙 受到了反作用力伤害！",
+          "怪力 倒下了！",
+          "对手派出了 大钢蛇！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 9,
+        "player": 74,
+        "playerHp": 85,
+        "playerMp": 79,
+        "enemy": 139,
+        "enemyHp": 185,
+        "enemyMp": 84,
+        "playerAction": "potion",
+        "move": null,
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "rock_slide",
+        "logs": [
+          "喷火龙 使用了 超级伤药！",
+          "敌方 大钢蛇 使用了 岩崩！",
+          "岩石属性正中弱点，效果非常好！"
+        ],
+        "playerRemaining": 6,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 10,
+        "player": 74,
+        "playerHp": 123,
+        "playerMp": 111,
+        "enemy": 139,
+        "enemyHp": 185,
+        "enemyMp": 73,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "rock_slide",
+        "logs": [
+          "喷火龙 速度更快，率先行动！",
+          "喷火龙 使用了 闪焰冲锋！",
+          "火属性击中了弱点！",
+          "喷火龙 受到了反作用力伤害！",
+          "敌方 大钢蛇 使用了 岩崩！",
+          "岩石属性正中弱点，效果非常好！",
+          "喷火龙 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，水箭龟！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 11,
+        "player": 76,
+        "playerHp": 229,
+        "playerMp": 95,
+        "enemy": 139,
+        "enemyHp": 24,
+        "enemyMp": 62,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "bulldoze",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "大钢蛇 倒下了！",
+          "对手派出了 九尾！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 2
+      },
+      {
+        "turn": 12,
+        "player": 76,
+        "playerHp": 229,
+        "playerMp": 78,
+        "enemy": 29,
+        "enemyHp": 169,
+        "enemyMp": 79,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "tail_whip",
+        "logs": [
+          "水箭龟 速度更快，率先行动！",
+          "水箭龟 使用了 波动冲！",
+          "水属性击中了弱点！",
+          "九尾 倒下了！",
+          "对手派出了 宝石海星！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 13,
+        "player": 76,
+        "playerHp": 229,
+        "playerMp": 61,
+        "enemy": 55,
+        "enemyHp": 142,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 14,
+        "player": 76,
+        "playerHp": 183,
+        "playerMp": 61,
+        "enemy": 55,
+        "enemyHp": 105,
+        "enemyMp": 67,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "tackle",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 撞击！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 15,
+        "player": 76,
+        "playerHp": 171,
+        "playerMp": 61,
+        "enemy": 55,
+        "enemyHp": 68,
+        "enemyMp": 67,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psychic",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 精神强念！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 1
+      },
+      {
+        "turn": 16,
+        "player": 76,
+        "playerHp": 125,
+        "playerMp": 61,
+        "enemy": 55,
+        "enemyHp": 28,
+        "enemyMp": 54,
+        "playerAction": "move",
+        "move": "tackle",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "psybeam",
+        "logs": [
+          "敌方 宝石海星 速度更快，率先行动！",
+          "敌方 宝石海星 使用了 幻象光线！",
+          "水箭龟 受到了伤害！",
+          "水箭龟 使用了 撞击！",
+          "敌方 宝石海星 受到了伤害！",
+          "宝石海星 倒下了！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 0
+      }
+    ]
+  },
+  {
+    "scenario": "starter-coverage/mixed/damage/p0/cap2",
+    "sample": 11,
+    "seed": 591463316,
+    "variant": 1,
+    "levelRotation": 3,
+    "team": [
+      {
+        "id": 74,
+        "level": 70
+      },
+      {
+        "id": 76,
+        "level": 65
+      },
+      {
+        "id": 72,
+        "level": 60
+      },
+      {
+        "id": 28,
+        "level": 100
+      },
+      {
+        "id": 35,
+        "level": 85
+      },
+      {
+        "id": 153,
+        "level": 80
+      }
+    ],
+    "leadId": 35,
+    "outcome": "loss",
+    "turns": 18,
+    "potionsUsed": 0,
+    "playerSwitches": 2,
+    "playerForcedSwitches": 5,
+    "enemySwitches": 2,
+    "enemyForcedSwitches": 3,
+    "enemyNoMoveTurns": 0,
+    "playerBlockedActions": 0,
+    "enemyBlockedActions": 0,
+    "residualDamagePlayer": 46,
+    "residualDamageEnemy": 0,
+    "finalParty": [
+      {
+        "id": 74,
+        "hp": 0,
+        "mp": 90,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 0,
+        "mp": 81,
+        "status": null
+      },
+      {
+        "id": 72,
+        "hp": 0,
+        "mp": 29,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 79,
+        "status": "poison"
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 62,
+        "status": null
+      },
+      {
+        "id": 153,
+        "hp": 0,
+        "mp": 6,
+        "status": null
+      }
+    ],
+    "finalEnemies": [
+      {
+        "id": 201,
+        "hp": 0,
+        "mp": 81,
+        "status": null
+      },
+      {
+        "id": 28,
+        "hp": 0,
+        "mp": 54,
+        "status": null
+      },
+      {
+        "id": 76,
+        "hp": 0,
+        "mp": 39,
+        "status": null
+      },
+      {
+        "id": 35,
+        "hp": 0,
+        "mp": 53,
+        "status": null
+      },
+      {
+        "id": 74,
+        "hp": 7,
+        "mp": 42,
+        "status": null
+      },
+      {
+        "id": 11,
+        "hp": 136,
+        "mp": 89,
+        "status": null
+      }
+    ],
+    "trace": [
+      {
+        "turn": 1,
+        "player": 35,
+        "playerHp": 231,
+        "playerMp": 84,
+        "enemy": 201,
+        "enemyHp": 280,
+        "enemyMp": 104,
+        "playerAction": "move",
+        "move": "explosion",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "leech_life",
+        "logs": [
+          "敌方 叉字蝠 速度更快，率先行动！",
+          "敌方 叉字蝠 使用了 吸血！",
+          "隆隆岩 受到了伤害！",
+          "敌方 叉字蝠 吸取了体力！",
+          "隆隆岩 使用了 大爆炸！",
+          "敌方 叉字蝠 受到了伤害！",
+          "隆隆岩 用尽了全部体力！",
+          "隆隆岩 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，雷丘！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 6
+      },
+      {
+        "turn": 2,
+        "player": 28,
+        "playerHp": 230,
+        "playerMp": 105,
+        "enemy": 201,
+        "enemyHp": 69,
+        "enemyMp": 92,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "poison_jab",
+        "logs": [
+          "敌方 叉字蝠 速度更快，率先行动！",
+          "敌方 叉字蝠 使用了 毒击！",
+          "雷丘 受到了伤害！",
+          "雷丘 中毒了，会持续损失体力！",
+          "雷丘 使用了 十万伏特！",
+          "电属性击中了弱点！",
+          "雷丘 因中毒损失了体力！",
+          "叉字蝠 倒下了！",
+          "对手派出了 雷丘！"
+        ],
+        "playerRemaining": 5,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 3,
+        "player": 28,
+        "playerHp": 57,
+        "playerMp": 92,
+        "enemy": 28,
+        "enemyHp": 197,
+        "enemyMp": 95,
+        "playerAction": "move",
+        "move": "thunderbolt",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "quickattack",
+        "logs": [
+          "敌方 雷丘 的 电光一闪 优先级更高，率先行动！",
+          "敌方 雷丘 使用了 电光一闪！",
+          "雷丘 受到了伤害！",
+          "雷丘 使用了 十万伏特！",
+          "电属性不太占优。",
+          "雷丘 因中毒损失了体力！",
+          "雷丘 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，喷火龙！"
+        ],
+        "playerRemaining": 4,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 4,
+        "player": 74,
+        "playerHp": 189,
+        "playerMp": 90,
+        "enemy": 28,
+        "enemyHp": 128,
+        "enemyMp": 95,
+        "playerAction": "move",
+        "move": "flare_blitz",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunderbolt",
+        "logs": [
+          "敌方 雷丘 速度更快，率先行动！",
+          "敌方 雷丘 使用了 十万伏特！",
+          "电属性击中了弱点！",
+          "喷火龙 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，水箭龟！"
+        ],
+        "playerRemaining": 3,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 5,
+        "player": 76,
+        "playerHp": 177,
+        "playerMp": 81,
+        "enemy": 28,
+        "enemyHp": 128,
+        "enemyMp": 82,
+        "playerAction": "move",
+        "move": "wave_crash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunderbolt",
+        "logs": [
+          "敌方 雷丘 速度更快，率先行动！",
+          "敌方 雷丘 使用了 十万伏特！",
+          "电属性击中了弱点！",
+          "水箭龟 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，妙蛙花！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 6,
+        "player": 72,
+        "playerHp": 166,
+        "playerMp": 80,
+        "enemy": 28,
+        "enemyHp": 128,
+        "enemyMp": 69,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "iron_tail",
+        "logs": [
+          "敌方 雷丘 速度更快，率先行动！",
+          "敌方 雷丘 使用了 铁尾！",
+          "敌方 雷丘 的 铁尾 没有命中！",
+          "妙蛙花 使用了 花瓣舞！",
+          "敌方 雷丘 受到了伤害！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 7,
+        "player": 72,
+        "playerHp": 166,
+        "playerMp": 63,
+        "enemy": 28,
+        "enemyHp": 52,
+        "enemyMp": 54,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 74,
+        "logs": [
+          "对手察觉到危险，准备换上 喷火龙 承受攻势。",
+          "对手收回了 雷丘！",
+          "对手派出了 喷火龙！",
+          "妙蛙花 使用了 花瓣舞！",
+          "敌方 喷火龙很抵抗草属性。"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 8,
+        "player": 72,
+        "playerHp": 166,
+        "playerMp": 46,
+        "enemy": 74,
+        "enemyHp": 151,
+        "enemyMp": 86,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 153,
+        "enemyAction": "move",
+        "enemyMove": "heat_wave",
+        "logs": [
+          "上吧，大比鸟！",
+          "敌方 喷火龙 使用了 热风！",
+          "敌方 喷火龙 的 热风 没有命中！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 9,
+        "player": 153,
+        "playerHp": 222,
+        "playerMp": 97,
+        "enemy": 74,
+        "enemyHp": 151,
+        "enemyMp": 72,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "heat_wave",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "大比鸟 的 暴风 没有命中！",
+          "敌方 喷火龙 使用了 热风！",
+          "敌方 喷火龙 的 热风 没有命中！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 10,
+        "player": 153,
+        "playerHp": 222,
+        "playerMp": 77,
+        "enemy": 74,
+        "enemyHp": 151,
+        "enemyMp": 58,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flare_blitz",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "敌方 喷火龙 受到了伤害！",
+          "敌方 喷火龙 使用了 闪焰冲锋！",
+          "大比鸟 受到了伤害！",
+          "敌方 喷火龙 受到了反作用力伤害！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 11,
+        "player": 153,
+        "playerHp": 133,
+        "playerMp": 57,
+        "enemy": 74,
+        "enemyHp": 7,
+        "enemyMp": 42,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "switch",
+        "enemyMove": null,
+        "enemySwitchTo": 28,
+        "logs": [
+          "对手察觉到危险，准备换上 雷丘 承受攻势。",
+          "对手收回了 喷火龙！",
+          "对手派出了 雷丘！",
+          "大比鸟 使用了 暴风！",
+          "大比鸟 的 暴风 没有命中！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 5
+      },
+      {
+        "turn": 12,
+        "player": 153,
+        "playerHp": 133,
+        "playerMp": 37,
+        "enemy": 28,
+        "enemyHp": 52,
+        "enemyMp": 54,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "thunder",
+        "logs": [
+          "大比鸟 的 电光一闪 优先级更高，率先行动！",
+          "大比鸟 使用了 电光一闪！",
+          "敌方 雷丘 受到了伤害！",
+          "雷丘 倒下了！",
+          "对手派出了 水箭龟！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 13,
+        "player": 153,
+        "playerHp": 133,
+        "playerMp": 37,
+        "enemy": 76,
+        "enemyHp": 216,
+        "enemyMp": 92,
+        "playerAction": "switch",
+        "move": null,
+        "switchTo": 72,
+        "enemyAction": "move",
+        "enemyMove": "flash_cannon",
+        "logs": [
+          "上吧，妙蛙花！",
+          "敌方 水箭龟 使用了 加农光炮！",
+          "妙蛙花 受到了伤害！",
+          "妙蛙花 的特防降低了！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 14,
+        "player": 72,
+        "playerHp": 108,
+        "playerMp": 46,
+        "enemy": 76,
+        "enemyHp": 216,
+        "enemyMp": 80,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flash_cannon",
+        "logs": [
+          "敌方 水箭龟 速度更快，率先行动！",
+          "敌方 水箭龟 使用了 加农光炮！",
+          "妙蛙花 受到了伤害！",
+          "妙蛙花 使用了 花瓣舞！",
+          "草属性击中了弱点！"
+        ],
+        "playerRemaining": 2,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 15,
+        "player": 72,
+        "playerHp": 23,
+        "playerMp": 29,
+        "enemy": 76,
+        "enemyHp": 84,
+        "enemyMp": 68,
+        "playerAction": "move",
+        "move": "petal_dance",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "flash_cannon",
+        "logs": [
+          "敌方 水箭龟 速度更快，率先行动！",
+          "敌方 水箭龟 使用了 加农光炮！",
+          "妙蛙花 受到了伤害！",
+          "妙蛙花 倒下了！",
+          "请选择一只宝可梦继续战斗。",
+          "上吧，大比鸟！"
+        ],
+        "playerRemaining": 1,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 16,
+        "player": 153,
+        "playerHp": 133,
+        "playerMp": 37,
+        "enemy": 76,
+        "enemyHp": 84,
+        "enemyMp": 56,
+        "playerAction": "move",
+        "move": "hurricane",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "wave_crash",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 暴风！",
+          "敌方 水箭龟 受到了伤害！",
+          "敌方 水箭龟 使用了 波动冲！",
+          "大比鸟 受到了伤害！"
+        ],
+        "playerRemaining": 1,
+        "enemyRemaining": 4
+      },
+      {
+        "turn": 17,
+        "player": 153,
+        "playerHp": 10,
+        "playerMp": 17,
+        "enemy": 76,
+        "enemyHp": 10,
+        "enemyMp": 39,
+        "playerAction": "move",
+        "move": "air_slash",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "wave_crash",
+        "logs": [
+          "大比鸟 速度更快，率先行动！",
+          "大比鸟 使用了 空气斩！",
+          "敌方 水箭龟 受到了伤害！",
+          "水箭龟 倒下了！",
+          "对手派出了 隆隆岩！"
+        ],
+        "playerRemaining": 1,
+        "enemyRemaining": 3
+      },
+      {
+        "turn": 18,
+        "player": 153,
+        "playerHp": 10,
+        "playerMp": 6,
+        "enemy": 35,
+        "enemyHp": 192,
+        "enemyMp": 75,
+        "playerAction": "move",
+        "move": "quickattack",
+        "switchTo": null,
+        "enemyAction": "move",
+        "enemyMove": "explosion",
+        "logs": [
+          "大比鸟 的 电光一闪 优先级更高，率先行动！",
+          "大比鸟 使用了 电光一闪！",
+          "普通属性不太占优。",
+          "敌方 隆隆岩 使用了 大爆炸！",
+          "大比鸟 受到了伤害！",
+          "敌方 隆隆岩 用尽了全部体力！",
+          "大比鸟 倒下了！",
+          "隆隆岩 倒下了！"
+        ],
+        "playerRemaining": 0,
+        "enemyRemaining": 2
+      }
+    ]
+  }
+]

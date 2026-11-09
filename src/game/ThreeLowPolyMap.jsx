@@ -1,5 +1,10 @@
+import './bicycle.css'
+import { BICYCLE_MODEL_KEY, SPORTS_CAR_MODEL_KEY, createPlayerTravelRig, attachBicycleModel, attachSportsCarModel, setPlayerRiding, animatePlayerTravelRig } from './playerBicycleVisual'
+import { isBicycleGrassTile, getBicycleStepDuration } from './bicycleRules'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { createFishingSceneVisual } from './fishingSceneVisual.js'
+import { FISHING_SPOT_PLACEMENTS } from './fishingMapEvents.js'
 import { clone as cloneSkeletonScene } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { getAdventureMapInfo, getEncounterZoneAt, getMapSignMessage } from './data/overworldMaps'
@@ -9,22 +14,61 @@ import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
 import { createEnvironmentGroundPatches } from './environmentGroundPatches'
 import { findEnvironmentSpawn, isEnvironmentTileBlocked } from './environmentNavigation.js'
 import { PLAYER_CHARACTER_KEY, isCharacterModelKey } from './data/characterAssets.js'
+import { CHARACTER_SURFACE_CLOCK, configureCharacterSurfaceMaterial } from './characterSurfaceMaterial.js'
 import { NPC_WANDER_RADIUS, buildNpcWanderArea, createNpcWanderer, isNpcWanderEnabled } from './npcWander.js'
-import { attachNpcWalkShadows, configureNpcWalkMaterial, createNpcWalkGeometry, getNpcWalkStride, hasNpcWalkRig, setNpcWalkStride } from './npcWalkVisual.js'
+import { attachNpcWalkShadows, configureNpcJointDefines, configureNpcWalkMaterial, createNpcWalkGeometry, hasNpcWalkRig, setNpcWalkGait, NPC_GAIT_CYCLE_DISTANCE } from './npcWalkVisual.js'
 import { getLegacyTile, isWalkable } from './world/LegacyGridAdapter'
 import { BLOCKED_LEGACY_TILES, ENCOUNTER_LEGACY_TILES, INTERACTION_LEGACY_TILES } from './world/constants'
 import { getEncounterTable, pickWildPokemon } from './data/encounterTables'
 import { resolveEncounterTableId } from './data/mapRegistry'
-import { animateLowPolyPlayer, createLowPolyPlayer } from './playerFigureVisual'
+import { createLowPolyPlayer } from './playerFigureVisual'
 import { createEliteFourCharacterTemplate, isEliteFourCharacterType } from './eliteFourCharacterVisual'
 import {
   getEliteRouteBlockerInteractionTile,
   getEliteRouteStepAsideOffset,
-  isEliteRouteBlockerCleared
+  isEliteRouteBlockerCleared,
+  shouldRouteBattleEventToInfo
 } from './eliteRouteBlocker'
 import { applyMapAssetMaterialStyle } from './mapMaterialStyle'
 import { getDecorativeModel, getRequiredModelKeys, loadModels } from './threeLowPolyModelCache'
 import { gameAudio } from '../utils/gameAudio'
+import { getProceduralModelScale } from './proceduralModelScales'
+import { createProceduralSceneryClearance } from './mapVisualCollision.js'
+import { FOREST_WALL_TREE_HEIGHT_SCALE, getForestWallTreeChance, getForestWallTreeKey, isForestWallExitClearance } from './forestWallScenery.js'
+import { getTreeModelScale } from './modelScaleReference.js'
+import { buildWaterSurfaceGeometries } from './mapWaterSurface'
+import { buildRoadSurfaceGeometries } from './mapRoadSurface'
+import {
+  CHUNK_CULL_BEYOND_FOG,
+  ensureOccluderFadeMaterial,
+  getCameraOffset,
+  occluderUniforms,
+  readMapCameraModePref,
+  readMapCameraYaw,
+  rememberMapCameraYaw,
+  resolveCameraFov,
+  resolveMapCameraProfile
+} from './mapCameraRig'
+import {
+  applyHorizonLighting,
+  createHorizonScenery,
+  createSkyDome,
+  resolveHorizonTheme
+} from './mapHorizonScenery'
+import { collectBorderExits } from './mapExitRunways'
+import {
+  applyCharacterEnvironment,
+  applyShoreFoam,
+  applyTerrainShading,
+  applyTreeWind,
+  createContactShadowLayer,
+  createFootstepParticles,
+  createMapPostFx,
+  createWaterMaterial,
+  disposeMapEnvironmentTexture,
+  getMapEnvironmentTexture,
+  toLambertMaterial
+} from './mapShaders'
 import {
   REGION_MAP_TILE,
   isInsideDecorationFootprint,
@@ -37,8 +81,6 @@ const CONTINUOUS_MOVE_MS = 285
 const TURN_TO_MOVE_DELAY_MS = 90
 const VISUAL_PADDING_TILES = 5
 const TRAMPLED_GRASS_MS = 520
-const CAMERA_HEIGHT = 14.5
-const CAMERA_FORWARD_OFFSET = 12.5
 const CAMERA_LOOK_Y = 0.45
 const CAMERA_EDGE_PADDING = CELL * 0.75
 const PLAYER_BASE_Y = 0.16
@@ -48,6 +90,7 @@ const HIDDEN_ENCOUNTER_GATE_INTERACTION_KIND = 'hidden_zone_unlock'
 const ENCOUNTER_ALERT_MS = 760
 
 const GRASS_SWAY_KEYS = new Set(['grass', 'grassLarge'])
+const WATER_LEGACY_TILE = 11
 const GRASS_SWAY_DISABLED = -999
 const grassSwayUniforms = { uMapTime: { value: 0 } }
 
@@ -141,12 +184,17 @@ function resolveMapRendererProfile() {
   // 移动端优化：即使在high模式也要限制某些参数
   const mobileOptimized = isMobile && !liteTier
 
+  // high 档走后处理（描边/调色），抗锯齿交给离屏 MSAA，画布本身不再开
+  const postFx = !liteTier
   return {
     isMobile,
     liteTier,
-    antialias: !liteTier,
-    // 移动端：限制pixelRatio避免过高分辨率导致性能问题
-    pixelRatioCap: liteTier ? 1.5 : (mobileOptimized ? 2 : 3),
+    postFx,
+    postFxSamples: isMobile ? 2 : 4,
+    antialias: !liteTier && !postFx,
+    // 3x DPR 会按 9 倍像素渲染，收敛到 2 / 1.5；帧率不足时再动态下调
+    pixelRatioCap: isMobile ? (liteTier ? 1.25 : 1.5) : (liteTier ? 1.5 : 2),
+    minPixelRatio: isMobile ? 0.85 : 1,
     // 移动端：使用较小的阴影贴图以节省内存和带宽
     shadowMapSize: liteTier ? 1024 : (mobileOptimized ? 1536 : 2048),
     shadowType: THREE.PCFShadowMap,
@@ -157,8 +205,11 @@ function resolveMapRendererProfile() {
     // 只有 lite 模式才关掉装饰投影；high 模式允许更多小物件也投影。
     castDecorationShadows: !liteTier,
     castAllDecorationShadows: !liteTier && !mobileOptimized,
-    idleFrameMs: isMobile ? 1000 / 24 : 1000 / 30,
-    recoveryIdleFrameMs: isMobile ? 1000 / 18 : 1000 / 24
+    // Keep the map on the browser's native RAF cadence. This allows 60/90/120
+    // Hz displays to present at their own refresh rate; dynamic pixel ratio
+    // below is responsible for adapting quality when a device is overloaded.
+    idleFrameMs: 0,
+    recoveryIdleFrameMs: 0
   }
 }
 
@@ -382,7 +433,6 @@ const DIRS = {
 const NPC_INTERACTION_EVENT_TYPES = new Set(['trainer', 'boss', 'merchant'])
 const BLOCKING_INTERACTIONS = new Set(['exit', 'heal', 'trainer', 'boss', 'challenge', 'objective', 'info', 'merchant'])
 const MUTED_EVENT_VISUAL_STATES = new Set(['locked', 'daily_complete', 'cleared', 'completed'])
-const NON_BATTLE_INFO_VISUAL_STATES = new Set(['daily_complete', 'cleared', 'completed', 'locked'])
 let activeThreeMapRendererLease = null
 
 function disposeActiveThreeMapRenderer(reason = 'handoff') {
@@ -459,13 +509,6 @@ function resolveEventVisualStateValue(eventId, mapEventVisualState, fallback = '
   return typeof status === 'string' && status.length > 0 ? status : fallback
 }
 
-function shouldRouteBattleEventToInfo(mapEvent, mapEventVisualState, currentMapBossCompleted = false) {
-  if (!mapEvent || !['trainer', 'boss', 'challenge'].includes(mapEvent.type)) return false
-  if (mapEvent.type === 'boss' && currentMapBossCompleted) return true
-  const status = resolveEventVisualStateValue(mapEvent.id, mapEventVisualState, 'available')
-  return NON_BATTLE_INFO_VISUAL_STATES.has(status)
-}
-
 function lerpAngle(current, target, alpha) {
   const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current))
   return current + delta * alpha
@@ -497,6 +540,58 @@ function worldFromTile(x, y, width, height) {
     x: (x - width / 2) * CELL + CELL / 2,
     z: (y - height / 2) * CELL + CELL / 2
   }
+}
+
+function createFishingShoreMarker(event, width, height) {
+  const group = new THREE.Group()
+  const point = worldFromTile(event.position.x, event.position.y, width, height)
+  const water = worldFromTile(event.properties.waterX, event.properties.waterY, width, height)
+  group.position.set(point.x, .08, point.z)
+  const wood = new THREE.MeshStandardMaterial({ color: 0x76533a, roughness: .84 })
+  const brass = new THREE.MeshStandardMaterial({ color: 0xe1b86e, roughness: .65 })
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(.05, .065, .9, 6), wood)
+  post.position.y = .45
+  group.add(post)
+  const canvas = document.createElement('canvas')
+  canvas.width = 256; canvas.height = 160
+  const context = canvas.getContext('2d')
+  context.fillStyle = '#285a60'; context.fillRect(0, 0, 256, 160)
+  context.strokeStyle = '#d9c18b'; context.lineWidth = 8; context.strokeRect(8, 8, 240, 144)
+  context.fillStyle = '#f2dfad'
+  context.beginPath(); context.ellipse(125, 66, 47, 24, 0, 0, Math.PI * 2); context.fill()
+  context.beginPath(); context.moveTo(82, 66); context.lineTo(52, 42); context.lineTo(52, 90); context.closePath(); context.fill()
+  context.fillStyle = '#285a60'; context.beginPath(); context.arc(151, 60, 5, 0, Math.PI * 2); context.fill()
+  context.fillStyle = '#f2dfad'; context.font = 'bold 23px sans-serif'; context.textAlign = 'center'
+  context.fillText('钓鱼点', 128, 125)
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(.82, .52), new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }))
+  sign.position.y = .79; sign.rotation.y = Math.PI / 4
+  group.add(sign)
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(.014, .028, 1.4, 5), wood)
+  rod.position.set(.22, .68, .06); rod.rotation.z = -.42
+  group.add(rod)
+  const basket = new THREE.Mesh(new THREE.CylinderGeometry(.18, .15, .3, 8), brass)
+  basket.position.set(-.23, .15, -.08)
+  group.add(basket)
+  const float = new THREE.Mesh(new THREE.SphereGeometry(.055, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf47a5c, roughness: .4 }))
+  float.position.set(water.x - point.x, .13, water.z - point.z)
+  group.add(float)
+  const linePoints = [new THREE.Vector3(.5, 1.28, .06), float.position.clone()]
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePoints), new THREE.LineBasicMaterial({ color: 0xd5ece8, transparent: true, opacity: .62 }))
+  group.add(line)
+  group.userData.updateFishing = (now) => {
+    float.position.y = .13 + Math.sin(now * .0019 + point.x) * .025
+    const positions = line.geometry.attributes.position
+    positions.setY(1, float.position.y)
+    positions.needsUpdate = true
+  }
+  group.userData.disposeFishing = () => {
+    texture.dispose()
+    line.geometry.dispose()
+    line.material.dispose()
+  }
+  return group
 }
 
 function seededRandom(x, y, salt = 0) {
@@ -2092,7 +2187,8 @@ const ELITE_NPC_THEME_EFFECT_STYLES = {
 }
 
 function createNpcRoleEffect(role, seed = 0, options = {}) {
-  const normalizedRole = normalizeNpcRole(role)
+  const shadowOnly = role === 'challenge'
+  const normalizedRole = normalizeNpcRole(role) || (shadowOnly ? 'normal' : null)
   if (!normalizedRole) return null
 
   const group = new THREE.Group()
@@ -2112,6 +2208,18 @@ function createNpcRoleEffect(role, seed = 0, options = {}) {
   const roleConfig = group.userData.spec
   const mutedOpacityMultiplier = group.userData.muted ? 0.28 : 1
   const lightIntensity = group.userData.muted ? 0 : roleConfig.lightIntensity
+
+  const contactShadow = new THREE.Mesh(new THREE.CircleGeometry(roleConfig.radius * .62, 24), new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1,
+    vertexShader: 'varying vec2 vShadowUv; void main(){vShadowUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader: 'varying vec2 vShadowUv; void main(){float d=length(vShadowUv-vec2(.5))*2.0; if(d>=1.0)discard; gl_FragColor=vec4(vec3(.025,.035,.03),.22*pow(1.0-d,2.0));}'
+  }))
+  contactShadow.rotation.x = -Math.PI / 2
+  contactShadow.position.y = .073
+  contactShadow.scale.set(1.2, .75, 1)
+  contactShadow.userData.rolePart = 'contact-shadow'
+  group.add(contactShadow)
+  if (shadowOnly) return group
 
   const base = new THREE.Mesh(
     new THREE.CircleGeometry(roleConfig.radius, 30),
@@ -2564,15 +2672,9 @@ function createTerrainTop(width, height, palette = {}) {
   geometry.computeVertexNormals()
   geometry.rotateX(-Math.PI / 2)
 
-  const mesh = new THREE.Mesh(
-    geometry,
-    new THREE.MeshStandardMaterial({
-      color: palette.terrainTop ?? 0x79d16b,
-      roughness: 0.95,
-      metalness: 0.02,
-      flatShading: false
-    })
-  )
+  const material = new THREE.MeshLambertMaterial({ color: palette.terrainTop ?? 0x79d16b })
+  applyTerrainShading(material, grassSwayUniforms.uMapTime)
+  const mesh = new THREE.Mesh(geometry, material)
   mesh.position.y = -0.03
   mesh.receiveShadow = true
   mesh.castShadow = false
@@ -2584,22 +2686,12 @@ function createIslandBase(width, height, palette = {}) {
   const terrainH = (height + VISUAL_PADDING_TILES * 2) * CELL + 4.3
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(terrainW, 0.7, terrainH),
-    new THREE.MeshStandardMaterial({
-      color: palette.terrainBase ?? 0x67b457,
-      roughness: 0.92
-    })
+    new THREE.MeshLambertMaterial({ color: palette.terrainBase ?? 0x67b457 })
   )
   base.position.y = -0.44
   base.receiveShadow = true
   base.castShadow = true
   return base
-}
-
-function tileObjectKey(x, y) {
-  const v = (x * 17 + y * 31) % 3
-  if (v === 0) return 'treeOak'
-  if (v === 1) return 'treeDefault'
-  return 'treePine'
 }
 
 const PROCEDURAL_TREE_MODEL_KEYS = ['treeOak', 'treeDefault', 'treePine']
@@ -2752,6 +2844,9 @@ function isDynamicBlockerVisualSuppressed(mapInfo, activeMapGrid, tileX, tileY, 
 
 function ThreeLowPolyMap({
   playerPos,
+  hasBicycle = false,
+  hasSportsCar = false,
+  equippedVehicle = null,
   mapGrid,
   currentMapName,
   mapConfig,
@@ -2770,10 +2865,21 @@ function ThreeLowPolyMap({
   onNavigate,
   collectedEventIds = [],
   springRestoreAnimation = null,
+  fishingActivity = null,
   currentMapBossCompleted = false,
   mapEventVisualState = {},
   encounterZoneLocks = {}
 }) {
+  const [activeVehicle, setActiveVehicle] = useState(null)
+  const [bicycleReady, setBicycleReady] = useState(false)
+  const [sportsCarReady, setSportsCarReady] = useState(false)
+  const [bicycleOnGrass, setBicycleOnGrass] = useState(false)
+  const hasBicycleRef = useRef(hasBicycle)
+  hasBicycleRef.current = hasBicycle
+  const hasSportsCarRef = useRef(hasSportsCar)
+  hasSportsCarRef.current = hasSportsCar
+  const equippedVehicleRef = useRef(equippedVehicle)
+  equippedVehicleRef.current = equippedVehicle
   const hostRef = useRef(null)
   const stateRef = useRef(null)
   const cooldownRef = useRef(encounterCooldownSteps)
@@ -2781,6 +2887,12 @@ function ThreeLowPolyMap({
   const [renderNonce, setRenderNonce] = useState(0)
   const [renderIssue, setRenderIssue] = useState(null)
   const [sceneReady, setSceneReady] = useState(false)
+  // 与渲染 effect 里的 immersiveCamera 同一判定（QA 俯瞰模式不转镜头）
+  const [cameraRotatable] = useState(() => (
+    readMapCameraModePref() === 'immersive' &&
+    !(window.location.pathname.endsWith('/map-runtime-preview') &&
+      new URLSearchParams(window.location.search).get('view') === 'overview')
+  ))
   const onSceneReadyChangeRef = useRef(onSceneReadyChange)
   onSceneReadyChangeRef.current = onSceneReadyChange
   const mapDebugEnabled = useMemo(() => isMapRuntimeDebugEnabled(), [])
@@ -2898,21 +3010,35 @@ function ThreeLowPolyMap({
     const renderProfile = resolveMapRendererProfile()
     const runtimeIsMobile = renderProfile.isMobile
     let idleFrameIntervalMs = renderProfile.idleFrameMs
+    let dynamicPixelRatio = Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap)
+    let postFx = null
 
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: renderProfile.antialias,
         alpha: false,
-        powerPreference: renderProfile.powerPreference,
-        logarithmicDepthBuffer: true
+        powerPreference: renderProfile.powerPreference
       })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
+      renderer.setPixelRatio(dynamicPixelRatio)
       renderer.shadowMap.enabled = true
+      // 阴影只在有东西动（玩家/NPC/镜头缓动）时重画
+      renderer.shadowMap.autoUpdate = false
+      renderer.info.autoReset = false
+      renderer.shadowMap.needsUpdate = true
       renderer.shadowMap.type = renderProfile.shadowType
       renderer.outputColorSpace = THREE.SRGBColorSpace
       renderer.toneMapping = THREE.ACESFilmicToneMapping
-      renderer.toneMappingExposure = 1.08
+      renderer.toneMappingExposure = 1.0
       renderer.setClearColor(0xbfe9ff, 1)
+      if (renderProfile.postFx) {
+        try {
+          postFx = createMapPostFx(renderer, { samples: renderProfile.postFxSamples })
+          if (scene.fog) postFx.setFog(scene.fog.near, scene.fog.far)
+        } catch (error) {
+          postFx = null
+          if (isMapRuntimeDebugEnabled()) console.warn('[ThreeLowPolyMap] Post FX unavailable:', error)
+        }
+      }
       renderProfile.maxAnisotropy = Math.min(
         renderProfile.maxAnisotropy,
         renderer.capabilities.getMaxAnisotropy?.() || renderProfile.maxAnisotropy
@@ -2946,16 +3072,54 @@ function ThreeLowPolyMap({
     renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false)
     renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored, false)
 
-    const usesCompactMapCamera = Number(mapInfo?.width) <= 28 && Number(mapInfo?.height) <= 24
     // QA overview is only available inside the explicitly gated runtime preview.
     const overviewMode = window.location.pathname.endsWith('/map-runtime-preview') &&
       new URLSearchParams(window.location.search).get('view') === 'overview'
-    if (overviewMode) scene.fog = null
-    const cameraHeight = overviewMode ? Math.max(mapInfo.width, mapInfo.height) * CELL * 1.55 : usesCompactMapCamera ? 11.8 : CAMERA_HEIGHT
-    const cameraForwardOffset = overviewMode ? cameraHeight * .48 : usesCompactMapCamera ? 9.6 : CAMERA_FORWARD_OFFSET
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200)
-    camera.position.set(0, cameraHeight, cameraForwardOffset)
-    camera.lookAt(0, CAMERA_LOOK_Y, 0)
+    if (overviewMode) {
+      scene.fog = null
+      postFx?.setFog(1e5, 1e5 + 1)
+      postFx?.setFade(1e5, 1e5 + 1)
+    }
+    const immersiveCamera = !overviewMode && readMapCameraModePref() === 'immersive'
+    const horizonTheme = resolveHorizonTheme(mapInfo?.id ?? mapInfo?.name ?? currentMapName)
+    const chunkCullDistance = horizonTheme.fog.far + CHUNK_CULL_BEYOND_FOG
+    let horizonScenery = null
+    const cameraProfile = resolveMapCameraProfile(immersiveCamera ? 'immersive' : 'classic')
+    const cameraOffset = getCameraOffset(cameraProfile)
+    if (overviewMode) {
+      const overviewHeight = Math.max(mapInfo.width, mapInfo.height) * CELL * 1.55
+      cameraOffset.set(0, overviewHeight, overviewHeight * .48)
+    }
+    if (immersiveCamera) {
+      scene.fog = new THREE.Fog(horizonTheme.fog.color, horizonTheme.fog.near, horizonTheme.fog.far)
+      postFx?.setFade(horizonTheme.fog.near, horizonTheme.fog.far - 8)
+      postFx?.setFog(horizonTheme.fog.near, horizonTheme.fog.far)
+      scene.background = new THREE.Color(horizonTheme.sky.horizon)
+    }
+    // 关掉对数深度后靠收紧 near/far 保精度（0.5 / 160 下 60 单位处深度分辨率约 0.0004）
+    const camera = new THREE.PerspectiveCamera(cameraProfile.fov, 1, 0.5, overviewMode ? 400 : 160)
+    const _drawingBufferSize = new THREE.Vector2()
+    let footstepParticles = null
+    let contactShadowLayer = null
+    camera.position.copy(cameraOffset)
+    camera.lookAt(0, cameraProfile.lookY, 0)
+    let skyDome = null
+    if (immersiveCamera) {
+      skyDome = createSkyDome(horizonTheme)
+      scene.add(skyDome)
+    }
+    const cameraLookAt = new THREE.Vector3()
+    const cameraLead = new THREE.Vector3()
+    let cameraSettling = false
+    // Camera heading survives map remounts and is independent of entry facing.
+    const cameraRotationEnabled = immersiveCamera
+    const baseCameraOffset = cameraOffset.clone()
+    const CAMERA_QUARTER_TURN = Math.PI / 2
+    let cameraYaw = immersiveCamera && !overviewMode ? readMapCameraYaw() : 0
+    let cameraYawTarget = cameraYaw
+    let fishingCameraRestoreYaw = null
+    let cameraDragPointerId = null
+    let cameraRotating = false
 
     // 视锥剔除复用对象（chunk-level frustum cull 用）
     const _viewFrustum = new THREE.Frustum()
@@ -2976,12 +3140,37 @@ function ThreeLowPolyMap({
     sun.position.set(12, 22, 8)
     sun.castShadow = true
     configureSunShadow(sun, renderProfile.shadowMapSize)
-    sun.shadow.camera.left = -22
-    sun.shadow.camera.right = 22
-    sun.shadow.camera.top = 22
-    sun.shadow.camera.bottom = -22
+    // 阴影盒从 ±22 收紧到 ±16，同样 2048 贴图下每单位 texel 约多 1.9 倍
+    const SHADOW_EXTENT = 16
+    sun.shadow.camera.left = -SHADOW_EXTENT
+    sun.shadow.camera.right = SHADOW_EXTENT
+    sun.shadow.camera.top = SHADOW_EXTENT
+    sun.shadow.camera.bottom = -SHADOW_EXTENT
+    const SUN_OFFSET = new THREE.Vector3(12, 22, 8)
+    const shadowTexel = (SHADOW_EXTENT * 2) / renderProfile.shadowMapSize
+    const sunLightDir = SUN_OFFSET.clone().negate().normalize()
+    const sunRight = new THREE.Vector3().crossVectors(sunLightDir, THREE.Object3D.DEFAULT_UP).normalize()
+    const sunUp = new THREE.Vector3().crossVectors(sunRight, sunLightDir).normalize()
+    const _shadowCenter = new THREE.Vector3()
+    const _lastShadowCenter = new THREE.Vector3(Infinity, 0, 0)
+    // 阴影中心按光源空间 texel 对齐，镜头移动时阴影边缘不闪
+    const placeSun = (x, z) => {
+      _shadowCenter.set(x, 0, z)
+      const r = Math.round(_shadowCenter.dot(sunRight) / shadowTexel) * shadowTexel
+      const u = Math.round(_shadowCenter.dot(sunUp) / shadowTexel) * shadowTexel
+      const d = _shadowCenter.dot(sunLightDir)
+      _shadowCenter.copy(sunRight).multiplyScalar(r).addScaledVector(sunUp, u).addScaledVector(sunLightDir, d)
+      if (_shadowCenter.distanceToSquared(_lastShadowCenter) > 1e-8) {
+        _lastShadowCenter.copy(_shadowCenter)
+        renderer.shadowMap.needsUpdate = true
+      }
+      sun.target.position.copy(_shadowCenter)
+      sun.position.copy(_shadowCenter).add(SUN_OFFSET)
+      sun.target.updateMatrixWorld()
+    }
     scene.add(sun)
     scene.add(sun.target)
+    if (immersiveCamera) applyHorizonLighting(horizonTheme, { hemisphere: ambient, sun })
 
     const root = new THREE.Group()
     scene.add(root)
@@ -3014,7 +3203,20 @@ function ThreeLowPolyMap({
       const height = mapGrid.length
       const worldHalfW = (width * CELL) / 2
       const worldHalfH = (height * CELL) / 2
-      const cameraDistance = Math.max(camera.position.y - CAMERA_LOOK_Y, 1)
+      if (immersiveCamera) {
+        // 低角度下看得到地平线，按俯视可见范围夹镜头没有意义；
+        // 只让跟随点留在地图内，地图外由外围地面 + 远山 + 雾补齐。
+        const padX = Math.min(CELL * 2, worldHalfW * 0.5)
+        const padZ = Math.min(CELL * 1.5, worldHalfH * 0.5)
+        camera.userData.bounds = {
+          minX: -worldHalfW + padX,
+          maxX: worldHalfW - padX,
+          minZ: -worldHalfH + padZ,
+          maxZ: worldHalfH - padZ
+        }
+        return
+      }
+      const cameraDistance = Math.max(cameraOffset.y - cameraProfile.lookY, 1)
       const halfViewH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * cameraDistance
       const halfViewW = halfViewH * camera.aspect
 
@@ -3052,12 +3254,20 @@ function ThreeLowPolyMap({
       const world = worldFromTile(tileX, tileY, width, height)
       const clamped = clampCameraTarget(world.x, world.z)
       cameraTarget.copy(clamped)
-      if (force) cameraFocus.copy(clamped)
+      if (force) {
+        cameraFocus.copy(clamped)
+        cameraLead.set(0, 0, 0)
+      }
       visibilityDirty = true
     }
 
-	    stateRef.current = {
+    stateRef.current = {
       worldReady: false,
+      hasBicycle: hasBicycleRef.current,
+      hasSportsCar: hasSportsCarRef.current,
+      equippedVehicle: equippedVehicleRef.current,
+      riding: false,
+      vehicle: null,
       worldBuilt: false,
       pointer,
       mapGrid,
@@ -3078,7 +3288,11 @@ function ThreeLowPolyMap({
       cloudBlocked,
       mapActive,
       encounterPending: false,
+      warpPending: false,
+      warpAttemptVersion: 0,
       springRestoreAnimation,
+      fishingActivity,
+      fishingController: null,
 	      player: null,
 	      springEffects: [],
 	      eventSignals: [],
@@ -3096,6 +3310,16 @@ function ThreeLowPolyMap({
 	      cameraFocus,
 	      cameraTarget,
       syncCameraTargetToTile
+    }
+
+    // 只改渲染分辨率，不动镜头（resize 会把镜头对齐到格子）
+    const applyDynamicPixelRatio = () => {
+      if (!renderer || host.clientWidth === 0 || host.clientHeight === 0) return
+      const { width, height } = getSafeRendererSize(host)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dynamicPixelRatio))
+      renderer.setSize(width, height, false)
+      postFx?.syncSize()
+      footstepParticles?.setPointScale(renderer.getDrawingBufferSize(_drawingBufferSize).y, camera.fov)
     }
 
     const resize = () => {
@@ -3117,9 +3341,12 @@ function ThreeLowPolyMap({
           }
         )
       }
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap))
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dynamicPixelRatio))
       renderer.setSize(width, height, false)
+      postFx?.syncSize()
+      footstepParticles?.setPointScale(renderer.getDrawingBufferSize(_drawingBufferSize).y, camera.fov)
       camera.aspect = width / height
+      camera.fov = overviewMode ? cameraProfile.fov : resolveCameraFov(cameraProfile, camera.aspect)
       camera.updateProjectionMatrix()
       updateCameraBounds()
       syncCameraTargetToTile(pointer.tileX, pointer.tileY, true)
@@ -3141,6 +3368,26 @@ function ThreeLowPolyMap({
       const visualPalette = mapInfo?.visualPalette || {}
       root.add(createIslandBase(width, height, visualPalette))
       root.add(createTerrainTop(width, height, visualPalette))
+      if (immersiveCamera) {
+        const borderExits = collectBorderExits(mapInfo, CELL, worldFromTile)
+        const horizon = createHorizonScenery(
+          (width + VISUAL_PADDING_TILES * 2) * CELL,
+          (height + VISUAL_PADDING_TILES * 2) * CELL,
+          horizonTheme,
+          { palette: visualPalette, timeUniform: grassSwayUniforms.uMapTime, exits: borderExits }
+        )
+        horizonScenery = horizon
+        // 外围地面和岛内地形用同一套色斑/云影，接缝处看不出来
+        const outerGround = horizon.getObjectByName('map-outer-ground')
+        if (outerGround) applyTerrainShading(outerGround.material, grassSwayUniforms.uMapTime)
+        root.add(horizon)
+      }
+      contactShadowLayer = createContactShadowLayer()
+      root.add(contactShadowLayer.mesh)
+      footstepParticles = createFootstepParticles()
+      footstepParticles.setPointScale(renderer.getDrawingBufferSize(_drawingBufferSize).y, camera.fov)
+      root.add(footstepParticles.points)
+      const characterEnvMap = getMapEnvironmentTexture(renderer)
 
 	      const springEffects = []
 	      const eventSignals = []
@@ -3216,7 +3463,10 @@ function ThreeLowPolyMap({
 
       const missingCharacters = [...runtimeRequiredModelKeys].filter((key) => isCharacterModelKey(key) && !models[key])
       if (missingCharacters.length) throw new Error(`角色模型尚未就绪：${missingCharacters.join(', ')}`)
-      const characterPlayer = createLowPolyPlayer()
+      const characterPlayer = createPlayerTravelRig(createLowPolyPlayer())
+      characterPlayer.traverse((child) => {
+        if (child.isMesh) applyCharacterEnvironment(child.material, characterEnvMap)
+      })
       characterPlayer.position.copy(fallbackPlayer.position)
       characterPlayer.rotation.copy(fallbackPlayer.rotation)
       root.remove(fallbackPlayer)
@@ -3227,68 +3477,56 @@ function ThreeLowPolyMap({
       })
       root.add(characterPlayer)
       stateRef.current.player = characterPlayer
+      stateRef.current.fishingController = createFishingSceneVisual({ root, player: characterPlayer, width, height, mapInfo, camera })
+      stateRef.current.fishingController.setActivity(stateRef.current.fishingActivity)
       stateRef.current.characterModelKeys = [...runtimeRequiredModelKeys].filter(isCharacterModelKey)
 
-      const pathMaterial = new THREE.MeshStandardMaterial({
-        color: visualPalette.path ?? 0xd9bd86,
-        roughness: 0.96,
-        metalness: visualPalette.pathMetalness ?? 0.01
+      const pathMaterial = new THREE.MeshLambertMaterial({
+        color: visualPalette.path ?? 0xd9bd86
       })
-      const pathEdgeMaterial = new THREE.MeshStandardMaterial({
+      const pathEdgeMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.pathEdge ?? 0xbe9461,
-        roughness: 0.98,
         transparent: true,
         opacity: 0.46
       })
-      const pathHighlightMaterial = new THREE.MeshStandardMaterial({
+      const pathHighlightMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.pathHighlight ?? 0xf6dfa9,
-        roughness: 0.9,
         transparent: true,
         opacity: 0.18
       })
-      const waterMaterial = new THREE.MeshStandardMaterial({
+      const waterMaterial = createWaterMaterial({
         color: visualPalette.water ?? 0x74d7df,
-        roughness: 0.5,
-        metalness: 0.02,
-        transparent: true,
-        opacity: 0.97
-      })
-      const waterDeepMaterial = new THREE.MeshStandardMaterial({
+        opacity: 0.97,
+        skyColor: immersiveCamera ? horizonTheme.sky.horizon : 0xe4f6ff
+      }, grassSwayUniforms.uMapTime)
+      const waterDeepMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.waterDeep ?? 0x2d9fc5,
-        roughness: 0.34,
-        metalness: 0.02,
         transparent: true,
         opacity: 0.28,
         depthWrite: false
       })
-      const waterBankMaterial = new THREE.MeshStandardMaterial({
+      const waterBankMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.waterBank ?? 0xe0c893,
-        roughness: 0.94,
-        metalness: 0.01,
         transparent: true,
         opacity: 0.5
       })
-      const forestFloorMaterial = new THREE.MeshStandardMaterial({
+      const forestFloorMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.forestFloor ?? 0x5fa85a,
-        roughness: 0.95,
         transparent: true,
         opacity: 0.14
       })
-      const sandPatchMaterial = new THREE.MeshStandardMaterial({
+      const sandPatchMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.sandPatch ?? 0xe8d4a8,
-        roughness: 0.96,
         transparent: true,
         opacity: 0.22
       })
-      const paleGrassPatchMaterial = new THREE.MeshStandardMaterial({
+      const paleGrassPatchMaterial = new THREE.MeshLambertMaterial({
         color: visualPalette.paleGrassPatch ?? 0xc8ddb8,
-        roughness: 0.95,
         transparent: true,
         opacity: 0.18
       })
-      const forestTrailMaterial = new THREE.MeshStandardMaterial({
+      const forestTrailMaterial = new THREE.MeshLambertMaterial({
         color: 0x8bcf72,
-        roughness: 0.96,
         transparent: true,
         opacity: 0.32
       })
@@ -3296,6 +3534,7 @@ function ThreeLowPolyMap({
       applyGroundDecalMaterial(pathEdgeMaterial)
       applyGroundDecalMaterial(pathHighlightMaterial)
       applyGroundDecalMaterial(waterBankMaterial)
+      applyShoreFoam(waterBankMaterial, grassSwayUniforms.uMapTime)
       applyGroundDecalMaterial(forestFloorMaterial)
       applyGroundDecalMaterial(sandPatchMaterial)
       applyGroundDecalMaterial(paleGrassPatchMaterial)
@@ -3321,11 +3560,34 @@ function ThreeLowPolyMap({
       }
 
       const _templateCache = {}
+      const _templateSubBox = new THREE.Box3()
+      const _blobScale = new THREE.Vector3()
+      const isTreeModelKey = (key) => (
+        SHADOW_CASTING_MODEL_KEYS.has(key) ||
+        Boolean(MAP_ASSET_CATALOG[key]?.themeTags?.includes('tree')) ||
+        /palm|willow|pine|tree/i.test(key)
+      )
+      // 接触阴影：矮小装饰、角色、细长物件（栏杆/围栏）、水面上的物体不加
+      const addContactShadow = (key, template, worldMatrix) => {
+        if (!template?.bounds || GRASS_SWAY_KEYS.has(key) || isCharacterModelKey(key)) return null
+        if (worldMatrix.elements[13] > 0.35) return null
+        const tileX = Math.round(worldMatrix.elements[12] / CELL + width / 2 - 0.5)
+        const tileY = Math.round(worldMatrix.elements[14] / CELL + height / 2 - 0.5)
+        if (mapGrid[tileY]?.[tileX] === WATER_LEGACY_TILE) return null
+        _blobScale.setFromMatrixScale(worldMatrix)
+        const sizeX = template.bounds.sizeX * _blobScale.x
+        const sizeZ = template.bounds.sizeZ * _blobScale.z
+        if (template.bounds.height * _blobScale.y < 0.55) return null
+        if (Math.min(sizeX, sizeZ) < 0.3 || Math.max(sizeX, sizeZ) / Math.min(sizeX, sizeZ) > 2.6) return null
+        const k = isTreeModelKey(key) ? 0.42 : 0.62
+        return contactShadowLayer.add(worldMatrix, Math.min(sizeX * k, 2.2), Math.min(sizeZ * k, 2.2))
+      }
       const getInstanceTemplate = (key) => {
         if (key in _templateCache) return _templateCache[key]
         const scene = models[key] || createEliteFourCharacterTemplate(key)
         if (!scene) { _templateCache[key] = null; return null }
         const subMeshes = []
+        const templateBox = new THREE.Box3()
         scene.updateMatrixWorld(true)
         scene.traverse((child) => {
           if (!child.isMesh || !child.geometry) return
@@ -3339,12 +3601,25 @@ function ThreeLowPolyMap({
             if (typeof entry.metalness === 'number') entry.metalness = isCharacterModelKey(key) ? 0 : 0.03
           })
           applyMapAssetMaterialStyle(mat, MAP_ASSET_CATALOG[key])
+          const isCharacter = isCharacterModelKey(key)
+          const finalMaterial = isCharacter ? mat : toLambertMaterial(mat)
+          if (isCharacter) {
+            applyCharacterEnvironment(finalMaterial, characterEnvMap)
+            configureCharacterSurfaceMaterial(finalMaterial, child.geometry)
+          }
+          const geometry = prepareMeshGeometry(child.geometry)
+          if (!geometry.boundingBox) geometry.computeBoundingBox()
+          templateBox.union(_templateSubBox.copy(geometry.boundingBox).applyMatrix4(child.matrixWorld))
           subMeshes.push({
-            geometry: prepareMeshGeometry(child.geometry),
-            material: mat,
+            geometry,
+            material: finalMaterial,
             localMatrix: child.matrixWorld.clone()
           })
         })
+        if (subMeshes.length > 0) {
+          const size = templateBox.getSize(new THREE.Vector3())
+          subMeshes.bounds = { sizeX: size.x, sizeZ: size.z, height: size.y, minY: templateBox.min.y }
+        }
         _templateCache[key] = subMeshes.length > 0 ? subMeshes : null
         return _templateCache[key]
       }
@@ -3393,7 +3668,12 @@ function ThreeLowPolyMap({
           if (usesGrassSway) ensureGrassSwayMaterial(sub.material)
           const usesNpcWalk = isCharacterModelKey(key) && hasNpcWalkRig(sub.geometry)
           const geometry = usesNpcWalk ? createNpcWalkGeometry(sub.geometry, cap) : sub.geometry
-          if (usesNpcWalk) configureNpcWalkMaterial(sub.material)
+          if (usesNpcWalk) {
+            configureNpcWalkMaterial(sub.material)
+            configureNpcJointDefines(sub.material, geometry)
+          }
+          if (!usesGrassSway && isTreeModelKey(key)) applyTreeWind(sub.material, grassSwayUniforms.uMapTime)
+          if (immersiveCamera && !usesGrassSway && !isCharacterModelKey(key)) ensureOccluderFadeMaterial(sub.material)
           const im = new THREE.InstancedMesh(geometry, sub.material, cap)
           if (usesNpcWalk) attachNpcWalkShadows(im)
           const isTreeLike = SHADOW_CASTING_MODEL_KEYS.has(key)
@@ -3439,6 +3719,10 @@ function ThreeLowPolyMap({
           })
           sub.instancedMesh.count += 1
           sub.instancedMesh.instanceMatrix.needsUpdate = true
+        }
+        if (refs.length > 0 && contactShadowLayer) {
+          const blobRef = addContactShadow(key, getInstanceTemplate(key), worldMatrix)
+          if (blobRef) refs.push(blobRef)
         }
         return refs.length > 0 ? refs : null
       }
@@ -3619,11 +3903,16 @@ function ThreeLowPolyMap({
           mapId: currentMapName, event: routeBlockerEvent, npcRole
         })
         const homeZoneId = getEncounterZoneAt(currentMapName, tileX, tileY)?.id ?? null
+        const npcWanderExclusionEvents = (mapInfo?.runtimeEvents || [])
+          .filter((event) => Number(event.properties?.npcWanderExclusionRadius) > 0)
         const wanderArea = wanderEnabled ? buildNpcWanderArea({
           home: { x: tileX, y: tileY },
           canVisit: (x, y) => (
             [0, 8, 13, 16, 17].includes(mapGrid[y]?.[x]) &&
             !npcReservedEventTiles.has(`${x},${y}`) &&
+            !npcWanderExclusionEvents.some((event) => Math.hypot(
+              x - Number(event.position?.x), y - Number(event.position?.y)
+            ) <= Number(event.properties?.npcWanderExclusionRadius)) &&
             !isEnvironmentTileBlocked(mapInfo, x, y) &&
             (getEncounterZoneAt(currentMapName, x, y)?.id ?? null) === homeZoneId &&
             !npcSolidDecorations.some((object) => isInsideDecorationFootprint(object, x, y, 0.12))
@@ -3652,6 +3941,8 @@ function ThreeLowPolyMap({
           walkBob: 0,
           walkRoll: 0,
           walkStride: 0,
+          gaitPhase: 0,
+          gaitBlend: 0,
           lastUpdateAt: 0,
           tileX,
           tileY,
@@ -3702,7 +3993,7 @@ function ThreeLowPolyMap({
               _instTmpMatrix.multiplyMatrices(_instTmpComposed, ref.localOffset)
               ref.mesh.setMatrixAt(ref.index, _instTmpMatrix)
               ref.mesh.instanceMatrix.needsUpdate = true
-              setNpcWalkStride(ref.mesh, ref.index, this.walkStride)
+              setNpcWalkGait(ref.mesh, ref.index, { phase: this.gaitPhase, blend: this.gaitBlend, scale: this.scale })
             })
             const offsetX = this.currentPosX - this.posX
             const offsetZ = this.currentPosZ - this.posZ
@@ -3715,7 +4006,7 @@ function ThreeLowPolyMap({
             if (stepAsideOffset.distance <= 0 || !this.routeBlockerEvent) return false
             const yielded = isEliteRouteBlockerCleared(
               this.routeBlockerEvent,
-              visualState,
+              options.eventVisualState || visualState,
               Boolean(options.currentMapBossCompleted)
             )
             const nextTargetX = this.posX + (yielded ? asideOffsetX : 0)
@@ -3790,6 +4081,7 @@ function ThreeLowPolyMap({
               const previousBob = this.walkBob
               const previousRoll = this.walkRoll
               const previousStride = this.walkStride
+              const previousBlend = this.gaitBlend
               const walk = this.wanderer.update(elapsed, {
                 paused: this.wanderPaused,
                 nearPlayer: distance <= 2,
@@ -3808,13 +4100,19 @@ function ThreeLowPolyMap({
               this.currentPosZ = this.posZ + (walk.y - this.tileY) * CELL
               this.interactionTileX = Math.round(walk.x)
               this.interactionTileY = Math.round(walk.y)
-              this.walkStride = getNpcWalkStride(walk, { standing: this.active })
-              this.walkBob = Math.abs(this.walkStride) * 0.025
-              this.walkRoll = this.walkStride * 0.018
+              const travelled = Math.hypot(this.currentPosX - previousX, this.currentPosZ - previousZ)
+              if (travelled > .00001) this.gaitPhase += travelled / NPC_GAIT_CYCLE_DISTANCE * Math.PI * 2
+              const walking = !this.wanderPaused && !this.active && (walk.moving || travelled > .00001)
+              this.gaitBlend = THREE.MathUtils.lerp(this.gaitBlend, walking ? 1 : 0, 1 - Math.exp(-elapsed * .014))
+              if (!walking && this.gaitBlend < .001) this.gaitBlend = 0
+              this.walkStride = Math.sin(this.gaitPhase) * this.gaitBlend
+              // Hip motion is solved in the same shader as the planted foot.
+              this.walkBob = 0
+              this.walkRoll = 0
               if (!this.active) this.targetRotation = DIRS[walk.direction].rot
               transformChanged = previousX !== this.currentPosX || previousZ !== this.currentPosZ ||
-                previousBob !== this.walkBob || previousRoll !== this.walkRoll || previousStride !== this.walkStride
-              if (this.wanderPaused && !this.active) return false
+                previousBob !== this.walkBob || previousRoll !== this.walkRoll || previousStride !== this.walkStride || previousBlend !== this.gaitBlend
+              if (this.wanderPaused && !this.active && !transformChanged) return false
             }
             if (this.moveStartedAt) {
               const progress = clamp((now - this.moveStartedAt) / this.moveDurationMs, 0, 1)
@@ -3841,12 +4139,12 @@ function ThreeLowPolyMap({
             return true
           },
           isAnimating() {
-            if (this.wanderer && this.wanderPaused && !this.active) return false
+            if (this.wanderer && this.wanderPaused && !this.active && this.gaitBlend === 0) return false
             const delta = Math.atan2(
               Math.sin(this.targetRotation - this.currentRotation),
               Math.cos(this.targetRotation - this.currentRotation)
             )
-            return this.moveStartedAt > 0 || (this.wanderer?.state.moving && !this.wanderPaused) || Math.abs(delta) >= 0.002
+            return this.gaitBlend > 0 || this.moveStartedAt > 0 || (this.wanderer?.state.moving && !this.wanderPaused) || Math.abs(delta) >= 0.002
           }
         }
         return controller
@@ -3879,6 +4177,7 @@ function ThreeLowPolyMap({
         applyObjectiveDeviceVisualState(objectiveDevice, visualState)
         npcFacingController?.syncRouteBlockerState?.(visualState, {
           immediate: true,
+          eventVisualState: normalizedMapEventVisualState[eventId],
           currentMapBossCompleted
         })
         eventVisualBindings.push({
@@ -3911,7 +4210,10 @@ function ThreeLowPolyMap({
       stateRef.current.mapChunks = chunks
       stateRef.current.chunkGrid = { chunkCountX, chunkTiles: CHUNK_TILES }
 
+      const canPlaceProceduralScenery = createProceduralSceneryClearance(mapInfo)
       const placeSmallDecoration = (key, pos, scale, rotation = 0, offsetX = 0, offsetZ = 0) => {
+        if (!canPlaceProceduralScenery(key, pos.x / CELL + width / 2 - .5,
+          pos.z / CELL + height / 2 - .5, scale, rotation, offsetX, offsetZ)) return
         const base = .025 - (getModelVisualBounds(models[key])?.minY ?? 0) * scale
         return addInstance(key, pos.x + offsetX, base, pos.z + offsetZ, rotation, scale)
       }
@@ -3923,11 +4225,19 @@ function ThreeLowPolyMap({
         return getVisualTile(mapGrid, tileX, tileY)
       }
 
+      const getForestSourceTile = (tileX, tileY) => {
+        const source = mapInfo?.forestWallSourceGrid
+        if (!source) return getRenderedTile(tileX, tileY)
+        const sx = Math.max(0, Math.min(width - 1, tileX))
+        const sy = Math.max(0, Math.min(height - 1, tileY))
+        return source[sy]?.[sx]
+      }
+
       const isForestEdge = (tileX, tileY) => {
         for (let oy = -1; oy <= 1; oy += 1) {
           for (let ox = -1; ox <= 1; ox += 1) {
             if (ox === 0 && oy === 0) continue
-            const neighbor = getRenderedTile(tileX + ox, tileY + oy)
+            const neighbor = getForestSourceTile(tileX + ox, tileY + oy)
             if (neighbor !== 1) return true
           }
         }
@@ -3957,7 +4267,7 @@ function ThreeLowPolyMap({
         let nz = 0
 
         for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const neighbor = getRenderedTile(tileX + ox, tileY + oy)
+          const neighbor = getForestSourceTile(tileX + ox, tileY + oy)
           if (neighbor !== 1 && neighbor !== 11) {
             nx += ox
             nz += oy
@@ -3972,8 +4282,12 @@ function ThreeLowPolyMap({
         }
       }
 
+      let forestSolidPlacedCount = 0
       const placeForestModel = (key, pos, scale, rotation, offsetX, offsetZ) => {
         if (mapInfo.environmentBoundaryTheme && (key === 'stone' || key === 'rock')) return
+        if (!canPlaceProceduralScenery(key, pos.x / CELL + width / 2 - .5,
+          pos.z / CELL + height / 2 - .5, scale, rotation, offsetX, offsetZ)) return
+        if (key === 'bush' || key === 'stone' || key === 'rock') forestSolidPlacedCount += 1
         const base = .025 - (getModelVisualBounds(models[key])?.minY ?? 0) * scale
         return addInstance(key, pos.x + offsetX, base, pos.z + offsetZ, rotation, scale)
       }
@@ -4028,18 +4342,8 @@ function ThreeLowPolyMap({
           const offsetX = edgeNudge.x * (force ? 0.45 : 0.2) + (seededRandom(x, y, 132 + i) - 0.5) * CELL * baseSpread
           const offsetZ = edgeNudge.z * (force ? 0.45 : 0.2) + (seededRandom(x, y, 139 + i) - 0.5) * CELL * baseSpread
           const rotation = seededRandom(x, y, 146 + i) * Math.PI * 2
-          const baseScale = key === 'rock'
-            ? preferClearance ? 0.74 : 0.82
-            : key === 'stone'
-              ? preferClearance ? 0.62 : 0.66
-              : key.includes('flower')
-                ? 0.74
-                : key === 'mushroom'
-                  ? 0.76
-                  : force ? 0.9 : onBlockedTile ? 1.02 : 0.9
-          const scale = force
-            ? baseScale + seededRandom(x, y, 153 + i) * 0.12
-            : baseScale + seededRandom(x, y, 153 + i) * (heavy ? 0.38 : 0.22)
+          // 同一模型全图同一尺寸（proceduralModelScales），只留 ±6% 自然浮动
+          const scale = getProceduralModelScale(key, x, y, 153 + i)
           placeForestModel(key, pos, scale, rotation, offsetX, offsetZ)
         }
       }
@@ -4108,7 +4412,31 @@ function ThreeLowPolyMap({
       }
 
       const renderWaterBodies = () => {
+        // 湖泊 / 池塘的岸线跟随玩法网格里的水格（11）：水格一定显示为水、可走格一定是陆地，
+        // 椭圆 waterBodies 只用于在水陆交界带内塑造自然的岸线。网格里没有水格时退回椭圆绘制。
+        const gridWater = buildWaterSurfaceGeometries(mapInfo, {
+          grid: mapGrid,
+          toWorld: (tileX, tileY) => worldFromTile(tileX, tileY, width, height)
+        })
+        if (gridWater) {
+          // 三层共用世界原点，透明排序按包围球深度会乱序；显式 renderOrder 保证 岸 → 水 → 深水。
+          ;[
+            [gridWater.bank, waterBankMaterial, -3],
+            [gridWater.water, waterMaterial, -2],
+            [gridWater.deep, waterDeepMaterial, -1]
+          ].forEach(([geometry, material, renderOrder]) => {
+            if (!geometry) return
+            // 与原椭圆路径一致：三层都走地面贴花的 polygonOffset，否则岸层会压住水面。
+            applyGroundDecalMaterial(material)
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.renderOrder = renderOrder
+            mesh.receiveShadow = true
+            mesh.name = 'Grid water surface'
+            root.add(mesh)
+          })
+        }
         mapInfo?.waterBodies?.forEach((body, index) => {
+          if (gridWater && body.type !== 'stream') return
           if (body.type === 'stream' && Array.isArray(body.points)) {
             for (let i = 0; i < body.points.length - 1; i += 1) {
               const [sx, sy] = body.points[i]
@@ -4175,13 +4503,33 @@ function ThreeLowPolyMap({
           })
           root.add(deep)
         })
+        return gridWater?.surface ?? null
       }
 
-      renderWaterBodies()
+      const gridWaterSurface = renderWaterBodies()
 
       const renderSmoothRoads = () => {
         if (mapInfo?.roadRenderStyle === 'organic') return false
         if (!Array.isArray(mapInfo?.visualPaths) || mapInfo.visualPaths.length === 0) return false
+
+        // 整个路网合成一个场：共线段合并、路口内角圆角、断头端头收进 tile、桥下以外不入水。
+        // 路肩和路面各只画一层，不再有半透明路肩叠加造成的深色圆环和鼓包。
+        const roadSurface = buildRoadSurfaceGeometries(mapInfo, {
+          toWorld: (tileX, tileY) => worldFromTile(tileX, tileY, width, height),
+          waterSurface: gridWaterSurface
+        })
+        if (roadSurface?.road) {
+          ;[[roadSurface.edge, pathEdgeMaterial], [roadSurface.road, pathMaterial]].forEach(([geometry, material]) => {
+            if (!geometry) return
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.receiveShadow = true
+            mesh.name = 'Smooth road surface'
+            root.add(mesh)
+            pathObjects.push(mesh)
+          })
+          // 不再在第一条路上叠浮空的高光圆片：所有道路同一种样式
+          return true
+        }
 
         const joinPatches = new Map()
         const addJoinPatch = (point, {
@@ -4399,21 +4747,42 @@ function ThreeLowPolyMap({
             const offsetZ = (seededRandom(x, y, 72) - 0.5) * CELL * 0.58
             const rotation = seededRandom(x, y, 73) * Math.PI * 2
 
+            // 可走草地上只放能穿过的矮植被（灌木 / 石头按标准尺寸会挡路，放在林缘）
             if (detailRoll > 0.97) {
-              placeSmallDecoration('flowerYellow', pos, 0.92, rotation, offsetX, offsetZ)
+              placeSmallDecoration('flowerYellow', pos, getProceduralModelScale('flowerYellow', x, y, 74), rotation, offsetX, offsetZ)
             } else if (detailRoll > 0.94) {
-              placeSmallDecoration('flowerRed', pos, 0.88, rotation, offsetX, offsetZ)
-            } else if (detailRoll > 0.91) {
-              placeSmallDecoration('bush', pos, 0.72, rotation, offsetX, offsetZ)
-            } else if (detailRoll > 0.89 && !mapInfo.environmentBoundaryTheme) {
-              placeSmallDecoration('stone', pos, 0.56, rotation, offsetX, offsetZ)
+              placeSmallDecoration('flowerRed', pos, getProceduralModelScale('flowerRed', x, y, 74), rotation, offsetX, offsetZ)
+            } else if (detailRoll > 0.9) {
+              placeSmallDecoration('grassLarge', pos, getProceduralModelScale('grassLarge', x, y, 74), rotation, offsetX, offsetZ)
             } else if (detailRoll > 0.87) {
-              placeSmallDecoration('mushroom', pos, 0.72, rotation, offsetX, offsetZ)
+              placeSmallDecoration('mushroom', pos, getProceduralModelScale('mushroom', x, y, 74), rotation, offsetX, offsetZ)
+            }
+          }
+
+          // 地图最外圈始终阻挡（见 mapVisualCollision 的 map-rim），
+          // 这一格若没画出实体模型，补一丛灌木，避免出现看不见的墙
+          const isPlayableRimTile = insidePlayableArea && blockedEdgeTile &&
+            (x === 0 || y === 0 || x === width - 1 || y === height - 1)
+          const solidCountBeforeTile = forestSolidPlacedCount
+          const ensureRimBoundaryVisual = () => {
+            if (!isPlayableRimTile || forestSolidPlacedCount > solidCountBeforeTile) return
+            // 标准尺寸的灌木一丛不够填满一格，用两丛错开摆，边界才看得出来
+            for (let k = 0; k < 2; k += 1) {
+              const rimScale = getProceduralModelScale('bush', x, y, 171 + k)
+              const rimBase = .025 - (getModelVisualBounds(models.bush)?.minY ?? 0) * rimScale
+              const along = (k - 0.5) * CELL * 0.42
+              const alongX = (y === 0 || y === height - 1) ? along : 0
+              const alongZ = (y === 0 || y === height - 1) ? 0 : along
+              addInstance('bush', pos.x + alongX, rimBase, pos.z + alongZ, seededRandom(x, y, 172 + k) * Math.PI * 2, rimScale)
             }
           }
 
           if (legacy === 1) {
-            if (mapInfo?.renderForestWallUndergrowth === false) continue
+            if (isForestWallExitClearance(mapInfo, x, y)) continue
+            if (mapInfo?.renderForestWallUndergrowth === false) {
+              ensureRimBoundaryVisual()
+              continue
+            }
             if (isInRoadClearance(mapInfo, x, y, 0.7)) {
               if (blockedEdgeTile) {
                 placeForestUndergrowth(x, y, pos, {
@@ -4423,6 +4792,7 @@ function ThreeLowPolyMap({
                   preferClearance: true
                 })
               }
+              ensureRimBoundaryVisual()
               continue
             }
 
@@ -4435,14 +4805,13 @@ function ThreeLowPolyMap({
                   force: blockedEdgeTile
                 })
               }
+              ensureRimBoundaryVisual()
               continue
             }
 
             const edge = isForestEdge(x, y)
             const treeRoll = seededRandom(x, y, 12)
-            const shouldRenderTree = insidePlayableArea
-              ? treeRoll < (edge ? 0.9 : 0.96)
-              : treeRoll < 0.9
+            const shouldRenderTree = treeRoll < getForestWallTreeChance(mapInfo?.id, edge, insidePlayableArea)
 
             if (!shouldRenderTree) {
               placeForestUndergrowth(x, y, pos, {
@@ -4450,27 +4819,24 @@ function ThreeLowPolyMap({
                 heavy: true,
                 force: blockedEdgeTile
               })
+              ensureRimBoundaryVisual()
               continue
             }
 
-            const key = tileObjectKey(x, y)
-            const baseScale = key === 'treePine' ? 1.62 : key === 'treeOak' ? 1.46 : 1.38
-            const edgeScale = edge ? 0.84 : 1
-            const treeScale = baseScale * edgeScale * (0.9 + seededRandom(x, y, 14) * 0.2)
-            const finalScale = insidePlayableArea ? treeScale : treeScale * 0.94
+            const key = getForestWallTreeKey(mapInfo?.id, x, y)
+            const finalScale = getProceduralModelScale(key, x, y, 14) * FOREST_WALL_TREE_HEIGHT_SCALE
             const edgeNudge = edge ? getForestEdgeNudge(x, y) : { x: 0, z: 0 }
-            addInstance(
-              key,
-              pos.x + edgeNudge.x + (seededRandom(x, y, 15) - 0.5) * CELL * 0.16,
-              0.08,
-              pos.z + edgeNudge.z + (seededRandom(x, y, 16) - 0.5) * CELL * 0.16,
-              ((x * 5 + y * 9) % 12) * Math.PI / 6,
-              finalScale
-            )
+            const offsetX = edgeNudge.x + (seededRandom(x, y, 15) - 0.5) * CELL * 0.16
+            const offsetZ = edgeNudge.z + (seededRandom(x, y, 16) - 0.5) * CELL * 0.16
+            const rotation = ((x * 5 + y * 9) % 12) * Math.PI / 6
+            if (canPlaceProceduralScenery(key, x, y, finalScale, rotation, offsetX, offsetZ)) {
+              addInstance(key, pos.x + offsetX, 0.08, pos.z + offsetZ, rotation, finalScale)
+            }
 
             if (seededRandom(x, y, 8) > (edge ? 0.78 : 0.9)) {
               placeForestUndergrowth(x, y, pos, { edge, heavy: false })
             }
+            ensureRimBoundaryVisual()
           }
 
           if (
@@ -4603,7 +4969,11 @@ function ThreeLowPolyMap({
           ? (object.height ?? -0.05)
           : (object.height ?? 0.2)
         const eliteLandmark = createEliteFourLandmark(object.type)
-        const modelBounds = object.surface ? getModelVisualBounds(models[spec.key] || eliteLandmark) : null
+        const isAuthoredActorOrPickup = Boolean(object.npcRole) || ['trainer', 'boss', 'merchant', 'item', 'pickup'].includes(object.eventType)
+        // Static models use their real mesh bottom, including protected gate trees
+        // that do not pass through the environment surface assignment.
+        const groundsOnSurface = Boolean(object.surface) || (!eliteLandmark && !isAuthoredActorOrPickup && (object.height == null || getTreeModelScale(spec.key) != null))
+        const modelBounds = groundsOnSurface ? getModelVisualBounds(models[spec.key] || eliteLandmark) : null
         const modelLift = modelBounds
           ? (object.surface === 'water' ? .075 : .025) - modelBounds.minY * modelScale
           : authoredLift
@@ -4766,6 +5136,12 @@ function ThreeLowPolyMap({
           return
         }
 
+        if (event.properties?.interactionKind === 'fishing') {
+          const marker = createFishingShoreMarker(event, width, height)
+          root.add(marker)
+          dynamicEventDecorations.push({ eventId: event.id, eventType: 'info', update: marker.userData.updateFishing })
+          return
+        }
         if (!['warp', 'fast_travel', 'heal', 'challenge', 'objective', 'sign', 'info', 'merchant'].includes(event.type)) return
         let objectiveDevice = null
         if (event.type === 'objective') {
@@ -4841,7 +5217,7 @@ function ThreeLowPolyMap({
     healthTimerId = window.setTimeout(runHealthCheck, 1800)
 
     function notifyPlayerIdle(state) {
-      if (!state?.pointer || state.pointer.moving) return
+      if (!state?.pointer || state.pointer.moving || state.warpPending) return
       state.onPlayerMove?.({
         x: state.pointer.tileX,
         y: state.pointer.tileY,
@@ -4926,9 +5302,37 @@ function ThreeLowPolyMap({
       return true
     }
 
+    function grassAt(x, y) {
+      const state = stateRef.current
+      return isBicycleGrassTile(getLegacyTile(state?.mapGrid, x, y), grassObjects.has(`${x},${y}`))
+    }
+    function changeRiding(enabled, vehicle = 'bicycle') {
+      const state = stateRef.current
+      if (!state?.player) return false
+      const crossingGrass = state.pointer.moving && (state.pointer.target?.fromGrass || state.pointer.target?.toGrass)
+      const onGrass = Boolean(crossingGrass || grassAt(state.pointer.tileX, state.pointer.tileY))
+      const owned = vehicle === 'sports_car' ? state.hasSportsCar : state.hasBicycle
+      state.riding = setPlayerRiding(state.player, Boolean(enabled && owned && !onGrass), vehicle)
+      state.vehicle = state.player.userData.vehicle
+      setActiveVehicle(state.vehicle)
+      if (mapDebugEnabled) host.dataset.vehicle = state.vehicle || 'walking'
+      setBicycleOnGrass(onGrass)
+      state.kickAnimation?.()
+      return state.riding
+    }
+    stateRef.current.changeRiding = changeRiding
+    stateRef.current.grassAt = grassAt
+    stateRef.current.toggleRiding = (vehicle = 'bicycle') => {
+      const state = stateRef.current
+      vehicle = state.equippedVehicle || vehicle
+      const owned = vehicle === 'sports_car' ? state?.hasSportsCar : state?.hasBicycle
+      if (!state?.worldReady || !state.mapActive || state.cloudBlocked || state.encounterPending || state.warpPending || !owned) return false
+      return changeRiding(!(state.riding && state.vehicle === vehicle), vehicle)
+    }
+
     function startMove(direction, options = {}) {
       const state = stateRef.current
-      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || state.warpPending || !state.mapActive || !state.player) return
       const pointerState = state.pointer
       const vec = DIRS[direction]
       if (!vec) return false
@@ -4963,6 +5367,12 @@ function ThreeLowPolyMap({
         return false
       }
 
+      const fromGrass = grassAt(pointerState.tileX, pointerState.tileY)
+      const toGrass = grassAt(nextX, nextY)
+      if (fromGrass || toGrass) changeRiding(false)
+      setBicycleOnGrass(fromGrass || toGrass)
+      const stepDuration = getBicycleStepDuration({ riding: state.riding, vehicle: state.vehicle, fromGrass, toGrass, walkDuration: options.continuous ? CONTINUOUS_MOVE_MS : MOVE_MS })
+      if (mapDebugEnabled) host.dataset.stepDuration = String(stepDuration)
       const width = state.mapGrid[0].length
       const height = state.mapGrid.length
       const from = options.from ?? state.player.position.clone()
@@ -4977,9 +5387,15 @@ function ThreeLowPolyMap({
         from,
         to: new THREE.Vector3(toPos.x, PLAYER_BASE_Y, toPos.z),
         rot: vec.rot,
-        elapsed: 0,
+        // Carry time left over from the previous tile. This keeps a held
+        // vehicle input on one continuous clock instead of restarting the
+        // interpolation at every grid boundary.
+        elapsed: Math.max(0, Number(options.elapsed) || 0),
         lastNow: options.now ?? performance.now(),
         continuous: Boolean(options.continuous),
+        duration: stepDuration,
+        fromGrass,
+        toGrass,
         step: { tileX: nextX, tileY: nextY, direction, legacyTile }
       }
       return true
@@ -4987,7 +5403,7 @@ function ThreeLowPolyMap({
 
     function requestMove(direction) {
       const state = stateRef.current
-      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive || !state.player) return false
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || state.warpPending || !state.mapActive || !state.player) return false
       const pointerState = state.pointer
       if (pointerState.moving) {
         pointerState.queued = direction
@@ -5004,7 +5420,7 @@ function ThreeLowPolyMap({
 
     function beginPress(direction) {
       const state = stateRef.current
-      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || !state.mapActive) return
+      if (!state?.worldReady || state.cloudBlocked || state.encounterPending || state.warpPending || !state.mapActive) return
       const vec = DIRS[direction]
       if (!vec) return
       clearMoveDelayTimer()
@@ -5129,7 +5545,9 @@ function ThreeLowPolyMap({
         : getMapEvents(currentMapName)
       const relocatedRouteBlocker = activeMapEvents.find((event) => {
         const visualState = resolveEventVisualStateValue(event.id, activeVisualState, 'available')
-        const interactionTile = getEliteRouteBlockerInteractionTile(event, visualState, activeBossCompleted)
+        const interactionTile = getEliteRouteBlockerInteractionTile(
+          event, activeVisualState[event.id] || visualState, activeBossCompleted
+        )
         return interactionTile?.x === tileX && interactionTile?.y === tileY
       }) || null
       // Keep the authored event intact: identity, progress and battle scenery use it.
@@ -5165,18 +5583,12 @@ function ThreeLowPolyMap({
       )
       if (isEliteRouteBlockerCleared(
         mapEvent,
-        battleVisualState,
+        activeVisualState[mapEvent.id] || battleVisualState,
         activeBossCompleted
       )) {
-        return relocatedRouteBlocker
-          ? { interaction: 'info', mapEvent }
-          : { interaction: null, mapEvent: null }
+        if (!relocatedRouteBlocker) return { interaction: null, mapEvent: null }
       }
-      if (shouldRouteBattleEventToInfo(
-        mapEvent,
-        activeVisualState,
-        activeBossCompleted
-      )) {
+      if (shouldRouteBattleEventToInfo(mapEvent, activeVisualState)) {
         return { interaction: 'info', mapEvent }
       }
       if (mapEvent.type === 'pickup') return { interaction: 'item', mapEvent }
@@ -5184,6 +5596,44 @@ function ThreeLowPolyMap({
         return { interaction: mapEvent.type, mapEvent }
       }
       return { interaction: safeFallbackInteraction, mapEvent }
+    }
+
+    function dispatchMapWarp(warp) {
+      const state = stateRef.current
+      if (!state || state.warpPending || typeof state.onMapWarp !== 'function') return
+      clearMoveDelayTimer()
+      state.pointer.holdDirection = null
+      state.pointer.queued = null
+      state.pointer.moving = false
+      state.pointer.target = null
+      // Commit the source position before dispatch, including denied gates.
+      // No source-position callback may run after the target landing is set.
+      notifyPlayerIdle(state)
+      // A held move can reach an exit from inside the animation's completion
+      // callback. Its later idle notification still belongs to the source map.
+      state.warpAttemptVersion += 1
+      state.warpPending = true
+      const release = () => {
+        if (disposed || stateRef.current !== state) return
+        state.warpPending = false
+        state.kickAnimation?.()
+      }
+      try {
+        const result = state.onMapWarp(warp)
+        if (result && typeof result.then === 'function') {
+          // Rejected progression gates resolve immediately; cloud transitions
+          // stay paused until their save finishes. Both paths must unlock.
+          Promise.resolve(result).then(release, (error) => {
+            release()
+            console.error('[ThreeLowPolyMap] Map transition failed:', error)
+          })
+        } else {
+          release()
+        }
+      } catch (error) {
+        release()
+        console.error('[ThreeLowPolyMap] Map transition failed:', error)
+      }
     }
 
     function handleBlockedInteraction({ tileX, tileY, targetX, targetY, legacyTile }) {
@@ -5197,7 +5647,7 @@ function ThreeLowPolyMap({
           ? mapEvent
           : getMapEventAt(currentMapName, targetX, targetY, 'warp')
         if (warp) {
-          state?.onMapWarp?.(warp)
+          dispatchMapWarp(warp)
         } else {
           state?.onCollect?.('info', 1, { tileX: targetX, tileY: targetY, mapEvent })
         }
@@ -5232,7 +5682,7 @@ function ThreeLowPolyMap({
           const warp = mapEvent?.type === 'warp'
             ? mapEvent
             : getMapEventAt(currentMapName, tileX, tileY, 'warp')
-          if (warp) stateRef.current?.onMapWarp?.(warp)
+          if (warp) dispatchMapWarp(warp)
           return false
         }
         dispatchCollectInteraction(interaction, {
@@ -5347,6 +5797,9 @@ function ThreeLowPolyMap({
     const frameTimings = []
     const MAX_FRAME_SAMPLES = 60
     let lowFpsWarningShown = false
+    let dynResFrameSum = 0
+    let dynResFrameCount = 0
+    let footstepEmitTimer = 0
 
     const scheduleAnimation = (delayMs = 0) => {
       if (frameId != null || idleFrameTimerId || disposed) return
@@ -5364,6 +5817,8 @@ function ThreeLowPolyMap({
 
     const kickAnimation = () => {
       if (disposed) return
+      // 外部状态（事件完成、拾取、NPC 隐藏等）变化后阴影要跟着重画
+      if (renderer) renderer.shadowMap.needsUpdate = true
       if (idleFrameTimerId) {
         window.clearTimeout(idleFrameTimerId)
         idleFrameTimerId = 0
@@ -5398,10 +5853,14 @@ function ThreeLowPolyMap({
     )
 
     const shouldRunFullSpeedFrame = (state) => Boolean(
+      state?.fishingActivity ||
       state?.pointer?.moving ||
       state?.pointer?.queued ||
       state?.pointer?.holdDirection ||
       activeTrampleGrassKeys.size > 0 ||
+      cameraSettling ||
+      cameraRotating ||
+      Boolean(footstepParticles?.isActive()) ||
       hasActiveDynamicDecorationAnimation(state?.dynamicEventDecorations) ||
       hasActiveNpcFacingAnimation(state?.npcFacingControllers) ||
       hasActivePickupBurst(state?.pickupBursts) ||
@@ -5411,6 +5870,7 @@ function ThreeLowPolyMap({
     )
 
     const animate = (now) => {
+      CHARACTER_SURFACE_CLOCK.value = now / 1000
       frameId = null
       const state = stateRef.current
       const mapShouldRun = Boolean(
@@ -5434,8 +5894,9 @@ function ThreeLowPolyMap({
       const dt = Math.min((now - last) / 1000, 0.05)
       const frameTime = now - last
 
-      // 性能监控：记录帧时间
-      if (runtimeIsMobile && activeFrameNeeded) {
+      // 性能监控：记录所有实际渲染帧。空闲阶段也持续采样，否则动态
+      // 分辨率无法发现静态地图在高分辨率下的掉帧。
+      if (frameTime > 0 && frameTime < 250) {
         frameTimings.push(frameTime)
         if (frameTimings.length > MAX_FRAME_SAMPLES) {
           frameTimings.shift()
@@ -5446,13 +5907,13 @@ function ThreeLowPolyMap({
           const avgFrameTime = frameTimings.reduce((a, b) => a + b, 0) / frameTimings.length
           const avgFps = 1000 / avgFrameTime
 
-          // 如果活跃操作期间低于25fps，先降低空闲刷新频率，避免非交互时继续消耗资源。
-          if (avgFps < 25) {
-            idleFrameIntervalMs = Math.max(idleFrameIntervalMs, renderProfile.recoveryIdleFrameMs)
+          // 极低帧率时只提示调节，不重新把地图锁到 24/30 FPS；下一轮
+          // 动态 DPR 会优先降低像素成本，保留设备原生 RAF 节奏。
+          if (avgFps < 25 && renderProfile.recoveryIdleFrameMs > 0) {
             if (mapDebugEnabled) {
               console.warn(
                 `[ThreeLowPolyMap] 检测到活跃低帧率 (${avgFps.toFixed(1)} FPS)，` +
-                `已把空闲刷新间隔调整为 ${Math.round(idleFrameIntervalMs)}ms。`
+                '将通过动态分辨率降低渲染成本。'
               )
             }
             lowFpsWarningShown = true
@@ -5469,15 +5930,18 @@ function ThreeLowPolyMap({
         const stepDelta = Math.min(Math.max(0, now - target.lastNow), 50)
         target.elapsed += stepDelta
         target.lastNow = now
-        const moveDuration = target.continuous ? CONTINUOUS_MOVE_MS : MOVE_MS
+        const moveDuration = target.duration || (target.continuous ? CONTINUOUS_MOVE_MS : MOVE_MS)
         const t = Math.min(target.elapsed / moveDuration, 1)
         const progress = t
         player.position.x = THREE.MathUtils.lerp(target.from.x, target.to.x, progress)
         player.position.z = THREE.MathUtils.lerp(target.from.z, target.to.z, progress)
-        player.position.y = PLAYER_BASE_Y + Math.sin(t * Math.PI) * 0.035
+        const rideBob = state.riding && state.vehicle !== 'sports_car' ? 0.0015 : 0
+        player.position.y = PLAYER_BASE_Y + Math.sin(t * Math.PI) * rideBob
         player.rotation.y = lerpAngle(player.rotation.y, target.rot, 0.74)
         if (t >= 1) {
           player.position.set(target.to.x, PLAYER_BASE_Y, target.to.z)
+          setBicycleOnGrass(target.toGrass)
+          const warpAttemptVersion = state.warpAttemptVersion
           const canContinue = finishStep(target.step)
           const nextDirection = state.pointer.queued || state.pointer.holdDirection
           const shouldContinue = Boolean(nextDirection && state.pointer.holdDirection === nextDirection)
@@ -5491,25 +5955,32 @@ function ThreeLowPolyMap({
             const continued = startMove(nextDirection, {
               from: target.to.clone(),
               now,
-              continuous: true
+              continuous: true,
+              elapsed: Math.max(0, target.elapsed - moveDuration)
             })
             if (continued) {
-              player.position.y = PLAYER_BASE_Y
+              const nextTarget = state.pointer.target
+              const nextDuration = nextTarget.duration || (nextTarget.continuous ? CONTINUOUS_MOVE_MS : MOVE_MS)
+              const nextT = Math.min(nextTarget.elapsed / nextDuration, 1)
+              player.position.x = THREE.MathUtils.lerp(nextTarget.from.x, nextTarget.to.x, nextT)
+              player.position.z = THREE.MathUtils.lerp(nextTarget.from.z, nextTarget.to.z, nextT)
+              player.position.y = PLAYER_BASE_Y + Math.sin(nextT * Math.PI) * (state.riding && state.vehicle !== 'sports_car' ? 0.0015 : 0)
             } else {
               state.pointer.moving = false
               state.pointer.target = null
-              notifyPlayerIdle(state)
+              if (state.warpAttemptVersion === warpAttemptVersion) notifyPlayerIdle(state)
             }
           } else {
             state.pointer.moving = false
             state.pointer.target = null
-            notifyPlayerIdle(state)
+            if (state.warpAttemptVersion === warpAttemptVersion) notifyPlayerIdle(state)
           }
         }
       }
 
       if (player) {
-        animateLowPolyPlayer(player, Boolean(state?.pointer?.moving), now, dt)
+        animatePlayerTravelRig(player, Boolean(state?.pointer?.moving), now, dt)
+        state?.fishingController?.update(now)
       }
 
 	      updateHealingSpringEffects(state?.springEffects, now)
@@ -5527,14 +5998,73 @@ function ThreeLowPolyMap({
 	      updatePickupCollectBursts(state?.pickupBursts, now)
 
       if (player) {
-        const liveFocus = clampCameraTarget(player.position.x, player.position.z)
-        cameraTarget.copy(liveFocus)
-        cameraFocus.copy(liveFocus)
-        camera.position.set(cameraFocus.x, cameraHeight, cameraFocus.z + cameraForwardOffset)
-        camera.lookAt(cameraFocus.x, cameraFocus.y, cameraFocus.z)
-        sun.position.set(player.position.x + 12, 22, player.position.z + 8)
-        sun.target.position.set(player.position.x, 0, player.position.z)
-        sun.target.updateMatrixWorld()
+        const fishingPoint = FISHING_SPOT_PLACEMENTS[state.fishingActivity?.spotId]
+        const waterFocus = fishingPoint ? worldFromTile(fishingPoint.waterX, fishingPoint.waterY, mapGrid[0].length, mapGrid.length) : null
+        if (cameraRotationEnabled && waterFocus) {
+          if (fishingCameraRestoreYaw === null) fishingCameraRestoreYaw = cameraYawTarget
+          const desiredYaw = Math.atan2(player.position.x - waterFocus.x, player.position.z - waterFocus.z) - Math.atan2(baseCameraOffset.x, baseCameraOffset.z)
+          cameraYawTarget = cameraYaw + Math.atan2(Math.sin(desiredYaw - cameraYaw), Math.cos(desiredYaw - cameraYaw))
+        } else if (fishingCameraRestoreYaw !== null) {
+          cameraYawTarget = cameraYaw + Math.atan2(Math.sin(fishingCameraRestoreYaw - cameraYaw), Math.cos(fishingCameraRestoreYaw - cameraYaw))
+          fishingCameraRestoreYaw = null
+        }
+        if (cameraProfile.damping > 0) {
+          // 镜头略微领先移动方向，停下后缓慢回正
+          const leadDir = state.pointer.moving ? DIRS[state.pointer.direction] : null
+          const leadScale = cameraProfile.lead * (state.riding ? 1.5 : 1)
+          const leadAlpha = 1 - Math.exp(-dt * 2.6)
+          cameraLead.x += ((leadDir ? leadDir.x * leadScale : 0) - cameraLead.x) * leadAlpha
+          cameraLead.z += ((leadDir ? leadDir.y * leadScale : 0) - cameraLead.z) * leadAlpha
+          const liveFocus = clampCameraTarget(
+            player.position.x + cameraLead.x + (waterFocus ? (waterFocus.x - player.position.x) * .3 : 0),
+            player.position.z + cameraLead.z + (waterFocus ? (waterFocus.z - player.position.z) * .3 : 0)
+          )
+          cameraTarget.copy(liveFocus)
+          const followAlpha = 1 - Math.exp(-dt * cameraProfile.damping)
+          cameraFocus.x += (cameraTarget.x - cameraFocus.x) * followAlpha
+          cameraFocus.z += (cameraTarget.z - cameraFocus.z) * followAlpha
+          cameraFocus.y = cameraTarget.y
+          cameraSettling = Math.abs(cameraTarget.x - cameraFocus.x) + Math.abs(cameraTarget.z - cameraFocus.z) > 0.004 ||
+            (!state.pointer.moving && Math.abs(cameraLead.x) + Math.abs(cameraLead.z) > 0.01)
+          if (!cameraSettling) cameraFocus.copy(cameraTarget)
+        } else {
+          const liveFocus = clampCameraTarget(
+            player.position.x + (waterFocus ? (waterFocus.x - player.position.x) * .3 : 0),
+            player.position.z + (waterFocus ? (waterFocus.z - player.position.z) * .3 : 0)
+          )
+          cameraTarget.copy(liveFocus)
+          cameraFocus.copy(liveFocus)
+        }
+        if (cameraRotationEnabled) {
+          if (cameraDragPointerId != null) {
+            cameraYaw = cameraYawTarget
+          } else {
+            cameraYaw += (cameraYawTarget - cameraYaw) * (1 - Math.exp(-dt * 11))
+            if (Math.abs(cameraYawTarget - cameraYaw) < 0.0008) cameraYaw = cameraYawTarget
+          }
+          cameraRotating = cameraDragPointerId != null || cameraYaw !== cameraYawTarget
+          cameraOffset.copy(baseCameraOffset).applyAxisAngle(THREE.Object3D.DEFAULT_UP, cameraYaw)
+        }
+        cameraLookAt.set(cameraFocus.x, cameraProfile.lookY, cameraFocus.z)
+        camera.position.set(cameraFocus.x + cameraOffset.x, cameraOffset.y, cameraFocus.z + cameraOffset.z)
+        camera.lookAt(cameraLookAt)
+        camera.updateMatrixWorld()
+        // 低角度视野向前拉长，阴影盒跟着往前移一段
+        if (immersiveCamera) {
+          const forwardLength = Math.hypot(cameraOffset.x, cameraOffset.z) || 1
+          placeSun(
+            player.position.x - (cameraOffset.x / forwardLength) * 6,
+            player.position.z - (cameraOffset.z / forwardLength) * 6
+          )
+        } else {
+          placeSun(player.position.x, player.position.z)
+        }
+        if (immersiveCamera) {
+          occluderUniforms.uOccluderPlayer.value.set(player.position.x, 1.0, player.position.z)
+          occluderUniforms.uOccluderCamera.value.copy(camera.position)
+          occluderUniforms.uOccluderRadius.value = 1.2
+          if (skyDome) skyDome.position.copy(camera.position)
+        }
       }
 
       // === Chunk 视锥剔除 ===
@@ -5550,7 +6080,19 @@ function ThreeLowPolyMap({
           visibleChunkIds.clear()
           for (let i = 0; i < mapChunks.length; i += 1) {
             const ch = mapChunks[i]
-            const visible = _viewFrustum.intersectsBox(ch.boundingBox)
+            let visible = _viewFrustum.intersectsBox(ch.boundingBox)
+            if (visible && immersiveCamera) {
+              // 能看到地平线后，雾外的 chunk 仍在视锥里，按距离再剔一次
+              if (!ch.center) {
+                ch.center = ch.boundingBox.getCenter(new THREE.Vector3())
+                const size = ch.boundingBox.getSize(new THREE.Vector3())
+                ch.cullReach = chunkCullDistance + Math.hypot(size.x, size.z) / 2
+              }
+              const dx = ch.center.x - cameraFocus.x
+              const dz = ch.center.z - cameraFocus.z
+              const reach = ch.cullReach
+              visible = dx * dx + dz * dz < reach * reach
+            }
             ch.group.visible = visible
             if (visible) {
               visibleChunkCount += 1
@@ -5619,8 +6161,49 @@ function ThreeLowPolyMap({
       }
       }
 
+      horizonScenery?.userData.update?.(now)
+
+      if (footstepParticles) {
+        if (player && state.pointer.moving && state.pointer.target) {
+          footstepEmitTimer -= dt
+          if (footstepEmitTimer <= 0) {
+            const inGrass = Boolean(state.pointer.target.toGrass)
+            footstepEmitTimer = inGrass ? 0.1 : (state.riding ? 0.07 : 0.16)
+            footstepParticles.emit(player.position.x, 0.02, player.position.z, inGrass ? 1 : 0, inGrass ? 2 : (state.riding ? 2 : 1))
+          }
+        } else {
+          footstepEmitTimer = 0
+        }
+        footstepParticles.update(dt)
+      }
+
+      if (activeFrameNeeded || cameraSettling || cameraRotating || !state.worldReady) {
+        renderer.shadowMap.needsUpdate = true
+      }
+
+      // 动态分辨率：持续掉帧就降 DPR，余量充足再慢慢升回去
+      if (frameTime > 0 && frameTime < 250) {
+        dynResFrameSum += frameTime
+        dynResFrameCount += 1
+        if (dynResFrameCount >= 45) {
+          const avgFps = 1000 / (dynResFrameSum / dynResFrameCount)
+          const deviceRatio = Math.min(window.devicePixelRatio || 1, renderProfile.pixelRatioCap)
+          let nextRatio = dynamicPixelRatio
+          if (avgFps < 50) nextRatio = Math.max(renderProfile.minPixelRatio, dynamicPixelRatio - 0.1)
+          else if (avgFps > 58.5) nextRatio = Math.min(deviceRatio, dynamicPixelRatio + 0.05)
+          if (Math.abs(nextRatio - dynamicPixelRatio) > 0.001) {
+            dynamicPixelRatio = nextRatio
+            applyDynamicPixelRatio()
+          }
+          dynResFrameSum = 0
+          dynResFrameCount = 0
+        }
+      }
       if (!renderer.getContext?.()?.isContextLost?.()) {
-        renderer.render(scene, camera)
+        // 后处理一帧有两次 render，统计要按帧累计
+        renderer.info.reset()
+        if (postFx) postFx.render(scene, camera)
+        else renderer.render(scene, camera)
         // Download completion alone is insufficient: wait for a complete rendered frame.
         if (state.worldBuilt && !state.worldReady && !browserContextLost && !rendererRestartPending) {
           reportSceneReady(true)
@@ -5638,11 +6221,35 @@ function ThreeLowPolyMap({
       const perfUpdateInterval = isMobile ? 60 : 1 // 移动端每60帧更新一次
 
       if (shouldUpdatePerfStats) {
+        // Input/warp diagnostics must describe the current frame, even when
+        // expensive mobile render statistics are sampled only once per 60 frames.
+        const liveProbe = window.__THREE_LOW_POLY_MAP_PERF__
+        if (liveProbe?.mapName === currentMapName) Object.assign(liveProbe, {
+          worldReady: state.worldReady === true,
+          playerTile: { x: state.pointer?.tileX, y: state.pointer?.tileY },
+          moving: state.pointer?.moving === true,
+          facing: state.pointer?.direction,
+          cameraYaw,
+          cameraYawTarget,
+          fishing: state.fishingController?.getDebugState?.() || null
+        })
         // 移动端降低性能统计频率
         if (!isMobile || (state.frameCount || 0) % perfUpdateInterval === 0) {
           window.__THREE_LOW_POLY_MAP_PERF__ = {
             worldReady: state.worldReady === true,
             playerModel: state.player?.userData?.kind,
+            playerTile: { x: state.pointer?.tileX, y: state.pointer?.tileY },
+            moving: state.pointer?.moving === true,
+            facing: state.pointer?.direction,
+            cameraYaw,
+            cameraYawTarget,
+            fishing: state.fishingController?.getDebugState?.() || null,
+            cameraPitch: cameraProfile.pitchDeg,
+            cameraDistance: cameraProfile.distance,
+            cameraFov: camera.fov,
+            riding: state.riding === true,
+            vehicle: state.vehicle,
+            movementDuration: state.pointer?.target?.duration || MOVE_MS,
             characterModelKeys: state.characterModelKeys || [],
             npcs: (state.npcFacingControllers || []).map((controller) => ({
               eventId: controller.eventId,
@@ -5657,6 +6264,8 @@ function ThreeLowPolyMap({
               wanderEnabled: Boolean(controller.wanderer),
               moving: controller.wanderer?.state.moving ?? false,
               walkStride: controller.walkStride,
+              gaitPhase: controller.gaitPhase,
+              gaitBlend: controller.gaitBlend,
               limbAnimation: controller.refs.some((ref) => hasNpcWalkRig(ref.mesh.geometry)),
               paused: controller.wanderer ? controller.wanderPaused : true,
               occupiedTiles: controller.wanderer?.state.occupiedTiles.map((tile) => ({ ...tile })) ??
@@ -5696,9 +6305,106 @@ function ThreeLowPolyMap({
     }
     scheduleAnimation()
 
+    const SCREEN_DIRECTIONS = ['up', 'right', 'down', 'left']
+    const getCameraQuadrant = () => (
+      cameraRotationEnabled ? ((Math.round(cameraYawTarget / CAMERA_QUARTER_TURN) % 4) + 4) % 4 : 0
+    )
+    const screenToWorldDirection = (direction) => {
+      const index = SCREEN_DIRECTIONS.indexOf(direction)
+      if (index < 0) return direction
+      return SCREEN_DIRECTIONS[(index - getCameraQuadrant() + 4) % 4]
+    }
+    // 屏幕方向 -> 按下时映射到的世界方向（松开时按同一映射结束，转镜头也不会卡键）
+    const pressedWorldDirections = new Map()
+    const beginScreenPress = (direction) => {
+      const worldDirection = screenToWorldDirection(direction)
+      pressedWorldDirections.set(direction, worldDirection)
+      beginPress(worldDirection)
+    }
+    const endScreenPress = (direction) => {
+      if (!direction) {
+        pressedWorldDirections.clear()
+        endPress()
+        return
+      }
+      const worldDirection = pressedWorldDirections.get(direction) ?? screenToWorldDirection(direction)
+      pressedWorldDirections.delete(direction)
+      endPress(worldDirection)
+    }
+    const setCameraYawTarget = (nextYaw) => {
+      if (!cameraRotationEnabled) return
+      cameraYawTarget = nextYaw
+      rememberMapCameraYaw(nextYaw)
+      kickAnimation()
+    }
+    const snapCameraYaw = () => {
+      setCameraYawTarget(Math.round(cameraYawTarget / CAMERA_QUARTER_TURN) * CAMERA_QUARTER_TURN)
+    }
+    const canRotateCamera = () => {
+      const state = stateRef.current
+      return cameraRotationEnabled && state?.worldReady && state.mapActive && !state.cloudBlocked && !state.warpPending
+    }
+    const rotateCameraStep = (steps) => {
+      if (!canRotateCamera()) return
+      setCameraYawTarget(Math.round(cameraYawTarget / CAMERA_QUARTER_TURN) * CAMERA_QUARTER_TURN + steps * CAMERA_QUARTER_TURN)
+    }
+
+    // 拖动画面转镜头：鼠标左键 / 单指；移动超过阈值才算拖动
+    let cameraDragStartX = 0
+    let cameraDragLastX = 0
+    let cameraDragActive = false
+    const handleCameraPointerDown = (event) => {
+      if (!canRotateCamera() || cameraDragPointerId != null) return
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      cameraDragPointerId = event.pointerId
+      cameraDragStartX = event.clientX
+      cameraDragLastX = event.clientX
+      cameraDragActive = false
+    }
+    const handleCameraPointerMove = (event) => {
+      if (event.pointerId !== cameraDragPointerId) return
+      if (!canRotateCamera()) return
+      if (!cameraDragActive) {
+        if (Math.abs(event.clientX - cameraDragStartX) < 6) return
+        cameraDragActive = true
+        try { renderer.domElement.setPointerCapture(event.pointerId) } catch { /* 已释放 */ }
+      }
+      const dx = event.clientX - cameraDragLastX
+      cameraDragLastX = event.clientX
+      const width = renderer.domElement.clientWidth || 1
+      // 抓住世界拖：手指往右，场景跟着往右转
+      setCameraYawTarget(cameraYawTarget - (dx / width) * Math.PI * 1.15)
+    }
+    const handleCameraPointerUp = (event) => {
+      if (event.pointerId !== cameraDragPointerId) return
+      cameraDragPointerId = null
+      if (cameraDragActive && canRotateCamera()) {
+        snapCameraYaw()
+      }
+      cameraDragActive = false
+      kickAnimation()
+    }
+    renderer.domElement.addEventListener('pointerdown', handleCameraPointerDown)
+    renderer.domElement.addEventListener('pointermove', handleCameraPointerMove)
+    renderer.domElement.addEventListener('pointerup', handleCameraPointerUp)
+    renderer.domElement.addEventListener('pointercancel', handleCameraPointerUp)
+
     const keyDown = (event) => {
       if (!stateRef.current?.mapActive || stateRef.current.cloudBlocked) return
       if (event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return
+      if (event.isComposing || event.target?.isContentEditable || event.metaKey || event.ctrlKey || event.altKey) return
+      if (event.code === 'KeyR' || event.key.toLowerCase() === 'r') {
+        const vehicle = stateRef.current.equippedVehicle || 'bicycle'
+        if (!(vehicle === 'sports_car' ? stateRef.current.hasSportsCar : stateRef.current.hasBicycle)) return
+        event.preventDefault()
+        if (!event.repeat) stateRef.current.toggleRiding?.(vehicle)
+        return
+      }
+      if (cameraRotationEnabled && (event.code === 'KeyQ' || event.code === 'KeyE')) {
+        event.preventDefault()
+        if (!event.repeat) rotateCameraStep(event.code === 'KeyQ' ? 1 : -1)
+        return
+      }
       let direction = null
       if (event.key === 'ArrowUp' || event.key.toLowerCase() === 'w') direction = 'up'
       if (event.key === 'ArrowDown' || event.key.toLowerCase() === 's') direction = 'down'
@@ -5707,9 +6413,9 @@ function ThreeLowPolyMap({
       if (!direction) return
       event.preventDefault()
       if (keyboardDirection === direction) return
-      if (keyboardDirection) endPress(keyboardDirection)
+      if (keyboardDirection) endScreenPress(keyboardDirection)
       keyboardDirection = direction
-      beginPress(direction)
+      beginScreenPress(direction)
     }
 
     const keyUp = (event) => {
@@ -5727,15 +6433,17 @@ function ThreeLowPolyMap({
       event.preventDefault()
       if (keyboardDirection === direction) {
         keyboardDirection = null
-        endPress(direction)
+        endScreenPress(direction)
       }
     }
 
     window.addEventListener('keydown', keyDown)
     window.addEventListener('keyup', keyUp)
-    stateRef.current.requestMove = requestMove
-    stateRef.current.beginPress = beginPress
-    stateRef.current.endPress = endPress
+    stateRef.current.requestMove = (direction) => requestMove(screenToWorldDirection(direction))
+    stateRef.current.beginPress = beginScreenPress
+    stateRef.current.endPress = endScreenPress
+    stateRef.current.rotateCamera = rotateCameraStep
+    stateRef.current.cameraRotationEnabled = cameraRotationEnabled
 
     cleanupRenderer = (reason = 'effect-cleanup') => {
       if (disposed) return
@@ -5753,10 +6461,16 @@ function ThreeLowPolyMap({
       resizeObserver?.disconnect?.()
       renderer?.domElement?.removeEventListener('webglcontextlost', handleContextLost, false)
       renderer?.domElement?.removeEventListener('webglcontextrestored', handleContextRestored, false)
+      renderer?.domElement?.removeEventListener('pointerdown', handleCameraPointerDown)
+      renderer?.domElement?.removeEventListener('pointermove', handleCameraPointerMove)
+      renderer?.domElement?.removeEventListener('pointerup', handleCameraPointerUp)
+      renderer?.domElement?.removeEventListener('pointercancel', handleCameraPointerUp)
       if (perfProbeEnabled && typeof window !== 'undefined') {
         delete window.__THREE_LOW_POLY_MAP_PERF__
       }
+      stateRef.current?.fishingController?.dispose()
       root.traverse((child) => {
+        child.userData?.disposeFishing?.()
         if (child.isMesh) {
           child.geometry?.dispose?.()
           child.customDepthMaterial?.dispose?.()
@@ -5765,6 +6479,16 @@ function ThreeLowPolyMap({
           else child.material?.dispose?.()
         }
       })
+      if (skyDome) {
+        skyDome.geometry.dispose()
+        skyDome.material.dispose()
+      }
+      contactShadowLayer?.dispose()
+      postFx?.dispose()
+      postFx = null
+      // PMREM 纹理属于当前 GL 上下文，渲染器重建时必须一起重建
+      disposeMapEnvironmentTexture(renderer)
+      occluderUniforms.uOccluderRadius.value = 0
       releaseThreeRenderer(renderer, reason)
       stateRef.current = null
     }
@@ -5793,6 +6517,7 @@ function ThreeLowPolyMap({
       applyNpcRoleEffectVisualState(binding?.npcRoleEffect, visualState)
       applyObjectiveDeviceVisualState(binding?.objectiveDevice, visualState)
       const routePositionChanged = binding?.npcFacingController?.syncRouteBlockerState?.(visualState, {
+        eventVisualState: normalizedMapEventVisualState[binding.eventId],
         currentMapBossCompleted
       })
       if (routePositionChanged) stateRef.current?.kickAnimation?.()
@@ -5845,9 +6570,16 @@ function ThreeLowPolyMap({
     stateRef.current.onZoneEnter = onZoneEnter
     stateRef.current.onBlockedMove = onBlockedMove
     stateRef.current.onEncounterCooldownChange = onEncounterCooldownChange
+    stateRef.current.hasBicycle = hasBicycle
+    stateRef.current.hasSportsCar = hasSportsCar
+    stateRef.current.equippedVehicle = equippedVehicle
     stateRef.current.cloudBlocked = cloudBlocked
     stateRef.current.mapActive = mapActive
     stateRef.current.springRestoreAnimation = springRestoreAnimation
+    stateRef.current.fishingActivity = fishingActivity
+    stateRef.current.fishingController?.setActivity(fishingActivity)
+    const ownsActiveVehicle = stateRef.current.vehicle === 'sports_car' ? hasSportsCar : hasBicycle
+    if (!ownsActiveVehicle || !mapActive || fishingActivity) stateRef.current.changeRiding?.(false)
     if (cloudBlocked || !mapActive) {
       stateRef.current.pointer.queued = null
       stateRef.current.pointer.holdDirection = null
@@ -5856,6 +6588,9 @@ function ThreeLowPolyMap({
       stateRef.current.kickAnimation?.()
     }
   }, [
+    hasBicycle,
+    hasSportsCar,
+    equippedVehicle,
     cloudBlocked,
     currentMapBossCompleted,
     currentMapName,
@@ -5872,7 +6607,8 @@ function ThreeLowPolyMap({
     onMapWarp,
     onPlayerMove,
     onZoneEnter,
-    springRestoreAnimation
+    springRestoreAnimation,
+    fishingActivity
   ])
 
   useEffect(() => {
@@ -5910,6 +6646,10 @@ function ThreeLowPolyMap({
     if (!stateRef.current?.player || !playerPos || stateRef.current.pointer.moving) return
     const safePosition = findEnvironmentSpawn(mapInfo, playerPos, mapGrid)
     if (safePosition !== playerPos) stateRef.current.onPlayerMove?.(safePosition)
+    if (playerPos.direction && DIRS[playerPos.direction]) {
+      stateRef.current.pointer.direction = playerPos.direction
+      stateRef.current.player.rotation.y = DIRS[playerPos.direction].rot
+    }
     if (
       stateRef.current.pointer.tileX === safePosition.x &&
       stateRef.current.pointer.tileY === safePosition.y
@@ -5922,11 +6662,8 @@ function ThreeLowPolyMap({
     const pos = worldFromTile(safePosition.x, safePosition.y, width, height)
     stateRef.current.pointer.tileX = safePosition.x
     stateRef.current.pointer.tileY = safePosition.y
-    if (playerPos.direction && DIRS[playerPos.direction]) {
-      stateRef.current.pointer.direction = playerPos.direction
-      stateRef.current.player.rotation.y = DIRS[playerPos.direction].rot
-    }
     stateRef.current.player.position.set(pos.x, PLAYER_BASE_Y, pos.z)
+    stateRef.current.changeRiding?.(stateRef.current.riding, stateRef.current.vehicle)
     stateRef.current.syncCameraTargetToTile?.(safePosition.x, safePosition.y, true)
     stateRef.current.npcFacingControllers?.forEach((controller) => {
       controller?.syncWithPlayerTile?.(safePosition.x, safePosition.y)
@@ -5934,12 +6671,47 @@ function ThreeLowPolyMap({
     stateRef.current.kickAnimation?.()
   }, [playerPos?.x, playerPos?.y, playerPos?.direction, currentMapName])
 
+  useEffect(() => {
+    let cancelled = false
+    setBicycleReady(false)
+    const state = stateRef.current
+    if (!hasBicycle || !sceneReady || !state?.player) return undefined
+    setBicycleOnGrass(Boolean(state.grassAt?.(state.pointer.tileX, state.pointer.tileY)))
+    loadModels([BICYCLE_MODEL_KEY]).then(() => {
+      if (cancelled || stateRef.current !== state) return
+      setBicycleReady(attachBicycleModel(state.player))
+      state.kickAnimation?.()
+    })
+    return () => { cancelled = true }
+  }, [hasBicycle, sceneReady, currentMapName, renderNonce])
+
+  useEffect(() => {
+    let cancelled = false
+    setSportsCarReady(false)
+    const state = stateRef.current
+    if (!hasSportsCar || !sceneReady || !state?.player) return undefined
+    setBicycleOnGrass(Boolean(state.grassAt?.(state.pointer.tileX, state.pointer.tileY)))
+    loadModels([SPORTS_CAR_MODEL_KEY]).then(() => {
+      if (cancelled || stateRef.current !== state) return
+      setSportsCarReady(attachSportsCarModel(state.player))
+      state.kickAnimation?.()
+    })
+    return () => { cancelled = true }
+  }, [hasSportsCar, sceneReady, currentMapName, renderNonce])
+
   const startMovePress = (direction) => {
     stateRef.current?.beginPress?.(direction)
   }
 
   const endMovePress = (direction) => {
     stateRef.current?.endPress?.(direction)
+  }
+
+  const rotateCameraPress = (event, steps) => {
+    if (event.button !== 0) return
+    // A second finger does not synthesize click while the first holds the D-pad.
+    event.preventDefault()
+    stateRef.current?.rotateCamera?.(steps)
   }
 
   return (
@@ -5972,7 +6744,7 @@ function ThreeLowPolyMap({
           )}
         </div>
 
-      <div className="map-controls-v2 map-controls-v2--float">
+      <div className="map-controls-v2 map-controls-v2--float" style={fishingActivity ? { display: 'none' } : undefined}>
         <div className="dpad dpad--minimal">
           <button
             type="button"
@@ -6023,6 +6795,49 @@ function ThreeLowPolyMap({
             <i className="fas fa-arrow-right"></i>
           </button>
         </div>
+        <div className="map-action-rail-wrapper">
+          {cameraRotatable && (
+            <div className="map-camera-rotate" role="group" aria-label="镜头旋转">
+              <button
+                type="button"
+                disabled={cloudBlocked || !sceneReady}
+                onPointerDown={event => rotateCameraPress(event, 1)}
+                onClick={event => { if (event.detail === 0) stateRef.current?.rotateCamera?.(1) }}
+                className="map-camera-rotate-button"
+                aria-label="镜头向左转"
+                aria-keyshortcuts="Q"
+                title="镜头向左转（Q，或拖动画面）"
+              >
+                <i className="fa-solid fa-rotate-left"></i>
+              </button>
+              <button
+                type="button"
+                disabled={cloudBlocked || !sceneReady}
+                onPointerDown={event => rotateCameraPress(event, -1)}
+                onClick={event => { if (event.detail === 0) stateRef.current?.rotateCamera?.(-1) }}
+                className="map-camera-rotate-button"
+                aria-label="镜头向右转"
+                aria-keyshortcuts="E"
+                title="镜头向右转（E，或拖动画面）"
+              >
+                <i className="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+          )}
+        {(hasBicycle || hasSportsCar) && <div className={`map-travel-actions${cameraRotatable ? ' map-travel-actions--above-camera' : ''}`}>
+          <button type="button"
+            disabled={cloudBlocked || !sceneReady || (equippedVehicle === 'sports_car' ? !sportsCarReady : !bicycleReady) || bicycleOnGrass}
+            onClick={() => stateRef.current?.toggleRiding?.(equippedVehicle || 'bicycle')}
+            className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted map-bicycle-button"
+            aria-label={activeVehicle ? '下车步行' : `使用${equippedVehicle === 'sports_car' ? '跑车' : '自行车'}`} aria-pressed={Boolean(activeVehicle)} aria-keyshortcuts="R"
+            title={bicycleOnGrass ? '草丛中只能步行' : activeVehicle ? '下车步行（R）' : `使用${equippedVehicle === 'sports_car' ? '跑车' : '自行车'}（R）`}>
+            {equippedVehicle === 'sports_car'
+              ? <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m3 19 3-5h13l6 5h4v7h-3m-8 0H12m-8 0H2v-7h27M8 14l3-5h8l4 5M5 20h4m15 0h3"/><circle cx="9" cy="25" r="3"/><circle cx="23" cy="25" r="3"/></svg>
+              : <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="7" cy="23" r="6"/><circle cx="25" cy="23" r="6"/><path d="m7 23 7-12 6 12H7l13-12 5 12-4-16h5M11 8h7"/></svg>}
+            <span>{bicycleOnGrass ? '草丛步行' : (equippedVehicle === 'sports_car' ? sportsCarReady : bicycleReady) ? (activeVehicle ? '下车' : '出发') : '准备中'}</span>
+            <kbd className="map-bicycle-key" aria-hidden="true">R</kbd>
+          </button>
+        </div>}
         <div className="map-action-grid map-action-rail">
           <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('bag')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="背包" aria-label="背包">
             <i className="fa-solid fa-bag-shopping"></i><span>背包</span>
@@ -6036,6 +6851,7 @@ function ThreeLowPolyMap({
           <button type="button" disabled={cloudBlocked} onClick={() => onNavigate?.('shop')} className="map-action-button map-action-button--icon map-hud-icon-button map-hud-frosted" title="商店" aria-label="商店">
             <i className="fa-solid fa-store"></i><span>商店</span>
           </button>
+        </div>
         </div>
       </div>
       </div>

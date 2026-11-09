@@ -743,6 +743,176 @@
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.38);
 }
 
+.map-ecology-survey-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 6px;
+  z-index: 72;
+  width: min(340px, calc(100vw - 24px));
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(167, 243, 208, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(45, 212, 191, 0.18), transparent 40%),
+    linear-gradient(145deg, rgba(7, 34, 43, 0.96), rgba(8, 47, 52, 0.94));
+  box-shadow: 0 18px 42px rgba(1, 15, 22, 0.38), inset 0 1px rgba(255, 255, 255, 0.1);
+  color: #ecfeff;
+  animation: map-ecology-survey-popover-in 160ms ease-out both;
+}
+
+.map-ecology-survey-popover__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.map-ecology-survey-popover__eyebrow {
+  color: #99f6e4;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.map-ecology-survey-popover h2 {
+  margin: 4px 0 0;
+  color: #f0fdfa;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.map-ecology-survey-popover h2 i {
+  margin-right: 5px;
+  color: #86efac;
+}
+
+.map-ecology-survey-popover__close {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(236, 254, 255, 0.78);
+  cursor: pointer;
+}
+
+.map-ecology-survey-popover__progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.map-ecology-survey-popover__progress-row strong {
+  color: #fef3c7;
+  font-size: 28px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.map-ecology-survey-popover__progress-row strong small {
+  color: rgba(254, 243, 199, 0.56);
+  font-size: 12px;
+}
+
+.map-ecology-survey-popover__progress-row > span {
+  color: rgba(236, 254, 255, 0.72);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.map-ecology-survey-popover__track {
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.map-ecology-survey-popover__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #86efac, #67e8f9);
+  box-shadow: 0 0 12px rgba(103, 232, 249, 0.42);
+  transition: width 240ms ease;
+}
+
+.map-ecology-survey-popover__reward {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 10px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 11px;
+  background: rgba(14, 116, 144, 0.2);
+}
+
+.map-ecology-survey-popover__reward > i {
+  margin-top: 2px;
+  color: #67e8f9;
+  font-size: 14px;
+}
+
+.map-ecology-survey-popover__reward strong,
+.map-ecology-survey-popover__reward span {
+  display: block;
+}
+
+.map-ecology-survey-popover__reward strong {
+  color: #cffafe;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.map-ecology-survey-popover__reward span {
+  margin-top: 3px;
+  color: rgba(236, 254, 255, 0.68);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.map-ecology-survey-popover__reward.is-complete {
+  border-color: rgba(134, 239, 172, 0.34);
+  background: rgba(6, 95, 70, 0.25);
+}
+
+.map-ecology-survey-popover__reward.is-complete > i {
+  color: #86efac;
+}
+
+.map-ecology-survey-popover__atlas-button {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 11px;
+  border: 1px solid rgba(153, 246, 228, 0.35);
+  border-radius: 9px;
+  background: rgba(45, 212, 191, 0.14);
+  color: #ccfbf1;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.map-ecology-survey-popover__atlas-button:hover,
+.map-ecology-survey-popover__atlas-button:focus-visible {
+  border-color: rgba(153, 246, 228, 0.7);
+  background: rgba(45, 212, 191, 0.24);
+  outline: none;
+}
+
+@keyframes map-ecology-survey-popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .game-topbar--unified {
   align-items: flex-start;
 }
@@ -2209,6 +2379,143 @@
   font-size: 10px;
   line-height: 1.25;
   font-weight: 850;
+}
+
+.timber-league-panel {
+  width: min(580px, 100%);
+  max-height: min(88dvh, calc(100% - 12px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d5e2e1;
+  border-radius: 8px;
+  background: #f8fbfa;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.35);
+}
+
+.timber-league-panel__header,
+.timber-league-panel__footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.timber-league-panel__header { border-bottom: 1px solid #dbe7e5; }
+.timber-league-panel__emblem {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #a16207;
+  font-size: 20px;
+}
+.timber-league-panel__heading { min-width: 0; flex: 1; }
+.timber-league-panel__heading small { display: block; color: #47716a; font-size: 11px; font-weight: 800; }
+.timber-league-panel__heading h2 { margin: 1px 0 0; font-size: 19px; line-height: 1.1; font-weight: 950; color: #142d2c; }
+.timber-league-panel__balance {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.timber-league-panel__content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px 18px;
+  -webkit-overflow-scrolling: touch;
+}
+.timber-league-panel__section-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 950;
+  color: #1f3b39;
+}
+.timber-league-panel__section-label:not(:first-child) { margin-top: 16px; }
+.timber-league-panel__rewards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.timber-league-panel__route-hint { margin: 8px 0 0; color: #365a55; font-size: 12px; line-height: 1.35; font-weight: 700; }
+.timber-league-opponents { width: 100%; margin-top: 12px; text-align: left; }
+.timber-league-opponents > strong { display: block; margin-bottom: 6px; font-size: 13px; color: #19423a; }
+.timber-league-opponents__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.timber-league-opponents__mon { min-width: 0; min-height: 72px; display: flex; align-items: center; gap: 6px; padding: 6px; border: 1px solid #d7e4dd; border-radius: 6px; background: #fff; }
+.timber-league-opponents__mon--lead { border: 2px solid #b88112; padding: 5px; background: #fff8df; }
+.timber-league-opponents__portrait { display: grid; justify-items: center; gap: 2px; flex: 0 0 38px; }
+.timber-league-opponents__portrait img, .timber-league-opponents__portrait > i { width: 38px; height: 38px; object-fit: contain; }
+.timber-league-opponents__portrait > i { display: grid; place-items: center; color: #64748b; }
+.timber-league-opponents__lead { padding: 2px 6px; border-radius: 4px; background: #92640b; color: #fff; font-size: 10px; line-height: 1.2; white-space: nowrap; }
+.timber-league-opponents__details { min-width: 0; }
+.timber-league-opponents__name { display: block; overflow-wrap: anywhere; font-size: 11px; font-weight: 800; color: #1f3b39; }
+.timber-league-opponents__mon small { display: block; color: #0f766e; font-size: 10px; }
+.timber-league-opponents__types { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.timber-league-opponents__types .type-badge { min-width: 0; min-height: 18px; padding: 2px 5px !important; font-size: 10px !important; }
+.timber-league-panel__goal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 0;
+  padding: 10px 0;
+  border-top: 1px solid #d9e5e2;
+  border-bottom: 1px solid #d9e5e2;
+}
+.timber-league-panel__goal > div { display: grid; gap: 2px; padding: 0 10px; }
+.timber-league-panel__goal > div + div { border-left: 1px solid #d9e5e2; }
+.timber-league-panel__goal small { font-size: 11px; font-weight: 750; color: #526c69; }
+.timber-league-panel__goal strong { font-size: 16px; font-weight: 950; color: #123f3c; }
+.timber-league-panel__medal {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  border: 1px solid #d5dfe1;
+  border-radius: 7px;
+  background: #fff;
+  text-align: center;
+  line-height: 1.2;
+}
+.timber-league-panel__medal > i { font-size: 24px; color: #b26a43; }
+.timber-league-panel__medal--silver > i { color: #677c91; }
+.timber-league-panel__medal--gold > i { color: #d4980c; }
+.timber-league-panel__medal--gold { background: #fff8df; border-color: #e9cf7f; }
+.timber-league-panel__medal--silver { background: #f0f4f8; border-color: #c5d0dc; }
+.timber-league-panel__medal--bronze { background: #fff0e9; border-color: #e6c2ac; }
+.timber-league-panel__medal strong { font-size: 13px; color: #213b39; }
+.timber-league-panel__medal span { min-height: 15px; font-size: 11px; font-weight: 750; color: #526767; }
+.timber-league-panel__medal b { font-size: 17px; color: #0e7466; }
+.timber-league-panel__medal b i { font-size: 13px; }
+.timber-league-panel__medal .timber-league-panel__medal-gold { font-size: clamp(11px, 3.3vw, 15px); white-space: nowrap; }
+.timber-league-panel__how { display: grid; gap: 4px; margin-top: 14px; color: #24403d; font-size: 12px; line-height: 1.3; }
+.timber-league-panel__how strong { font-size: 13px; }
+.timber-league-panel__how small { color: #4a625e; font-size: 12px; }
+.timber-league-panel__actions-list { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 3px; }
+.timber-league-panel__actions-list span { padding: 5px 8px; border-radius: 6px; background: #e7f4f2; color: #145a56; font-weight: 850; }
+.timber-league-panel__reminders { display: grid; gap: 6px; margin-top: 12px; }
+.timber-league-panel__reminders span { display: flex; gap: 7px; align-items: start; color: #395651; font-size: 12px; line-height: 1.3; font-weight: 750; }
+.timber-league-panel__reminders i { width: 15px; flex: 0 0 15px; margin-top: 1px; color: #12806d; text-align: center; }
+.timber-league-panel__footer { border-top: 1px solid #dbe7e5; }
+.timber-league-panel__footer .game-soft-button { flex: 0 0 80px; }
+.timber-league-panel__footer .game-primary-button { flex: 1; min-width: 0; }
+
+@media (max-width: 380px) {
+  .timber-league-panel__header, .timber-league-panel__footer { padding: 9px 10px; }
+  .timber-league-panel__content { padding: 10px; }
+  .timber-league-panel__rewards { gap: 5px; }
+  .timber-league-panel__footer .game-soft-button { flex-basis: 64px; }
+  .timber-league-panel__footer .game-primary-button { font-size: 11px; padding-inline: 5px; }
+}
+
+@media (max-width: 420px) {
+  .timber-league-opponents__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .npc-battle-dialogue__chips {
@@ -10153,6 +10460,28 @@
   font-weight: 850;
 }
 
+.battle-victory-league {
+  display: inline-grid;
+  gap: 3px;
+  max-width: min(420px, 94vw);
+  margin-top: 5px;
+  padding: 8px 11px;
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  border-radius: 8px;
+  background: rgba(6, 78, 59, 0.46);
+  color: #d1fae5;
+  text-align: left;
+}
+.battle-victory-league strong { font-size: 13px; line-height: 1.2; }
+.battle-victory-league span,
+.battle-victory-league small { font-size: 11px; line-height: 1.3; color: rgba(236, 253, 245, 0.86); }
+.battle-victory-settlement .timber-league-opponents { margin: 0 0 12px; }
+.battle-victory-settlement .timber-league-opponents > strong { color: #d1fae5; }
+.battle-victory-settlement .timber-league-opponents__mon { border-color: rgba(52, 211, 153, 0.36); background: rgba(6, 78, 59, 0.38); }
+.battle-victory-settlement .timber-league-opponents__mon--lead { border-color: #e9c86c; background: rgba(120, 83, 12, 0.4); }
+.battle-victory-settlement .timber-league-opponents__name { color: #f0fdf4; }
+.battle-victory-settlement .timber-league-opponents__mon small { color: #6ee7b7; }
+
 .game-scroll-area {
   flex: 1 1 auto;
   min-height: 0;
@@ -10656,6 +10985,101 @@ button.game-collection-card:active:not(:disabled) {
 .shop-item-card {
   overflow: visible;
 }
+
+.shop-page .game-page-header { flex-wrap: wrap; }
+.shop-page .game-page-header > div:last-child { flex-wrap: wrap; }
+.shop-category-tabs {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 12px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid rgba(127, 163, 157, 0.28);
+  border-radius: 12px;
+  background: rgba(226, 240, 235, 0.8);
+  scrollbar-width: thin;
+  scrollbar-color: #9dbbb2 transparent;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.shop-category-tab {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #48635b;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shop-category-tab:hover { background: rgba(255, 255, 255, 0.7); }
+.shop-category-tab--active,
+.shop-category-tab--active:hover {
+  border-color: #137d68;
+  background: #137d68;
+  color: #fff;
+}
+.shop-category-tab:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+.shop-category-tab__count {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(38, 92, 75, 0.08);
+  font-size: 11px;
+}
+.shop-category-tab--active .shop-category-tab__count { background: rgba(255, 255, 255, 0.2); }
+.shop-products:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+.shop-page .game-collection-section__head { align-items: center; }
+.shop-page .game-collection-section__desc { font-size: 11px; color: #43605d; text-align: right; }
+.shop-page .game-collection-card--disabled { opacity: 1; filter: none; }
+.shop-page .shop-item-card { border: 1px solid rgba(127, 163, 157, 0.26); border-radius: 8px; background: rgba(255, 255, 255, 0.78); }
+.shop-page .shop-item-card .game-collection-card__name { font-size: 13px; }
+.game-item-english { max-width:100%; color:#60766d; font-size:11px; font-weight:550; line-height:1.4; overflow-wrap:anywhere; }
+.shop-page .shop-item-card__hint { color: #4c655f; font-size: 11px; line-height: 1.3; font-weight: 750; }
+.shop-page .shop-item-card .game-collection-card__desc {
+  font-size: 11px;
+  min-height: 0;
+  color: #435b58;
+  display: block;
+  overflow: visible;
+}
+.shop-page .shop-item-card .game-collection-card__price {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.shop-page .shop-item-card .game-collection-card__price span { white-space: nowrap; }
+.shop-training-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-left: 3px solid #0d9488;
+  background: #effaf6;
+  color: #235c55;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 850;
+}
+.shop-training-path > span { white-space: nowrap; }
+.shop-training-path > .fa-arrow-right { color: #748e88; font-size: 10px; }
 
 .shop-item-card--purchased {
   border: 1px solid rgba(20, 184, 166, 0.45);
@@ -14738,6 +15162,55 @@ button.dex-evolution-tile:active {
   pointer-events: auto;
 }
 
+/* 镜头旋转：右侧按钮轨上方，左右排列 */
+.map-controls-v2--float .map-camera-rotate {
+  pointer-events: auto;
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.map-controls-v2--float .map-camera-rotate-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  touch-action: none;
+  transition: transform 90ms ease, background 90ms ease;
+}
+
+.map-controls-v2--float .map-camera-rotate-button:active:not(:disabled) {
+  transform: scale(0.92);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.map-controls-v2--float .map-camera-rotate-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* 桌面有 Q/E 和鼠标拖动，按钮缩小一些 */
+@media (hover: hover) and (pointer: fine) {
+  .map-controls-v2--float .map-camera-rotate-button {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+}
+
 /* 沉浸式：无圆盘，仅四个轻量方向键 */
 .map-controls-v2--float .dpad.dpad--minimal {
   width: 104px;
@@ -14982,6 +15455,8 @@ button.dex-evolution-tile:active {
   position: absolute;
   inset: 0;
   display: block;
+  /* 画面拖动用来转镜头，禁止浏览器把它当成滚动/缩放 */
+  touch-action: none;
   width: 100% !important;
   height: 100% !important;
   max-width: 100%;
@@ -15151,6 +15626,7 @@ button.dex-evolution-tile:active {
 }
 
 .map-runtime-preview__canvas {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -16019,6 +16495,184 @@ button.dex-evolution-tile:active {
   background:
     radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.18) 0 17%, transparent 18%),
     linear-gradient(180deg, transparent 0 60%, rgba(62, 35, 22, 0.22) 100%);
+}
+
+/* A restrained opponent-led atmosphere layer. The map scene remains the
+   anchor; this layer only adds readable type and encounter cues. */
+.battle-theme-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: .82;
+  mix-blend-mode: screen;
+  transition: opacity 260ms ease, filter 260ms ease;
+}
+
+.battle-theme-visual::before,
+.battle-theme-visual::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+}
+
+.battle-theme-visual::before {
+  background:
+    radial-gradient(ellipse at 50% 68%, var(--battle-theme-glow, rgba(255,255,255,.16)) 0 13%, transparent 42%),
+    linear-gradient(118deg, transparent 0 46%, var(--battle-theme-edge, rgba(255,255,255,.08)) 47% 48%, transparent 49% 100%);
+  filter: blur(3px);
+}
+
+.battle-theme-visual::after {
+  background:
+    radial-gradient(circle at 14% 28%, var(--battle-theme-particle, rgba(255,255,255,.38)) 0 1px, transparent 2px),
+    radial-gradient(circle at 32% 20%, var(--battle-theme-particle, rgba(255,255,255,.28)) 0 1px, transparent 2px),
+    radial-gradient(circle at 68% 26%, var(--battle-theme-particle, rgba(255,255,255,.3)) 0 1px, transparent 2px),
+    radial-gradient(circle at 86% 38%, var(--battle-theme-particle, rgba(255,255,255,.24)) 0 1px, transparent 2px);
+  opacity: .46;
+  animation: battleThemeDrift 10s ease-in-out infinite alternate;
+}
+
+.battle-theme-neutral {
+  --battle-theme-glow: rgba(186, 230, 253, .14);
+  --battle-theme-edge: rgba(224, 242, 254, .08);
+  --battle-theme-particle: rgba(255, 255, 255, .28);
+}
+
+.battle-theme-ember {
+  --battle-theme-glow: rgba(251, 146, 60, .38);
+  --battle-theme-edge: rgba(248, 113, 113, .2);
+  --battle-theme-particle: rgba(254, 215, 170, .8);
+  background: radial-gradient(ellipse at 50% 90%, rgba(234, 88, 12, .34), transparent 54%);
+}
+
+.battle-theme-water {
+  --battle-theme-glow: rgba(56, 189, 248, .34);
+  --battle-theme-edge: rgba(125, 211, 252, .2);
+  --battle-theme-particle: rgba(186, 230, 253, .72);
+}
+
+/* Theme classes are on the whole arena. Only the decorative water layer moves. */
+.battle-theme-water .battle-theme-visual {
+  background: repeating-linear-gradient(0deg, transparent 0 20px, rgba(186, 230, 253, .1) 21px 22px, transparent 23px 43px);
+  animation: battleWaterRipple 7s linear infinite;
+}
+
+.battle-theme-frost {
+  --battle-theme-glow: rgba(165, 243, 252, .32);
+  --battle-theme-edge: rgba(224, 242, 254, .24);
+  --battle-theme-particle: rgba(240, 249, 255, .86);
+  background: radial-gradient(ellipse at 50% 92%, rgba(186, 230, 253, .3), transparent 57%);
+}
+
+.battle-theme-storm {
+  --battle-theme-glow: rgba(250, 204, 21, .3);
+  --battle-theme-edge: rgba(125, 211, 252, .26);
+  --battle-theme-particle: rgba(254, 240, 138, .86);
+  background:
+    linear-gradient(112deg, transparent 0 49%, rgba(250, 204, 21, .18) 49.3% 49.8%, transparent 50.1%),
+    radial-gradient(ellipse at 50% 84%, rgba(59, 130, 246, .22), transparent 56%);
+}
+
+.battle-theme-verdant {
+  --battle-theme-glow: rgba(74, 222, 128, .3);
+  --battle-theme-edge: rgba(134, 239, 172, .18);
+  --battle-theme-particle: rgba(187, 247, 208, .7);
+  background: radial-gradient(ellipse at 50% 88%, rgba(34, 197, 94, .22), transparent 58%);
+}
+
+.battle-theme-mystic {
+  --battle-theme-glow: rgba(192, 132, 252, .3);
+  --battle-theme-edge: rgba(216, 180, 254, .2);
+  --battle-theme-particle: rgba(233, 213, 255, .82);
+  background: radial-gradient(ellipse at 50% 72%, rgba(109, 40, 217, .22), transparent 58%);
+}
+
+.battle-theme-arcane {
+  --battle-theme-glow: rgba(244, 114, 182, .28);
+  --battle-theme-edge: rgba(196, 181, 253, .22);
+  --battle-theme-particle: rgba(251, 207, 232, .82);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(251, 191, 36, .18), transparent 18%),
+    radial-gradient(ellipse at 50% 82%, rgba(168, 85, 247, .22), transparent 58%);
+}
+
+.battle-theme-dragon {
+  --battle-theme-glow: rgba(96, 165, 250, .32);
+  --battle-theme-edge: rgba(129, 140, 248, .24);
+  --battle-theme-particle: rgba(191, 219, 254, .86);
+  background:
+    linear-gradient(148deg, transparent 0 42%, rgba(129, 140, 248, .16) 42.4% 43%, transparent 43.4%),
+    radial-gradient(ellipse at 50% 86%, rgba(37, 99, 235, .24), transparent 58%);
+}
+
+.battle-theme-earth {
+  --battle-theme-glow: rgba(251, 191, 36, .26);
+  --battle-theme-edge: rgba(217, 119, 6, .2);
+  --battle-theme-particle: rgba(254, 215, 170, .72);
+  background:
+    repeating-linear-gradient(154deg, transparent 0 28px, rgba(120, 53, 15, .12) 29px 31px, transparent 32px 62px),
+    radial-gradient(ellipse at 50% 90%, rgba(180, 83, 9, .22), transparent 58%);
+}
+
+.battle-theme-iron {
+  --battle-theme-glow: rgba(148, 163, 184, .3);
+  --battle-theme-edge: rgba(226, 232, 240, .2);
+  --battle-theme-particle: rgba(241, 245, 249, .8);
+  background:
+    linear-gradient(90deg, transparent 0 17%, rgba(226, 232, 240, .12) 17.4% 18%, transparent 18.4% 82%, rgba(226, 232, 240, .1) 82.4% 83%, transparent 83.4%),
+    radial-gradient(ellipse at 50% 88%, rgba(71, 85, 105, .28), transparent 58%);
+}
+
+.anime-battle-bg.battle-presentation-boss .battle-theme-visual {
+  opacity: .98;
+  filter: saturate(1.15);
+}
+
+.anime-battle-bg.battle-presentation-boss .battle-theme-visual::before {
+  background:
+    radial-gradient(ellipse at 50% 66%, rgba(251, 191, 36, .28) 0 13%, transparent 42%),
+    radial-gradient(ellipse at 50% 18%, rgba(127, 29, 29, .2), transparent 45%);
+}
+
+.anime-battle-bg.battle-presentation-challenge .battle-theme-visual {
+  opacity: .94;
+}
+
+.anime-battle-bg.battle-presentation-challenge .battle-theme-visual::before {
+  background:
+    linear-gradient(120deg, transparent 0 45%, rgba(250, 204, 21, .22) 45.4% 46%, transparent 46.4%),
+    linear-gradient(60deg, transparent 0 54%, rgba(34, 211, 238, .18) 54.4% 55%, transparent 55.4%),
+    radial-gradient(ellipse at 50% 72%, rgba(250, 204, 21, .18) 0 18%, transparent 42%);
+}
+
+.anime-battle-bg.battle-presentation-lieutenant .battle-theme-visual {
+  opacity: .9;
+}
+
+.anime-battle-bg.battle-presentation-rarity-rare .battle-theme-visual::after,
+.anime-battle-bg.battle-presentation-rarity-ultra .battle-theme-visual::after,
+.anime-battle-bg.battle-presentation-rarity-mythic .battle-theme-visual::after,
+.anime-battle-bg.battle-presentation-rarity-boosted .battle-theme-visual::after {
+  opacity: .9;
+  animation-duration: 5s;
+}
+
+.anime-battle-bg.battle-presentation-rarity-ultra .battle-theme-visual,
+.anime-battle-bg.battle-presentation-rarity-mythic .battle-theme-visual {
+  filter: saturate(1.2) brightness(1.08);
+}
+
+@keyframes battleThemeDrift {
+  from { transform: translate3d(-8px, 4px, 0) scale(1); }
+  to { transform: translate3d(10px, -6px, 0) scale(1.04); }
+}
+
+@keyframes battleWaterRipple {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 22px, 0); }
 }
 
 .battle-environment-props {
@@ -19415,6 +20069,27 @@ button.dex-evolution-tile:active {
   box-shadow: 0 -12px 28px rgba(4, 9, 22, 0.28);
 }
 
+.battle-league-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 29px;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+.battle-league-progress span { white-space: nowrap; }
+.battle-league-progress i { color: #34d399; }
+.battle-league-progress strong { color: #fff; font-size: 13px; white-space: nowrap; }
+@media (max-width: 380px) {
+  .battle-league-progress { gap: 5px; padding-inline: 7px; font-size: 10px; }
+  .battle-league-progress strong { font-size: 12px; }
+}
+
 .battle-command-controls {
   min-height: var(--battle-command-controls-height);
   height: var(--battle-command-controls-height);
@@ -21346,6 +22021,12 @@ button.dex-evolution-tile:active {
   filter: drop-shadow(0 12px 18px rgba(2, 8, 23, 0.34));
 }
 
+.battle-intro-portrait-loading {
+  align-self: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .6);
+}
+
 .battle-intro-trainer-portrait--lieutenant {
   width: clamp(124px, 30vw, 188px);
   height: clamp(154px, 36vw, 232px);
@@ -21832,6 +22513,47 @@ button.dex-evolution-tile:active {
 
 }
 
+/* Keep the actual NPC and its introduction in one compact vertical flow. */
+.battle-intro-overlay--trainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2vh, 20px);
+  padding: 68px 20px 36px;
+}
+
+.battle-intro-overlay--trainer .battle-intro-sprite-stage {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  width: min(78vw, 320px);
+  height: auto;
+}
+
+.battle-intro-overlay--trainer .battle-intro-trainer-portrait {
+  width: min(52vw, 220px);
+  height: min(32vh, 270px);
+}
+
+.battle-intro-overlay--trainer .battle-intro-info-panel {
+  position: relative;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 0;
+}
+
+@media (max-height: 620px) {
+  .battle-intro-overlay--trainer { gap: 10px; padding-top: 40px; padding-bottom: 16px; }
+  .battle-intro-overlay--trainer .battle-intro-trainer-portrait { height: min(29vh, 180px); }
+}
+
 .battle-sendout-overlay {
   background: transparent;
   isolation: isolate;
@@ -22021,6 +22743,11 @@ button.dex-evolution-tile:active {
   0%   { transform: translate(-50%, -50%) scale(0.4) translateY(30px); opacity: 0; }
   55%  { transform: translate(-50%, -50%) scale(1.12) translateY(-6px); opacity: 1; }
   100% { transform: translate(-50%, -50%) scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes btIntroNpc {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes btIntroText {
   0%   { opacity: 0; transform: translateX(-50%) translateY(18px); }
@@ -22471,6 +23198,13 @@ button.dex-evolution-tile:active {
 }
 .battle-victory-panel__button {
   margin-top: 0 !important;
+}
+.battle-victory-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 .battle-victory-settlement {
   width: min(100%, 340px);
@@ -27128,6 +27862,12 @@ button.dex-evolution-tile:active {
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.map-ecology-entry-button {
+  position: relative;
+  overflow: visible;
+  color: #bbf7d0;
 }
 
 .map-progress-entry-button__value {

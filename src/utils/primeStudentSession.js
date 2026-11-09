@@ -12,7 +12,6 @@ export function primeStudentSession() {
   void import('../components/Game/GameWrapper')
   void import('../game/threeLowPolyModelCache')
   void import('../game/ThreeLowPolyMap')
-  void import('../game/threeLowPolyMap')
 
   if (typeof window.requestIdleCallback === 'function') {
     window.requestIdleCallback(() => {

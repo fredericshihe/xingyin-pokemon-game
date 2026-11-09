@@ -1,0 +1,110 @@
+[
+  {
+    "name": "tree_oak",
+    "label": "成熟阔叶橡树",
+    "kind": "oak",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.25,
+    "heightMetres": 3.545,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.287,
+    "triangles": 572,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_oak.glb",
+    "themeTags": [
+      "forest",
+      "deciduous",
+      "oak"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "bytes": 5600,
+    "bounds": {
+      "min": [
+        -1.4857404232025146,
+        0,
+        -1.0399999618530273
+      ],
+      "max": [
+        1.4038255214691162,
+        3.544987201690674,
+        1.2198941707611084
+      ]
+    },
+    "meshCount": 1,
+    "materialCount": 1,
+    "textureCount": 0,
+    "animationCount": 0
+  },
+  {
+    "name": "tree_default",
+    "label": "层叠阔叶树",
+    "kind": "deciduous",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.1,
+    "heightMetres": 3.195,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.061,
+    "triangles": 468,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_default.glb",
+    "themeTags": [
+      "forest",
+      "deciduous",
+      "default"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "bytes": 4916,
+    "bounds": {
+      "min": [
+        -1.148677110671997,
+        0,
+        -0.6399999856948853
+      ],
+      "max": [
+        1.186668872833252,
+        3.1949872970581055,
+        1.0100511312484741
+      ]
+    },
+    "meshCount": 1,
+    "materialCount": 1,
+    "textureCount": 0,
+    "animationCount": 0
+  },
+  {
+    "name": "tree_pineTallA_detailed",
+    "label": "高山层叠松树",
+    "kind": "pine",
+    "source": "Blender 5.2 / original Xingyin forest trees",
+    "targetHeightMetres": 3.85,
+    "heightMetres": 4.105,
+    "playerHeightMetres": 1.55,
+    "heightRatio": 2.648,
+    "triangles": 682,
+    "file": "/assets/3d/xingyin-environment-v2/forest-trees/tree_pineTallA_detailed.glb",
+    "themeTags": [
+      "forest",
+      "alpine",
+      "pine"
+    ],
+    "grounded": true,
+    "material": "vertex-colour satin palette",
+    "bytes": 6132,
+    "bounds": {
+      "min": [
+        -0.9399999976158142,
+        0,
+        -0.9399999976158142
+      ],
+      "max": [
+        0.9399803280830383,
+        4.104987144470215,
+        0.9399803280830383
+      ]
+    },
+    "meshCount": 1,
+    "materialCount": 1,
+    "textureCount": 0,
+    "animationCount": 0
+  }
+]

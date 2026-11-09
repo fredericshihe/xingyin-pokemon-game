@@ -62,7 +62,7 @@ export function createBattleActorPlayback(stage, effect, recipe, reducedMotion =
   const duration = effect.durationMs
   const hitAt = getBattleMoveImpactDelay(effect.phase, duration)
   const impact = hitAt / duration
-  const contact = recipe.power !== 0 && ['strike', 'slam', 'dash', 'dive', 'dragon-dive', 'rampage', 'slash', 'fang', 'drill', 'whip', 'roll', 'hammer', 'bone-swing', 'toss', 'burrow'].includes(recipe.technique)
+  const contact = recipe.power !== 0 && ['anatomy', 'frenzy', 'vine', 'tongue', 'strike', 'slam', 'dash', 'dive', 'dragon-dive', 'rampage', 'slash', 'fang', 'drill', 'whip', 'roll', 'hammer', 'bone-swing', 'toss', 'burrow'].includes(recipe.technique)
   const miss = effect.phase === 'miss'
   const blocked = effect.visualResult?.kind === 'blocked'
   const actorFocused = blocked || ['charge', 'start', 'copy', 'fizzle'].includes(effect.phase)
@@ -70,10 +70,10 @@ export function createBattleActorPlayback(stage, effect, recipe, reducedMotion =
   const a = effect.anchors?.[actorSide], b = effect.anchors?.[targetSide]
   const dx = a && b ? (parseFloat(b.x) - parseFloat(a.x)) / 100 * stage.clientWidth : 0
   const dy = a && b ? (parseFloat(b.y) - parseFloat(a.y)) / 100 * stage.clientHeight : 0
-  const travel = canMove && contact && !actorFocused && actor !== target ? (recipe.technique === 'whip' ? .2 : .58) : 0
+  const travel = canMove && contact && !actorFocused && actor !== target ? (['whip','vine','tongue'].includes(recipe.technique) ? .2 : .58) : 0
   const x = dx * travel, y = dy * travel + (miss ? -42 : 0)
   const dir = actorSide === 'player' ? 1 : -1
-  const airborne = ['slam', 'dive', 'dragon-dive'].includes(recipe.technique)
+  const airborne = ['slam', 'dive', 'dragon-dive'].includes(recipe.technique) || recipe.motion === 'overhead'
   const lift = airborne && canMove ? Math.min(90, stage.clientHeight * .18) : 0
   const transform = (tx, ty, sx = 1, sy = sx, angle = 0) => `translate3d(${tx}px,${ty}px,0) rotate(${angle}deg) scale(${sx},${sy})`
   const animations = []
@@ -113,14 +113,19 @@ export function createBattleActorPlayback(stage, effect, recipe, reducedMotion =
         {offset:1,transform:transform(0,0)},
       ]
     } else if (attack && recipe.gesture === 'kick') {
+      const combinedDouble = recipe.key === 'double_kick' && (effect.feedback?.hitCount || effect.profile?.hitCount || 1) === 1
       keyframes = [
         {offset:0,transform:transform(0,0)},
         {offset:impact*.45,transform:transform(-dir*8,-14,1.02,1.06,-dir*16)},
         {offset:impact,transform:transform(x,y,1.1,.94,dir*22)},
-        {offset:Math.min(.88,impact+.25),transform:transform(x*.2,y*.2,1,1,-dir*6)},
+        ...(combinedDouble ? [
+          {offset:impact+(1-impact)*.15,transform:transform(x*.65,y*.7-10,1,1,-dir*12)},
+          {offset:impact+(1-impact)*.26,transform:transform(x,y,1.1,.94,-dir*20)},
+          {offset:impact+(1-impact)*.6,transform:transform(x*.2,y*.2,1,1,-dir*6)},
+        ] : [{offset:Math.min(.88,impact+.25),transform:transform(x*.2,y*.2,1,1,-dir*6)}]),
         {offset:1,transform:transform(0,0)},
       ]
-    } else if (attack && recipe.technique === 'rampage') {
+    } else if (attack && ['rampage','frenzy'].includes(recipe.technique)) {
       keyframes = [
         {offset:0,transform:transform(0,0)},
         {offset:impact*.5,transform:transform(-dir*10,-5,1.08,1.08,-dir*10)},

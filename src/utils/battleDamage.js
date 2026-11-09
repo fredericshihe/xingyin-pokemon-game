@@ -1,3 +1,4 @@
+import { getDynamaxStatMultiplier } from './dynamax'
 import { TYPES, TYPE_NAMES_CN, getEffectiveness } from './constants'
 
 /** 同级对战（等级差 ≤3）时，单次伤害不超过目标最大 HP 的比例，避免离谱秒杀 */
@@ -35,7 +36,7 @@ export const resolveBattleStat = (mon, stat, { burnHalvesPhysicalAtk = true } = 
   if (stat === 'spd' && mon?.status === 'paralysis') statusModifier = 0.5
   if (burnHalvesPhysicalAtk && stat === 'atk' && mon?.status === 'burn') statusModifier = 0.5
   const stage = mon?.statStages?.[stat] || 0
-  return Math.max(1, Math.floor(baseValue * getStageMultiplier(stage) * statusModifier))
+  return Math.max(1, Math.floor(baseValue * getStageMultiplier(stage) * statusModifier * getDynamaxStatMultiplier(mon, stat)))
 }
 
 export const getBattlePokemonTypes = (mon) => (

@@ -14,7 +14,7 @@ await withViteAuditServer(async ({loadModule}) => {
     const mechanics=[move.power?`威力 ${move.power}`:'',move.status?`${move.statusChance ?? 100}% ${status[move.status] || move.status}`:'',
       move.volatileStatus?status[move.volatileStatus]||move.volatileStatus:'',
       ...changes.map(c=>`${c.target==='attacker'?'自身':'对方'}${stat[c.stat]||c.stat}${c.stages>0?'提升':'降低'} ${Math.abs(c.stages)} 级`),effect[move.effect]||'',move.charge?'蓄力':''].filter(Boolean)
-    return {key,name:move.name,mechanics:mechanics.join('；'),technique:recipe.technique,material:recipe.material,gesture:recipe.gesture,direction:recipe.direction,powerLevel:recipe.powerLevel}
+    return {key,name:move.name,mechanics:mechanics.join('；'),technique:recipe.technique,material:recipe.material,subject:recipe.subject,motion:recipe.motion,gesture:recipe.gesture,direction:recipe.direction,powerLevel:recipe.powerLevel}
   })
   await fs.mkdir('art/battle-vfx',{recursive:true})
   await fs.writeFile('art/battle-vfx/MOVE-DIRECTIONS.json',JSON.stringify(rows,null,2))

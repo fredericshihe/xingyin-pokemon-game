@@ -1,0 +1,71 @@
+{
+  "model": "Seeded approximate battle simulation using actual species, level stats, move sets, damage, accuracy, critical hits, MP costs and minigame trainer AI (including switches, no opponent potions). One match against six opponents; levels use the strongest three party members with a floor tied to the highest level. Average parties sample six distinct final species with base-stat totals from 440 to 560. Does not model statuses, experience gains or manual tactical switching. Player super potions restore 50 HP/30 MP and are used automatically at low HP/MP.",
+  "averageFinalSpeciesCount": 91,
+  "levelBias": 0,
+  "results": [
+    {
+      "scenario": "six-lv80-average-no-items",
+      "route": "training",
+      "opponentLevelOffset": 29,
+      "betweenStages": "actual-carry",
+      "runs": 1000,
+      "winPercent": 78.2,
+      "averageGoldPerAttempt": 3191,
+      "goldOnFullClear": 4080,
+      "goldPercent": 32.2,
+      "medianWinningTurns": 15,
+      "winningTurnsP25": 13,
+      "winningTurnsP75": 17,
+      "winningTurnsP90": 19,
+      "silverPercent": 69.1,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        72,
+        73,
+        74,
+        74,
+        75,
+        76
+      ],
+      "medalDistribution": {
+        "gold": 322,
+        "silver": 369,
+        "bronze": 91
+      },
+      "averageVouchersPerAttempt": 1.8
+    },
+    {
+      "scenario": "six-lv80-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 29,
+      "betweenStages": "actual-carry",
+      "runs": 1000,
+      "winPercent": 79.1,
+      "averageGoldPerAttempt": 3227,
+      "goldOnFullClear": 4080,
+      "goldPercent": 25.1,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 14,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "silverPercent": 64.7,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        72,
+        73,
+        74,
+        74,
+        75,
+        76
+      ],
+      "medalDistribution": {
+        "gold": 251,
+        "silver": 396,
+        "bronze": 144
+      },
+      "averageVouchersPerAttempt": 1.69
+    }
+  ]
+}

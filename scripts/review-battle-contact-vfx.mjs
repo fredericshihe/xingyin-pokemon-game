@@ -8,12 +8,13 @@ const out = process.argv[3] || 'output/battle-vfx-v3/contact'
 await fs.mkdir(out, { recursive: true })
 const browser = await launchChrome()
 const report = []
+const moves = ['double_kick','blaze_kick','vinewhip','power_whip','fury_attack','bone_rush','bonemerang','thunder_punch','wing_attack','iron_tail','dragon_rush','outrage']
 try {
   const page = await createPage(browser.port)
   for (const device of [{ id: 'phone', width: 390, height: 844, dpr: 2, cpuThrottle: 1 }, { id: 'tablet', width: 768, height: 1024, dpr: 1, cpuThrottle: 1 }]) {
     await preparePage(page, device, false)
     const tiles = []
-    for (const [row, move] of ['bodyslam', 'dragon_rush', 'outrage', 'tackle', 'scratch', 'slam', 'dragonclaw'].entries()) {
+    for (const [row, move] of moves.entries()) {
       for (const [column, progress] of [.18, .43, .68].entries()) {
         await navigateAndWait(page, `${base}/battle-vfx-lab?scene=actual&move=${move}&frame=${progress}`)
         for (let i = 0; i < 100; i++) {
@@ -42,7 +43,7 @@ try {
         report.push({ device: device.id, move, progress, ...sample })
       }
     }
-    await sharp({ create: { width: 900, height: 7 * 378, channels: 3, background: '#fff' } }).composite(tiles).png().toFile(`${out}/${device.id}-sequence.png`)
+    await sharp({ create: { width: 900, height: moves.length * 378, channels: 3, background: '#fff' } }).composite(tiles).png().toFile(`${out}/${device.id}-sequence.png`)
   }
   page.close()
 } finally {

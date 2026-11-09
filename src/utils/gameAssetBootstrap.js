@@ -180,7 +180,7 @@ const runIdleWarmup = ({ mapName, adjacentMapNames = [] } = {}) => {
   loadNextBatch()
   void preloadAdjacentMapModels(adjacentMapNames)
   if (mapName) {
-    void import('../game/threeLowPolyMap')
+    void import('../game/ThreeLowPolyMap')
   }
 }
 

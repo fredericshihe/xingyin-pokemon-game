@@ -1,0 +1,16 @@
+.map-controls-v2--float .map-action-rail-wrapper { position: relative; align-self: stretch; flex: 0 0 auto; margin-left: auto; }
+.map-controls-v2--float .map-action-rail-wrapper > .map-action-grid { height: 100%; max-width: none; pointer-events: auto; }
+.map-travel-actions { position: absolute; bottom: calc(100% + 12px); right: 0; display: flex; gap: 8px; justify-content: center; pointer-events: none; }
+.map-travel-actions--above-camera { bottom: calc(100% + 66px); right: 0; width: 98px; }
+@media (hover: hover) and (pointer: fine) {
+  .map-travel-actions--above-camera { bottom: calc(100% + 58px); width: 82px; }
+}
+.map-travel-actions .map-bicycle-button { pointer-events: auto; }
+.map-bicycle-key { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .map-bicycle-key { display: grid; place-items: center; position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; padding: 0 3px; border: 1px solid #99c9c5; border-radius: 5px; background: #effffb; color: #176e68; font: 700 11px/1 system-ui, sans-serif; }
+}
+.map-bicycle-button[aria-pressed="true"] { color: #086b65; border-color: #37bca7; background: linear-gradient(135deg,#d6fff0ee,#b2edeeee); box-shadow: 0 3px 15px #258e7026; }
+.map-bicycle-button svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.map-bicycle-button:disabled { opacity: .5; }
+.map-sports-car-button[aria-pressed="true"] { color: #a8343e; border-color: #ed7f86; background: linear-gradient(135deg,#fff1e5ee,#ffd7dbee); box-shadow: 0 3px 15px #b3455226; }

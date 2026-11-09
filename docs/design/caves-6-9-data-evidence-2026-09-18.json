@@ -1,0 +1,3866 @@
+{
+  "status": "planning-evidence-not-runtime-config",
+  "verifiedDate": "2026-09-18",
+  "sourceNote": "PokeAPI is a community project containing original-game data, not an official Pokemon Company Git repository.",
+  "source": {
+    "repository": "https://github.com/PokeAPI/pokeapi",
+    "commit": "5c776e225f2150862e021062d7f304c8958368cc",
+    "files": [
+      {
+        "file": "pokemon_species.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_species.csv",
+        "sha256": "e66e2eeb25fd3836b0ebab6bf87bbf01960aa3c0555e2bac495fa8393c5e0c45",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_evolution.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_evolution.csv",
+        "sha256": "a35ceefa30851ab29faf90d7425a2773a43db5f4e9e3f3be4f0abcd51f67282a",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_species_names.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_species_names.csv",
+        "sha256": "820cde17074cdb1c2b0595c997fb8f998e773bd5da3bb525dec85703c86c5fd9",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "version_groups.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/version_groups.csv",
+        "sha256": "28da8d89d8eb4966941f81a9e62b3990510ed4d76dd774158246551a8e7707a7",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon.csv",
+        "sha256": "16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f8ce6b",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_stats.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_stats.csv",
+        "sha256": "fa2c44263a3706468682fefc3e0b3c4f5487fe9febed7d4ebcd6939c34b16aa8",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_types.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_types.csv",
+        "sha256": "f1fc4bfd657a034ea3bf6972423b10276424aa068577b304a78a08996425ba05",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "types.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/types.csv",
+        "sha256": "37f039c8d722f47d51ba1c5c5ecf9b7007235b1a9a1af2827645c777b70307c8",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "growth_rates.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/growth_rates.csv",
+        "sha256": "2691fea161441ce97085d70c0f466c0329a9a5a587a9797bb3b757da0e8090d0",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "moves.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/moves.csv",
+        "sha256": "8aafd37bf78f19471495c05b201545180f50f0a08a2a2a844d69f9837dd39ac9",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "move_names.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/move_names.csv",
+        "sha256": "99e23ee38ea53d1473474d463b87651deac3cd4928750f8186feae66da45c147",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_moves.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_moves.csv",
+        "sha256": "22a807cef26891eeac0d0c900bd363e66baf421f7ee795bc7bc3e718f23b939e",
+        "matchedMasterRead": true
+      },
+      {
+        "file": "pokemon_species_flavor_text.csv",
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/5c776e225f2150862e021062d7f304c8958368cc/data/v2/csv/pokemon_species_flavor_text.csv",
+        "sha256": "c341e602ab623084fef4c44ca4a174938e617802cfcf2deec830d824f688dc69",
+        "matchedMasterRead": true
+      }
+    ]
+  },
+  "currentRosterCount": 209,
+  "wildCandidateCount": 12,
+  "newSpeciesCountIncludingEvolutions": 23,
+  "resultingRosterCount": 232,
+  "newDexNumbersOverlapCurrentRoster": false,
+  "selectedVersionGroup": {
+    "id": 20,
+    "name": "sword-shield",
+    "reason": "A common supported baseline for all 23 standard forms; explicit scoped generator override required."
+  },
+  "uniqueLevelUpMoveCount": 141,
+  "currentlyDefinedMoveCount": 94,
+  "missingMoveCount": 47,
+  "missingMoves": [
+    {
+      "key": "baton_pass",
+      "name": "接棒",
+      "apiName": "baton-pass"
+    },
+    {
+      "key": "block",
+      "name": "挡路",
+      "apiName": "block"
+    },
+    {
+      "key": "boomburst",
+      "name": "爆音波",
+      "apiName": "boomburst"
+    },
+    {
+      "key": "crafty_shield",
+      "name": "戏法防守",
+      "apiName": "crafty-shield"
+    },
+    {
+      "key": "curse",
+      "name": "诅咒",
+      "apiName": "curse"
+    },
+    {
+      "key": "destiny_bond",
+      "name": "同命",
+      "apiName": "destiny-bond"
+    },
+    {
+      "key": "detect",
+      "name": "看穿",
+      "apiName": "detect"
+    },
+    {
+      "key": "disable",
+      "name": "定身法",
+      "apiName": "disable"
+    },
+    {
+      "key": "dragon_darts",
+      "name": "龙箭",
+      "apiName": "dragon-darts"
+    },
+    {
+      "key": "dual_chop",
+      "name": "二连劈",
+      "apiName": "dual-chop"
+    },
+    {
+      "key": "fissure",
+      "name": "地裂",
+      "apiName": "fissure"
+    },
+    {
+      "key": "foul_play",
+      "name": "欺诈",
+      "apiName": "foul-play"
+    },
+    {
+      "key": "grudge",
+      "name": "怨念",
+      "apiName": "grudge"
+    },
+    {
+      "key": "guard_split",
+      "name": "防守平分",
+      "apiName": "guard-split"
+    },
+    {
+      "key": "guillotine",
+      "name": "断头钳",
+      "apiName": "guillotine"
+    },
+    {
+      "key": "haze",
+      "name": "黑雾",
+      "apiName": "haze"
+    },
+    {
+      "key": "horn_drill",
+      "name": "角钻",
+      "apiName": "horn-drill"
+    },
+    {
+      "key": "imprison",
+      "name": "封印",
+      "apiName": "imprison"
+    },
+    {
+      "key": "infestation",
+      "name": "死缠烂打",
+      "apiName": "infestation"
+    },
+    {
+      "key": "laser_focus",
+      "name": "磨砺",
+      "apiName": "laser-focus"
+    },
+    {
+      "key": "light_screen",
+      "name": "光墙",
+      "apiName": "light-screen"
+    },
+    {
+      "key": "lock_on",
+      "name": "锁定",
+      "apiName": "lock-on"
+    },
+    {
+      "key": "mean_look",
+      "name": "黑色目光",
+      "apiName": "mean-look"
+    },
+    {
+      "key": "metal_burst",
+      "name": "金属爆炸",
+      "apiName": "metal-burst"
+    },
+    {
+      "key": "night_shade",
+      "name": "黑夜魔影",
+      "apiName": "night-shade"
+    },
+    {
+      "key": "phantom_force",
+      "name": "潜灵奇袭",
+      "apiName": "phantom-force"
+    },
+    {
+      "key": "power_split",
+      "name": "力量平分",
+      "apiName": "power-split"
+    },
+    {
+      "key": "protect",
+      "name": "守住",
+      "apiName": "protect"
+    },
+    {
+      "key": "quash",
+      "name": "延后",
+      "apiName": "quash"
+    },
+    {
+      "key": "rain_dance",
+      "name": "求雨",
+      "apiName": "rain-dance"
+    },
+    {
+      "key": "roar",
+      "name": "吼叫",
+      "apiName": "roar"
+    },
+    {
+      "key": "roost",
+      "name": "羽栖",
+      "apiName": "roost"
+    },
+    {
+      "key": "safeguard",
+      "name": "神秘守护",
+      "apiName": "safeguard"
+    },
+    {
+      "key": "sandstorm",
+      "name": "沙暴",
+      "apiName": "sandstorm"
+    },
+    {
+      "key": "shadow_claw",
+      "name": "暗影爪",
+      "apiName": "shadow-claw"
+    },
+    {
+      "key": "skill_swap",
+      "name": "特性互换",
+      "apiName": "skill-swap"
+    },
+    {
+      "key": "smack_down",
+      "name": "击落",
+      "apiName": "smack-down"
+    },
+    {
+      "key": "spit_up",
+      "name": "喷出",
+      "apiName": "spit-up"
+    },
+    {
+      "key": "spite",
+      "name": "怨恨",
+      "apiName": "spite"
+    },
+    {
+      "key": "stealth_rock",
+      "name": "隐形岩",
+      "apiName": "stealth-rock"
+    },
+    {
+      "key": "sunny_day",
+      "name": "大晴天",
+      "apiName": "sunny-day"
+    },
+    {
+      "key": "super_fang",
+      "name": "愤怒门牙",
+      "apiName": "super-fang"
+    },
+    {
+      "key": "tailwind",
+      "name": "顺风",
+      "apiName": "tailwind"
+    },
+    {
+      "key": "taunt",
+      "name": "挑衅",
+      "apiName": "taunt"
+    },
+    {
+      "key": "u_turn",
+      "name": "急速折返",
+      "apiName": "u-turn"
+    },
+    {
+      "key": "weather_ball",
+      "name": "气象球",
+      "apiName": "weather-ball"
+    },
+    {
+      "key": "whirlwind",
+      "name": "吹飞",
+      "apiName": "whirlwind"
+    }
+  ],
+  "species": [
+    {
+      "dexNo": 302,
+      "name": "勾魂眼",
+      "apiName": "sableye",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dark",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 50,
+        "attack": 75,
+        "defense": 75,
+        "specialAttack": 65,
+        "specialDefense": 65,
+        "speed": 50
+      },
+      "baseStatTotal": 380,
+      "growthRate": "medium-slow",
+      "captureRate": 45,
+      "baseExperience": 133,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "leer",
+          "name": "瞪眼",
+          "apiName": "leer",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 3,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 6,
+          "key": "confuse_ray",
+          "name": "奇异之光",
+          "apiName": "confuse-ray",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 9,
+          "key": "shadow_sneak",
+          "name": "影子偷袭",
+          "apiName": "shadow-sneak",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "fake_out",
+          "name": "击掌奇袭",
+          "apiName": "fake-out",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 15,
+          "key": "disable",
+          "name": "定身法",
+          "apiName": "disable",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 18,
+          "key": "detect",
+          "name": "看穿",
+          "apiName": "detect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 21,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "fury_swipes",
+          "name": "乱抓",
+          "apiName": "fury-swipes",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 27,
+          "key": "knock_off",
+          "name": "拍落",
+          "apiName": "knock-off",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "quash",
+          "name": "延后",
+          "apiName": "quash",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 33,
+          "key": "shadow_claw",
+          "name": "暗影爪",
+          "apiName": "shadow-claw",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "mean_look",
+          "name": "黑色目光",
+          "apiName": "mean-look",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 39,
+          "key": "power_gem",
+          "name": "力量宝石",
+          "apiName": "power-gem",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 42,
+          "key": "zen_headbutt",
+          "name": "意念头锤",
+          "apiName": "zen-headbutt",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 45,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "foul_play",
+          "name": "欺诈",
+          "apiName": "foul-play",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "宝石的眼睛发出诡异光芒时，就会摄取人的魂魄。是令人恐惧的宝可梦。"
+        },
+        {
+          "versionId": 34,
+          "text": "会去吃宝石的结晶。双眼在漆黑一片的地方会发出宝石的光芒。"
+        }
+      ]
+    },
+    {
+      "dexNo": 442,
+      "name": "花岩怪",
+      "apiName": "spiritomb",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ghost",
+        "dark"
+      ],
+      "stats": {
+        "hp": 50,
+        "attack": 92,
+        "defense": 108,
+        "specialAttack": 92,
+        "specialDefense": 108,
+        "speed": 35
+      },
+      "baseStatTotal": 485,
+      "growthRate": "medium",
+      "captureRate": 100,
+      "baseExperience": 170,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "confuse_ray",
+          "name": "奇异之光",
+          "apiName": "confuse-ray",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 5,
+          "key": "shadow_sneak",
+          "name": "影子偷袭",
+          "apiName": "shadow-sneak",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 10,
+          "key": "spite",
+          "name": "怨恨",
+          "apiName": "spite",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 15,
+          "key": "payback",
+          "name": "以牙还牙",
+          "apiName": "payback",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "nasty_plot",
+          "name": "诡计",
+          "apiName": "nasty-plot",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 25,
+          "key": "hex",
+          "name": "祸不单行",
+          "apiName": "hex",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "memento",
+          "name": "临别礼物",
+          "apiName": "memento",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 35,
+          "key": "sucker_punch",
+          "name": "突袭",
+          "apiName": "sucker-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "curse",
+          "name": "诅咒",
+          "apiName": "curse",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 45,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 50,
+          "key": "dark_pulse",
+          "name": "恶之波动",
+          "apiName": "dark-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 55,
+          "key": "hypnosis",
+          "name": "催眠术",
+          "apiName": "hypnosis",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 60,
+          "key": "dream_eater",
+          "name": "食梦",
+          "apiName": "dream-eater",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "由１０８个灵魂聚在一起变成了宝可梦，但似乎有性格恶劣的灵魂混在里面。"
+        },
+        {
+          "versionId": 34,
+          "text": "总是作恶多端，于是被使用神奇法术的旅人绑缚在楔石里。"
+        }
+      ]
+    },
+    {
+      "dexNo": 562,
+      "name": "哭哭面具",
+      "apiName": "yamask",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ghost"
+      ],
+      "stats": {
+        "hp": 38,
+        "attack": 30,
+        "defense": 85,
+        "specialAttack": 55,
+        "specialDefense": 65,
+        "speed": 30
+      },
+      "baseStatTotal": 303,
+      "growthRate": "medium",
+      "captureRate": 190,
+      "baseExperience": 61,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "protect",
+          "name": "守住",
+          "apiName": "protect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 4,
+          "key": "haze",
+          "name": "黑雾",
+          "apiName": "haze",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 8,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "disable",
+          "name": "定身法",
+          "apiName": "disable",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "will_o_wisp",
+          "name": "鬼火",
+          "apiName": "will-o-wisp",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "crafty_shield",
+          "name": "戏法防守",
+          "apiName": "crafty-shield",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "hex",
+          "name": "祸不单行",
+          "apiName": "hex",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "mean_look",
+          "name": "黑色目光",
+          "apiName": "mean-look",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 32,
+          "key": "grudge",
+          "name": "怨念",
+          "apiName": "grudge",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "curse",
+          "name": "诅咒",
+          "apiName": "curse",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 40,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "dark_pulse",
+          "name": "恶之波动",
+          "apiName": "dark-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "guard_split",
+          "name": "防守平分",
+          "apiName": "guard-split",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 48,
+          "key": "power_split",
+          "name": "力量平分",
+          "apiName": "power-split",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 52,
+          "key": "destiny_bond",
+          "name": "同命",
+          "apiName": "destiny-bond",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "每天夜里都在遗迹中徘徊。据说它拿着的面具是它还是人类时的脸。"
+        },
+        {
+          "versionId": 34,
+          "text": "古代人的灵魂变成了宝可梦。为了寻找认得自己长相的人而在遗迹里徘徊。"
+        }
+      ]
+    },
+    {
+      "dexNo": 563,
+      "name": "迭失棺",
+      "apiName": "cofagrigus",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ghost"
+      ],
+      "stats": {
+        "hp": 58,
+        "attack": 50,
+        "defense": 145,
+        "specialAttack": 95,
+        "specialDefense": 105,
+        "speed": 30
+      },
+      "baseStatTotal": 483,
+      "growthRate": "medium",
+      "captureRate": 90,
+      "baseExperience": 169,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 562,
+          "minimumLevel": 34,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "shadow_claw",
+          "name": "暗影爪",
+          "apiName": "shadow-claw",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "haze",
+          "name": "黑雾",
+          "apiName": "haze",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "protect",
+          "name": "守住",
+          "apiName": "protect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "scary_face",
+          "name": "鬼面",
+          "apiName": "scary-face",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "shadow_claw",
+          "name": "暗影爪",
+          "apiName": "shadow-claw",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "disable",
+          "name": "定身法",
+          "apiName": "disable",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "will_o_wisp",
+          "name": "鬼火",
+          "apiName": "will-o-wisp",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "crafty_shield",
+          "name": "戏法防守",
+          "apiName": "crafty-shield",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "hex",
+          "name": "祸不单行",
+          "apiName": "hex",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "mean_look",
+          "name": "黑色目光",
+          "apiName": "mean-look",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 32,
+          "key": "grudge",
+          "name": "怨念",
+          "apiName": "grudge",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 38,
+          "key": "curse",
+          "name": "诅咒",
+          "apiName": "curse",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 44,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 50,
+          "key": "dark_pulse",
+          "name": "恶之波动",
+          "apiName": "dark-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 56,
+          "key": "guard_split",
+          "name": "防守平分",
+          "apiName": "guard-split",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 56,
+          "key": "power_split",
+          "name": "力量平分",
+          "apiName": "power-split",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 62,
+          "key": "destiny_bond",
+          "name": "同命",
+          "apiName": "destiny-bond",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "拥有闪亮亮的黄金之躯。据说它已再也无法记起自己曾是人类。"
+        },
+        {
+          "versionId": 34,
+          "text": "迭失棺象征着国王的财富，因此许多古墓里都有它的壁画。"
+        }
+      ]
+    },
+    {
+      "dexNo": 436,
+      "name": "铜镜怪",
+      "apiName": "bronzor",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "psychic"
+      ],
+      "stats": {
+        "hp": 57,
+        "attack": 24,
+        "defense": 86,
+        "specialAttack": 24,
+        "specialDefense": 86,
+        "speed": 23
+      },
+      "baseStatTotal": 300,
+      "growthRate": "medium",
+      "captureRate": 255,
+      "baseExperience": 60,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "confusion",
+          "name": "念力",
+          "apiName": "confusion",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "confuse_ray",
+          "name": "奇异之光",
+          "apiName": "confuse-ray",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "payback",
+          "name": "以牙还牙",
+          "apiName": "payback",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "imprison",
+          "name": "封印",
+          "apiName": "imprison",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "gyro_ball",
+          "name": "陀螺球",
+          "apiName": "gyro-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "hypnosis",
+          "name": "催眠术",
+          "apiName": "hypnosis",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "safeguard",
+          "name": "神秘守护",
+          "apiName": "safeguard",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 28,
+          "key": "extrasensory",
+          "name": "神通力",
+          "apiName": "extrasensory",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "metal_sound",
+          "name": "金属音",
+          "apiName": "metal-sound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "future_sight",
+          "name": "预知未来",
+          "apiName": "future-sight",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "会在古老的遗迹出现。身上的纹路不属于伽勒尔文化，因此至今仍然谜团重重。"
+        },
+        {
+          "versionId": 34,
+          "text": "虽然人们说把铜镜怪打磨到发光，它就能映照出真相，但其实它非常讨厌被打磨。"
+        }
+      ]
+    },
+    {
+      "dexNo": 437,
+      "name": "青铜钟",
+      "apiName": "bronzong",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "psychic"
+      ],
+      "stats": {
+        "hp": 67,
+        "attack": 89,
+        "defense": 116,
+        "specialAttack": 79,
+        "specialDefense": 116,
+        "speed": 33
+      },
+      "baseStatTotal": 500,
+      "growthRate": "medium",
+      "captureRate": 90,
+      "baseExperience": 175,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 436,
+          "minimumLevel": 33,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "block",
+          "name": "挡路",
+          "apiName": "block",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "block",
+          "name": "挡路",
+          "apiName": "block",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "confuse_ray",
+          "name": "奇异之光",
+          "apiName": "confuse-ray",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "confusion",
+          "name": "念力",
+          "apiName": "confusion",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "payback",
+          "name": "以牙还牙",
+          "apiName": "payback",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "sunny_day",
+          "name": "大晴天",
+          "apiName": "sunny-day",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "weather_ball",
+          "name": "气象球",
+          "apiName": "weather-ball",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "imprison",
+          "name": "封印",
+          "apiName": "imprison",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "gyro_ball",
+          "name": "陀螺球",
+          "apiName": "gyro-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "hypnosis",
+          "name": "催眠术",
+          "apiName": "hypnosis",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "safeguard",
+          "name": "神秘守护",
+          "apiName": "safeguard",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 28,
+          "key": "extrasensory",
+          "name": "神通力",
+          "apiName": "extrasensory",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 38,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "metal_sound",
+          "name": "金属音",
+          "apiName": "metal-sound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 50,
+          "key": "future_sight",
+          "name": "预知未来",
+          "apiName": "future-sight",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 56,
+          "key": "rain_dance",
+          "name": "求雨",
+          "apiName": "rain-dance",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "被称为能召唤雨云的神明。生气时会用像钟声一般令人毛骨悚然的声音来威吓对手。"
+        },
+        {
+          "versionId": 34,
+          "text": "它身上的纹路让许多学者都认为它原本并不存在于伽勒尔。"
+        }
+      ]
+    },
+    {
+      "dexNo": 622,
+      "name": "泥偶小人",
+      "apiName": "golett",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ground",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 59,
+        "attack": 74,
+        "defense": 50,
+        "specialAttack": 35,
+        "specialDefense": 50,
+        "speed": 35
+      },
+      "baseStatTotal": 303,
+      "growthRate": "medium",
+      "captureRate": 190,
+      "baseExperience": 61,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "mud_slap",
+          "name": "掷泥",
+          "apiName": "mud-slap",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "defense_curl",
+          "name": "变圆",
+          "apiName": "defense-curl",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "pound",
+          "name": "拍击",
+          "apiName": "pound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "shadow_punch",
+          "name": "暗影拳",
+          "apiName": "shadow-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "curse",
+          "name": "诅咒",
+          "apiName": "curse",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 20,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "stomping_tantrum",
+          "name": "跺脚",
+          "apiName": "stomping-tantrum",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "mega_punch",
+          "name": "百万吨重拳",
+          "apiName": "mega-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "phantom_force",
+          "name": "潜灵奇袭",
+          "apiName": "phantom-force",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 48,
+          "key": "hammer_arm",
+          "name": "臂锤",
+          "apiName": "hammer-arm",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 52,
+          "key": "earthquake",
+          "name": "地震",
+          "apiName": "earthquake",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 56,
+          "key": "dynamic_punch",
+          "name": "爆裂拳",
+          "apiName": "dynamic-punch",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "诞生自黏土的古代宝可梦。不知为何，有一些泥偶小人会不断地把大石头排列起来。"
+        },
+        {
+          "versionId": 34,
+          "text": "用黏土制成的宝可梦。即使现在也一直遵循着数千年前主人的命令。"
+        }
+      ]
+    },
+    {
+      "dexNo": 623,
+      "name": "泥偶巨人",
+      "apiName": "golurk",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ground",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 89,
+        "attack": 124,
+        "defense": 80,
+        "specialAttack": 55,
+        "specialDefense": 80,
+        "speed": 55
+      },
+      "baseStatTotal": 483,
+      "growthRate": "medium",
+      "captureRate": 90,
+      "baseExperience": 169,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 622,
+          "minimumLevel": 43,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "defense_curl",
+          "name": "变圆",
+          "apiName": "defense-curl",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "focus_punch",
+          "name": "真气拳",
+          "apiName": "focus-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "high_horsepower",
+          "name": "十万马力",
+          "apiName": "high-horsepower",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "mud_slap",
+          "name": "掷泥",
+          "apiName": "mud-slap",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "pound",
+          "name": "拍击",
+          "apiName": "pound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "shadow_punch",
+          "name": "暗影拳",
+          "apiName": "shadow-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "curse",
+          "name": "诅咒",
+          "apiName": "curse",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 20,
+          "key": "night_shade",
+          "name": "黑夜魔影",
+          "apiName": "night-shade",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "stomping_tantrum",
+          "name": "跺脚",
+          "apiName": "stomping-tantrum",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "mega_punch",
+          "name": "百万吨重拳",
+          "apiName": "mega-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "shadowball",
+          "name": "暗影球",
+          "apiName": "shadow-ball",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 46,
+          "key": "phantom_force",
+          "name": "潜灵奇袭",
+          "apiName": "phantom-force",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 52,
+          "key": "hammer_arm",
+          "name": "臂锤",
+          "apiName": "hammer-arm",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 58,
+          "key": "earthquake",
+          "name": "地震",
+          "apiName": "earthquake",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 64,
+          "key": "dynamic_punch",
+          "name": "爆裂拳",
+          "apiName": "dynamic-punch",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "古代人城堡的墙壁里那像炮台一样的底座是为了让泥偶巨人发射光束而建的。"
+        },
+        {
+          "versionId": 34,
+          "text": "虽然有人认为它体内有着生成能量的永动机，但至今仍未得到证实。"
+        }
+      ]
+    },
+    {
+      "dexNo": 703,
+      "name": "小碎钻",
+      "apiName": "carbink",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "rock",
+        "fairy"
+      ],
+      "stats": {
+        "hp": 50,
+        "attack": 50,
+        "defense": 150,
+        "specialAttack": 50,
+        "specialDefense": 150,
+        "speed": 50
+      },
+      "baseStatTotal": 500,
+      "growthRate": "slow",
+      "captureRate": 60,
+      "baseExperience": 100,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "harden",
+          "name": "变硬",
+          "apiName": "harden",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 5,
+          "key": "guard_split",
+          "name": "防守平分",
+          "apiName": "guard-split",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 10,
+          "key": "smack_down",
+          "name": "击落",
+          "apiName": "smack-down",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 15,
+          "key": "flail",
+          "name": "抓狂",
+          "apiName": "flail",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "ancient_power",
+          "name": "原始之力",
+          "apiName": "ancient-power",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 25,
+          "key": "rock_polish",
+          "name": "岩石打磨",
+          "apiName": "rock-polish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "light_screen",
+          "name": "光墙",
+          "apiName": "light-screen",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 35,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "skill_swap",
+          "name": "特性互换",
+          "apiName": "skill-swap",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 45,
+          "key": "power_gem",
+          "name": "力量宝石",
+          "apiName": "power-gem",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 50,
+          "key": "stealth_rock",
+          "name": "隐形岩",
+          "apiName": "stealth-rock",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 55,
+          "key": "moonblast",
+          "name": "月亮之力",
+          "apiName": "moonblast",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 60,
+          "key": "stone_edge",
+          "name": "尖石攻击",
+          "apiName": "stone-edge",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "从体内埋藏的宝石中发射出高能量的光线，将所有来袭的敌人都一扫而尽。"
+        },
+        {
+          "versionId": 34,
+          "text": "据说在世界上的某处，有个沉睡着许多小碎钻的矿脉，它们的女王也在那里。"
+        }
+      ]
+    },
+    {
+      "dexNo": 304,
+      "name": "可可多拉",
+      "apiName": "aron",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "rock"
+      ],
+      "stats": {
+        "hp": 50,
+        "attack": 70,
+        "defense": 100,
+        "specialAttack": 40,
+        "specialDefense": 40,
+        "speed": 30
+      },
+      "baseStatTotal": 330,
+      "growthRate": "slow",
+      "captureRate": 180,
+      "baseExperience": 66,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "harden",
+          "name": "变硬",
+          "apiName": "harden",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "metal_claw",
+          "name": "金属爪",
+          "apiName": "metal-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "rock_tomb",
+          "name": "岩石封锁",
+          "apiName": "rock-tomb",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "roar",
+          "name": "吼叫",
+          "apiName": "roar",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "headbutt",
+          "name": "头锤",
+          "apiName": "headbutt",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "protect",
+          "name": "守住",
+          "apiName": "protect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "iron_head",
+          "name": "铁头",
+          "apiName": "iron-head",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 33,
+          "key": "metal_sound",
+          "name": "金属音",
+          "apiName": "metal-sound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "take_down",
+          "name": "猛撞",
+          "apiName": "take-down",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "autotomize",
+          "name": "身体轻量化",
+          "apiName": "autotomize",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "iron_tail",
+          "name": "铁尾",
+          "apiName": "iron-tail",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 52,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 56,
+          "key": "double_edge",
+          "name": "舍身冲撞",
+          "apiName": "double-edge",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 60,
+          "key": "metal_burst",
+          "name": "金属爆炸",
+          "apiName": "metal-burst",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "食用铁矿石，偶尔也会吃铁路的轨道，从而打造出保护身体的钢铁盔甲。"
+        },
+        {
+          "versionId": 34,
+          "text": "进化的时候，钢铁盔甲会全部脱落。人们曾经将其捡来活用于生活。"
+        }
+      ]
+    },
+    {
+      "dexNo": 305,
+      "name": "可多拉",
+      "apiName": "lairon",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "rock"
+      ],
+      "stats": {
+        "hp": 60,
+        "attack": 90,
+        "defense": 140,
+        "specialAttack": 50,
+        "specialDefense": 50,
+        "speed": 40
+      },
+      "baseStatTotal": 430,
+      "growthRate": "slow",
+      "captureRate": 90,
+      "baseExperience": 151,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 304,
+          "minimumLevel": 32,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "harden",
+          "name": "变硬",
+          "apiName": "harden",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "metal_claw",
+          "name": "金属爪",
+          "apiName": "metal-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "rock_tomb",
+          "name": "岩石封锁",
+          "apiName": "rock-tomb",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "roar",
+          "name": "吼叫",
+          "apiName": "roar",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "headbutt",
+          "name": "头锤",
+          "apiName": "headbutt",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "protect",
+          "name": "守住",
+          "apiName": "protect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "iron_head",
+          "name": "铁头",
+          "apiName": "iron-head",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 35,
+          "key": "metal_sound",
+          "name": "金属音",
+          "apiName": "metal-sound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "take_down",
+          "name": "猛撞",
+          "apiName": "take-down",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 46,
+          "key": "autotomize",
+          "name": "身体轻量化",
+          "apiName": "autotomize",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 52,
+          "key": "iron_tail",
+          "name": "铁尾",
+          "apiName": "iron-tail",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 58,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 64,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 70,
+          "key": "double_edge",
+          "name": "舍身冲撞",
+          "apiName": "double-edge",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 76,
+          "key": "metal_burst",
+          "name": "金属爆炸",
+          "apiName": "metal-burst",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "由于可多拉所栖息的山上有着丰富的泉水和铁矿石，因此经常会与人类发生争端。"
+        },
+        {
+          "versionId": 34,
+          "text": "会用钢铁之躯互相撞击来争夺地盘。仔细看会发现钢铁盔甲上有伤痕和凹陷。"
+        }
+      ]
+    },
+    {
+      "dexNo": 306,
+      "name": "波士可多拉",
+      "apiName": "aggron",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "rock"
+      ],
+      "stats": {
+        "hp": 70,
+        "attack": 110,
+        "defense": 180,
+        "specialAttack": 60,
+        "specialDefense": 60,
+        "speed": 50
+      },
+      "baseStatTotal": 530,
+      "growthRate": "slow",
+      "captureRate": 45,
+      "baseExperience": 239,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 305,
+          "minimumLevel": 42,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "harden",
+          "name": "变硬",
+          "apiName": "harden",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "metal_claw",
+          "name": "金属爪",
+          "apiName": "metal-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "rock_tomb",
+          "name": "岩石封锁",
+          "apiName": "rock-tomb",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "roar",
+          "name": "吼叫",
+          "apiName": "roar",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "headbutt",
+          "name": "头锤",
+          "apiName": "headbutt",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "protect",
+          "name": "守住",
+          "apiName": "protect",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "iron_head",
+          "name": "铁头",
+          "apiName": "iron-head",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 35,
+          "key": "metal_sound",
+          "name": "金属音",
+          "apiName": "metal-sound",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "take_down",
+          "name": "猛撞",
+          "apiName": "take-down",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "autotomize",
+          "name": "身体轻量化",
+          "apiName": "autotomize",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 56,
+          "key": "iron_tail",
+          "name": "铁尾",
+          "apiName": "iron-tail",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 64,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 72,
+          "key": "heavy_slam",
+          "name": "重磅冲撞",
+          "apiName": "heavy-slam",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 80,
+          "key": "double_edge",
+          "name": "舍身冲撞",
+          "apiName": "double-edge",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 88,
+          "key": "metal_burst",
+          "name": "金属爆炸",
+          "apiName": "metal-burst",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "会用能够刺穿铁板的锐利尖角在撞击敌人的同时攻击对方。"
+        },
+        {
+          "versionId": 34,
+          "text": "很久以前，有位国王由于希望像波士可多拉一样强大而戴上了模仿它的头部制成的头盔。"
+        }
+      ]
+    },
+    {
+      "dexNo": 529,
+      "name": "螺钉地鼠",
+      "apiName": "drilbur",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ground"
+      ],
+      "stats": {
+        "hp": 60,
+        "attack": 85,
+        "defense": 40,
+        "specialAttack": 30,
+        "specialDefense": 45,
+        "speed": 68
+      },
+      "baseStatTotal": 328,
+      "growthRate": "medium",
+      "captureRate": 120,
+      "baseExperience": 66,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "mud_slap",
+          "name": "掷泥",
+          "apiName": "mud-slap",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "rapid_spin",
+          "name": "高速旋转",
+          "apiName": "rapid-spin",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "hone_claws",
+          "name": "磨爪",
+          "apiName": "hone-claws",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "fury_swipes",
+          "name": "乱抓",
+          "apiName": "fury-swipes",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "metal_claw",
+          "name": "金属爪",
+          "apiName": "metal-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "sandstorm",
+          "name": "沙暴",
+          "apiName": "sandstorm",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "crush_claw",
+          "name": "撕裂爪",
+          "apiName": "crush-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "dig",
+          "name": "挖洞",
+          "apiName": "dig",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "swords_dance",
+          "name": "剑舞",
+          "apiName": "swords-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "drill_run",
+          "name": "直冲钻",
+          "apiName": "drill-run",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "earthquake",
+          "name": "地震",
+          "apiName": "earthquake",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "fissure",
+          "name": "地裂",
+          "apiName": "fissure",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "会将双掌上的爪子并拢，并让身体高速旋转，瞄准猎物冲过去。"
+        },
+        {
+          "versionId": 34,
+          "text": "会用爪子在地底挖掘前进。一些农民因为担心它会因此糟蹋蔬菜而讨厌它。"
+        }
+      ]
+    },
+    {
+      "dexNo": 530,
+      "name": "龙头地鼠",
+      "apiName": "excadrill",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "ground",
+        "steel"
+      ],
+      "stats": {
+        "hp": 110,
+        "attack": 135,
+        "defense": 60,
+        "specialAttack": 50,
+        "specialDefense": 65,
+        "speed": 88
+      },
+      "baseStatTotal": 508,
+      "growthRate": "medium",
+      "captureRate": 60,
+      "baseExperience": 178,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 529,
+          "minimumLevel": 31,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "horn_drill",
+          "name": "角钻",
+          "apiName": "horn-drill",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "hone_claws",
+          "name": "磨爪",
+          "apiName": "hone-claws",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "horn_drill",
+          "name": "角钻",
+          "apiName": "horn-drill",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "mud_slap",
+          "name": "掷泥",
+          "apiName": "mud-slap",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "rapid_spin",
+          "name": "高速旋转",
+          "apiName": "rapid-spin",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "fury_swipes",
+          "name": "乱抓",
+          "apiName": "fury-swipes",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "metal_claw",
+          "name": "金属爪",
+          "apiName": "metal-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "sandstorm",
+          "name": "沙暴",
+          "apiName": "sandstorm",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 24,
+          "key": "crush_claw",
+          "name": "撕裂爪",
+          "apiName": "crush-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "rock_slide",
+          "name": "岩崩",
+          "apiName": "rock-slide",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 34,
+          "key": "dig",
+          "name": "挖洞",
+          "apiName": "dig",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "swords_dance",
+          "name": "剑舞",
+          "apiName": "swords-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 46,
+          "key": "drill_run",
+          "name": "直冲钻",
+          "apiName": "drill-run",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 52,
+          "key": "earthquake",
+          "name": "地震",
+          "apiName": "earthquake",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 58,
+          "key": "fissure",
+          "name": "地裂",
+          "apiName": "fissure",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "有许多看似自然形成的洞窟其实都是龙头地鼠一阵乱钻之后留下来的。"
+        },
+        {
+          "versionId": 34,
+          "text": "别名钻头王。在地底下挖掘前进的速度达到了每小时１５０公里。"
+        }
+      ]
+    },
+    {
+      "dexNo": 303,
+      "name": "大嘴娃",
+      "apiName": "mawile",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "steel",
+        "fairy"
+      ],
+      "stats": {
+        "hp": 50,
+        "attack": 85,
+        "defense": 85,
+        "specialAttack": 55,
+        "specialDefense": 55,
+        "speed": 50
+      },
+      "baseStatTotal": 380,
+      "growthRate": "fast",
+      "captureRate": 45,
+      "baseExperience": 133,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "growl",
+          "name": "叫声",
+          "apiName": "growl",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "fairy_wind",
+          "name": "妖精之风",
+          "apiName": "fairy-wind",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "baton_pass",
+          "name": "接棒",
+          "apiName": "baton-pass",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "spit_up",
+          "name": "喷出",
+          "apiName": "spit-up",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 16,
+          "key": "stockpile",
+          "name": "蓄力",
+          "apiName": "stockpile",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "swallow",
+          "name": "吞下",
+          "apiName": "swallow",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "sucker_punch",
+          "name": "突袭",
+          "apiName": "sucker-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "iron_defense",
+          "name": "铁壁",
+          "apiName": "iron-defense",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "crunch",
+          "name": "咬碎",
+          "apiName": "crunch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 32,
+          "key": "sweet_scent",
+          "name": "甜甜香气",
+          "apiName": "sweet-scent",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "iron_head",
+          "name": "铁头",
+          "apiName": "iron-head",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "taunt",
+          "name": "挑衅",
+          "apiName": "taunt",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 44,
+          "key": "fake_tears",
+          "name": "假哭",
+          "apiName": "fake-tears",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "play_rough",
+          "name": "嬉闹",
+          "apiName": "play-rough",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "会用温顺的长相让对手大意，然后再用大颚一口咬住对手。咬住后就绝不会松口。"
+        },
+        {
+          "versionId": 34,
+          "text": "大嘴娃能用自己那由钢角变化而成的巨大颚部将对手一口紧紧咬住。"
+        }
+      ]
+    },
+    {
+      "dexNo": 610,
+      "name": "牙牙",
+      "apiName": "axew",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon"
+      ],
+      "stats": {
+        "hp": 46,
+        "attack": 87,
+        "defense": 60,
+        "specialAttack": 30,
+        "specialDefense": 40,
+        "speed": 57
+      },
+      "baseStatTotal": 320,
+      "growthRate": "slow",
+      "captureRate": 75,
+      "baseExperience": 64,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "leer",
+          "name": "瞪眼",
+          "apiName": "leer",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 3,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 6,
+          "key": "false_swipe",
+          "name": "点到为止",
+          "apiName": "false-swipe",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 9,
+          "key": "assurance",
+          "name": "恶意追击",
+          "apiName": "assurance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "taunt",
+          "name": "挑衅",
+          "apiName": "taunt",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 15,
+          "key": "slash",
+          "name": "劈开",
+          "apiName": "slash",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 18,
+          "key": "dragonclaw",
+          "name": "龙爪",
+          "apiName": "dragon-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 21,
+          "key": "scary_face",
+          "name": "鬼面",
+          "apiName": "scary-face",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "crunch",
+          "name": "咬碎",
+          "apiName": "crunch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 27,
+          "key": "dragon_dance",
+          "name": "龙之舞",
+          "apiName": "dragon-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "dual_chop",
+          "name": "二连劈",
+          "apiName": "dual-chop",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 33,
+          "key": "laser_focus",
+          "name": "磨砺",
+          "apiName": "laser-focus",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 39,
+          "key": "swords_dance",
+          "name": "剑舞",
+          "apiName": "swords-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 42,
+          "key": "outrage",
+          "name": "逆鳞",
+          "apiName": "outrage",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 45,
+          "key": "guillotine",
+          "name": "断头钳",
+          "apiName": "guillotine",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 48,
+          "key": "giga_impact",
+          "name": "终极冲击",
+          "apiName": "giga-impact",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "在地面上筑巢居住。用牙齿粉碎坚硬的树果，和伙伴比拼力气。"
+        },
+        {
+          "versionId": 34,
+          "text": "会和伙伴们一起互撞牙齿来玩。折断的牙齿会马上长出来，所以丝毫都不会去在意。"
+        }
+      ]
+    },
+    {
+      "dexNo": 611,
+      "name": "斧牙龙",
+      "apiName": "fraxure",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon"
+      ],
+      "stats": {
+        "hp": 66,
+        "attack": 117,
+        "defense": 70,
+        "specialAttack": 40,
+        "specialDefense": 50,
+        "speed": 67
+      },
+      "baseStatTotal": 410,
+      "growthRate": "slow",
+      "captureRate": 60,
+      "baseExperience": 144,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 610,
+          "minimumLevel": 38,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "false_swipe",
+          "name": "点到为止",
+          "apiName": "false-swipe",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "leer",
+          "name": "瞪眼",
+          "apiName": "leer",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 9,
+          "key": "assurance",
+          "name": "恶意追击",
+          "apiName": "assurance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "taunt",
+          "name": "挑衅",
+          "apiName": "taunt",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 15,
+          "key": "slash",
+          "name": "劈开",
+          "apiName": "slash",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 18,
+          "key": "dragonclaw",
+          "name": "龙爪",
+          "apiName": "dragon-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 21,
+          "key": "scary_face",
+          "name": "鬼面",
+          "apiName": "scary-face",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "crunch",
+          "name": "咬碎",
+          "apiName": "crunch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 27,
+          "key": "dragon_dance",
+          "name": "龙之舞",
+          "apiName": "dragon-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "dual_chop",
+          "name": "二连劈",
+          "apiName": "dual-chop",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 33,
+          "key": "laser_focus",
+          "name": "磨砺",
+          "apiName": "laser-focus",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 41,
+          "key": "swords_dance",
+          "name": "剑舞",
+          "apiName": "swords-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 46,
+          "key": "outrage",
+          "name": "逆鳞",
+          "apiName": "outrage",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 51,
+          "key": "guillotine",
+          "name": "断头钳",
+          "apiName": "guillotine",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 56,
+          "key": "giga_impact",
+          "name": "终极冲击",
+          "apiName": "giga-impact",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "牙齿一旦折断就不会再次生长。战斗结束之后会用河滩上的岩石仔细地磨牙。"
+        },
+        {
+          "versionId": 34,
+          "text": "皮肤像盔甲一样坚硬。非常擅长在撞击的同时用牙齿猛刺的战法。"
+        }
+      ]
+    },
+    {
+      "dexNo": 612,
+      "name": "双斧战龙",
+      "apiName": "haxorus",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon"
+      ],
+      "stats": {
+        "hp": 76,
+        "attack": 147,
+        "defense": 90,
+        "specialAttack": 60,
+        "specialDefense": 70,
+        "speed": 97
+      },
+      "baseStatTotal": 540,
+      "growthRate": "slow",
+      "captureRate": 45,
+      "baseExperience": 243,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 611,
+          "minimumLevel": 48,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "false_swipe",
+          "name": "点到为止",
+          "apiName": "false-swipe",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "leer",
+          "name": "瞪眼",
+          "apiName": "leer",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "scratch",
+          "name": "抓",
+          "apiName": "scratch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 9,
+          "key": "assurance",
+          "name": "恶意追击",
+          "apiName": "assurance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "taunt",
+          "name": "挑衅",
+          "apiName": "taunt",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 15,
+          "key": "slash",
+          "name": "劈开",
+          "apiName": "slash",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 18,
+          "key": "dragonclaw",
+          "name": "龙爪",
+          "apiName": "dragon-claw",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 21,
+          "key": "scary_face",
+          "name": "鬼面",
+          "apiName": "scary-face",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "crunch",
+          "name": "咬碎",
+          "apiName": "crunch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 27,
+          "key": "dragon_dance",
+          "name": "龙之舞",
+          "apiName": "dragon-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "dual_chop",
+          "name": "二连劈",
+          "apiName": "dual-chop",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 33,
+          "key": "laser_focus",
+          "name": "磨砺",
+          "apiName": "laser-focus",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 41,
+          "key": "swords_dance",
+          "name": "剑舞",
+          "apiName": "swords-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 46,
+          "key": "outrage",
+          "name": "逆鳞",
+          "apiName": "outrage",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 53,
+          "key": "guillotine",
+          "name": "断头钳",
+          "apiName": "guillotine",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 60,
+          "key": "giga_impact",
+          "name": "终极冲击",
+          "apiName": "giga-impact",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "坚固的大牙是它的骄傲。为了保持牙齿的强度，会舔泥土来补充矿物质。"
+        },
+        {
+          "versionId": 34,
+          "text": "性格温和，但生起气来非常恐怖。会用自己那引以为傲，可以削铁如泥的牙齿攻击敌人。"
+        }
+      ]
+    },
+    {
+      "dexNo": 714,
+      "name": "嗡蝠",
+      "apiName": "noibat",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "flying",
+        "dragon"
+      ],
+      "stats": {
+        "hp": 40,
+        "attack": 30,
+        "defense": 35,
+        "specialAttack": 45,
+        "specialDefense": 40,
+        "speed": 55
+      },
+      "baseStatTotal": 245,
+      "growthRate": "medium",
+      "captureRate": 190,
+      "baseExperience": 49,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "absorb",
+          "name": "吸取",
+          "apiName": "absorb",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 4,
+          "key": "gust",
+          "name": "起风",
+          "apiName": "gust",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 8,
+          "key": "supersonic",
+          "name": "超音波",
+          "apiName": "supersonic",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "double_team",
+          "name": "影子分身",
+          "apiName": "double-team",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "wing_attack",
+          "name": "翅膀攻击",
+          "apiName": "wing-attack",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "air_cutter",
+          "name": "空气利刃",
+          "apiName": "air-cutter",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "whirlwind",
+          "name": "吹飞",
+          "apiName": "whirlwind",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 32,
+          "key": "super_fang",
+          "name": "愤怒门牙",
+          "apiName": "super-fang",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "air_slash",
+          "name": "空气斩",
+          "apiName": "air-slash",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "screech",
+          "name": "刺耳声",
+          "apiName": "screech",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "roost",
+          "name": "羽栖",
+          "apiName": "roost",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 49,
+          "key": "tailwind",
+          "name": "顺风",
+          "apiName": "tailwind",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 52,
+          "key": "hurricane",
+          "name": "暴风",
+          "apiName": "hurricane",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "到了太阳落山时，它便会离开居住的洞窟四处飞行，用超音波寻找熟透的果实。"
+        },
+        {
+          "versionId": 34,
+          "text": "可以控制所有频率的音波。就算是体型巨大的宝可梦，也对它的超音波束手无策。"
+        }
+      ]
+    },
+    {
+      "dexNo": 715,
+      "name": "音波龙",
+      "apiName": "noivern",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "flying",
+        "dragon"
+      ],
+      "stats": {
+        "hp": 85,
+        "attack": 70,
+        "defense": 80,
+        "specialAttack": 97,
+        "specialDefense": 80,
+        "speed": 123
+      },
+      "baseStatTotal": 535,
+      "growthRate": "medium",
+      "captureRate": 45,
+      "baseExperience": 187,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 714,
+          "minimumLevel": 48,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "absorb",
+          "name": "吸取",
+          "apiName": "absorb",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "gust",
+          "name": "起风",
+          "apiName": "gust",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "moonlight",
+          "name": "月光",
+          "apiName": "moonlight",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "supersonic",
+          "name": "超音波",
+          "apiName": "supersonic",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "tackle",
+          "name": "撞击",
+          "apiName": "tackle",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 12,
+          "key": "double_team",
+          "name": "影子分身",
+          "apiName": "double-team",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 16,
+          "key": "wing_attack",
+          "name": "翅膀攻击",
+          "apiName": "wing-attack",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 20,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "air_cutter",
+          "name": "空气利刃",
+          "apiName": "air-cutter",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 28,
+          "key": "whirlwind",
+          "name": "吹飞",
+          "apiName": "whirlwind",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 32,
+          "key": "super_fang",
+          "name": "愤怒门牙",
+          "apiName": "super-fang",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 36,
+          "key": "air_slash",
+          "name": "空气斩",
+          "apiName": "air-slash",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 40,
+          "key": "screech",
+          "name": "刺耳声",
+          "apiName": "screech",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 44,
+          "key": "roost",
+          "name": "羽栖",
+          "apiName": "roost",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 51,
+          "key": "tailwind",
+          "name": "顺风",
+          "apiName": "tailwind",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 56,
+          "key": "hurricane",
+          "name": "暴风",
+          "apiName": "hurricane",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 62,
+          "key": "boomburst",
+          "name": "爆音波",
+          "apiName": "boomburst",
+          "definedInCurrentGame": false
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "会对在黑暗中无计可施的对手痛加打击。好勇斗狠，性格残忍。"
+        },
+        {
+          "versionId": 34,
+          "text": "在黑暗中一边飞行一边发出能粉碎岩石的超音波痛击敌人，然后用利齿给予致命的一击。"
+        }
+      ]
+    },
+    {
+      "dexNo": 885,
+      "name": "多龙梅西亚",
+      "apiName": "dreepy",
+      "wildCandidate": true,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 28,
+        "attack": 60,
+        "defense": 30,
+        "specialAttack": 40,
+        "specialDefense": 30,
+        "speed": 82
+      },
+      "baseStatTotal": 270,
+      "growthRate": "slow",
+      "captureRate": 45,
+      "baseExperience": 54,
+      "evolutionIntoThisSpecies": [],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "infestation",
+          "name": "死缠烂打",
+          "apiName": "infestation",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "quickattack",
+          "name": "电光一闪",
+          "apiName": "quick-attack",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "曾经栖息在古代的大海。在重生为幽灵宝可梦后，会在昔日的住处徘徊。"
+        },
+        {
+          "versionId": 34,
+          "text": "虽然单独１只弱得甚至敌不过小孩，但会和伙伴合作一起锻炼，通过进化而变得更强。"
+        }
+      ]
+    },
+    {
+      "dexNo": 886,
+      "name": "多龙奇",
+      "apiName": "drakloak",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 68,
+        "attack": 80,
+        "defense": 50,
+        "specialAttack": 60,
+        "specialDefense": 50,
+        "speed": 102
+      },
+      "baseStatTotal": 410,
+      "growthRate": "slow",
+      "captureRate": 45,
+      "baseExperience": 144,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 885,
+          "minimumLevel": 50,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "dragon_pulse",
+          "name": "龙之波动",
+          "apiName": "dragon-pulse",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "infestation",
+          "name": "死缠烂打",
+          "apiName": "infestation",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "quickattack",
+          "name": "电光一闪",
+          "apiName": "quick-attack",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 6,
+          "key": "lock_on",
+          "name": "锁定",
+          "apiName": "lock-on",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "assurance",
+          "name": "恶意追击",
+          "apiName": "assurance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 18,
+          "key": "hex",
+          "name": "祸不单行",
+          "apiName": "hex",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "agility",
+          "name": "高速移动",
+          "apiName": "agility",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "double_hit",
+          "name": "二连击",
+          "apiName": "double-hit",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "u_turn",
+          "name": "急速折返",
+          "apiName": "u-turn",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 42,
+          "key": "dragon_dance",
+          "name": "龙之舞",
+          "apiName": "dragon-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "phantom_force",
+          "name": "潜灵奇袭",
+          "apiName": "phantom-force",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 54,
+          "key": "take_down",
+          "name": "猛撞",
+          "apiName": "take-down",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 61,
+          "key": "dragon_rush",
+          "name": "龙之俯冲",
+          "apiName": "dragon-rush",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 66,
+          "key": "double_edge",
+          "name": "舍身冲撞",
+          "apiName": "double-edge",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 72,
+          "key": "last_resort",
+          "name": "珍藏",
+          "apiName": "last-resort",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "飞行速度为每小时２００公里。与多龙梅西亚一起战斗，到它进化为止都会细心照顾。"
+        },
+        {
+          "versionId": 34,
+          "text": "要是没让自己在照顾的多龙梅西亚乘在头上就静不下心来，甚至会因此试图把别的宝可梦放到头上。"
+        }
+      ]
+    },
+    {
+      "dexNo": 887,
+      "name": "多龙巴鲁托",
+      "apiName": "dragapult",
+      "wildCandidate": false,
+      "alreadyInCurrentRoster": false,
+      "types": [
+        "dragon",
+        "ghost"
+      ],
+      "stats": {
+        "hp": 88,
+        "attack": 120,
+        "defense": 75,
+        "specialAttack": 100,
+        "specialDefense": 75,
+        "speed": 142
+      },
+      "baseStatTotal": 600,
+      "growthRate": "slow",
+      "captureRate": 45,
+      "baseExperience": 300,
+      "evolutionIntoThisSpecies": [
+        {
+          "fromDexNo": 886,
+          "minimumLevel": 60,
+          "triggerId": 1
+        }
+      ],
+      "learnsetVersionGroup": "sword-shield",
+      "levelUpLearnset": [
+        {
+          "level": 0,
+          "key": "dragon_darts",
+          "name": "龙箭",
+          "apiName": "dragon-darts",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "astonish",
+          "name": "惊吓",
+          "apiName": "astonish",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "bite",
+          "name": "咬住",
+          "apiName": "bite",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "dragon_breath",
+          "name": "龙息",
+          "apiName": "dragon-breath",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "dragon_darts",
+          "name": "龙箭",
+          "apiName": "dragon-darts",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "infestation",
+          "name": "死缠烂打",
+          "apiName": "infestation",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 1,
+          "key": "quickattack",
+          "name": "电光一闪",
+          "apiName": "quick-attack",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 1,
+          "key": "sucker_punch",
+          "name": "突袭",
+          "apiName": "sucker-punch",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 6,
+          "key": "lock_on",
+          "name": "锁定",
+          "apiName": "lock-on",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 12,
+          "key": "assurance",
+          "name": "恶意追击",
+          "apiName": "assurance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 18,
+          "key": "hex",
+          "name": "祸不单行",
+          "apiName": "hex",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 24,
+          "key": "agility",
+          "name": "高速移动",
+          "apiName": "agility",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 30,
+          "key": "double_hit",
+          "name": "二连击",
+          "apiName": "double-hit",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 36,
+          "key": "u_turn",
+          "name": "急速折返",
+          "apiName": "u-turn",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 42,
+          "key": "dragon_dance",
+          "name": "龙之舞",
+          "apiName": "dragon-dance",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 48,
+          "key": "phantom_force",
+          "name": "潜灵奇袭",
+          "apiName": "phantom-force",
+          "definedInCurrentGame": false
+        },
+        {
+          "level": 54,
+          "key": "take_down",
+          "name": "猛撞",
+          "apiName": "take-down",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 63,
+          "key": "dragon_rush",
+          "name": "龙之俯冲",
+          "apiName": "dragon-rush",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 70,
+          "key": "double_edge",
+          "name": "舍身冲撞",
+          "apiName": "double-edge",
+          "definedInCurrentGame": true
+        },
+        {
+          "level": 78,
+          "key": "last_resort",
+          "name": "珍藏",
+          "apiName": "last-resort",
+          "definedInCurrentGame": true
+        }
+      ],
+      "originalFlavorText": [
+        {
+          "versionId": 33,
+          "text": "让多龙梅西亚住在自己角上的洞里。战斗开始后会用音速将多龙梅西亚发射出去。"
+        },
+        {
+          "versionId": 34,
+          "text": "它角里的多龙梅西亚似乎满心期待着能被以音速发射出去。"
+        }
+      ]
+    }
+  ],
+  "localEvidenceFiles": {
+    "src/utils/gameData.js": "0126c3d09a5a744506c2a53800880170b0f1a6254b6ac4cc949b6dc6efc08ff8"
+  }
+}

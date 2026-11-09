@@ -1,0 +1,106 @@
+:root {
+  --ui-font: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --ui-text: #3f362b;
+  --ui-muted: #796d5d;
+  --ui-subtle: #9b8e7c;
+  --ui-primary: #9a5a16;
+  --ui-primary-start: #fde68a;
+  --ui-primary-end: #fbbf24;
+  --ui-primary-hover-start: #fddd72;
+  --ui-primary-hover-end: #f4b518;
+  --ui-primary-ink: #5c3b18;
+  --ui-primary-soft: #fff5dd;
+  --ui-primary-border: #e8c88e;
+  --ui-focus: #b77321;
+  --ui-bg: #faf7f0;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f6f0e5;
+  --ui-control-soft: #fffaf0;
+  --ui-border: #e8e0d2;
+  --ui-success: #237356;
+  --ui-danger: #b53e4b;
+  --ui-danger-soft: #fff3f4;
+  --ui-warning: #8a641f;
+  --ui-radius-control: 10px;
+  --ui-radius-card: 16px;
+  --ui-shadow-card: 0 4px 20px rgb(92 59 24 / 5%);
+  --ui-shadow-dialog: 0 24px 80px rgb(63 54 43 / 22%);
+  --ui-control-sm: 32px;
+  --ui-control-md: 40px;
+  --ui-control-lg: 44px;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-8: 32px;
+  --ui-type-title: 24px;
+  --ui-type-section: 18px;
+  --ui-type-body: 14px;
+  --ui-type-caption: 12px;
+}
+
+/* Shared action semantics; scene positioning and animation are owned by gameplay. */
+#root :is(.game-primary-button, .game-soft-button, .game-danger-button),
+.ui-dialog :is(.game-primary-button, .game-soft-button, .game-danger-button) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--ui-control-lg); padding: 10px 16px;
+  border: 1px solid transparent; border-radius: var(--ui-radius-control);
+  font: 600 var(--ui-type-body)/1.4 var(--ui-font);
+  letter-spacing: 0; text-shadow: none; box-shadow: none;
+  cursor: pointer; transition: background 140ms ease, border-color 140ms ease, opacity 140ms ease;
+}
+#root .game-primary-button, .ui-dialog .game-primary-button { color: var(--ui-primary-ink); background: linear-gradient(180deg, var(--ui-primary-start), var(--ui-primary-end)); border-color: var(--ui-primary-end); }
+#root .game-primary-button:hover:not(:disabled), .ui-dialog .game-primary-button:hover:not(:disabled) { background: linear-gradient(180deg, var(--ui-primary-hover-start), var(--ui-primary-hover-end)); border-color: var(--ui-primary-hover-end); }
+#root .game-soft-button, .ui-dialog .game-soft-button { color: var(--ui-text); background: var(--ui-control-soft); border-color: var(--ui-border); }
+#root .game-soft-button:hover:not(:disabled), .ui-dialog .game-soft-button:hover:not(:disabled) { background: var(--ui-primary-soft); border-color: var(--ui-primary-border); }
+#root .game-danger-button, .ui-dialog .game-danger-button { background: var(--ui-danger); border-color: var(--ui-danger); color: white; }
+#root :is(.game-primary-button, .game-soft-button, .game-danger-button):active:not(:disabled) { transform: none; filter: none; }
+#root :is(.game-primary-button, .game-soft-button, .game-danger-button):disabled,
+.ui-dialog button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+:is(#root, .ui-dialog) :is(button, input, select, textarea):focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
+#root .game-icon-button { min-width: 40px; min-height: 40px; border-radius: 10px; box-shadow: none; color: var(--ui-text); background: var(--ui-control-soft); border-color: var(--ui-border); }
+#root .game-icon-button:hover:not(:disabled) { background: var(--ui-primary-soft); border-color: var(--ui-primary-border); }
+#root .game-icon-button--muted { color: var(--ui-muted); }
+#root .game-icon-button--danger, #root .game-icon-button--danger:hover:not(:disabled) { color: var(--ui-danger); background: var(--ui-danger-soft); }
+
+.ui-dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 24px; border: 1px solid var(--ui-border); border-radius: 20px; color: var(--ui-text); background: white; box-shadow: var(--ui-shadow-dialog); font-family: var(--ui-font); overflow: auto; }
+.ui-dialog::backdrop { background: rgb(63 54 43 / 44%); backdrop-filter: blur(3px); }
+.ui-dialog form { display: flex; flex-direction: column; gap: 16px; margin: 0; }
+.ui-dialog h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 700; }
+.ui-dialog p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--ui-muted); white-space: pre-line; overflow-wrap: anywhere; }
+.ui-dialog__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--ui-primary-soft); color: var(--ui-primary); }
+.ui-dialog__icon--danger { background: var(--ui-danger-soft); color: var(--ui-danger); }
+.ui-dialog .ui-dialog__error { color: var(--ui-danger); }
+.ui-dialog__actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px; }
+.ui-dialog__actions button { flex: 1; }
+.ui-field { display: grid; gap: 8px; font-size: 13px; font-weight: 600; }
+.ui-field input { width: 100%; height: 44px; box-sizing: border-box; border: 1px solid var(--ui-border); border-radius: 10px; padding: 0 12px; font: 400 16px var(--ui-font); color: var(--ui-text); background: white; }
+
+/* Authentication uses the same calm surface, typography and form dimensions. */
+#root .auth-page { font-family: var(--ui-font); background: var(--ui-bg); padding: 24px; flex-direction: column; justify-content: flex-start; align-items: center; }
+#root .auth-shell { width: min(100%, 960px); border-radius: 24px; border: 1px solid var(--ui-border); box-shadow: var(--ui-shadow-card); margin-block: auto; flex-shrink: 0; }
+#root .auth-panel { background: white; padding: clamp(24px, 4vw, 48px); }
+#root .auth-panel__header h2 { font-size: 28px; line-height: 1.35; font-weight: 700; }
+#root .auth-panel__header p, #root .auth-switch { font-size: 14px; line-height: 1.6; color: var(--ui-muted); font-weight: 400; }
+#root .auth-form { gap: 20px; }
+#root .auth-field > span { font-size: 14px; font-weight: 600; color: var(--ui-text); }
+#root .auth-input-wrap { min-height: 48px; border: 1px solid var(--ui-border); border-radius: 10px; background: white; box-shadow: none; }
+#root .auth-input-wrap:focus-within { border-color: var(--ui-focus); box-shadow: 0 0 0 3px var(--ui-primary-soft); }
+#root .auth-input-wrap :is(input, select) { font-size: 16px; font-weight: 400; min-height: 48px; color: var(--ui-text); }
+#root .auth-scenery { display: none; }
+#root .auth-hero h1 { font-weight: 700; font-size: clamp(28px, 3vw, 40px); }
+#root .auth-route-card { background: transparent; box-shadow: none; border: 0; font-size: 12px; }
+#root .auth-error { font-size: 13px; border-radius: 10px; font-weight: 400; }
+#root .auth-role-button { min-height: 44px; border: 1px solid var(--ui-border); border-radius: 10px; color: var(--ui-muted); background: white; box-shadow: none; font-size: 14px; font-weight: 500; }
+#root .auth-role-button--active { background: var(--ui-primary-soft); border-color: var(--ui-primary-border); color: var(--ui-primary); font-weight: 600; }
+@media (max-width: 640px) {
+  #root .auth-page { padding: 16px; }
+  #root .auth-panel { padding: 24px; }
+  #root .auth-hero { padding: 20px; }
+  #root .auth-mascot-stage { max-height: 140px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-dialog *, #root :is(.game-primary-button, .game-soft-button, .game-danger-button) { transition: none; }
+}

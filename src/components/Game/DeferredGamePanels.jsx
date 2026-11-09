@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { BATTLE_ITEMS, KEY_ITEMS } from '../../utils/adventureItems'
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   DEX_DISPLAY_MONSTERS,
   EXP_POTIONS,
@@ -6,10 +7,12 @@ import {
   OFFICIAL_DEX_MONSTERS,
   POKEBALLS,
   POTIONS,
+  STAT_BOOST_ITEMS,
   getMoveAvailabilityLevel,
   getMoveKeysAvailableForMonsterLevel,
 } from '../../utils/gameData'
 import {
+  getExpPotionEffectText,
   getInventoryItemQuantity,
   getInventoryItemSellPrice,
   getPokeballEffectText,
@@ -30,10 +33,14 @@ import { toPngFallbackUrl } from '../../utils/mediaAssetUrl'
 import { getPokemonAcquisitionInfo } from '../../utils/pokemonAcquisition'
 import { calculateCatchRate, getPlayerAverageLevel } from '../../utils/gameBalance'
 import { MASTER_BALL_ITEM_KEY } from '../../utils/shopPurchaseLimits'
+import { getTimberVoucherBalance } from '../../game/timberLeague.js'
 import { CollectionCard, CollectionGrid, TypeBadge } from './gameUiPrimitives'
 import { assetUrl } from '../../utils/assetUrl'
 import { gameAudio } from '../../utils/gameAudio'
 import { getPermanentDexStatus, getPokemonSpeciesKey } from '../../utils/longTermProgression'
+import { getStatGemUsage, STAT_GEM_RULE_TEXT, STAT_GEM_TOTAL_LIMIT } from '../../utils/pokemonStats'
+import { getPokemonReleaseQuote } from '../../utils/pokemonRelease'
+import PokemonReleaseSummary from './PokemonReleaseSummary'
 
 const POKEMON_LOCAL_PLACEHOLDER = assetUrl('/assets/pokemon/placeholder.svg')
 const DEFAULT_CAPTURE_BALL_KEY = 'pokeball_basic'
@@ -1077,11 +1084,61 @@ export function AdventureProgressScreen({
   )
 }
 
+function CollectionCategoryTabs({ categories, activeCategory, onSelect, id, label, disabled = false }) {
+  const buttonRefs = useRef({})
+  useEffect(() => {
+    buttonRefs.current[activeCategory]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [activeCategory])
+  const selectCategory = (category, moveFocus = false) => {
+    onSelect(category)
+    const button = buttonRefs.current[category]
+    if (moveFocus) button?.focus({ preventScroll: true })
+    button?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }
+  const handleKeyDown = (event, category) => {
+    const index = categories.findIndex((entry) => entry.key === category)
+    const nextIndex = event.key === 'ArrowRight' ? (index + 1) % categories.length
+      : event.key === 'ArrowLeft' ? (index - 1 + categories.length) % categories.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? categories.length - 1 : null
+    if (nextIndex === null) return
+    event.preventDefault()
+    selectCategory(categories[nextIndex].key, true)
+  }
+  return (
+    <div className="shop-category-tabs" role="tablist" aria-label={label}>
+      {categories.map((category) => (
+        <button
+          key={category.key}
+          type="button"
+          role="tab"
+          id={`${id}-tab-${category.key}`}
+          aria-selected={activeCategory === category.key}
+          aria-controls={`${id}-products`}
+          tabIndex={activeCategory === category.key ? 0 : -1}
+          disabled={disabled}
+          className={`shop-category-tab ${activeCategory === category.key ? 'shop-category-tab--active' : ''}`}
+          ref={(button) => { buttonRefs.current[category.key] = button }}
+          onClick={() => selectCategory(category.key)}
+          onKeyDown={(event) => handleKeyDown(event, category.key)}
+        >
+          <i className={`fa-solid ${category.icon}`} aria-hidden="true" />
+          <span>{category.label}</span>
+          {category.count != null && <span className="shop-category-tab__count" aria-hidden="true">{category.count}</span>}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function ShopScreen({
   playerGold,
+  timberLeague,
   playerInventory,
+  playerTeam = [],
+  initialCategory = 'pokeball',
   masterBallPurchasedInCurrentRegion = false,
   onPurchase,
+  renderFishingGear,
   onBack,
   getInventoryItemQuantity,
   getPotionEffectText
@@ -1091,20 +1148,50 @@ export function ShopScreen({
   const pendingPurchaseKeyRef = useRef(null)
   const purchaseFeedbackTimerRef = useRef(null)
   const purchaseFeedbackFrameRef = useRef(null)
+  const shopId = useId()
+  const productAreaRef = useRef(null)
   const allItems = {
     pokeball: POKEBALLS,
     potion: POTIONS,
-    expPotion: EXP_POTIONS
+    expPotion: EXP_POTIONS,
+    battleItem: BATTLE_ITEMS,
+    keyItem: KEY_ITEMS,
+    statBoost: STAT_BOOST_ITEMS,
   }
   const sectionLabels = {
     pokeball: '精灵球',
     potion: '回复药',
-    expPotion: '经验药水'
+    battleItem: '战斗道具',
+    keyItem: '旅行装备',
+    expPotion: '经验药水',
+    statBoost: '属性宝石',
+    fishingGear: '渔具'
   }
   const sectionDescriptions = {
-    pokeball: '用于捕捉野生宝可梦',
-    potion: '用于恢复宝可梦体力与技能值',
-    expPotion: '用于提升宝可梦经验'
+    pokeball: '遇到野生宝可梦时用',
+    potion: 'HP 是体力，MP 是技能值；还能解除异常状态',
+    battleItem: '战斗中使用；每场只能用一次',
+    keyItem: '买一次，以后都能用',
+    expPotion: '战斗外使用，让宝可梦成长',
+    statBoost: STAT_GEM_RULE_TEXT
+  }
+  const sectionIcons = {
+    pokeball: 'fa-circle-dot',
+    potion: 'fa-heart-pulse',
+    expPotion: 'fa-flask',
+    battleItem: 'fa-bolt',
+    keyItem: 'fa-bicycle',
+    statBoost: 'fa-gem',
+    fishingGear: 'fa-fish'
+  }
+  const categoryKeys = [...Object.keys(allItems), ...(renderFishingGear ? ['fishingGear'] : [])]
+  const [activeCategory, setActiveCategory] = useState(() => (
+    categoryKeys.includes(initialCategory) ? initialCategory : 'pokeball'
+  ))
+
+  const selectCategory = (category) => {
+    if (productAreaRef.current) productAreaRef.current.scrollTop = 0
+    setActiveCategory(category)
   }
 
   const showPurchaseFeedback = (feedback) => {
@@ -1163,47 +1250,85 @@ export function ShopScreen({
   const isShopBusy = Boolean(pendingPurchaseKey)
 
   return (
-    <div className="game-page">
+    <div className="game-page shop-page">
       <div className="game-page-header">
         <div>
           <h2 className="game-page-title">
             <i className="fa-solid fa-store text-teal-600"></i>
             商店
           </h2>
-          <div className="game-page-subtitle">购买捕捉、回复和经验道具</div>
+          <div className="game-page-subtitle">选道具，看效果和价格，再决定买不买</div>
         </div>
         <div className="flex items-center gap-2 text-sm font-bold">
           <span className="adventure-chip">
             <i className="fa-solid fa-coins text-amber-500"></i>
-            {playerGold}
+            金币 {playerGold}
+          </span>
+          <span className="adventure-chip" title="在铁木营地挑战训练联赛获得">
+            <i className="fa-solid fa-ticket text-emerald-500"></i>
+            凭证 {getTimberVoucherBalance(timberLeague)}
           </span>
           <button onClick={onBack} className="game-icon-button" title="返回" aria-label="返回">
             <i className="fa-solid fa-arrow-left"></i>
           </button>
         </div>
       </div>
-      <div className="game-scroll-area">
-        {Object.entries(allItems).map(([itemType, itemsMap]) => (
+      <CollectionCategoryTabs
+        categories={categoryKeys.map((key) => ({ key, label: sectionLabels[key], icon: sectionIcons[key],
+          count: allItems[key] ? Object.values(allItems[key]).filter((item) => !item.notForSale).length : null }))}
+        activeCategory={activeCategory}
+        onSelect={selectCategory}
+        id={shopId}
+        label="商店商品分类"
+      />
+      <div
+        ref={productAreaRef}
+        className="game-scroll-area shop-products"
+        role="tabpanel"
+        id={`${shopId}-products`}
+        aria-labelledby={`${shopId}-tab-${activeCategory}`}
+        tabIndex={0}
+      >
+        {activeCategory === 'fishingGear' && renderFishingGear?.()}
+        {Object.entries(allItems).filter(([itemType]) => itemType === activeCategory).map(([itemType, itemsMap]) => (
           <section key={itemType} className="game-collection-section">
             <div className="game-collection-section__head">
               <h3 className="game-collection-section__title">{sectionLabels[itemType]}</h3>
               <span className="game-collection-section__desc">{sectionDescriptions[itemType]}</span>
             </div>
+            {itemType === 'expPotion' && <div className="shop-training-path" aria-label="超级经验药水获取方法">
+              <span><i className="fa-solid fa-flag-checkered" aria-hidden="true" /> 找铁木计时员挑战</span>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              <span><i className="fa-solid fa-ticket" aria-hidden="true" /> 赢训练凭证</span>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              <span><i className="fa-solid fa-flask" aria-hidden="true" /> 加金币买药升级</span>
+            </div>}
+            {itemType === 'statBoost' && <div className="shop-training-path" aria-label="宝石使用方法">
+              <span><i className="fa-solid fa-gem" aria-hidden="true" /> 买宝石</span>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              <span><i className="fa-solid fa-bag-shopping" aria-hidden="true" /> 背包选伙伴</span>
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              <span><i className="fa-solid fa-arrow-trend-up" aria-hidden="true" /> 永久提升</span>
+            </div>}
             <CollectionGrid>
               {Object.entries(itemsMap).filter(([, item]) => !item.notForSale).map(([key, item]) => {
                 const currentQuantity = getInventoryItemQuantity(playerInventory, itemType, key)
                 const cannotAfford = playerGold < item.price
-                const regionPurchaseLimitReached = itemType === 'pokeball' && key === MASTER_BALL_ITEM_KEY && masterBallPurchasedInCurrentRegion
+                const voucherCost = Math.max(0, Number(item.trainingVoucherCost) || 0)
+                const lacksVouchers = getTimberVoucherBalance(timberLeague) < voucherCost
+                const regionPurchaseLimitReached = (itemType === 'pokeball' && key === MASTER_BALL_ITEM_KEY && masterBallPurchasedInCurrentRegion) || (item.permanent && currentQuantity > 0)
                 const purchaseKey = `${itemType}:${key}`
                 const isPending = pendingPurchaseKey === purchaseKey
                 const purchaseFeedbackId = purchaseFeedback?.id || 'idle'
                 const isPurchased = purchaseFeedback?.key === purchaseKey
+                const eligibleGemTargets = itemType === 'statBoost'
+                  ? playerTeam.filter((mon) => getStatGemUsage(mon, item)?.canUse).length : 0
                 return (
                   <CollectionCard
                     key={key}
                     className={[
                       'shop-item-card',
-                      cannotAfford || regionPurchaseLimitReached ? 'game-collection-card--disabled' : '',
+                      cannotAfford || lacksVouchers || regionPurchaseLimitReached ? 'game-collection-card--disabled' : '',
                       isPurchased ? 'shop-item-card--purchased' : ''
                     ].filter(Boolean).join(' ')}
                   >
@@ -1221,28 +1346,36 @@ export function ShopScreen({
                       )}
                     </div>
                     <div className="game-collection-card__name">{item.name}</div>
+                <div className="game-item-english" lang="en">{item.englishName}</div>
                     <div className="game-collection-card__desc">
-                      {itemType === 'expPotion'
-                        ? `经验 +${item.expAmount}`
+                      {item.shortEffect || (itemType === 'statBoost'
+                        ? getStatBoostEffectText(item)
+                        : itemType === 'expPotion'
+                        ? getExpPotionEffectText(item)
                         : itemType === 'potion'
                           ? getPotionEffectText(item)
-                          : getPokeballEffectText(item)}
+                          : getPokeballEffectText(item))}
                     </div>
-                    <div className="game-collection-card__price">
-                      <i className="fa-solid fa-coins"></i>
-                      {item.price}
+                    {itemType === 'expPotion' && key === 'exp_potion_super' && <div className="shop-item-card__hint">只能在战斗外使用</div>}
+                    {itemType === 'battleItem' && key === 'dynamax_candy' && <div className="shop-item-card__hint">每场一次；倒下或战斗结束后失效</div>}
+                    {itemType === 'keyItem' && key === 'bicycle' && <div className="shop-item-card__hint">进入草丛会自动下车</div>}
+                    {itemType === 'keyItem' && key === 'sports_car' && <div className="shop-item-card__hint">进入草丛会自动下车</div>}
+                    {itemType === 'statBoost' && playerTeam.length > 0 && <div className="shop-item-card__hint">{eligibleGemTargets > 0 ? `队伍中 ${eligibleGemTargets} 只伙伴可用` : '当前队伍这项已用满'}</div>}
+                    <div className="game-collection-card__price" aria-label={`价格：${item.price} 金币${voucherCost > 0 ? `和 ${voucherCost} 张训练凭证` : ''}`}>
+                      <span><i className="fa-solid fa-coins" aria-hidden="true" /> {item.price} 金币</span>
+                      {voucherCost > 0 && <span>+ <i className="fa-solid fa-ticket" aria-hidden="true" /> {voucherCost} 凭证</span>}
                     </div>
                     <div className="game-collection-card__footer">
                       <button
                         type="button"
                         onClick={() => handleBuy(itemType, key, 1)}
-                        disabled={cannotAfford || regionPurchaseLimitReached || isShopBusy}
+                        disabled={cannotAfford || lacksVouchers || regionPurchaseLimitReached || isShopBusy}
                         className={`game-primary-button ${isPurchased ? 'shop-item-card__buy-button--done' : ''}`}
                       >
                         {regionPurchaseLimitReached ? (
                           <>
                             <i className="fa-solid fa-check"></i>
-                            本区域已购买
+                            {item.permanent ? '已永久解锁' : '本区域已购买'}
                           </>
                         ) : isPending ? (
                           <>
@@ -1254,16 +1387,12 @@ export function ShopScreen({
                             <i className="fa-solid fa-check"></i>
                             继续购买
                           </>
-                        ) : '购买'}
+                        ) : cannotAfford && lacksVouchers ? '金币和凭证不足'
+                          : cannotAfford ? `还差 ${item.price - playerGold} 金币`
+                            : lacksVouchers ? `还差 ${voucherCost - getTimberVoucherBalance(timberLeague)} 凭证` : '购买'}
                       </button>
                     </div>
-                    {isPurchased && (
-                      <div key={`feedback-${purchaseFeedbackId}`} className="shop-purchase-feedback" role="status" aria-live="polite">
-                        <i className="fa-solid fa-bag-shopping"></i>
-                        <span>已放入背包</span>
-                        <b>+{purchaseFeedback.quantity}</b>
-                      </div>
-                    )}
+
                   </CollectionCard>
                 )
               })}
@@ -1283,7 +1412,6 @@ export function ItemSellScreen({
 }) {
   const [pendingSellKey, setPendingSellKey] = useState(null)
   const [sellFeedback, setSellFeedback] = useState(null)
-  const [sellAmounts, setSellAmounts] = useState({})
   const pendingSellKeyRef = useRef(null)
   const sellFeedbackTimerRef = useRef(null)
   const sellFeedbackFrameRef = useRef(null)
@@ -1357,21 +1485,10 @@ export function ItemSellScreen({
   }, [])
 
   const getAmountKey = (itemType, itemKey) => `${itemType}:${itemKey}`
-  const clampSellAmount = (value, maxQuantity) => {
-    const nextValue = Math.trunc(Number(value))
-    if (!Number.isSafeInteger(nextValue)) return 1
-    return Math.max(1, Math.min(maxQuantity, nextValue))
-  }
-  const updateSellAmount = (amountKey, nextAmount, maxQuantity) => {
-    setSellAmounts((current) => ({
-      ...current,
-      [amountKey]: clampSellAmount(nextAmount, maxQuantity)
-    }))
-  }
-  const handleSell = async (itemType, itemKey, maxQuantity) => {
+  const handleSell = async (itemType, itemKey) => {
     const sellKey = getAmountKey(itemType, itemKey)
     if (pendingSellKeyRef.current) return
-    const amount = clampSellAmount(sellAmounts[sellKey] || 1, maxQuantity)
+    const amount = 1
     pendingSellKeyRef.current = sellKey
     setPendingSellKey(sellKey)
     try {
@@ -1383,10 +1500,7 @@ export function ItemSellScreen({
           quantity: result.quantity || amount,
           totalGold: result.totalGold || 0,
         })
-        setSellAmounts((current) => ({
-          ...current,
-          [sellKey]: 1
-        }))
+
       }
     } finally {
       if (pendingSellKeyRef.current === sellKey) {
@@ -1434,11 +1548,9 @@ export function ItemSellScreen({
             <CollectionGrid>
               {items.map(({ itemKey, item, quantity, sellPrice }) => {
                 const sellKey = getAmountKey(itemType, itemKey)
-                const sellAmount = clampSellAmount(sellAmounts[sellKey] || 1, quantity)
                 const isPending = pendingSellKey === sellKey
                 const sellFeedbackId = sellFeedback?.id || 'idle'
                 const isSold = sellFeedback?.key === sellKey
-                const totalGold = sellPrice * sellAmount
                 return (
                   <CollectionCard
                     key={itemKey}
@@ -1462,6 +1574,7 @@ export function ItemSellScreen({
                       )}
                     </div>
                     <div className="game-collection-card__name">{item.name}</div>
+                <div className="game-item-english" lang="en">{item.englishName}</div>
                     <div className="game-collection-card__desc">
                       单个回收价
                     </div>
@@ -1469,29 +1582,10 @@ export function ItemSellScreen({
                       <i className="fa-solid fa-coins"></i>
                       {sellPrice}
                     </div>
-                    <div className="item-sell-card__amount" aria-label={`${item.name}出售数量`}>
-                      <button
-                        type="button"
-                        onClick={() => updateSellAmount(sellKey, sellAmount - 1, quantity)}
-                        disabled={isSellBusy || sellAmount <= 1}
-                        aria-label="减少数量"
-                      >
-                        <i className="fa-solid fa-minus"></i>
-                      </button>
-                      <span>{sellAmount}</span>
-                      <button
-                        type="button"
-                        onClick={() => updateSellAmount(sellKey, sellAmount + 1, quantity)}
-                        disabled={isSellBusy || sellAmount >= quantity}
-                        aria-label="增加数量"
-                      >
-                        <i className="fa-solid fa-plus"></i>
-                      </button>
-                    </div>
                     <div className="game-collection-card__footer">
                       <button
                         type="button"
-                        onClick={() => handleSell(itemType, itemKey, quantity)}
+                        onClick={() => handleSell(itemType, itemKey)}
                         disabled={isSellBusy || quantity <= 0}
                         className={`game-primary-button ${isSold ? 'shop-item-card__buy-button--done' : ''}`}
                       >
@@ -1503,18 +1597,12 @@ export function ItemSellScreen({
                         ) : (
                           <>
                             <i className="fa-solid fa-coins"></i>
-                            卖 {totalGold}
+                            出售
                           </>
                         )}
                       </button>
                     </div>
-                    {isSold && (
-                      <div key={`feedback-${sellFeedbackId}`} className="shop-purchase-feedback item-sell-feedback" role="status" aria-live="polite">
-                        <i className="fa-solid fa-coins"></i>
-                        <span>获得金币</span>
-                        <b>+{sellFeedback.totalGold}</b>
-                      </div>
-                    )}
+
                   </CollectionCard>
                 )
               })}
@@ -1687,6 +1775,7 @@ const GameConfirmDialog = ({
   cancelLabel = '取消',
   confirmButtonClassName = 'game-danger-button',
   busy = false,
+  confirmDisabled = false,
   children,
   onCancel,
   onConfirm
@@ -1702,14 +1791,14 @@ const GameConfirmDialog = ({
         <div className="reset-confirm-card__body">
           <p className="reset-confirm-card__eyebrow">需要确认</p>
           <h2 id="game-local-confirm-title">{title}</h2>
-          <p>{message}</p>
+          {message && <p>{message}</p>}
           {children}
         </div>
         <div className="reset-confirm-card__actions">
           <button type="button" className="game-soft-button" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </button>
-          <button type="button" className={confirmButtonClassName} onClick={onConfirm} disabled={busy}>
+          <button type="button" className={confirmButtonClassName} onClick={onConfirm} disabled={busy || confirmDisabled}>
             <i className={`fa-solid ${busy ? 'fa-rotate fa-spin' : icon}`}></i>
             {busy ? '处理中' : confirmLabel}
           </button>
@@ -1935,12 +2024,15 @@ export function TeamScreen({
   onReorderTeam,
   onRelease,
   onReleaseStorage,
+  releaseBlockedReason = '',
   onDeposit,
   onWithdraw,
   onSwapWithStorage,
   onCustomizeMoves,
   playerGold = 0,
-  moveCustomizationBlockedReason = ''
+  moveCustomizationBlockedReason = '',
+  title,
+  subtitle
 }) {
   const [selectedPartyMonsterId, setSelectedPartyMonsterId] = useState(null)
   const [selectedStorageMonsterId, setSelectedStorageMonsterId] = useState(null)
@@ -1950,6 +2042,10 @@ export function TeamScreen({
   const [releaseConfirm, setReleaseConfirm] = useState(null)
   const [moveCustomizer, setMoveCustomizer] = useState(null)
   const [moveSaveConfirm, setMoveSaveConfirm] = useState(null)
+  const releaseTarget = releaseConfirm?.from === 'storage'
+    ? storageBox.find((mon) => mon.id === releaseConfirm.monId)
+    : team.find((mon) => mon.id === releaseConfirm?.monId)
+  const releaseQuote = getPokemonReleaseQuote(releaseTarget)
 
   const normalizeStats = (mon) => {
     if (!mon) return { currentHp: 0, maxHp: 0, currentMp: 0, maxMp: 0 }
@@ -1999,28 +2095,26 @@ export function TeamScreen({
 
   const handleReleaseClick = async (event, mon) => {
     event.stopPropagation()
-    if (!onRelease || team.length <= 1 || isBusy) return
+    if (!onRelease || team.length <= 1 || isBusy || releaseBlockedReason || !getPokemonReleaseQuote(mon)) return
     setReleaseConfirm({
       from: 'party',
       monId: mon.id,
       title: `放生 ${mon.name}？`,
-      message: '放生后会从队伍中移除，无法直接找回。'
     })
   }
 
   const handleStorageReleaseClick = async (event, mon) => {
     event.stopPropagation()
-    if (!onReleaseStorage || isBusy) return
+    if (!onReleaseStorage || isBusy || releaseBlockedReason || !getPokemonReleaseQuote(mon)) return
     setReleaseConfirm({
       from: 'storage',
       monId: mon.id,
       title: `放生仓库中的 ${mon.name}？`,
-      message: '放生后会从仓库中移除，无法找回。'
     })
   }
 
   const handleConfirmRelease = async () => {
-    if (!releaseConfirm || isBusy) return
+    if (!releaseConfirm || isBusy || releaseBlockedReason) return
     const isStorageRelease = releaseConfirm.from === 'storage'
     const target = isStorageRelease
       ? storageBox.find((mon) => mon.id === releaseConfirm.monId)
@@ -2033,8 +2127,8 @@ export function TeamScreen({
     setIsBusy(true)
     try {
       const success = isStorageRelease
-        ? await onReleaseStorage?.(target.id)
-        : await onRelease?.(target.id)
+        ? await onReleaseStorage?.(target.id, releaseQuote?.gold)
+        : await onRelease?.(target.id, 'party', releaseQuote?.gold)
       if (success) {
         if (isStorageRelease) {
           setSelectedStorageMonsterId(null)
@@ -2163,10 +2257,10 @@ export function TeamScreen({
         <div>
           <h2 className="game-page-title">
             <i className={`fa-solid ${isSwitching ? 'fa-users' : 'fa-paw'} text-teal-600`}></i>
-            {isSwitching ? '选择替换的宝可梦' : '宝可梦管理'}
+            {title || (isSwitching ? '选择替换的宝可梦' : '宝可梦管理')}
           </h2>
           <div className="game-page-subtitle">
-            {isSwitching ? '仅出战队伍可上场' : '队伍与仓库分开管理，道具只对出战队伍生效'}
+            {subtitle || (isSwitching ? '仅出战队伍可上场' : '队伍与仓库分开管理，道具只对出战队伍生效')}
           </div>
         </div>
         <button onClick={onBack} disabled={isBusy} className="game-icon-button" title="返回" aria-label="返回">
@@ -2414,11 +2508,12 @@ export function TeamScreen({
               </button>
               <button
                 onClick={(event) => handleReleaseClick(event, selectedMonster)}
-                disabled={!onRelease || team.length <= 1}
+                disabled={!onRelease || team.length <= 1 || isBusy || Boolean(releaseBlockedReason) || !getPokemonReleaseQuote(selectedMonster)}
                 className="game-danger-button min-h-9 text-xs"
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
-                {team.length <= 1 ? '保留最后一只' : '放生'}
+                {releaseBlockedReason || (team.length <= 1 ? '保留最后一只' : '放生')}
+                {!releaseBlockedReason && team.length > 1 && getPokemonReleaseQuote(selectedMonster) && <span className="pokemon-release-quote">+{getPokemonReleaseQuote(selectedMonster).gold} <i className="fa-solid fa-coins" aria-hidden="true" /></span>}
               </button>
             </div>
           </div>
@@ -2466,11 +2561,12 @@ export function TeamScreen({
               </button>
               <button
                 onClick={(event) => handleStorageReleaseClick(event, selectedStorageMonster)}
-                disabled={!onReleaseStorage}
+                disabled={!onReleaseStorage || isBusy || Boolean(releaseBlockedReason) || !getPokemonReleaseQuote(selectedStorageMonster)}
                 className="game-danger-button min-h-9 text-xs"
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
-                放生
+                {releaseBlockedReason || '放生'}
+                {!releaseBlockedReason && getPokemonReleaseQuote(selectedStorageMonster) && <span className="pokemon-release-quote">+{getPokemonReleaseQuote(selectedStorageMonster).gold} <i className="fa-solid fa-coins" aria-hidden="true" /></span>}
               </button>
             </div>
           </div>
@@ -2548,16 +2644,18 @@ export function TeamScreen({
       <GameConfirmDialog
         open={Boolean(releaseConfirm)}
         title={releaseConfirm?.title}
-        message={releaseConfirm?.message}
         icon="fa-person-walking-arrow-right"
-        confirmLabel="确认放生"
+        confirmLabel={`放生并领取 ${releaseQuote?.gold ?? 0} 金币`}
+        confirmDisabled={!releaseQuote || Boolean(releaseBlockedReason)}
         cancelLabel="再想想"
         busy={isBusy}
         onCancel={() => {
           if (!isBusy) setReleaseConfirm(null)
         }}
         onConfirm={handleConfirmRelease}
-      />
+      >
+        {releaseTarget && <PokemonReleaseSummary monster={releaseTarget} />}
+      </GameConfirmDialog>
       <GameConfirmDialog
         open={Boolean(moveSaveConfirm && moveSavePreviewMonster)}
         title={`保存 ${moveSavePreviewMonster?.name || '宝可梦'} 的技能方案？`}
@@ -2682,9 +2780,15 @@ const StatBoostBurst = ({ label = '', compact = false }) => (
 
 export function UnifiedBagScreen({
   inventory = [],
+  initialCategory,
+  renderFishBasket,
+  fishBasketCount = 0,
   onClose,
   onUseItem,
   onUsePotion,
+  onUseBattleItem,
+  canUseDynamax = false,
+  battleItemBlockedReason = '',
   onUseExpPotion,
   onUseStatBoostItem,
   onBattleItemConsumed,
@@ -2692,7 +2796,9 @@ export function UnifiedBagScreen({
   isBattle = false,
   canUseBattleBalls = true,
   activeEnemyMon = null,
-  addLog
+  addLog,
+  equippedVehicle = null,
+  onEquipVehicle
 }) {
   const [selectedItem, setSelectedItem] = useState(null)
   const [showTeamSelect, setShowTeamSelect] = useState(false)
@@ -2700,8 +2806,11 @@ export function UnifiedBagScreen({
   const [targetItemNotice, setTargetItemNotice] = useState(null)
   const [targetItemHeaderNotice, setTargetItemHeaderNotice] = useState(null)
   const [pendingItemTargetId, setPendingItemTargetId] = useState(null)
+  const [vehicleEquipPending, setVehicleEquipPending] = useState(null)
   const itemUseEffectTimerRef = useRef(null)
   const pendingItemTargetIdRef = useRef(null)
+  const bagId = useId()
+  const productAreaRef = useRef(null)
 
   const stackedInventory = useMemo(() => sortInventorySlots(inventory), [inventory])
   const isItemUsePending = pendingItemTargetId !== null
@@ -2710,7 +2819,7 @@ export function UnifiedBagScreen({
     : 0
   const selectedItemIsDepleted = Boolean(selectedItem) && selectedItemQuantity <= 0
   const selectedItemEffectText = selectedItem?.type === 'expPotion'
-    ? `经验 +${selectedItem?.expAmount || 0}`
+    ? getExpPotionEffectText(selectedItem)
     : selectedItem?.type === 'statBoost'
       ? getStatBoostEffectText(selectedItem)
     : getPotionEffectParts(selectedItem).join(' · ')
@@ -2766,6 +2875,28 @@ export function UnifiedBagScreen({
     return { ...slot, ...details, inventoryType, type }
   }).filter((item) => item.name)
 
+  const categories = [
+    { key: 'pokeball', label: '精灵球', icon: 'fa-circle-dot' },
+    { key: 'potion', label: '回复药', icon: 'fa-heart-pulse' },
+    { key: 'expPotion', label: '经验药水', icon: 'fa-flask' },
+    { key: 'battleItem', label: '战斗道具', icon: 'fa-bolt' },
+    { key: 'keyItem', label: '旅行装备', icon: 'fa-bicycle' },
+    { key: 'statBoost', label: '属性宝石', icon: 'fa-gem' },
+    ...(renderFishBasket && !isBattle ? [{ key: 'fishBasket', label: '渔具', icon: 'fa-fish', count: null }] : []),
+    ...(items.some((item) => item.inventoryType === 'evolutionItem') ? [{ key: 'evolutionItem', label: '旧版道具', icon: 'fa-box-archive' }] : [])
+  ].map((category) => ({ ...category,
+    count: category.key === 'fishBasket' ? null : category.count ?? items.filter((item) => item.inventoryType === category.key).length }))
+  const [activeCategory, setActiveCategory] = useState(() => (
+    categories.some((category) => category.key === initialCategory) ? initialCategory
+      : isBattle && items.some((item) => item.inventoryType === 'potion') ? 'potion'
+        : categories.find((category) => category.count > 0)?.key || 'pokeball'
+  ))
+  const visibleItems = items.filter((item) => item.inventoryType === activeCategory)
+  const selectCategory = (category) => {
+    if (productAreaRef.current) productAreaRef.current.scrollTop = 0
+    setActiveCategory(category)
+  }
+
   const battleCatchChanceByBall = useMemo(() => {
     if (!isBattle || !activeEnemyMon) return {}
     const playerAverageLevel = getPlayerAverageLevel(team)
@@ -2782,6 +2913,32 @@ export function UnifiedBagScreen({
   const handleItemClick = async (item) => {
     if (pendingItemTargetIdRef.current) return
 
+    if (item.type === 'keyItem' && (item.itemKey === 'bicycle' || item.itemKey === 'sports_car')) {
+      if (isBattle || vehicleEquipPending) return
+      setVehicleEquipPending(item.itemKey)
+      try {
+        await onEquipVehicle?.(item.itemKey)
+      } finally {
+        setVehicleEquipPending(null)
+      }
+      return
+    }
+    if (item.type === 'battleItem') {
+      if (!isBattle || !canUseDynamax || battleItemBlockedReason) return
+      pendingItemTargetIdRef.current = 'battle-item'
+      setPendingItemTargetId('battle-item')
+      try {
+        const result = await onUseBattleItem?.(item.itemKey)
+        if (result === true || result?.success) {
+          await onBattleItemConsumed?.({ itemType: 'battleItem', itemKey: item.itemKey })
+          onClose?.()
+        }
+      } finally {
+        pendingItemTargetIdRef.current = null
+        setPendingItemTargetId(null)
+      }
+      return
+    }
     if (item.type === 'potion' || item.type === 'expPotion' || item.type === 'statBoost') {
       if (isBattle && (item.type === 'expPotion' || item.type === 'statBoost')) {
         addLog?.(`${item.name} 只能在战斗之外使用。`)
@@ -2866,7 +3023,7 @@ export function UnifiedBagScreen({
         await playItemUseEffect({
           type: 'exp',
           monId,
-          amount: item.expAmount || usageResult?.expAmount || 0,
+          amount: usageResult?.expAmount ?? item.expAmount ?? 0,
           itemName: item.name,
           levelUps: Array.isArray(usageResult?.levelUps) ? usageResult.levelUps : [],
         }, EXP_ANIMATION_DURATION_MS)
@@ -2911,7 +3068,7 @@ export function UnifiedBagScreen({
   }
 
   return (
-    <div className="absolute inset-0 z-50 game-page">
+    <div className="absolute inset-0 z-50 game-page shop-page bag-page">
       <div className="game-page-header">
         <div>
           <h2 className="game-page-title">
@@ -2931,17 +3088,39 @@ export function UnifiedBagScreen({
         </button>
       </div>
 
-      <div className="game-scroll-area">
+      <CollectionCategoryTabs
+        categories={categories}
+        activeCategory={activeCategory}
+        onSelect={selectCategory}
+        id={bagId}
+        label="背包物品分类"
+        disabled={isItemUsePending || Boolean(vehicleEquipPending)}
+      />
+      <div
+        ref={productAreaRef}
+        className="game-scroll-area shop-products"
+        role="tabpanel"
+        id={`${bagId}-products`}
+        aria-labelledby={`${bagId}-tab-${activeCategory}`}
+        tabIndex={0}
+      >
+        {activeCategory === 'fishBasket' ? renderFishBasket?.() : <section className="game-collection-section">
+        <div className="game-collection-section__head">
+          <h3 className="game-collection-section__title">{categories.find((category) => category.key === activeCategory)?.label}</h3>
+          <span className="game-collection-section__desc">{visibleItems.length} 种物品</span>
+        </div>
         <CollectionGrid>
-          {items.length === 0 && <div className="game-collection-empty">背包是空的</div>}
-          {items.map((item) => {
+          {visibleItems.length === 0 && <div className="game-collection-empty">这个分栏暂时没有物品</div>}
+          {visibleItems.map((item) => {
             const isLegacyEvolutionItem = item.type === 'evolutionItem'
             const battleLocked = item.type === 'ball' && !isBattle
             const trainerBattleLocked = item.type === 'ball' && isBattle && !canUseBattleBalls
             const battleGrowthLocked = (item.type === 'expPotion' || item.type === 'statBoost') && isBattle
             const noTargetLocked = isLegacyEvolutionItem
-            const itemLocked = battleLocked || trainerBattleLocked || battleGrowthLocked || noTargetLocked
-            const effectText = trainerBattleLocked
+            const battleItemLocked = item.type === 'battleItem' && Boolean(battleItemBlockedReason)
+            const isVehicle = item.type === 'keyItem' && (item.itemKey === 'bicycle' || item.itemKey === 'sports_car')
+            const itemLocked = battleLocked || trainerBattleLocked || battleGrowthLocked || noTargetLocked || battleItemLocked || (item.type === 'keyItem' && !isVehicle) || (item.type === 'battleItem' && (!isBattle || !canUseDynamax))
+            const effectText = battleItemLocked ? battleItemBlockedReason : item.shortEffect ? (item.type === 'battleItem' && !isBattle ? '仅战斗中对出战宝可梦使用' : item.shortEffect) : trainerBattleLocked
               ? '训练家对战中不能捕捉'
               : battleGrowthLocked
                 ? '仅战斗外使用'
@@ -2952,7 +3131,7 @@ export function UnifiedBagScreen({
                       : `当前约${battleCatchChanceByBall[item.itemKey]}%`
                     : getPokeballEffectText(item)
                   : item.type === 'expPotion'
-                    ? `经验 +${item.expAmount}`
+                    ? getExpPotionEffectText(item)
                     : item.type === 'statBoost'
                       ? getStatBoostEffectText(item)
                     : isLegacyEvolutionItem
@@ -2960,7 +3139,7 @@ export function UnifiedBagScreen({
                       : getPotionEffectText(item)
 
             return (
-              <CollectionCard key={`${item.inventoryType}-${item.itemKey}`} className={itemLocked ? 'game-collection-card--disabled' : ''}>
+              <CollectionCard key={`${item.inventoryType}-${item.itemKey}`} className={`shop-item-card ${itemLocked ? 'game-collection-card--disabled' : ''}`}>
                 <span className="game-collection-card__corner">
                   <span className="game-collection-card__qty">x{item.quantity}</span>
                 </span>
@@ -2974,21 +3153,23 @@ export function UnifiedBagScreen({
                   />
                 </div>
                 <div className="game-collection-card__name">{item.name}</div>
+                <div className="game-item-english" lang="en">{item.englishName}</div>
                 <div className="game-collection-card__desc">{effectText}</div>
                 <div className="game-collection-card__footer">
                   <button
                     type="button"
                     onClick={() => handleItemClick(item)}
-                    disabled={itemLocked}
+                    disabled={itemLocked || isItemUsePending || Boolean(vehicleEquipPending)}
                     className="game-primary-button"
                   >
-                    {battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleGrowthLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
+                    {isVehicle ? (isBattle ? '地图装备' : vehicleEquipPending === item.itemKey ? '保存中...' : equippedVehicle === item.itemKey ? '已装备' : '装备') : item.type === 'keyItem' ? '已永久解锁' : item.type === 'battleItem' ? (!isBattle ? '仅战斗' : battleItemLocked ? '训练赛禁用' : canUseDynamax ? '极巨化' : '暂不可用') : battleLocked ? '仅战斗' : trainerBattleLocked ? '仅野外' : battleGrowthLocked ? '仅地图' : noTargetLocked ? '已停用' : '使用'}
                   </button>
                 </div>
               </CollectionCard>
             )
           })}
         </CollectionGrid>
+        </section>}
       </div>
 
       {showTeamSelect && (
@@ -3007,6 +3188,7 @@ export function UnifiedBagScreen({
                 <div className="bag-target-item-panel__body">
                   <div className="bag-target-kicker">选择目标</div>
                   <h3 id="bag-target-title">{selectedItem?.name || '道具'}</h3>
+                  <span className="game-item-english" lang="en">{selectedItem?.englishName}</span>
                   <p>{selectedItemEffectText || '恢复'}</p>
                 </div>
                 <span className={`bag-target-stock ${selectedItemIsDepleted ? 'bag-target-stock--empty' : ''}`}>
@@ -3024,6 +3206,13 @@ export function UnifiedBagScreen({
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </header>
+
+            {selectedItem?.levelGain === 1 && (
+              <p className="bag-target-notice">{selectedItem.description}</p>
+            )}
+            {selectedItem?.type === 'statBoost' && selectedItem.effect === 'stat_boost' && (
+              <p className="bag-target-notice">{STAT_GEM_RULE_TEXT}</p>
+            )}
 
             {targetItemNotice && (
               <div className={`bag-target-notice ${selectedItemIsDepleted ? 'bag-target-notice--empty' : ''}`}>
@@ -3043,6 +3232,7 @@ export function UnifiedBagScreen({
                 const mpPercent = maxMp > 0 ? Math.max(0, Math.min(100, (currentMp / maxMp) * 100)) : 100
                 const selectedExpPotion = selectedItem?.type === 'expPotion' ? selectedItem : null
                 const selectedStatBoostItem = selectedItem?.type === 'statBoost' ? selectedItem : null
+                const statGemUsage = selectedStatBoostItem ? getStatGemUsage(mon, selectedStatBoostItem) : null
                 const selectedPotion = selectedItem?.type === 'potion' ? selectedItem : null
                 const selectedPotionRecovery = selectedPotion ? getPotionRecoveryProfile(selectedPotion) : { hp: 0, mp: 0 }
                 const expToNextLevel = Number(mon.expToNextLevel)
@@ -3066,15 +3256,15 @@ export function UnifiedBagScreen({
                 const isUnavailable = selectedExpPotion
                   ? isMaxLevel
                   : selectedStatBoostItem
-                    ? false
+                    ? Boolean(statGemUsage && !statGemUsage.canUse)
                   : !canPotionRestoreHp && !canPotionRestoreMp && !canPotionCureStatus
                 const isTargetDisabled = isUnavailable || isItemUsePending || selectedItemIsDepleted
                 const statusLabel = selectedItemIsDepleted
                   ? '无库存'
                   : selectedExpPotion
-                    ? isMaxLevel ? '满级' : `+${selectedExpPotion.expAmount || 0}`
+                    ? isMaxLevel ? '满级' : getExpPotionEffectText(selectedExpPotion)
                     : selectedStatBoostItem
-                      ? getStatBoostEffectText(selectedStatBoostItem)
+                      ? statGemUsage ? statGemUsage.canUse ? `还能用${statGemUsage.remaining}颗` : '宝石额度已满' : getStatBoostEffectText(selectedStatBoostItem)
                     : isUnavailable
                       ? '已满'
                       : canPotionCureStatus && !canPotionRestoreHp && !canPotionRestoreMp
@@ -3122,13 +3312,14 @@ export function UnifiedBagScreen({
                         <div className="bag-target-restore-preview">
                           <span className="bag-target-restore-preview--active bag-target-restore-preview--status">{getStatBoostEffectText(selectedStatBoostItem)}</span>
                           <span className="bag-target-restore-preview--active bag-target-restore-preview--mp">永久生效</span>
+                          {statGemUsage && <span>这项 {statGemUsage.statCount}/4 · 总计 {statGemUsage.total}/10</span>}
                         </div>
                       )}
                       <div className="bag-target-option__bars">
                         <div className="bag-target-meter">
-                          <span>{selectedExpPotion ? 'EXP' : selectedStatBoostItem ? '基础值' : 'HP'}</span>
-                          <div><i className="bag-target-meter__hp" style={{ width: selectedExpPotion ? `${expPercent}%` : `${hpPercent}%` }}></i></div>
-                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : selectedStatBoostItem ? '永久提升' : `${currentHp}/${maxHp}`}</b>
+                          <span>{selectedExpPotion ? 'EXP' : statGemUsage ? '宝石' : selectedStatBoostItem ? '基础值' : 'HP'}</span>
+                          <div><i className="bag-target-meter__hp" style={{ width: selectedExpPotion ? `${expPercent}%` : statGemUsage ? `${Math.min(100, statGemUsage.total / STAT_GEM_TOTAL_LIMIT * 100)}%` : `${hpPercent}%` }}></i></div>
+                          <b>{selectedExpPotion ? (isMaxLevel ? 'MAX' : `${mon.currentExp || 0}/${Number.isFinite(expToNextLevel) ? expToNextLevel : '--'}`) : statGemUsage ? `${statGemUsage.total}/${STAT_GEM_TOTAL_LIMIT}` : selectedStatBoostItem ? '永久提升' : `${currentHp}/${maxHp}`}</b>
                         </div>
                         {!selectedExpPotion && !selectedStatBoostItem && selectedPotion && (
                           <div className="bag-target-meter">
@@ -3163,6 +3354,9 @@ export function UnifiedBagScreen({
 
 export function BagScreen({
   playerInventory = [],
+  initialCategory,
+  renderFishBasket,
+  fishBasketCount = 0,
   activePlayerMon,
   activeEnemyMon,
   onUseItem,
@@ -3170,18 +3364,29 @@ export function BagScreen({
   addLog,
   playerTeam = [],
   onUsePotion,
+  onUseBattleItem,
+  canUseDynamax = false,
+  battleItemBlockedReason = '',
   onUseExpPotion,
   onUseStatBoostItem,
-  canUsePokeballs = true
+  canUsePokeballs = true,
+  equippedVehicle = null,
+  onEquipVehicle
 }) {
   const effectiveTeam = playerTeam && playerTeam.length > 0 ? playerTeam : (activePlayerMon ? [activePlayerMon] : [])
 
   return (
     <UnifiedBagScreen
       inventory={playerInventory}
+      initialCategory={initialCategory}
+      renderFishBasket={renderFishBasket}
+      fishBasketCount={fishBasketCount}
       onClose={onBack}
       onUseItem={onUseItem}
       onUsePotion={onUsePotion}
+      onUseBattleItem={onUseBattleItem}
+      canUseDynamax={canUseDynamax}
+      battleItemBlockedReason={battleItemBlockedReason}
       onUseExpPotion={onUseExpPotion}
       onUseStatBoostItem={onUseStatBoostItem}
       team={effectiveTeam}
@@ -3189,6 +3394,8 @@ export function BagScreen({
       canUseBattleBalls={canUsePokeballs}
       activeEnemyMon={activeEnemyMon}
       addLog={addLog}
+      equippedVehicle={equippedVehicle}
+      onEquipVehicle={onEquipVehicle}
     />
   )
 }

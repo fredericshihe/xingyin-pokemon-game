@@ -45,11 +45,11 @@ async function harness({ imageCount = 3, modelCount = 2 } = {}) {
       collectMapModelKeys: () => Array.from({ length: modelCount }, (_, i) => `model-${i}`),
       preloadModelKeysUntilComplete: (keys, options) => job(keys, options, modelJobs), resetModelLoadCache() { modelResets += 1 }
     },
-    '../game/threeLowPolyMap': {}
+    '../game/ThreeLowPolyMap': {}
   }
   const modules = new Map()
   async function getModule(specifier) {
-    if (specifier === '../game/threeLowPolyMap') await engine.promise
+    if (specifier === '../game/ThreeLowPolyMap') await engine.promise
     if (!modules.has(specifier)) {
       const exports = definitions[specifier]
       assert.ok(exports, `Unexpected dependency ${specifier}`)

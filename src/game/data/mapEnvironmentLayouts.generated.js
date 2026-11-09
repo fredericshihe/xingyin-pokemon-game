@@ -1,103 +1,256 @@
 // Generated offline by scripts/generate-map-environment-layouts.mjs.
 export const MAP_ENVIRONMENT_LAYOUTS = {
   "GodotMap": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "60": 1.779,
-      "62": 2.448,
-      "64": 1.829,
-      "68": 2.948,
-      "71": 2.123,
-      "72": 2.461,
-      "75": 1.912,
-      "77": 2.867,
-      "79": 1.854,
-      "81": 1.763,
-      "82": 1.691,
-      "84": 1.836,
-      "85": 2.149,
-      "88": 2.534,
-      "90": 1.967,
-      "91": 1.224,
-      "94": 3.133,
-      "176": 4.159,
-      "181": 4.159,
-      "191": 1.54,
-      "192": 1.584,
-      "194": 2.051,
-      "198": 1.875
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {
+      "[\"nature_stone_flat_a\",null,13.8,6.4,0.86,0.5]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",null,16.2,25,0.82,0.7]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",null,29.2,28.8,0.78,-0.2]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"tree-pine\",\"valley_tree_edges_6\",25.81,1.17,1.01,3.8498]": {
+        "environmentRenderScale": 1.121
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_2\",26.06,17.04,0.87,3.4474]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_4\",26.11,22.06,0.86,2.8825]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_6\",36.83,22.83,0.91,0.7495]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_8\",29.91,30.04,0.74,0.0246]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_10\",28.1,29.15,0.78,4.1037]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_12\",36,22.1,0.9,4.2862]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_14\",37.79,21.79,0.75,1.023]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_16\",37.83,20.96,0.89,0.6813]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_18\",29.1,22.96,0.7,0.1616]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_20\",27.96,27.8,0.76,5.9703]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_22\",38.21,17.17,0.89,5.4655]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_24\",36.85,16.85,0.65,5.6355]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_26\",35.08,21.9,0.83,0.3405]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_28\",38.07,19.79,0.86,5.5727]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_30\",26.8,22.99,0.78,0.4422]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_32\",29.88,28.07,0.77,2.653]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"valley_lake_bank_34\",31.07,29.77,0.89,4.9395]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMap_39_6\",38.24,5.98,3.03,4.6477]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_22_4\",21.94,3.71,0.88,5.0335]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_23_4\",23.05,3.73,0.86,6.2747]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_25_4\",25.02,3.77,0.84,3.8862]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_27_4\",27.02,3.73,0.9,5.3935]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"tree-pine\",\"starter_boundary_blocker_2_7\",1.78,7.07,0.87,2.7457]": {
+        "environmentRenderScale": 1.121
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_30_7\",30.2,6.79,0.97,5.0354]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"tree-default\",\"starter_boundary_blocker_31_7\",31,6.67,0.94,0.3416]": {
+        "environmentRenderScale": 1.021
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_35_7\",34.99,6.75,0.87,4.2746]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_2_9\",1.71,9.02,0.83,1.2356]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_3_12\",3.03,12.21,0.85,4.0611]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_7_12\",6.66,12.37,0.61,0.7746]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_14_12\",14,12.49,0.61,0.5723]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_39_12\",39.49,12.01,0.62,0.1149]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_13_13\",13.36,13.34,0.66,3.4102]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_15_13\",14.67,13.35,0.6,5.7675]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_39_15\",39.47,15.47,0.53,2.6031]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_20_16\",20.33,16.35,0.63,1.9564]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_24_16\",23.64,16.37,0.66,0.2808]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_38_16\",38.33,16.36,0.63,2.1987]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_14_17\",14.52,17,0.64,1.2862]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_36_17\",36.05,17.26,0.95,5.4944]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_14_18\",14.51,18.01,0.66,2.6514]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_14_19\",14.66,19,0.67,2.9729]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_6_20\",5.48,20,0.67,0.0282]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_19_20\",19.36,20.35,0.62,4.1337]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_36_20\",36,19.51,0.63,3.2767]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_15_21\",14.66,20.65,0.66,0.9169]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_19_21\",19.33,20.65,0.6,2.3061]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_4_22\",3.98,21.52,0.66,2.9575]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_20_22\",20.17,21.86,0.85,0.6271]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_23_23\",23.01,22.52,0.66,3.5293]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_24_23\",23.67,22.64,0.62,0.6733]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_39_23\",39.51,23.01,0.62,0.1473]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_39_24\",39.21,23.98,0.83,0.975]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_39_26\",39.49,25.99,0.67,1.0265]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_39_27\",39.48,26.99,0.65,3.3396]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_39_28\",39.5,28.01,0.73,2.361]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_1_29\",0.49,28.99,0.61,5.4225]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_39_29\",39.49,29.01,0.63,0.1208]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_1_30\",0.68,30.03,0.83,0.752]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_11_30\",10.97,30.23,0.83,1.1621]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_21_30\",20.98,30.42,0.8,0.5516]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_39_30\",39.25,29.93,1.02,4.8433]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_2_31\",2.05,31.24,0.91,6.1481]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_4_31\",4,31.43,0.79,3.799]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_6_31\",5.99,31.4,0.75,4.1173]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_7_31\",7.01,31.51,0.64,4.7102]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_8_31\",7.98,31.34,1.02,5.4411]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_9_31\",9.05,31.29,0.98,6.0064]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_12_31\",12.02,31.26,0.9,1.0296]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_a\",\"starter_boundary_blocker_18_31\",18,31.48,0.6,0.7173]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_19_31\",19.01,31.51,0.61,5.3894]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_20_31\",19.99,31.49,0.79,0.7323]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_22_31\",21.99,31.5,0.63,0.949]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_b\",\"starter_boundary_blocker_23_31\",22.99,31.51,0.64,1.523]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_flat_c\",\"starter_boundary_blocker_24_31\",24.02,31.5,0.66,2.8636]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"stone-large\",\"starter_boundary_blocker_29_31\",29.03,31.28,1.01,0.3531]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"rock-large\",\"starter_boundary_blocker_32_31\",32.07,31.35,0.9,0.2236]": {
+        "environmentHiddenBoundary": true
+      }
     },
-    "hiddenOriginals": [
-      47,
-      56,
-      59,
-      149,
-      150,
-      151,
-      152,
-      153,
-      154,
-      155,
-      156,
-      157,
-      158,
-      159,
-      160,
-      161,
-      162,
-      163,
-      164,
-      165,
-      195,
-      196,
-      197,
-      200,
-      201,
-      202,
-      203,
-      204,
-      205,
-      206,
-      207,
-      208,
-      209,
-      210,
-      211,
-      213,
-      215,
-      216,
-      217,
-      218,
-      219,
-      220,
-      221,
-      222,
-      223,
-      224,
-      225,
-      226,
-      227,
-      228,
-      229,
-      230,
-      231,
-      233,
-      236,
-      237,
-      238,
-      239,
-      240,
-      241,
-      242,
-      244
-    ],
     "boundaries": [
       {
         "type": "boundary_village_01",
-        "x": 21,
-        "y": 2,
-        "scale": 1.935,
-        "rotation": 0.022431947582721778,
+        "x": 1,
+        "y": 29,
+        "scale": 1.355,
+        "rotation": -0.07518358570920401,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -106,14 +259,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMap_0",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_village_02",
-        "x": 5,
-        "y": 19,
-        "scale": 1.719,
-        "rotation": -0.06431727740768821,
+        "x": 6.5,
+        "y": 3,
+        "scale": 1.461,
+        "rotation": -0.053720453642821075,
         "footprint": {
           "width": 1.26,
           "height": 1.09
@@ -122,14 +275,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMap_1",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_village_03",
-        "x": 7,
-        "y": 1,
-        "scale": 3.488,
-        "rotation": -0.0751835857092063,
+        "x": 24,
+        "y": 3,
+        "scale": 2.442,
+        "rotation": -0.09287090921934661,
         "footprint": {
           "width": 1,
           "height": 0.46
@@ -142,10 +295,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_village_04",
-        "x": 17.5,
-        "y": 1,
-        "scale": 4.225,
-        "rotation": -0.18078845056130757,
+        "x": 35.5,
+        "y": 7,
+        "scale": 2.958,
+        "rotation": 0.0037328486491137415,
         "footprint": {
           "width": 0.71,
           "height": 0.39
@@ -158,10 +311,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_village_05",
-        "x": 1,
-        "y": 29,
+        "x": 20,
+        "y": 1,
         "scale": 1.462,
-        "rotation": -0.0063306280782943645,
+        "rotation": 0.0011546033920440265,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -170,14 +323,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMap_4",
-        "blocksPath": true
+        "blocksPath": false
       },
       {
         "type": "boundary_village_06",
-        "x": 29.5,
-        "y": 3.5,
+        "x": 4.5,
+        "y": 1,
         "scale": 1.312,
-        "rotation": 0.023297364596170274,
+        "rotation": 0.17581088790066385,
         "footprint": {
           "width": 1.28,
           "height": 1.1
@@ -189,43 +342,11 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "blocksPath": false
       },
       {
-        "type": "boundary_village_07",
-        "x": 10,
-        "y": 3.5,
-        "scale": 2.885,
-        "rotation": -0.00977457789956384,
-        "footprint": {
-          "width": 1.04,
-          "height": 0.48
-        },
-        "surface": "ground",
-        "environmentBoundary": true,
-        "environmentBackdrop": false,
-        "sourceId": "environment_boundary_GodotMap_6",
-        "blocksPath": false
-      },
-      {
-        "type": "boundary_village_08",
-        "x": 24.5,
-        "y": 16.5,
-        "scale": 2.736,
-        "rotation": -0.01812388225694715,
-        "footprint": {
-          "width": 1.02,
-          "height": 0.39
-        },
-        "surface": "ground",
-        "environmentBoundary": true,
-        "environmentBackdrop": false,
-        "sourceId": "environment_boundary_GodotMap_7",
-        "blocksPath": true
-      },
-      {
         "type": "boundary_village_09",
-        "x": 7.5,
-        "y": 17,
-        "scale": 1.541,
-        "rotation": 0.03650230695351506,
+        "x": 8.5,
+        "y": 30.5,
+        "scale": 1.078,
+        "rotation": 0.023297364596170274,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -234,14 +355,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMap_8",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_village_10",
-        "x": 6,
-        "y": 13,
-        "scale": 1.354,
-        "rotation": 0.2568211196969081,
+        "x": 27,
+        "y": 3,
+        "scale": 1.115,
+        "rotation": -0.1257577048250045,
         "footprint": {
           "width": 1.27,
           "height": 1.08
@@ -253,27 +374,11 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "blocksPath": false
       },
       {
-        "type": "boundary_village_11",
-        "x": 14,
-        "y": 3.5,
-        "scale": 2.414,
-        "rotation": -0.07403661335478535,
-        "footprint": {
-          "width": 1.05,
-          "height": 0.51
-        },
-        "surface": "ground",
-        "environmentBoundary": true,
-        "environmentBackdrop": false,
-        "sourceId": "environment_boundary_GodotMap_10",
-        "blocksPath": true
-      },
-      {
         "type": "boundary_village_12",
-        "x": 3,
-        "y": 12.5,
+        "x": 2,
+        "y": 8.5,
         "scale": 1.819,
-        "rotation": -0.07176144552973683,
+        "rotation": -0.06088907505922409,
         "footprint": {
           "width": 1.33,
           "height": 0.39
@@ -282,77 +387,17 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMap_11",
-        "blocksPath": false
+        "blocksPath": true
       }
     ],
     "boundaryTheme": true,
     "additions": [
       {
-        "type": "exclusive_village_01",
-        "x": 1.5,
-        "y": 8,
-        "scale": 1.187,
-        "rotation": 1.3907963267948966,
-        "footprint": {
-          "width": 2.19,
-          "height": 1.79
-        },
-        "surface": "ground",
-        "environmentRole": "tree",
-        "environmentFacing": "natural",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMap_place_0",
-        "sourceId": "environment_scene_GodotMap_place_0_0",
-        "blocksPath": true
-      },
-      {
-        "type": "exclusive_village_03",
-        "x": 2.9,
-        "y": 10.4,
-        "scale": 1.05,
-        "rotation": 1.5707963267948966,
-        "footprint": {
-          "width": 1.33,
-          "height": 0.48
-        },
-        "surface": "ground",
-        "environmentRole": "furniture",
-        "environmentFacing": "road",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMap_place_0",
-        "sourceId": "environment_scene_GodotMap_place_0_1",
-        "blocksPath": true
-      },
-      {
-        "type": "exclusive_village_09",
-        "x": 5.1,
-        "y": 3.2,
-        "scale": 1.3,
-        "rotation": 1.1707963267948966,
-        "footprint": {
-          "width": 0.97,
-          "height": 0.94
-        },
-        "surface": "ground",
-        "environmentRole": "plant",
-        "environmentFacing": "natural",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMap_place_0",
-        "sourceId": "environment_scene_GodotMap_place_0_2",
-        "blocksPath": false
-      },
-      {
         "type": "exclusive_village_07",
-        "x": 20.5,
-        "y": 20.5,
+        "x": 14,
+        "y": 13,
         "scale": 1.45,
-        "rotation": -1.5707963267948966,
+        "rotation": 3.141592653589793,
         "footprint": {
           "width": 1.54,
           "height": 0.41
@@ -369,8 +414,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_village_05",
-        "x": 19.6,
-        "y": 16.1,
+        "x": 13.9,
+        "y": 12.1,
         "scale": 1.033,
         "rotation": 3.141592653589793,
         "footprint": {
@@ -388,31 +433,11 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "blocksPath": false
       },
       {
-        "type": "exclusive_village_14",
-        "x": 19.4,
-        "y": 21.8,
-        "scale": 1.2,
-        "rotation": -1.5707963267948966,
-        "footprint": {
-          "width": 1.93,
-          "height": 1.08
-        },
-        "surface": "ground",
-        "environmentRole": "garden",
-        "environmentFacing": "scene",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMap_place_1",
-        "sourceId": "environment_scene_GodotMap_place_1_2",
-        "blocksPath": true
-      },
-      {
         "type": "exclusive_village_16",
-        "x": 24.4,
-        "y": 21,
+        "x": 14,
+        "y": 17.4,
         "scale": 1.127,
-        "rotation": -1.5707963267948966,
+        "rotation": 3.141592653589793,
         "footprint": {
           "width": 1.78,
           "height": 0.99
@@ -425,14 +450,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMap_place_1",
         "sourceId": "environment_scene_GodotMap_place_1_3",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "exclusive_village_02",
-        "x": 22.5,
-        "y": 23,
+        "x": 25.5,
+        "y": 17,
         "scale": 1.04,
-        "rotation": 1.5707963267948966,
+        "rotation": -3.141592653589793,
         "footprint": {
           "width": 0.94,
           "height": 1.09
@@ -445,14 +470,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMap_place_2",
         "sourceId": "environment_scene_GodotMap_place_2_0",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "exclusive_village_04",
-        "x": 21.4,
-        "y": 24.9,
+        "x": 23.9,
+        "y": 16.6,
         "scale": 0.945,
-        "rotation": 1.5707963267948966,
+        "rotation": -3.141592653589793,
         "footprint": {
           "width": 1.26,
           "height": 1.1
@@ -465,32 +490,12 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMap_place_2",
         "sourceId": "environment_scene_GodotMap_place_2_1",
-        "blocksPath": true
-      },
-      {
-        "type": "exclusive_village_06",
-        "x": 23.6,
-        "y": 18.7,
-        "scale": 1.3,
-        "rotation": 1.1707963267948966,
-        "footprint": {
-          "width": 1.27,
-          "height": 0.54
-        },
-        "surface": "ground",
-        "environmentRole": "plant",
-        "environmentFacing": "natural",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMap_place_2",
-        "sourceId": "environment_scene_GodotMap_place_2_2",
         "blocksPath": false
       },
       {
         "type": "exclusive_village_11",
         "x": 15,
-        "y": 22,
+        "y": 21,
         "scale": 1.1,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -505,11 +510,11 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMap_place_3",
         "sourceId": "environment_scene_GodotMap_place_3_0",
-        "blocksPath": true
+        "blocksPath": false
       },
       {
         "type": "exclusive_village_12",
-        "x": 13.9,
+        "x": 14.9,
         "y": 22.4,
         "scale": 1.05,
         "rotation": 1.5707963267948966,
@@ -529,8 +534,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_village_10",
-        "x": 14.1,
-        "y": 18,
+        "x": 13.1,
+        "y": 22.5,
         "scale": 1.1,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -545,74 +550,69 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMap_place_3",
         "sourceId": "environment_scene_GodotMap_place_3_3",
-        "blocksPath": false
+        "blocksPath": true
       }
     ],
     "groundPatches": [
       {
-        "x": 3.065199526984349,
-        "y": 6.739793218065298,
-        "rx": 4.843097005177018,
-        "ry": 6.358456781934702
+        "x": 14,
+        "y": 14.935962499999999,
+        "rx": 3.1165000000000003,
+        "ry": 5.0219024999999995
       },
       {
-        "x": 21.854932499999997,
-        "y": 19.436030000000002,
-        "rx": 5.1029325,
-        "ry": 5.5219700000000005
+        "x": 24.646725,
+        "y": 16.823525,
+        "rx": 3.3420750000000012,
+        "ry": 2.7432750000000006
       },
       {
-        "x": 22.5625036252354,
-        "y": 21.64916415565014,
-        "rx": 3.6822536252354023,
-        "ry": 5.846185844349858
-      },
-      {
-        "x": 14.451,
-        "y": 20.310125,
-        "rx": 2.8404999999999996,
-        "ry": 4.893124999999998
+        "x": 13.951,
+        "y": 21.936625,
+        "rx": 3.3404999999999996,
+        "ry": 3.2666249999999977
       }
     ],
     "blockedTiles": [
-      "3,8",
-      "3,9",
-      "3,10",
-      "19,23",
-      "21,25",
-      "22,25",
+      "13,17",
+      "13,18",
+      "26,17",
       "15,22",
-      "14,23",
+      "15,23",
+      "13,22",
+      "13,23",
       "2,28",
       "2,29",
       "2,30",
-      "25,16",
-      "26,16",
-      "26,17",
-      "15,4"
+      "6,4",
+      "7,4",
+      "8,30",
+      "9,30",
+      "3,8",
+      "3,9"
     ],
     "notes": {
-      "preserved": 248,
-      "added": 13,
-      "replaced": 62,
-      "boundaryModels": 12,
-      "resized": 23,
-      "interior": 10,
+      "preserved": 259,
+      "added": 8,
+      "replaced": 77,
+      "boundaryModels": 9,
+      "resized": 3,
+      "interior": 8,
       "scenes": [
         {
           "id": "GodotMap_place_0",
           "name": "玉兰歇脚庭",
-          "placed": 3
+          "placed": 0
         },
         {
           "id": "GodotMap_place_1",
           "name": "花架入口",
-          "placed": 4
+          "placed": 3
         },
         {
           "id": "GodotMap_place_2",
           "name": "蜂房花园",
-          "placed": 3
+          "placed": 2
         },
         {
           "id": "GodotMap_place_3",
@@ -621,16 +621,11 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         }
       ],
       "modelCounts": {
-        "exclusive_village_01": 1,
-        "exclusive_village_03": 1,
-        "exclusive_village_09": 1,
         "exclusive_village_07": 1,
         "exclusive_village_05": 1,
-        "exclusive_village_14": 1,
         "exclusive_village_16": 1,
         "exclusive_village_02": 1,
         "exclusive_village_04": 1,
-        "exclusive_village_06": 1,
         "exclusive_village_11": 1,
         "exclusive_village_12": 1,
         "exclusive_village_10": 1
@@ -638,24 +633,30 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     }
   },
   "GodotMapV2": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "168": 3.955,
-      "169": 4.237,
-      "170": 3.751,
-      "172": 3.96,
-      "180": 3.751,
-      "201": 4.159,
-      "204": 3.431
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_19_0\",18.98,0.63,2.95,0.6701]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_21_0\",20.99,0.79,2.9,4.487]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_38_0\",38.06,0.58,3.22,0.6956]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_0_5\",0.53,5.05,3.02,1.1765]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_33_21\",32.98,21.59,3.32,4.7517]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_39_25\",38.46,24.93,3,2.5309]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_24_31\",24.06,30.96,2.99,3.8157]": {
+        "environmentHiddenBoundary": true
+      }
     },
-    "hiddenOriginals": [
-      206,
-      207,
-      208,
-      210,
-      212,
-      213
-    ],
     "boundaries": [
       {
         "type": "boundary_meadow_01",
@@ -675,10 +676,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_02",
-        "x": 7.5,
-        "y": 1.5,
+        "x": 21.5,
+        "y": 6,
         "scale": 1.924,
-        "rotation": 0.42725886169205046,
+        "rotation": -0.18078845056130757,
         "footprint": {
           "width": 1.45,
           "height": 0.62
@@ -691,10 +692,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_03",
-        "x": 22,
-        "y": 13.5,
+        "x": 7.5,
+        "y": 30,
         "scale": 2.167,
-        "rotation": 0.15439074705524555,
+        "rotation": -0.6384321206031325,
         "footprint": {
           "width": 0.91,
           "height": 0.48
@@ -707,10 +708,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_04",
-        "x": 6.5,
-        "y": 30,
+        "x": 10,
+        "y": 2,
         "scale": 2.455,
-        "rotation": -0.17747761291608422,
+        "rotation": 0.47696609895374315,
         "footprint": {
           "width": 0.91,
           "height": 0.5
@@ -723,10 +724,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_05",
-        "x": 16,
-        "y": 1,
+        "x": 2.5,
+        "y": 23,
         "scale": 1.72,
-        "rotation": -0.14600377335037906,
+        "rotation": 0.36773198364585835,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -739,10 +740,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_06",
-        "x": 27,
-        "y": 3,
+        "x": 31,
+        "y": 2.5,
         "scale": 1.616,
-        "rotation": 0.04483717103402781,
+        "rotation": 0.3963363372656823,
         "footprint": {
           "width": 1.45,
           "height": 0.62
@@ -755,10 +756,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_07",
-        "x": 36,
-        "y": 22,
+        "x": 3,
+        "y": 1.5,
         "scale": 2.167,
-        "rotation": 0.16386813469710662,
+        "rotation": 0.43564896429819017,
         "footprint": {
           "width": 0.91,
           "height": 0.47
@@ -771,10 +772,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_08",
-        "x": 36,
-        "y": 2.5,
+        "x": 17,
+        "y": 1.5,
         "scale": 2.454,
-        "rotation": 0.057439645967600934,
+        "rotation": 0.4690743370665223,
         "footprint": {
           "width": 0.91,
           "height": 0.45
@@ -803,10 +804,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_10",
-        "x": 1.5,
-        "y": 2,
+        "x": 36.5,
+        "y": 3,
         "scale": 1.392,
-        "rotation": 0.15132367980398884,
+        "rotation": 0.034792572256041765,
         "footprint": {
           "width": 1.45,
           "height": 0.62
@@ -819,10 +820,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_11",
-        "x": 1,
-        "y": 28,
+        "x": 25,
+        "y": 1.5,
         "scale": 2.095,
-        "rotation": 0.45203742478694814,
+        "rotation": -0.6045688676213952,
         "footprint": {
           "width": 0.91,
           "height": 0.51
@@ -835,10 +836,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_meadow_12",
-        "x": 21.5,
-        "y": 1.5,
+        "x": 1.5,
+        "y": 29,
         "scale": 2.455,
-        "rotation": -0.15747318578341502,
+        "rotation": -0.36393070255398485,
         "footprint": {
           "width": 0.91,
           "height": 0.53
@@ -854,8 +855,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     "additions": [
       {
         "type": "exclusive_meadow_01",
-        "x": 21,
-        "y": 8.5,
+        "x": 20.5,
+        "y": 10.5,
         "scale": 1.546,
         "rotation": -0.18,
         "footprint": {
@@ -875,7 +876,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_meadow_02",
         "x": 19.6,
-        "y": 12.9,
+        "y": 12.4,
         "scale": 1.118,
         "rotation": 0.32,
         "footprint": {
@@ -894,8 +895,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_06",
-        "x": 22.8,
-        "y": 11.1,
+        "x": 23.3,
+        "y": 11.6,
         "scale": 0.774,
         "rotation": -0.4,
         "footprint": {
@@ -914,8 +915,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_13",
-        "x": 21.5,
-        "y": 3.6,
+        "x": 21,
+        "y": 8.1,
         "scale": 1.35,
         "rotation": 0.14,
         "footprint": {
@@ -934,10 +935,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_03",
-        "x": 27.5,
-        "y": 14,
+        "x": 26.5,
+        "y": 12,
         "scale": 1.35,
-        "rotation": 0,
+        "rotation": 1.5707963267948966,
         "footprint": {
           "width": 1.15,
           "height": 0.24
@@ -950,14 +951,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_place_1",
         "sourceId": "environment_scene_GodotMapV2_place_1_0",
-        "blocksPath": true
+        "blocksPath": false
       },
       {
         "type": "exclusive_meadow_05",
-        "x": 27.1,
-        "y": 12.9,
+        "x": 27.4,
+        "y": 13.4,
         "scale": 1.081,
-        "rotation": 1.5707963267948966,
+        "rotation": 0,
         "footprint": {
           "width": 1.48,
           "height": 0.79
@@ -970,12 +971,12 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_place_1",
         "sourceId": "environment_scene_GodotMapV2_place_1_1",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "exclusive_meadow_11",
-        "x": 27.8,
-        "y": 13.1,
+        "x": 27.6,
+        "y": 11.7,
         "scale": 1.1,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -994,10 +995,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_14",
-        "x": 25,
-        "y": 11.6,
+        "x": 21.6,
+        "y": 13.5,
         "scale": 1.282,
-        "rotation": 0.14,
+        "rotation": 1.7107963267948967,
         "footprint": {
           "width": 2.34,
           "height": 0.72
@@ -1074,10 +1075,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_04",
-        "x": 28,
-        "y": 21.5,
+        "x": 33,
+        "y": 21,
         "scale": 1.85,
-        "rotation": -1.7507963267948965,
+        "rotation": 2.961592653589793,
         "footprint": {
           "width": 1.15,
           "height": 0.72
@@ -1094,10 +1095,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_meadow_10",
-        "x": 27.1,
-        "y": 19.6,
+        "x": 34.9,
+        "y": 20.1,
         "scale": 0.833,
-        "rotation": -1.5707963267948966,
+        "rotation": 3.141592653589793,
         "footprint": {
           "width": 0.71,
           "height": 0.68
@@ -1110,14 +1111,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_place_3",
         "sourceId": "environment_scene_GodotMapV2_place_3_1",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "exclusive_meadow_12",
-        "x": 27.9,
-        "y": 23.8,
+        "x": 29.2,
+        "y": 20.4,
         "scale": 1.3,
-        "rotation": -1.9707963267948965,
+        "rotation": 2.741592653589793,
         "footprint": {
           "width": 1.05,
           "height": 1.05
@@ -1130,14 +1131,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_place_3",
         "sourceId": "environment_scene_GodotMapV2_place_3_2",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "exclusive_meadow_16",
-        "x": 32.4,
-        "y": 21.5,
+        "x": 36,
+        "y": 22.9,
         "scale": 1.35,
-        "rotation": -1.4307963267948964,
+        "rotation": 3.2815926535897932,
         "footprint": {
           "width": 1.75,
           "height": 1.07
@@ -1155,16 +1156,16 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     ],
     "groundPatches": [
       {
-        "x": 21.023688557952298,
-        "y": 8.019656723773632,
-        "rx": 4.247324062478247,
-        "ry": 7.427250465519854
+        "x": 21.265343328426773,
+        "y": 10.019656723773632,
+        "rx": 4.50566929200377,
+        "ry": 4.927250465519854
       },
       {
-        "x": 25.863291740185105,
-        "y": 12.547844607024235,
-        "rx": 4.412958259814896,
-        "ry": 3.614155392975767
+        "x": 24.566814607024234,
+        "y": 13.119083259814897,
+        "rx": 5.633125392975764,
+        "ry": 3.930583259814896
       },
       {
         "x": 13.929092163256842,
@@ -1173,10 +1174,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "ry": 3.4175539461797246
       },
       {
-        "x": 30.048399403719042,
-        "y": 21.999343573516313,
-        "rx": 5.231619403719041,
-        "ry": 4.695058573516311
+        "x": 32.78803775652268,
+        "y": 21.642808330202726,
+        "rx": 6.482439903555301,
+        "ry": 4.137210477235351
       }
     ],
     "blockedTiles": [
@@ -1185,15 +1186,17 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "11,18",
       "12,18",
       "12,19",
-      "12,20"
+      "12,20",
+      "35,20",
+      "29,20"
     ],
     "notes": {
-      "preserved": 237,
+      "preserved": 232,
       "added": 15,
-      "replaced": 6,
+      "replaced": 7,
       "boundaryModels": 12,
-      "resized": 7,
-      "interior": 14,
+      "resized": 0,
+      "interior": 12,
       "scenes": [
         {
           "id": "GodotMapV2_place_0",
@@ -1236,27 +1239,22 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     }
   },
   "GodotMapV2_MistLake": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "105": 3.771,
-      "113": 3.834,
-      "114": 3.912,
-      "136": 2.477
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {
+      "[\"nature_rock_large\",\"boundary_visual_blocker_GodotMapV2_MistLake_0_0\",0.59,0.59,3.3,4.5652]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_stone_large\",\"boundary_visual_blocker_GodotMapV2_MistLake_0_27\",0.57,27,3.4,1.7775]": {
+        "environmentHiddenBoundary": true
+      }
     },
-    "hiddenOriginals": [
-      137,
-      139,
-      143,
-      146,
-      151
-    ],
     "boundaries": [
       {
         "type": "boundary_lake_01",
-        "x": 1.5,
-        "y": 8.5,
+        "x": 2,
+        "y": 8,
         "scale": 1.974,
-        "rotation": -0.3757503499210793,
+        "rotation": 0.021854980693738854,
         "footprint": {
           "width": 1.11,
           "height": 0.88
@@ -1285,10 +1283,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_03",
-        "x": 31.5,
-        "y": 30,
+        "x": 29.5,
+        "y": 6,
         "scale": 2.183,
-        "rotation": -0.25973485504751775,
+        "rotation": 0.055446241879062386,
         "footprint": {
           "width": 0.97,
           "height": 0.53
@@ -1349,10 +1347,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_07",
-        "x": 31.5,
-        "y": 5,
+        "x": 17.5,
+        "y": 20.5,
         "scale": 1.932,
-        "rotation": 0.4033754789760654,
+        "rotation": 0.20604562142116023,
         "footprint": {
           "width": 0.94,
           "height": 0.55
@@ -1365,10 +1363,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_08",
-        "x": 7,
-        "y": 3.5,
+        "x": 1.5,
+        "y": 22.5,
         "scale": 2.189,
-        "rotation": 0.11954072604912293,
+        "rotation": 0.16193102937898435,
         "footprint": {
           "width": 0.87,
           "height": 0.46
@@ -1381,10 +1379,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_09",
-        "x": 36,
-        "y": 30,
+        "x": 9,
+        "y": 3,
         "scale": 1.565,
-        "rotation": -0.02989159511904702,
+        "rotation": -0.601342179734672,
         "footprint": {
           "width": 1.11,
           "height": 0.88
@@ -1397,10 +1395,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_10",
-        "x": 35.5,
-        "y": 8.5,
+        "x": 11,
+        "y": 30,
         "scale": 1.981,
-        "rotation": -0.07262204101230793,
+        "rotation": -0.11670228098035176,
         "footprint": {
           "width": 1.08,
           "height": 0.85
@@ -1413,10 +1411,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_11",
-        "x": 25.5,
-        "y": 5.5,
+        "x": 20.5,
+        "y": 2.5,
         "scale": 1.733,
-        "rotation": -0.03996011815141416,
+        "rotation": 0.6207151679166469,
         "footprint": {
           "width": 0.93,
           "height": 0.49
@@ -1429,10 +1427,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_lake_12",
-        "x": 11,
-        "y": 3.5,
+        "x": 3.5,
+        "y": 30,
         "scale": 1.964,
-        "rotation": 0.05573383531253135,
+        "rotation": 0.057727162043952646,
         "footprint": {
           "width": 0.89,
           "height": 0.55
@@ -1441,6 +1439,278 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_MistLake_11",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_01",
+        "x": 7,
+        "y": 11.5,
+        "scale": 1.382,
+        "rotation": -0.19043290143590202,
+        "footprint": {
+          "width": 1.11,
+          "height": 0.88
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_12",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_lake_02",
+        "x": 1,
+        "y": 6,
+        "scale": 1.755,
+        "rotation": 0.04483717103402781,
+        "footprint": {
+          "width": 1.07,
+          "height": 0.86
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_03",
+        "x": 2.5,
+        "y": 11.5,
+        "scale": 1.856,
+        "rotation": -0.25973485504751775,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_14",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_04",
+        "x": 31,
+        "y": 4.5,
+        "scale": 2.102,
+        "rotation": 0.05688409856902987,
+        "footprint": {
+          "width": 0.88,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_15",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_05",
+        "x": 6.5,
+        "y": 3.5,
+        "scale": 1.485,
+        "rotation": 0.06690186668574816,
+        "footprint": {
+          "width": 1.11,
+          "height": 0.88
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_06",
+        "x": 38.5,
+        "y": 20,
+        "scale": 1.096,
+        "rotation": 0.05600189680858036,
+        "footprint": {
+          "width": 1.08,
+          "height": 0.87
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_17",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_07",
+        "x": 26.5,
+        "y": 6,
+        "scale": 1.932,
+        "rotation": -0.018681366848310548,
+        "footprint": {
+          "width": 0.94,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_18",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_08",
+        "x": 23.5,
+        "y": 30.5,
+        "scale": 1.532,
+        "rotation": -0.2894313029580466,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_19",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_lake_09",
+        "x": 3.5,
+        "y": 26,
+        "scale": 1.095,
+        "rotation": 0.07833652560453552,
+        "footprint": {
+          "width": 1.11,
+          "height": 0.88
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_11",
+        "x": 18,
+        "y": 28.5,
+        "scale": 1.733,
+        "rotation": -0.06144430838412526,
+        "footprint": {
+          "width": 0.93,
+          "height": 0.49
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_22",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_12",
+        "x": 3.5,
+        "y": 23.5,
+        "scale": 1.669,
+        "rotation": 0.046276876525519046,
+        "footprint": {
+          "width": 0.89,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_23",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_02",
+        "x": 17.5,
+        "y": 24,
+        "scale": 1.229,
+        "rotation": 0.09882753185709169,
+        "footprint": {
+          "width": 1.07,
+          "height": 0.86
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_25",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_06",
+        "x": 11.5,
+        "y": 3.5,
+        "scale": 1.096,
+        "rotation": -0.1485340742333468,
+        "footprint": {
+          "width": 1.08,
+          "height": 0.87
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_29",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_07",
+        "x": 26.5,
+        "y": 28,
+        "scale": 1.353,
+        "rotation": 0.22721632622989676,
+        "footprint": {
+          "width": 0.94,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_30",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_lake_08",
+        "x": 16.5,
+        "y": 12,
+        "scale": 1.532,
+        "rotation": -0.0823077727822525,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_31",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_11",
+        "x": 19,
+        "y": 4,
+        "scale": 1.473,
+        "rotation": 0.047716353865513324,
+        "footprint": {
+          "width": 0.93,
+          "height": 0.49
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_34",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_lake_12",
+        "x": 3.5,
+        "y": 21,
+        "scale": 1.375,
+        "rotation": 0.5762613383435852,
+        "footprint": {
+          "width": 0.89,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_MistLake_35",
         "blocksPath": false
       }
     ],
@@ -1488,10 +1758,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_lake_11",
-        "x": 6.7,
+        "x": 7.2,
         "y": 19.9,
         "scale": 1.15,
-        "rotation": 3.141592653589793,
+        "rotation": -1.5707963267948966,
         "footprint": {
           "width": 1.06,
           "height": 0.1
@@ -1528,10 +1798,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_lake_01",
-        "x": 22,
-        "y": 2,
+        "x": 2.5,
+        "y": 2.5,
         "scale": 1.611,
-        "rotation": -0.18,
+        "rotation": 1.3907963267948966,
         "footprint": {
           "width": 1.49,
           "height": 1.31
@@ -1548,8 +1818,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_lake_02",
-        "x": 19.6,
-        "y": 0.9,
+        "x": 2.4,
+        "y": 4.4,
         "scale": 0.809,
         "rotation": 0,
         "footprint": {
@@ -1569,7 +1839,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_lake_05",
         "x": 21.5,
-        "y": 19,
+        "y": 18.5,
         "scale": 1.027,
         "rotation": -3.141592653589793,
         "footprint": {
@@ -1587,9 +1857,29 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "blocksPath": false
       },
       {
+        "type": "exclusive_lake_09",
+        "x": 22.9,
+        "y": 14.1,
+        "scale": 1.35,
+        "rotation": -2.8215926535897933,
+        "footprint": {
+          "width": 1.31,
+          "height": 0.8
+        },
+        "surface": "water",
+        "environmentRole": "naturalGround",
+        "environmentFacing": "natural",
+        "environmentHabitat": "water",
+        "environmentComposition": true,
+        "environmentBackdrop": false,
+        "environmentScene": "GodotMapV2_MistLake_place_2",
+        "sourceId": "environment_scene_GodotMapV2_MistLake_place_2_1",
+        "blocksPath": false
+      },
+      {
         "type": "exclusive_lake_10",
         "x": 19,
-        "y": 20.9,
+        "y": 20.4,
         "scale": 1.1,
         "rotation": 0,
         "footprint": {
@@ -1608,10 +1898,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_lake_06",
-        "x": 18,
-        "y": 26,
+        "x": 29.5,
+        "y": 30,
         "scale": 1.85,
-        "rotation": 2.961592653589793,
+        "rotation": -3.3215926535897933,
         "footprint": {
           "width": 1.05,
           "height": 1
@@ -1624,49 +1914,72 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_MistLake_place_3",
         "sourceId": "environment_scene_GodotMapV2_MistLake_place_3_0",
-        "blocksPath": true
+        "blocksPath": false
+      },
+      {
+        "type": "exclusive_lake_15",
+        "x": 32,
+        "y": 29.9,
+        "scale": 1.277,
+        "rotation": -3.001592653589793,
+        "footprint": {
+          "width": 1.8,
+          "height": 1.11
+        },
+        "surface": "ground",
+        "environmentRole": "naturalGround",
+        "environmentFacing": "natural",
+        "environmentHabitat": "shore",
+        "environmentComposition": true,
+        "environmentBackdrop": false,
+        "environmentScene": "GodotMapV2_MistLake_place_3",
+        "sourceId": "environment_scene_GodotMapV2_MistLake_place_3_3",
+        "blocksPath": false
       }
     ],
     "groundPatches": [
       {
-        "x": 8.6905,
+        "x": 9.2165,
         "y": 19.83925,
-        "rx": 4.6,
+        "rx": 4.074,
         "ry": 3.31325
       },
       {
-        "x": 21.254293590946318,
-        "y": 1.8742635913631482,
-        "rx": 4.1154235909463175,
-        "ry": 3.3787635913631484
+        "x": 2.5,
+        "y": 2.9673914090536817,
+        "rx": 3.2530271827262967,
+        "ry": 3.8371085909463183
       },
       {
         "x": 19,
-        "y": 20.9,
+        "y": 20.4,
         "rx": 2.1595000000000013,
         "ry": 2.1099999999999994
       },
       {
-        "x": 18,
-        "y": 26,
-        "rx": 3.121160542039352,
+        "x": 30.807896895882607,
+        "y": 30,
+        "rx": 4.42905743792196,
         "ry": 3.083937889018845
       }
     ],
     "blockedTiles": [
       "11,20",
       "8,19",
-      "17,25",
-      "19,25",
       "9,13",
-      "10,13"
+      "10,13",
+      "6,11",
+      "6,12",
+      "23,30",
+      "24,30",
+      "26,28"
     ],
     "notes": {
-      "preserved": 182,
-      "added": 9,
-      "replaced": 5,
-      "boundaryModels": 12,
-      "resized": 4,
+      "preserved": 170,
+      "added": 11,
+      "replaced": 2,
+      "boundaryModels": 29,
+      "resized": 0,
       "interior": 7,
       "scenes": [
         {
@@ -1682,12 +1995,12 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         {
           "id": "GodotMapV2_MistLake_place_2",
           "name": "苇筏水湾",
-          "placed": 2
+          "placed": 3
         },
         {
           "id": "GodotMapV2_MistLake_place_3",
           "name": "苔石湿岸",
-          "placed": 1
+          "placed": 2
         }
       ],
       "modelCounts": {
@@ -1698,29 +2011,33 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "exclusive_lake_01": 1,
         "exclusive_lake_02": 1,
         "exclusive_lake_05": 1,
+        "exclusive_lake_09": 1,
         "exclusive_lake_10": 1,
-        "exclusive_lake_06": 1
+        "exclusive_lake_06": 1,
+        "exclusive_lake_15": 1
       }
     }
   },
   "GodotMapV2_FarmTown": {
     "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "221": 3.639,
-      "223": 3.955,
-      "230": 3.751,
-      "233": 3.955
+    "objectOverrides": {
+      "[\"nature_rock_large\",\"boundary_visual_blocker_GodotMapV2_FarmTown_0_0\",0.41,0.44,3.54,4.5723]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_rock_large\",\"boundary_visual_blocker_GodotMapV2_FarmTown_26_0\",25.94,-0.06,3.06,4.4402]": {
+        "environmentHiddenBoundary": true
+      },
+      "[\"nature_rock_large\",\"boundary_visual_blocker_GodotMapV2_FarmTown_32_0\",31.96,0.61,3.48,4.0472]": {
+        "environmentHiddenBoundary": true
+      }
     },
-    "hiddenOriginals": [
-      283
-    ],
     "boundaries": [
       {
         "type": "boundary_farm_01",
-        "x": 6.5,
+        "x": 11.5,
         "y": 2.5,
         "scale": 1.924,
-        "rotation": -0.6404932001490882,
+        "rotation": -0.40652119349665955,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -1733,10 +2050,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_02",
-        "x": 33,
+        "x": 8.5,
         "y": 30,
         "scale": 1.715,
-        "rotation": -0.06316823883059505,
+        "rotation": 0.06575328982035476,
         "footprint": {
           "width": 1.26,
           "height": 1.09
@@ -1749,10 +2066,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_03",
-        "x": 33.5,
-        "y": 3,
+        "x": 30,
+        "y": 30,
         "scale": 3.243,
-        "rotation": 0.0014432538131234627,
+        "rotation": 0.06661474211799223,
         "footprint": {
           "width": 1.11,
           "height": 0.45
@@ -1765,10 +2082,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_04",
-        "x": 7.5,
-        "y": 30.5,
+        "x": 37.5,
+        "y": 25.5,
         "scale": 2.564,
-        "rotation": -0.04224514886497487,
+        "rotation": 0.5801985005467178,
         "footprint": {
           "width": 1.17,
           "height": 0.36
@@ -1781,10 +2098,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_05",
-        "x": 37.5,
-        "y": 25.5,
+        "x": 4,
+        "y": 2.5,
         "scale": 1.714,
-        "rotation": 0.6107866268551632,
+        "rotation": 0.43862519538101685,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -1797,10 +2114,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_06",
-        "x": 1.5,
-        "y": 11.5,
+        "x": 34.5,
+        "y": 30,
         "scale": 1.546,
-        "rotation": 0.11925698670233222,
+        "rotation": 0.21476649749484586,
         "footprint": {
           "width": 1.28,
           "height": 1.1
@@ -1813,10 +2130,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_07",
-        "x": 10,
-        "y": 3.5,
+        "x": 7.5,
+        "y": 2.5,
         "scale": 2.703,
-        "rotation": -0.00977457789956384,
+        "rotation": -0.3012243305691753,
         "footprint": {
           "width": 1.11,
           "height": 0.45
@@ -1829,10 +2146,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_08",
-        "x": 28,
-        "y": 30.5,
+        "x": 11.5,
+        "y": 30,
         "scale": 2.821,
-        "rotation": 0.05630898914967951,
+        "rotation": -0.4006536335634807,
         "footprint": {
           "width": 1.17,
           "height": 0.36
@@ -1841,14 +2158,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_FarmTown_7",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_farm_09",
-        "x": 36,
-        "y": 30,
-        "scale": 1.544,
-        "rotation": -0.02989159511904702,
+        "x": 37.5,
+        "y": 11,
+        "scale": 1.312,
+        "rotation": -0.07262204101232629,
         "footprint": {
           "width": 1.31,
           "height": 1.11
@@ -1861,10 +2178,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_10",
-        "x": 3.5,
-        "y": 3.5,
-        "scale": 1.555,
-        "rotation": 0.033639569212293975,
+        "x": 37.5,
+        "y": 20,
+        "scale": 1.322,
+        "rotation": 0.3139039408729326,
         "footprint": {
           "width": 1.27,
           "height": 1.08
@@ -1877,10 +2194,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_11",
-        "x": 1.5,
-        "y": 7,
-        "scale": 2.504,
-        "rotation": -0.14907697105887602,
+        "x": 5,
+        "y": 30.5,
+        "scale": 2.062,
+        "rotation": -0.06316823883058587,
         "footprint": {
           "width": 1.12,
           "height": 0.45
@@ -1893,10 +2210,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_farm_12",
-        "x": 35.5,
-        "y": 10,
-        "scale": 2.186,
-        "rotation": 0.06747607618439311,
+        "x": 1.5,
+        "y": 15.5,
+        "scale": 1.8,
+        "rotation": 0.21638189486535775,
         "footprint": {
           "width": 1.17,
           "height": 0.36
@@ -1952,8 +2269,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_04",
-        "x": 2.7,
-        "y": 18.9,
+        "x": 3.2,
+        "y": 16.9,
         "scale": 0.984,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -1972,8 +2289,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_16",
-        "x": 10,
-        "y": 21.9,
+        "x": 7.5,
+        "y": 19.9,
         "scale": 1.117,
         "rotation": -3.141592653589793,
         "footprint": {
@@ -1992,8 +2309,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_02",
-        "x": 3,
-        "y": 16,
+        "x": 3.5,
+        "y": 7.5,
         "scale": 2.174,
         "rotation": 1.3907963267948966,
         "footprint": {
@@ -2012,8 +2329,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_05",
-        "x": 0.9,
-        "y": 16.4,
+        "x": 2.4,
+        "y": 10.4,
         "scale": 1.3,
         "rotation": 1.8907963267948966,
         "footprint": {
@@ -2033,7 +2350,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_farm_12",
         "x": 4.1,
-        "y": 13.2,
+        "y": 4.7,
         "scale": 1.2,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -2052,8 +2369,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_13",
-        "x": 0.6,
-        "y": 14,
+        "x": 1.6,
+        "y": 7,
         "scale": 1.2,
         "rotation": 1.5707963267948966,
         "footprint": {
@@ -2152,10 +2469,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_09",
-        "x": 30,
-        "y": 7.5,
+        "x": 32.5,
+        "y": 12,
         "scale": 1.029,
-        "rotation": -1.5707963267948966,
+        "rotation": 0,
         "footprint": {
           "width": 1.04,
           "height": 0.62
@@ -2173,7 +2490,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_farm_11",
         "x": 30.1,
-        "y": 5.6,
+        "y": 11.4,
         "scale": 1.15,
         "rotation": -1.5707963267948966,
         "footprint": {
@@ -2192,10 +2509,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "exclusive_farm_15",
-        "x": 32.4,
-        "y": 8.3,
+        "x": 37.8,
+        "y": 12.6,
         "scale": 1.2,
-        "rotation": -1.5707963267948966,
+        "rotation": 0,
         "footprint": {
           "width": 1.66,
           "height": 0.61
@@ -2213,16 +2530,16 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     ],
     "groundPatches": [
       {
-        "x": 6.664311892715052,
-        "y": 20.064845,
-        "rx": 6.431711892715052,
-        "ry": 4.114405
+        "x": 6.914311892715052,
+        "y": 18.79587,
+        "rx": 6.181711892715052,
+        "ry": 4.845430000000001
       },
       {
-        "x": 2.26,
-        "y": 15.0774702715491,
-        "rx": 4.164,
-        "ry": 4.5374702715491
+        "x": 2.76,
+        "y": 7.7038436200792635,
+        "rx": 3.6639999999999997,
+        "ry": 5.663843620079264
       },
       {
         "x": 28.466375,
@@ -2231,10 +2548,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "ry": 4.212
       },
       {
-        "x": 31.223505,
-        "y": 7.13175,
-        "rx": 3.542494999999999,
-        "ry": 4.164250000000001
+        "x": 34.3215,
+        "y": 11.86675,
+        "rx": 6.474499999999999,
+        "ry": 3.0992499999999996
       }
     ],
     "blockedTiles": [
@@ -2246,9 +2563,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "9,21",
       "10,21",
       "11,21",
-      "9,22",
-      "10,22",
-      "11,22",
+      "7,20",
+      "8,20",
       "28,18",
       "29,18",
       "28,19",
@@ -2257,18 +2573,18 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "27,22",
       "28,22",
       "29,22",
-      "30,7",
-      "30,8",
-      "30,5",
-      "30,6"
+      "33,12",
+      "30,11",
+      "30,12",
+      "13,29"
     ],
     "notes": {
-      "preserved": 309,
+      "preserved": 298,
       "added": 15,
-      "replaced": 1,
+      "replaced": 3,
       "boundaryModels": 12,
-      "resized": 4,
-      "interior": 10,
+      "resized": 0,
+      "interior": 9,
       "scenes": [
         {
           "id": "GodotMapV2_FarmTown_place_0",
@@ -2312,8 +2628,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
   },
   "GodotMapV2_PirateShore": {
     "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
+    "objectOverrides": {},
     "boundaries": [],
     "boundaryTheme": false,
     "additions": [
@@ -2547,7 +2862,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "20,23"
     ],
     "notes": {
-      "preserved": 272,
+      "preserved": 281,
       "added": 9,
       "replaced": 0,
       "boundaryModels": 0,
@@ -2590,8 +2905,6 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
   },
   "GodotMapV2_Graveyard": {
     "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
     "boundaries": [
       {
         "type": "boundary_grave_01",
@@ -3220,29 +3533,23 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "exclusive_grave_12": 1,
         "exclusive_grave_15": 1
       }
-    }
+    },
+    "objectOverrides": {}
   },
   "GodotMapV2_HexRuins": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "89": 4.386,
-      "154": 4.363,
-      "161": 3.44,
-      "178": 3.204,
-      "180": 2.844,
-      "182": 2.464,
-      "193": 2.952,
-      "195": 2.88,
-      "196": 0.962
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {
+      "[\"platformer_rocks\",\"hex_ruins_45\",1.09,11.82,1.29,3.2015]": {
+        "environmentRenderScale": 4.386
+      }
     },
-    "hiddenOriginals": [],
     "boundaries": [
       {
         "type": "boundary_ruins_01",
-        "x": 10.5,
-        "y": 3,
+        "x": 31,
+        "y": 5.5,
         "scale": 1.25,
-        "rotation": 0.5862871167662326,
+        "rotation": 0.6407375585838165,
         "footprint": {
           "width": 0.97,
           "height": 0.39
@@ -3271,10 +3578,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_03",
-        "x": 6.5,
-        "y": 30.5,
+        "x": 3,
+        "y": 27,
         "scale": 2.167,
-        "rotation": 0.026162202772541165,
+        "rotation": -0.5384108499689669,
         "footprint": {
           "width": 0.96,
           "height": 0.38
@@ -3287,10 +3594,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_04",
-        "x": 24,
-        "y": 30.5,
+        "x": 1.5,
+        "y": 10,
         "scale": 1.588,
-        "rotation": 0.12010813396443384,
+        "rotation": -0.12434141053682088,
         "footprint": {
           "width": 1.3,
           "height": 0.54
@@ -3299,14 +3606,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_HexRuins_3",
-        "blocksPath": true
+        "blocksPath": false
       },
       {
         "type": "boundary_ruins_05",
-        "x": 28,
-        "y": 6,
+        "x": 38.5,
+        "y": 10,
         "scale": 1.029,
-        "rotation": -0.6416802666273825,
+        "rotation": 0.6238709217223615,
         "footprint": {
           "width": 0.97,
           "height": 0.39
@@ -3319,10 +3626,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_06",
-        "x": 38,
-        "y": 9.5,
+        "x": 13.5,
+        "y": 30.5,
         "scale": 1.476,
-        "rotation": 0.28454563292832513,
+        "rotation": 0.21638189486535775,
         "footprint": {
           "width": 1.3,
           "height": 0.39
@@ -3331,14 +3638,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_HexRuins_5",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_ruins_07",
-        "x": 3,
-        "y": 7,
+        "x": 11,
+        "y": 3,
         "scale": 1.402,
-        "rotation": -0.03162156066881134,
+        "rotation": 0.6351501885101724,
         "footprint": {
           "width": 0.96,
           "height": 0.38
@@ -3351,10 +3658,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_08",
-        "x": 37.5,
-        "y": 30,
+        "x": 7.5,
+        "y": 30.5,
         "scale": 1.929,
-        "rotation": 0.3421875025487478,
+        "rotation": -0.039383892437079855,
         "footprint": {
           "width": 1.3,
           "height": 0.54
@@ -3367,10 +3674,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_09",
-        "x": 35.5,
-        "y": 21.5,
+        "x": 23.5,
+        "y": 30.5,
         "scale": 1.25,
-        "rotation": 0.17414291473338725,
+        "rotation": 0.014084015218066773,
         "footprint": {
           "width": 0.97,
           "height": 0.39
@@ -3379,14 +3686,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_HexRuins_8",
-        "blocksPath": false
+        "blocksPath": true
       },
       {
         "type": "boundary_ruins_10",
-        "x": 13.5,
-        "y": 30.5,
+        "x": 38,
+        "y": 28.5,
         "scale": 1.216,
-        "rotation": -0.1378540688892024,
+        "rotation": -0.4330867193931477,
         "footprint": {
           "width": 1.3,
           "height": 0.39
@@ -3395,14 +3702,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_HexRuins_9",
-        "blocksPath": true
+        "blocksPath": false
       },
       {
         "type": "boundary_ruins_11",
-        "x": 34,
-        "y": 5,
+        "x": 36,
+        "y": 6,
         "scale": 1.702,
-        "rotation": -0.16833320154306639,
+        "rotation": 0.2657713400865291,
         "footprint": {
           "width": 0.96,
           "height": 0.38
@@ -3415,10 +3722,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_ruins_12",
-        "x": 4,
-        "y": 3.5,
+        "x": 2.5,
+        "y": 7.5,
         "scale": 1.588,
-        "rotation": 0.1959263383758573,
+        "rotation": -0.15691301971519936,
         "footprint": {
           "width": 1.3,
           "height": 0.54
@@ -3428,6 +3735,278 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_HexRuins_11",
         "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_01",
+        "x": 8,
+        "y": 22,
+        "scale": 1.25,
+        "rotation": -0.0413809894728307,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_02",
+        "x": 35,
+        "y": 22,
+        "scale": 1.216,
+        "rotation": 0.013815020016272142,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_03",
+        "x": 35,
+        "y": 30.5,
+        "scale": 2.167,
+        "rotation": 0.05628946895501994,
+        "footprint": {
+          "width": 0.96,
+          "height": 0.38
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_14",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_04",
+        "x": 4.5,
+        "y": 30.5,
+        "scale": 1.588,
+        "rotation": 0.19510048735758034,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_15",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_05",
+        "x": 27,
+        "y": 6.5,
+        "scale": 1.029,
+        "rotation": -0.00804283508696787,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_06",
+        "x": 28.5,
+        "y": 30.5,
+        "scale": 1.476,
+        "rotation": 0.012929660675584174,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_17",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_ruins_07",
+        "x": 3.5,
+        "y": 5,
+        "scale": 1.402,
+        "rotation": 0.3239133248900051,
+        "footprint": {
+          "width": 0.96,
+          "height": 0.38
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_18",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_08",
+        "x": 10,
+        "y": 30.5,
+        "scale": 1.639,
+        "rotation": -0.0620190009393637,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_19",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_ruins_09",
+        "x": 33.5,
+        "y": 6,
+        "scale": 1.25,
+        "rotation": -0.5918732200828531,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_10",
+        "x": 3,
+        "y": 22.5,
+        "scale": 0.851,
+        "rotation": 0.35118825495481915,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_21",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_11",
+        "x": 38.5,
+        "y": 7.5,
+        "scale": 1.192,
+        "rotation": 0.5181583180120131,
+        "footprint": {
+          "width": 0.96,
+          "height": 0.38
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_22",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_12",
+        "x": 1,
+        "y": 26,
+        "scale": 1.112,
+        "rotation": 0.02414315996231389,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_23",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_01",
+        "x": 38.5,
+        "y": 14,
+        "scale": 1.063,
+        "rotation": 0.23417765184684022,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_24",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_ruins_02",
+        "x": 17.5,
+        "y": 30.5,
+        "scale": 0.851,
+        "rotation": -0.041688604347663395,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_25",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_05",
+        "x": 28,
+        "y": 8.5,
+        "scale": 0.875,
+        "rotation": 0.6492586694312381,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_28",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_09",
+        "x": 32.5,
+        "y": 22,
+        "scale": 0.875,
+        "rotation": -0.23259781268655683,
+        "footprint": {
+          "width": 0.97,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_32",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_ruins_10",
+        "x": 2,
+        "y": 3,
+        "scale": 0.851,
+        "rotation": 0.0017123101886852056,
+        "footprint": {
+          "width": 1.3,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_HexRuins_33",
+        "blocksPath": false
       }
     ],
     "boundaryTheme": true,
@@ -3435,7 +4014,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_ruins_01",
         "x": 26.5,
-        "y": 7,
+        "y": 9.5,
         "scale": 1.45,
         "rotation": 0,
         "footprint": {
@@ -3455,7 +4034,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       {
         "type": "exclusive_ruins_02",
         "x": 26.6,
-        "y": 8.4,
+        "y": 7.9,
         "scale": 1.35,
         "rotation": 0,
         "footprint": {
@@ -3470,26 +4049,6 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "environmentScene": "GodotMapV2_HexRuins_place_0",
         "sourceId": "environment_scene_GodotMapV2_HexRuins_place_0_1",
-        "blocksPath": false
-      },
-      {
-        "type": "exclusive_ruins_13",
-        "x": 31,
-        "y": 5.1,
-        "scale": 1.35,
-        "rotation": 0.14,
-        "footprint": {
-          "width": 2.15,
-          "height": 0.87
-        },
-        "surface": "ground",
-        "environmentRole": "naturalGround",
-        "environmentFacing": "natural",
-        "environmentHabitat": "ground",
-        "environmentComposition": true,
-        "environmentBackdrop": false,
-        "environmentScene": "GodotMapV2_HexRuins_place_0",
-        "sourceId": "environment_scene_GodotMapV2_HexRuins_place_0_3",
         "blocksPath": false
       },
       {
@@ -3695,10 +4254,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     ],
     "groundPatches": [
       {
-        "x": 28.96212382928921,
-        "y": 6.719116855548341,
-        "rx": 5.556873829289211,
-        "ry": 4.40313314445166
+        "x": 26.5,
+        "y": 8.520125,
+        "rx": 3.0947500000000012,
+        "ry": 3.342375
       },
       {
         "x": 8.230500000000001,
@@ -3731,27 +4290,31 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "31,20",
       "30,21",
       "30,22",
-      "23,30",
-      "24,30",
-      "25,30",
       "13,30",
       "14,30",
+      "23,30",
+      "24,30",
+      "28,30",
+      "29,30",
+      "10,30",
+      "11,30",
+      "38,14",
       "2,12",
       "1,13",
       "2,13"
     ],
     "notes": {
-      "preserved": 240,
-      "added": 13,
+      "preserved": 229,
+      "added": 12,
       "replaced": 0,
-      "boundaryModels": 12,
-      "resized": 9,
+      "boundaryModels": 29,
+      "resized": 1,
       "interior": 8,
       "scenes": [
         {
           "id": "GodotMapV2_HexRuins_place_0",
           "name": "六棱门遗址",
-          "placed": 3
+          "placed": 2
         },
         {
           "id": "GodotMapV2_HexRuins_place_1",
@@ -3772,7 +4335,6 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "modelCounts": {
         "exclusive_ruins_01": 1,
         "exclusive_ruins_02": 1,
-        "exclusive_ruins_13": 1,
         "exclusive_ruins_05": 1,
         "exclusive_ruins_03": 1,
         "exclusive_ruins_07": 1,
@@ -3788,17 +4350,6 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
   },
   "GodotMapV2_SurvivalRidge": {
     "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "104": 3.373,
-      "108": 3.539,
-      "110": 4.098,
-      "111": 4.125,
-      "127": 3.661,
-      "132": 2.82,
-      "134": 3.498,
-      "136": 3.334
-    },
-    "hiddenOriginals": [],
     "boundaries": [
       {
         "type": "boundary_ridge_01",
@@ -4267,25 +4818,74 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "exclusive_ridge_05": 1,
         "exclusive_ridge_13": 1
       }
+    },
+    "objectOverrides": {
+      "[\"survival_rock_b\",\"ridge_edges_26\",34.12,23.18,2.52,0.0624]": {
+        "environmentRenderScale": 3.373
+      },
+      "[\"survival_rock_b\",\"ridge_edges_44\",33.81,25.89,2.6,0.8814]": {
+        "environmentRenderScale": 3.539
+      },
+      "[\"survival_rock_c\",\"ridge_edges_51\",37.82,1.94,2.8,1.5811]": {
+        "environmentRenderScale": 4.098
+      },
+      "[\"survival_rock_a\",\"ridge_edges_55\",29.79,0.81,2.64,6.2095]": {
+        "environmentRenderScale": 4.125
+      },
+      "[\"nature_tree_pine\",\"environment_grove_15\",37.99,9.2,2.74,2.5482]": {
+        "environmentRenderScale": 3.661
+      },
+      "[\"nature_tree_pine\",\"environment_grove_20\",16.93,23.84,2.61,1.6508]": {
+        "environmentRenderScale": 2.82
+      },
+      "[\"nature_tree_pine\",\"environment_grove_25\",38.06,5.18,2.83,3.3996]": {
+        "environmentRenderScale": 3.498
+      },
+      "[\"nature_tree_pine\",\"environment_grove_27\",35.88,26.01,2.83,5.7991]": {
+        "environmentRenderScale": 3.334
+      }
     }
   },
   "GodotMapV2_BossHighland": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {
-      "69": 2.584,
-      "72": 1.654,
-      "81": 1.729,
-      "133": 4.951,
-      "135": 3.917,
-      "141": 3.58,
-      "155": 1.71,
-      "160": 1.3,
-      "163": 1.596,
-      "171": 2.354,
-      "173": 1.651,
-      "181": 2.144
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {
+      "[\"platformer_rocks\",\"peak_stones_4\",25.98,28.99,1.36,1.7015]": {
+        "environmentRenderScale": 2.584
+      },
+      "[\"platformer_rocks\",\"peak_stones_13\",24.93,18.81,1.38,5.6451]": {
+        "environmentRenderScale": 1.654
+      },
+      "[\"platformer_rocks\",\"peak_stones_31\",28.19,17.22,1.33,3.0949]": {
+        "environmentRenderScale": 1.729
+      },
+      "[\"platformer_rocks\",\"peak_edges_27\",11.03,1.03,3.03,4.8427]": {
+        "environmentRenderScale": 4.951
+      },
+      "[\"platformer_rocks\",\"peak_edges_31\",1.82,1.11,2.78,2.3627]": {
+        "environmentRenderScale": 4.106
+      },
+      "[\"platformer_rocks\",\"peak_edges_61\",35.85,1.22,2.64,3.5476]": {
+        "environmentRenderScale": 3.58
+      },
+      "[\"platformer_rocks\",\"peak_wing_w_8\",10.87,18.97,0.9,1.8646]": {
+        "environmentRenderScale": 1.71
+      },
+      "[\"platformer_rocks\",\"peak_wing_e_8\",34.13,18.91,1,1.1999]": {
+        "environmentRenderScale": 1.3
+      },
+      "[\"platformer_rocks\",\"peak_cross_8\",22.94,14.91,0.84,5.6506]": {
+        "environmentRenderScale": 1.596
+      },
+      "[\"platformer_rocks\",\"GodotMapV2_BossHighland_openfill_4\",30.15,5.85,1.36,2.1576]": {
+        "environmentRenderScale": 2.354
+      },
+      "[\"platformer_rocks\",\"GodotMapV2_BossHighland_openfill_23\",22.02,16.96,1.27,0.1526]": {
+        "environmentRenderScale": 1.651
+      },
+      "[\"platformer_rocks\",\"GodotMapV2_BossHighland_openfill_46\",34.95,19.94,1.34,1.9095]": {
+        "environmentRenderScale": 2.144
+      }
     },
-    "hiddenOriginals": [],
     "boundaries": [
       {
         "type": "boundary_highland_01",
@@ -4401,10 +5001,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_highland_08",
-        "x": 1,
-        "y": 8.5,
+        "x": 1.5,
+        "y": 3,
         "scale": 1.665,
-        "rotation": -0.47066993471383906,
+        "rotation": -0.2523241025793242,
         "footprint": {
           "width": 1.01,
           "height": 0.44
@@ -4449,10 +5049,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_highland_11",
-        "x": 8.5,
-        "y": 2,
+        "x": 10.5,
+        "y": 30.5,
         "scale": 2.187,
-        "rotation": -0.6447664931617434,
+        "rotation": -0.008908714399076305,
         "footprint": {
           "width": 1.04,
           "height": 0.4
@@ -4465,10 +5065,10 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       },
       {
         "type": "boundary_highland_12",
-        "x": 1.5,
-        "y": 3,
+        "x": 37.5,
+        "y": 30.5,
         "scale": 2.096,
-        "rotation": 0.17525503494385622,
+        "rotation": 0.046276876525519046,
         "footprint": {
           "width": 1.12,
           "height": 0.4
@@ -4478,6 +5078,326 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_BossHighland_11",
         "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_01",
+        "x": 38,
+        "y": 6.5,
+        "scale": 1.527,
+        "rotation": -0.018989482231127956,
+        "footprint": {
+          "width": 0.91,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_02",
+        "x": 8,
+        "y": 1.5,
+        "scale": 1.516,
+        "rotation": -0.5080841151245531,
+        "footprint": {
+          "width": 1.06,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_03",
+        "x": 35.5,
+        "y": 4.5,
+        "scale": 1.973,
+        "rotation": -0.12660718424317724,
+        "footprint": {
+          "width": 1.05,
+          "height": 0.43
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_14",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_04",
+        "x": 26.5,
+        "y": 30.5,
+        "scale": 2.052,
+        "rotation": -0.019278008142072468,
+        "footprint": {
+          "width": 1.04,
+          "height": 0.43
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_15",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_05",
+        "x": 38.5,
+        "y": 21.5,
+        "scale": 1.079,
+        "rotation": -0.3653644051138114,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_06",
+        "x": 5,
+        "y": 21.5,
+        "scale": 2.513,
+        "rotation": 0.1532689429738188,
+        "footprint": {
+          "width": 1.02,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_17",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_highland_07",
+        "x": 18.5,
+        "y": 30.5,
+        "scale": 1.493,
+        "rotation": -0.13672551337219407,
+        "footprint": {
+          "width": 1.06,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_18",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_08",
+        "x": 18,
+        "y": 1.5,
+        "scale": 1.665,
+        "rotation": 0.6209658226748098,
+        "footprint": {
+          "width": 1.01,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_19",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_09",
+        "x": 28.5,
+        "y": 3,
+        "scale": 2.4,
+        "rotation": -0.04111247456120836,
+        "footprint": {
+          "width": 0.93,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_10",
+        "x": 8,
+        "y": 30.5,
+        "scale": 1.939,
+        "rotation": -0.05172608458178429,
+        "footprint": {
+          "width": 1.08,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_21",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_11",
+        "x": 29.5,
+        "y": 30.5,
+        "scale": 2.187,
+        "rotation": -0.052589245135107154,
+        "footprint": {
+          "width": 1.04,
+          "height": 0.4
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_22",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_12",
+        "x": 11,
+        "y": 3,
+        "scale": 1.782,
+        "rotation": 0.02414315996233235,
+        "footprint": {
+          "width": 1.12,
+          "height": 0.4
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_23",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_01",
+        "x": 3.5,
+        "y": 28,
+        "scale": 1.527,
+        "rotation": -0.5071827126032346,
+        "footprint": {
+          "width": 0.91,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_24",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_02",
+        "x": 4,
+        "y": 1.5,
+        "scale": 1.516,
+        "rotation": -0.18932866102558502,
+        "footprint": {
+          "width": 1.06,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_25",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_03",
+        "x": 35,
+        "y": 30.5,
+        "scale": 1.973,
+        "rotation": 0.18604991783494015,
+        "footprint": {
+          "width": 1.05,
+          "height": 0.43
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_26",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_04",
+        "x": 34,
+        "y": 3,
+        "scale": 2.052,
+        "rotation": 0.26418988085549117,
+        "footprint": {
+          "width": 1.04,
+          "height": 0.43
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_27",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_05",
+        "x": 38.5,
+        "y": 11,
+        "scale": 1.079,
+        "rotation": 0.06573379647166565,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_28",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_07",
+        "x": 35.5,
+        "y": 7,
+        "scale": 1.493,
+        "rotation": 0.03709824536385395,
+        "footprint": {
+          "width": 1.06,
+          "height": 0.39
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_30",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_08",
+        "x": 3,
+        "y": 30.5,
+        "scale": 1.665,
+        "rotation": -0.07174197144472512,
+        "footprint": {
+          "width": 1.01,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_31",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_highland_10",
+        "x": 16,
+        "y": 21.5,
+        "scale": 1.357,
+        "rotation": -0.2720781967667972,
+        "footprint": {
+          "width": 1.08,
+          "height": 0.45
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_BossHighland_33",
+        "blocksPath": true
       }
     ],
     "boundaryTheme": true,
@@ -4766,13 +5686,16 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "31,18",
       "32,18",
       "33,18",
+      "6,21",
+      "6,22",
+      "17,22",
       "31,6"
     ],
     "notes": {
-      "preserved": 215,
+      "preserved": 219,
       "added": 12,
       "replaced": 0,
-      "boundaryModels": 12,
+      "boundaryModels": 32,
       "resized": 12,
       "interior": 11,
       "scenes": [
@@ -4815,8 +5738,6 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
   },
   "GodotMapV2_FrostDojo": {
     "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
     "boundaries": [
       {
         "type": "boundary_frost_01",
@@ -5408,12 +6329,12 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "exclusive_frost_06": 1,
         "exclusive_frost_13": 1
       }
-    }
+    },
+    "objectOverrides": {}
   },
   "GodotMapV2_TideDojo": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {},
     "boundaries": [
       {
         "type": "boundary_tide_01",
@@ -5509,6 +6430,102 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_TideDojo_9",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_01",
+        "x": 2.5,
+        "y": 12,
+        "scale": 0.984,
+        "rotation": 0.42984845015487677,
+        "footprint": {
+          "width": 1.13,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_05",
+        "x": 10,
+        "y": 17,
+        "scale": 1.056,
+        "rotation": 0.21556514073365096,
+        "footprint": {
+          "width": 1.13,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_09",
+        "x": 18,
+        "y": 7,
+        "scale": 0.779,
+        "rotation": 0.6141558164949554,
+        "footprint": {
+          "width": 1.13,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_10",
+        "x": 6,
+        "y": 17,
+        "scale": 0.861,
+        "rotation": -0.4793125325026294,
+        "footprint": {
+          "width": 1.27,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_21",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_05",
+        "x": 14,
+        "y": 5,
+        "scale": 0.87,
+        "rotation": -0.24143085813398257,
+        "footprint": {
+          "width": 1.13,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_28",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_tide_09",
+        "x": 19.5,
+        "y": 17,
+        "scale": 0.946,
+        "rotation": 0.015257913758982307,
+        "footprint": {
+          "width": 1.13,
+          "height": 0.14
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_TideDojo_32",
         "blocksPath": false
       }
     ],
@@ -5820,7 +6837,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "preserved": 58,
       "added": 14,
       "replaced": 0,
-      "boundaryModels": 6,
+      "boundaryModels": 12,
       "resized": 0,
       "interior": 14,
       "scenes": [
@@ -5864,9 +6881,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     }
   },
   "GodotMapV2_IronDojo": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {},
     "boundaries": [
       {
         "type": "boundary_iron_01",
@@ -6058,6 +7074,326 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_IronDojo_11",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_01",
+        "x": 24.5,
+        "y": 12.5,
+        "scale": 1.743,
+        "rotation": -0.07262204101230793,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_02",
+        "x": 22.5,
+        "y": 10.5,
+        "scale": 2.056,
+        "rotation": -0.37340735095542454,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_03",
+        "x": 3.5,
+        "y": 7.5,
+        "scale": 2.75,
+        "rotation": 0.6243493681418368,
+        "footprint": {
+          "width": 0.86,
+          "height": 0.5
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_14",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_04",
+        "x": 10,
+        "y": 2.5,
+        "scale": 3.115,
+        "rotation": 0.03450433164493786,
+        "footprint": {
+          "width": 0.95,
+          "height": 0.5
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_15",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_05",
+        "x": 16.5,
+        "y": 6.5,
+        "scale": 1.33,
+        "rotation": 0.5363106474683516,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.47
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_06",
+        "x": 20.5,
+        "y": 21,
+        "scale": 1.66,
+        "rotation": 0.2255928769697765,
+        "footprint": {
+          "width": 0.83,
+          "height": 0.48
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_17",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_07",
+        "x": 22,
+        "y": 5.5,
+        "scale": 1.81,
+        "rotation": 0.6455690552968648,
+        "footprint": {
+          "width": 0.86,
+          "height": 0.56
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_18",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_08",
+        "x": 2.5,
+        "y": 13.5,
+        "scale": 2.051,
+        "rotation": -0.13674466876311972,
+        "footprint": {
+          "width": 0.95,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_19",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_09",
+        "x": 9.5,
+        "y": 9,
+        "scale": 1.043,
+        "rotation": -0.040536312344283044,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_10",
+        "x": 12,
+        "y": 14,
+        "scale": 1.207,
+        "rotation": 0.523818771912994,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.48
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_21",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_11",
+        "x": 5,
+        "y": 22,
+        "scale": 1.349,
+        "rotation": 0.6068653781213535,
+        "footprint": {
+          "width": 1.35,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_22",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_12",
+        "x": 12,
+        "y": 4,
+        "scale": 1.528,
+        "rotation": 0.07862306494398365,
+        "footprint": {
+          "width": 1.35,
+          "height": 0.57
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_23",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_01",
+        "x": 19,
+        "y": 2.5,
+        "scale": 1.743,
+        "rotation": 0.10990004143162269,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_24",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_02",
+        "x": 6.5,
+        "y": 3.5,
+        "scale": 2.056,
+        "rotation": 0.5988058040823098,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_25",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_03",
+        "x": 24,
+        "y": 8.5,
+        "scale": 1.925,
+        "rotation": -0.0740560796328923,
+        "footprint": {
+          "width": 0.86,
+          "height": 0.5
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_26",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_05",
+        "x": 2.5,
+        "y": 17,
+        "scale": 1.33,
+        "rotation": 0.6485102114344901,
+        "footprint": {
+          "width": 0.87,
+          "height": 0.47
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_28",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_06",
+        "x": 24,
+        "y": 16,
+        "scale": 1.66,
+        "rotation": 0.38809699491689803,
+        "footprint": {
+          "width": 0.83,
+          "height": 0.48
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_29",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_09",
+        "x": 16,
+        "y": 22.5,
+        "scale": 1.043,
+        "rotation": -0.37505941782808433,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.44
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_32",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_iron_10",
+        "x": 9.5,
+        "y": 17,
+        "scale": 1.026,
+        "rotation": 0.10904645841417096,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.48
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_33",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_iron_11",
+        "x": 14,
+        "y": 9,
+        "scale": 0.944,
+        "rotation": -0.09285151637506503,
+        "footprint": {
+          "width": 1.35,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_IronDojo_34",
         "blocksPath": false
       }
     ],
@@ -6410,12 +7746,14 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "ry": 3.12125
       }
     ],
-    "blockedTiles": [],
+    "blockedTiles": [
+      "16,22"
+    ],
     "notes": {
       "preserved": 61,
       "added": 16,
       "replaced": 0,
-      "boundaryModels": 12,
+      "boundaryModels": 32,
       "resized": 0,
       "interior": 16,
       "scenes": [
@@ -6461,9 +7799,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     }
   },
   "GodotMapV2_DragonDojo": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {},
     "boundaries": [
       {
         "type": "boundary_dragon_01",
@@ -6639,6 +7976,86 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_DragonDojo_10",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_dragon_01",
+        "x": 19,
+        "y": 19,
+        "scale": 1.004,
+        "rotation": -0.1577532222632291,
+        "footprint": {
+          "width": 0.93,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_DragonDojo_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_dragon_02",
+        "x": 22,
+        "y": 22.5,
+        "scale": 1.153,
+        "rotation": 0.5805795672572013,
+        "footprint": {
+          "width": 0.91,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_DragonDojo_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_dragon_11",
+        "x": 17,
+        "y": 15,
+        "scale": 1.109,
+        "rotation": 0.12065619388839988,
+        "footprint": {
+          "width": 1,
+          "height": 0.49
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_DragonDojo_22",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_dragon_01",
+        "x": 16,
+        "y": 4,
+        "scale": 1.004,
+        "rotation": -0.4253124981157467,
+        "footprint": {
+          "width": 0.93,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_DragonDojo_24",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_dragon_02",
+        "x": 12.5,
+        "y": 3.5,
+        "scale": 0.807,
+        "rotation": 0.43670449462093963,
+        "footprint": {
+          "width": 0.91,
+          "height": 0.46
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_DragonDojo_25",
         "blocksPath": false
       }
     ],
@@ -6939,7 +8356,7 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
       "preserved": 73,
       "added": 13,
       "replaced": 0,
-      "boundaryModels": 11,
+      "boundaryModels": 16,
       "resized": 0,
       "interior": 11,
       "scenes": [
@@ -6982,9 +8399,8 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
     }
   },
   "GodotMapV2_ChampionTower": {
-    "revision": "environment-20260918-interior-v5",
-    "renderScales": {},
-    "hiddenOriginals": [],
+    "revision": "environment-20260928-themed-boundaries-v6",
+    "objectOverrides": {},
     "boundaries": [
       {
         "type": "boundary_champion_01",
@@ -7176,6 +8592,342 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "environmentBoundary": true,
         "environmentBackdrop": false,
         "sourceId": "environment_boundary_GodotMapV2_ChampionTower_11",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_01",
+        "x": 16,
+        "y": 14.5,
+        "scale": 1.767,
+        "rotation": -0.64177208433037,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_12",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_02",
+        "x": 8,
+        "y": 5.5,
+        "scale": 1.589,
+        "rotation": 0.02529692852944103,
+        "footprint": {
+          "width": 0.64,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_13",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_03",
+        "x": 5,
+        "y": 21,
+        "scale": 3.043,
+        "rotation": -0.030468274488004363,
+        "footprint": {
+          "width": 0.85,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_14",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_04",
+        "x": 4.5,
+        "y": 12,
+        "scale": 3.447,
+        "rotation": -0.029046106266810246,
+        "footprint": {
+          "width": 0.76,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_15",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_05",
+        "x": 22.5,
+        "y": 17.5,
+        "scale": 1.589,
+        "rotation": 0.38693827816718307,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_16",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_06",
+        "x": 12,
+        "y": 15,
+        "scale": 1.45,
+        "rotation": -0.04080484231390107,
+        "footprint": {
+          "width": 0.62,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_17",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_07",
+        "x": 20.5,
+        "y": 20,
+        "scale": 2.586,
+        "rotation": 0.1107727366462073,
+        "footprint": {
+          "width": 0.81,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_18",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_champion_08",
+        "x": 25,
+        "y": 17,
+        "scale": 2.93,
+        "rotation": 0.5753146838249917,
+        "footprint": {
+          "width": 0.82,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_19",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_09",
+        "x": 22.5,
+        "y": 12.5,
+        "scale": 1.446,
+        "rotation": -0.5778376376538433,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_20",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_10",
+        "x": 8.5,
+        "y": 11.5,
+        "scale": 1.762,
+        "rotation": -0.5730330516988076,
+        "footprint": {
+          "width": 0.62,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_21",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_11",
+        "x": 22,
+        "y": 23,
+        "scale": 2.79,
+        "rotation": -0.2907403918902891,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_22",
+        "blocksPath": true
+      },
+      {
+        "type": "boundary_champion_12",
+        "x": 11,
+        "y": 3,
+        "scale": 2.93,
+        "rotation": 0.02414315996233235,
+        "footprint": {
+          "width": 0.79,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_23",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_01",
+        "x": 17,
+        "y": 5,
+        "scale": 1.767,
+        "rotation": 0.4975254383962412,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_24",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_02",
+        "x": 8.5,
+        "y": 19.5,
+        "scale": 1.589,
+        "rotation": 0.14178144249621324,
+        "footprint": {
+          "width": 0.64,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_25",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_03",
+        "x": 25,
+        "y": 20.5,
+        "scale": 2.586,
+        "rotation": -0.6252197300436887,
+        "footprint": {
+          "width": 0.85,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_26",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_04",
+        "x": 2.5,
+        "y": 19,
+        "scale": 2.93,
+        "rotation": 0.20440230418750216,
+        "footprint": {
+          "width": 0.76,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_27",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_05",
+        "x": 16,
+        "y": 18.5,
+        "scale": 1.589,
+        "rotation": 0.23444689590727616,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_28",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_06",
+        "x": 22.5,
+        "y": 15,
+        "scale": 1.45,
+        "rotation": 0.4029072560881104,
+        "footprint": {
+          "width": 0.62,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_29",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_07",
+        "x": 2.5,
+        "y": 23,
+        "scale": 2.586,
+        "rotation": 0.09882753185709169,
+        "footprint": {
+          "width": 0.81,
+          "height": 0.53
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_30",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_09",
+        "x": 6.5,
+        "y": 15.5,
+        "scale": 1.446,
+        "rotation": 0.02560493697474754,
+        "footprint": {
+          "width": 0.63,
+          "height": 0.55
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_32",
+        "blocksPath": false
+      },
+      {
+        "type": "boundary_champion_10",
+        "x": 20.5,
+        "y": 4.5,
+        "scale": 1.762,
+        "rotation": -0.04226470124920237,
+        "footprint": {
+          "width": 0.62,
+          "height": 0.54
+        },
+        "surface": "ground",
+        "environmentBoundary": true,
+        "environmentBackdrop": false,
+        "sourceId": "environment_boundary_GodotMapV2_ChampionTower_33",
         "blocksPath": false
       }
     ],
@@ -7528,12 +9280,18 @@ export const MAP_ENVIRONMENT_LAYOUTS = {
         "ry": 3.143015000000001
       }
     ],
-    "blockedTiles": [],
+    "blockedTiles": [
+      "20,21",
+      "21,21",
+      "21,22",
+      "21,23",
+      "21,24"
+    ],
     "notes": {
       "preserved": 36,
       "added": 16,
       "replaced": 0,
-      "boundaryModels": 12,
+      "boundaryModels": 33,
       "resized": 0,
       "interior": 16,
       "scenes": [

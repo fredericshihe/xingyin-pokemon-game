@@ -132,7 +132,7 @@ export function createNpcWanderer({ home, area, direction = 'down', random = Mat
     state.occupiedTiles = [{ x: state.tileX, y: state.tileY }, { ...state.target }]
     state.stepProgress = 0
     stepElapsedMs = 0
-    stepDurationMs = 700 + sample() * 400
+    stepDurationMs = 1400 + sample() * 400
     if (burstStepsRemaining === 0) burstStepsRemaining = 1 + Math.floor(sample() * 3)
     return state
   }

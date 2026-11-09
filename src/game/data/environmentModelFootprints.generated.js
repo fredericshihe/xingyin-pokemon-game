@@ -949,20 +949,24 @@ export const ENVIRONMENT_MODEL_FOOTPRINTS = {
     "height": 0.46
   },
   "nature_rock_large": {
-    "width": 0.51,
-    "height": 0.66
+    "width": 1.11,
+    "height": 0.86
   },
   "nature_tent_detailed_open": {
     "width": 0.57,
     "height": 0.45
   },
+  "nature_tree_default": {
+    "width": 1.54,
+    "height": 1.31
+  },
   "nature_tree_oak": {
-    "width": 0.42,
-    "height": 0.48
+    "width": 1.92,
+    "height": 1.58
   },
   "nature_tree_pine": {
-    "width": 0.27,
-    "height": 0.26
+    "width": 1.22,
+    "height": 1.22
   },
   "pirate_barrel": {
     "width": 0.87,
@@ -1025,7 +1029,7 @@ export const ENVIRONMENT_MODEL_FOOTPRINTS = {
     "height": 0.65
   },
   "town_tree": {
-    "width": 0.67,
-    "height": 0.67
+    "width": 1.54,
+    "height": 1.31
   }
 }

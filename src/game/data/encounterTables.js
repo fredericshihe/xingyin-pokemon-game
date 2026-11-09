@@ -1,5 +1,5 @@
 /** 草丛遇敌表：仅基础形态，等级区间与进化阶段一致 */
-import { getSpeciesLevelBounds, pickWildEncounter } from '../../utils/wildEncounterRules'
+import { getSpeciesLevelBounds, pickWildEncounter } from '../../utils/wildEncounterRules.js'
 import { resolveSpeciesForLevelWithVariety } from '../../utils/pokemonFamilyVariety.js'
 
 export const DEFAULT_FALLBACK_ENCOUNTER_TABLE_ID = 'valley_safe_grass'

@@ -16,7 +16,9 @@ const addError = (message) => errors.push(message)
 
 await withViteAuditServer(async ({ loadModule }) => {
   const { MAP_IDS, getMapInfo } = await loadModule('/src/game/data/mapCatalog.js')
-  const { getTrainerRoleBalance, normalizeTrainerRole } = await loadModule('/src/utils/gameBalance.js')
+  const { calculateBattleRewards, getTrainerRoleBalance, normalizeTrainerRole } = await loadModule('/src/utils/gameBalance.js')
+  const { calculateTimberLeagueStageGold } = await loadModule('/src/game/timberLeague.js')
+  const { POKEMON_BREEDER_MIN_PRICE } = await loadModule('/src/utils/pokemonBreeder.js')
   const { isLevelValidForSpecies } = await loadModule('/src/utils/wildEncounterRules.js')
   const { getEvolutionFamilyKey } = await loadModule('/src/utils/pokemonFamilyVariety.js')
   const { getMapConfig } = await loadModule('/src/data/maps/mapConfig.js')
@@ -393,6 +395,28 @@ await withViteAuditServer(async ({ loadModule }) => {
   if (!(boss.goldMultiplier < minigame.goldMultiplier && boss.goldCapMultiplier < minigame.goldCapMultiplier)) {
     addError('循环小游戏金币奖励上限必须高于 Boss，才能支撑长期重复挑战')
   }
+  const goldAt = (level, role) => calculateBattleRewards({
+    defeatedMon: { level }, battleKind: 'trainer', trainerRole: role
+  }).gold
+  const goldExamples = []
+  for (const level of [50, 60, 70, 80, 90, 100]) {
+    const normalGold = 2 * goldAt(level, 'normal')
+    const lieutenantGold = 4 * goldAt(level, 'lieutenant')
+    const bossGold = 6 * goldAt(level, 'boss')
+    const leagueGold = calculateTimberLeagueStageGold(Array.from({ length: 6 }, () => ({ level })), 'bronze')
+    goldExamples.push({ level, normalGold, lieutenantGold, bossGold, leagueGold })
+    if (!(normalGold < lieutenantGold && lieutenantGold < bossGold && bossGold < leagueGold)) {
+      addError(`Lv.${level} 金币收益应按普通训练家、部下、首领、2 能量联赛递增`)
+    }
+  }
+  const level100DojoRematches = 12 * 4 * goldAt(100, 'lieutenant') + 4 * 6 * goldAt(100, 'boss')
+  if (level100DojoRematches >= POKEMON_BREEDER_MIN_PRICE) {
+    addError('四座道馆的每日精英复战不应单独支付一只最低价饲养家宝可梦')
+  }
+  if (!(goldAt(80, 'normal') > goldAt(50, 'normal') && goldAt(100, 'normal') > goldAt(80, 'normal') &&
+    goldAt(80, 'boss') > goldAt(50, 'boss') && goldAt(100, 'boss') > goldAt(80, 'boss'))) {
+    addError('高等级地图战斗金币应随对手等级提高，不能过早被封顶')
+  }
   if (!(normal.rewardMultiplier < lieutenant.rewardMultiplier && lieutenant.rewardMultiplier < boss.rewardMultiplier)) {
     addError('训练家奖励倍率必须满足 normal < lieutenant < boss')
   }
@@ -414,9 +438,10 @@ await withViteAuditServer(async ({ loadModule }) => {
   }
 
   console.log('[audit-trainer-battle] OK')
+  console.log('- representative gold by level:', JSON.stringify(goldExamples))
   console.log(`- checked events: ${trainerEvents.length}`)
   console.log(`- daily scaling trainers: ${dailyScalingTrainerCount}`)
-  console.log(`- one-time lieutenants: ${lieutenantCount}`)
+  console.log(`- lieutenants with daily rematches after first clear: ${lieutenantCount}`)
   console.log(`- repeatable minigame trainers: ${minigameCount}`)
   console.log(`- daily variant battles: ${dailyVariantBattleCount}`)
   console.log(`- challenge events: ${challengeEventCount}`)

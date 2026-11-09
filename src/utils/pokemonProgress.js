@@ -1,7 +1,7 @@
 import { MOVES, MONSTERS, normalizeMoveLoadoutMode, normalizeMovesForPokemonLevel } from './gameData'
 import { getOfficialExpToNextLevel } from './officialExperience'
 import { getEvolutionDueByLevel, getEvolutionTargetsAtLevel, getMovesLearnedAtLevel } from './pokemonGrowth'
-import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts } from './pokemonStats'
+import { applyBaseStatBoosts, calculateStatsForLevel, normalizeBaseStatBoosts, normalizeStatGemUses } from './pokemonStats'
 
 const asPositiveInteger = (value) => {
   const number = Number(value)
@@ -109,6 +109,19 @@ const getExpToNextLevel = (level, baseMonster) => (
   level >= 100 ? Infinity : getOfficialExpToNextLevel(level, baseMonster)
 )
 
+// 直升药水按官方成长曲线补足下一级，不读取存档中可能过期的阈值。
+// 已溢出的旧存档交给成长修复流程处理，避免消耗药水却只兑现已有经验。
+export const getExpPotionExpAmount = (mon, potion, getBaseMonsterDefinition = null) => {
+  if (!mon || getLevel(mon) >= 100) return 0
+  if (potion?.levelGain === 1) {
+    const baseMonster = resolvePokemonBaseDefinition(mon, getBaseMonsterDefinition)
+    if (!baseMonster) return 0
+    return Math.max(0, getExpToNextLevel(getLevel(mon), baseMonster) - getCurrentExp(mon))
+  }
+  const amount = Math.trunc(Number(potion?.expAmount))
+  return Number.isFinite(amount) ? Math.max(0, amount) : 0
+}
+
 const getStatSnapshot = (mon) => ({
   maxHp: Math.max(0, Math.trunc(Number(mon?.maxHp ?? mon?.stats?.hp ?? 0) || 0)),
   maxMp: Math.max(0, Math.trunc(Number(mon?.maxMp ?? 0) || 0)),
@@ -185,6 +198,7 @@ const refreshMonsterStatsForLevel = (baseMonster, mon, level) => {
     ...mon,
     ...stats,
     statBoosts,
+    statGemUses: normalizeStatGemUses(mon?.statGemUses),
     level,
     moveLoadoutMode,
     moves: getRuntimeMovesPreservingKnown(baseMonster, mon?.moves, level, {
@@ -205,6 +219,7 @@ const buildLeveledMonster = (baseMonster, previousMon, level, currentExp) => {
     ...baseMonster,
     ...stats,
     statBoosts,
+    statGemUses: normalizeStatGemUses(previousMon?.statGemUses),
     id: previousMon?.id,
     baseId: baseMonster.id,
     level,

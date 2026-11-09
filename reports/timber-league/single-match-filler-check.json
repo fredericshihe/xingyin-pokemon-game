@@ -1,0 +1,39 @@
+{
+  "model": "Seeded approximate battle simulation using actual species, level stats, move sets, damage, accuracy, critical hits, MP costs and minigame trainer AI (including switches, no opponent potions). One match against six opponents; levels use the strongest three party members with a floor tied to the highest level. Average parties sample six distinct final species with base-stat totals from 440 to 560. Does not model statuses, experience gains or manual tactical switching. Player super potions restore 50 HP/30 MP and are used automatically at low HP/MP.",
+  "averageFinalSpeciesCount": 91,
+  "levelBias": 0,
+  "results": [
+    {
+      "scenario": "one-lv100-five-lv20-no-items",
+      "route": "training",
+      "opponentLevelOffset": 49,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 1,
+      "averageGoldPerAttempt": 41,
+      "goldOnFullClear": 4104,
+      "goldPercent": 1,
+      "medianWinningTurns": 9,
+      "winningTurnsP25": 8,
+      "winningTurnsP75": 9,
+      "winningTurnsP90": 9,
+      "silverPercent": 1,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        84,
+        85,
+        86,
+        86,
+        87,
+        94
+      ],
+      "medalDistribution": {
+        "gold": 4,
+        "silver": 0,
+        "bronze": 0
+      },
+      "averageVouchersPerAttempt": 0.03
+    }
+  ]
+}

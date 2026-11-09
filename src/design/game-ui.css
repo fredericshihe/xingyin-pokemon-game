@@ -1,0 +1,62 @@
+/* Shared information panels. Three scenes and battle animation layers keep their
+   own spatial layout; these rules only govern text, surfaces and controls. */
+#root .game-page { font-family: var(--ui-font); color: var(--ui-text); background: var(--ui-bg); padding: 20px; gap: 0; }
+#root .game-page-header { padding: 16px 20px; margin-bottom: 16px; background: white; border: 1px solid var(--ui-border); border-radius: 16px; box-shadow: var(--ui-shadow-card); backdrop-filter: none; flex-wrap: wrap; }
+#root .game-page-title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.4; letter-spacing: 0; }
+#root .game-page-subtitle { margin-top: 4px; font-size: 12px; font-weight: 400; line-height: 1.6; color: var(--ui-muted); }
+#root .game-collection-section__head { gap: 12px; margin-bottom: 16px; align-items: baseline; }
+#root .game-collection-section__title { font-size: 16px; font-weight: 600; color: var(--ui-text); line-height: 1.5; }
+#root .game-collection-section__desc { font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--ui-muted); }
+#root .game-collection-grid { gap: 16px; }
+#root :is(.shop-item-card, .fishing-catch-card, .fishing-equipment-card, .breeder-offer-card) { border: 1px solid var(--ui-border); border-radius: 14px; background: white; box-shadow: var(--ui-shadow-card); padding: 16px 12px; gap: 8px; }
+#root :is(.shop-item-card, .fishing-catch-card, .fishing-equipment-card) .game-collection-card__sprite-wrap { margin: 8px 0; border: 0; background: var(--ui-surface-soft); border-radius: 12px; box-shadow: none; }
+#root .game-collection-card__name { font-size: 14px; font-weight: 600; line-height: 1.5; }
+#root .game-item-english { font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--ui-muted); }
+#root .game-collection-card__desc { font-size: 12px; font-weight: 400; line-height: 1.6; color: var(--ui-muted); min-height: 3.2em; }
+#root :is(.game-collection-card__meta, .shop-item-card__hint) { font-size: 12px; font-weight: 400; line-height: 1.5; color: var(--ui-muted); }
+#root :is(.game-collection-card__qty, .game-collection-card__price) { font-size: 12px; font-weight: 600; border-radius: 6px; padding: 4px 8px; }
+#root .shop-category-tabs { gap: 4px; padding: 4px; margin-bottom: 16px; background: var(--ui-surface-soft); border: 1px solid var(--ui-border); border-radius: 12px; }
+#root .shop-category-tab { min-height: 40px; padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--ui-muted); border-radius: 8px; }
+#root .shop-category-tab--active, #root .shop-category-tab--active:hover { color: var(--ui-primary); background: white; border: 1px solid var(--ui-border); box-shadow: 0 1px 3px rgb(92 59 24 / 5%); font-weight: 600; }
+#root .shop-category-tab__count { color: var(--ui-muted); background: var(--ui-surface-soft); font-size: 11px; font-weight: 400; }
+#root .shop-category-tab--active .shop-category-tab__count { background: var(--ui-primary-soft); }
+#root .shop-training-path { background: var(--ui-primary-soft); border-color: var(--ui-border); color: var(--ui-muted); border-radius: 10px; font-size: 12px; font-weight: 400; line-height: 1.6; }
+#root :is(.fishing-panel-note, .fishing-panel-status) { font-size: 12px; font-weight: 400; line-height: 1.7; border-radius: 10px; }
+#root .fishing-filters { gap: 12px; align-items: center; margin-bottom: 16px; background: var(--ui-surface-soft); border-color: var(--ui-border); }
+#root .fishing-filters select, #root .timber-bank-page :is(input, select), #root .game-page .game-input { height: 44px; min-height: 44px; padding: 0 12px; border: 1px solid var(--ui-border); border-radius: 10px; background: white; font: 400 14px/1.5 var(--ui-font); color: var(--ui-text); box-shadow: none; }
+#root .fishing-filter-menu { border: 1px solid var(--ui-border); border-radius: 10px; background: white; box-shadow: var(--ui-shadow-card); }
+#root :is(.fishing-filter-button, .fishing-filter-option) { min-height: 40px; font-size: 13px; font-weight: 500; border-radius: 8px; }
+#root .fishing-filter-option.is-active { background: var(--ui-primary-soft); border-color: var(--ui-primary-border); color: var(--ui-primary); }
+#root .fishing-filter-row > span { font-size: 12px; font-weight: 400; color: var(--ui-muted); }
+#root .fishing-market-summary { padding: 16px; background: white; border: 1px solid var(--ui-border); border-radius: 12px; }
+#root .fishing-market-summary span { font-size: 12px; font-weight: 400; color: var(--ui-muted); }
+#root .fishing-market-summary strong { font-size: 18px; font-weight: 600; }
+#root .fishing-location-maps, #root .fishing-bait-stock-uses { font-size: 12px; font-weight: 400; line-height: 1.6; }
+#root .fishing-bait-stock-count { font-size: 14px; font-weight: 600; }
+#root .fishing-probability-details { font-size: 12px; font-weight: 400; line-height: 1.6; }
+#root .fishing-hud .fishing-card { background: rgb(255 255 255 / 97%); border-color: var(--ui-border); border-radius: 16px; box-shadow: var(--ui-shadow-card); }
+#root .fishing-hud .fishing-heading h2 { font-size: 18px; font-weight: 600; line-height: 1.4; }
+#root .timber-bank-product-tabs { background: var(--ui-surface-soft); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: none; padding: 4px; gap: 4px; }
+#root .timber-bank-product-tab { border: 1px solid transparent; border-radius: 8px; min-height: 60px; padding: 12px; }
+#root .timber-bank-product-tab:hover { transform: none; }
+#root .timber-bank-product-tab.is-active { background: white; border-color: var(--ui-border); color: var(--ui-primary); box-shadow: none; }
+#root .timber-bank-product-tab b { font-size: 14px; font-weight: 600; }
+#root .timber-bank-product-tab small { font-size: 12px; font-weight: 400; }
+#root .timber-bank-intro { background: white; border: 1px solid var(--ui-border); box-shadow: var(--ui-shadow-card); border-radius: 16px; }
+#root .timber-bank-intro-copy h3 { font-size: 24px; font-weight: 700; line-height: 1.4; }
+#root :is(.breeder-rule, .breeder-toolbar) { font-size: 13px; font-weight: 400; line-height: 1.7; }
+#root :is(.pokemon-detail-modal, .game-local-confirm-modal) { border: 1px solid var(--ui-border); border-radius: 20px; box-shadow: var(--ui-shadow-dialog); }
+@media (max-width: 640px) {
+  #root .game-page { padding: 12px; }
+  #root .game-page-header { padding: 12px 16px; gap: 12px; }
+  #root .game-page-title { font-size: 20px; }
+  #root .game-collection-grid { gap: 12px; }
+  #root :is(.shop-item-card, .fishing-catch-card, .fishing-equipment-card) { padding: 12px 8px; }
+  #root .game-collection-card__name { white-space: normal; }
+  #root .fishing-filters select { font-size: 16px; }
+  #root .timber-bank-page :is(input, select) { font-size: 16px; }
+  #root :is(.shop-category-tab, .fishing-filter-option) { min-height: 44px; }
+}
+@media (pointer: coarse) {
+  #root :is(.shop-category-tab, .fishing-filter-button, .fishing-filter-option) { min-height: 44px; }
+}

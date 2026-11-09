@@ -28,7 +28,7 @@ def rgb(hexcode):
 MAT = bpy.data.materials.new('Xingyin • satin / vertex palette')
 MAT.use_nodes = True
 bsdf = MAT.node_tree.nodes.get('Principled BSDF')
-bsdf.inputs['Roughness'].default_value = .64
+bsdf.inputs['Roughness'].default_value = .82
 bsdf.inputs['Specular IOR Level'].default_value = .28
 vc = MAT.node_tree.nodes.new('ShaderNodeVertexColor')
 vc.layer_name = 'Color'
@@ -132,7 +132,8 @@ SPECS = [
  dict(id='trainer_lieutenant',label='精英训练家',style='officer',coat='355c7d',accent='edbd6c',hair='282d3e',cape=True),
  dict(id='trainer_boss',label='地区首领',style='commander',coat='503958',accent='d5ae62',hair='bec2d3',cape=True,crown=True),
  dict(id='trainer_merchant',label='旅行商人',style='merchant',coat='6c4b3e',accent='dcad6f',hair='40312d',hat=True,pack=True),
- dict(id='trainer_challenge',label='试炼导师',style='martial',coat='ece4d4',accent='cf665c',hair='34313c',hairStyle='bun'),
+ dict(id='trainer_breeder',label='星雾宝可梦饲养家',style='breeder',coat='459f86',accent='ef927b',hair='68483e',female=True,hairStyle='pony',cap=True,pack=True),
+ dict(id='trainer_challenge',label='铁木计时员',style='challenge',coat='ece4d4',accent='cf665c',hair='34313c',hairStyle='bun'),
  dict(id='grave_character_ghost',label='幽谷引路人',style='mystic',coat='b5c5d9',accent='8396c9',skin='d0d9e4',hair='e3e7ef',female=True,hairStyle='bob',cape=True),
  dict(id='grave_character_skeleton',label='遗迹守望者',style='guard',coat='727484',accent='d9d6bd',skin='d8c7b3',hair='d0cabf',armor=True),
  dict(id='grave_character_zombie',label='荒园守卫',style='ranger',coat='738572',accent='c4a46d',skin='b0bea4',hair='575958',hat=True),
@@ -209,6 +210,45 @@ def make_character(spec):
         for s in (-1,1):
             tube('Padded shoulder strap',[(s*.15,1.12,.158),(s*.17,1.4,.19),(s*.19,1.6,.075),(s*.18,1.48,-.24)],.021,'dark')
             rounded('Pack strap buckle',(s*.1,1.36,-.387),(.028,.055,.012),'gold',.005)
+    if spec['id']=='trainer_breeder':
+        # The breeder has a wide egg-care silhouette, basket and supply satchel;
+        # these are structural props so the profession reads at map distance.
+        rounded('Breeder cream apron',(0,1.14,.221),(.48,.68,.045),'ivory',.055)
+        rounded('Apron feed pocket',(0,.99,.247),(.31,.18,.045),'coat',.022)
+        tube('Crossbody kit strap',[(-.31,1.56,.11),(-.13,1.37,.24),(.27,1.13,.15)],.034,'dark')
+        rounded('Treat satchel',(.34,1.04,.015),(.28,.36,.28),'accent',.055)
+        # Egg basket on the free side: a broad rim and three visible eggs create
+        # a recognizable silhouette without adding a separate draw object.
+        rounded('Egg basket body',(-.48,1.01,-.005),(.36,.29,.26),'coat',.06)
+        tube('Egg basket rim',[(-.69,1.17,-.005),(-.48,1.22,-.005),(-.27,1.17,-.005)],.026,'gold',10)
+        tube('Egg basket handle',[(-.66,1.14,-.01),(-.57,1.38,-.02),(-.39,1.47,-.02),(-.30,1.14,-.01)],.024,'gold',10)
+        for x, z, color in [(-.57,.04,'ivory'),(-.47,.08,'white'),(-.37,.04,'ivory')]:
+            ellipsoid('Care egg',(x,1.18,z),(.085,.115,.065),'ivory',16,10)
+            ellipsoid('Egg care mark',(x,1.23,z+.055),(.024,.019,.01),color,12,8)
+        ellipsoid('Held ball white shell',(.50,1.01,.14),(.13,.13,.13),'ivory',20,12)
+        ellipsoid('Held ball red cap',(.50,1.065,.14),(.128,.074,.128),'accent',20,10)
+        rounded('Held ball seam',(.50,1.018,.27),(.24,.021,.014),'dark',.008)
+        ellipsoid('Held ball clasp',(.50,1.018,.279),(.033,.033,.013),'white',12,8)
+        rounded('Grooming brush',(-.24,.94,.24),(.07,.30,.035),'gold',.018)
+        for x in (-.265,-.24,-.215):
+            tube('Brush bristle',[(x,.80,.245),(x,.72,.245)],.008,'dark',6)
+    if spec['id']=='trainer_challenge':
+        # The league timer is deliberately broad and high-contrast: a flag, chest
+        # stopwatch and padded shoulders separate it from ordinary trainers.
+        rounded('Timer jacket',(0,1.24,.21),(.52,.67,.055),'ivory',.06)
+        rounded('Timer red sash',(0,1.08,.255),(.56,.10,.035),'coat',.018)
+        for s in (-1,1):
+            ellipsoid('Timer shoulder pad',(s*.35,1.53,.02),(.18,.13,.18),'coat',16,10)
+            rounded('Timer wrist band',(s*.445,1.12,.08),(.11,.11,.17),'accent',.024)
+        ellipsoid('Oversized stopwatch',(0,1.39,.29),(.13,.16,.026),'gold',20,12)
+        ellipsoid('Stopwatch face',(0,1.39,.321),(.095,.12,.012),'white',20,10)
+        tube('Stopwatch hand',[(0,1.39,.334),(.045,1.46,.334)],.009,'coat',6)
+        tube('Stopwatch lanyard',[(-.13,1.52,.24),(0,1.61,.24),(.13,1.52,.24)],.014,'gold',8)
+        tube('Flag pole',[(.43,.98,.10),(.54,1.55,.10),(.54,2.18,.10)],.026,'dark',8)
+        mesh('Finish flag',[(.54,2.16,.11),(.92,2.06,.11),(.54,1.90,.11)],[(0,1,2)],'coat',False)
+        mesh('Flag stripe',[(.55,2.08,.115),(.82,2.03,.115),(.55,1.99,.115)],[(0,1,2)],'ivory',False)
+        rounded('Timer visor',(0,2.30,.235),(.42,.06,.18),'coat',.025)
+        tube('Visor trim',[(-.20,2.29,.29),(0,2.34,.31),(.20,2.29,.29)],.012,'gold',8)
     if style=='diver':
         for s in (-1,1):
             ellipsoid('Diving air canister',(s*.13,1.26,-.25),(.1,.34,.10),'accent')

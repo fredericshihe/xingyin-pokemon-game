@@ -30,6 +30,8 @@ export function preloadBattleVfxAtlas() {
 export function BattleMoveEffect({ effect, onDone }) {
   const canvasRef = useRef(null)
   const renderScaleRef = useRef(1)
+  const preparedEffectsRef = useRef(new Set())
+  const preparedSceneRef = useRef(false)
   const liveRef = useRef({ effect, onDone })
   liveRef.current = { effect, onDone }
   // Battle scenes mount before the first turn, warming the single shared atlas.
@@ -37,12 +39,31 @@ export function BattleMoveEffect({ effect, onDone }) {
   useEffect(() => {
     if (!effect || !canvasRef.current) return undefined
     const canvas = canvasRef.current
+    let doneCalled = false
+    const finishEffect = () => {
+      if (doneCalled) return
+      doneCalled = true
+      liveRef.current.onDone?.(effect.id)
+    }
+    // A small, budgeted raster surface avoids first-use GPU raster stalls for
+    // new material combinations; sprites are already baked into the atlas.
+    // This surface is drawn every frame. `willReadFrequently` forces many
+    // browsers onto a software canvas path, turning the impact burst into a
+    // long task and making the effect visibly stutter. The single warm-up
+    // read below is cheap without that hint and keeps the normal path GPU
+    // accelerated.
     const ctx = canvas.getContext('2d', { alpha: true })
-    if (!ctx) { effect.onCancel?.(new Error('战斗画布不可用')); liveRef.current.onDone?.(); return undefined }
+    if (!ctx) {
+      effect.onCancel?.(new Error('战斗画布不可用'))
+      finishEffect()
+      return undefined
+    }
     const move = effect.move || MOVES[effect.moveKey] || effect
     const config = getMoveEffectConfig(effect.moveKey, move)
     const profile = effect.profile || getBattleCinematicProfile(effect.moveKey, move, config, { phase: effect.phase, durationMs: effect.durationMs })
     const recipe = getMoveVfxRecipe(effect.moveKey, move, config)
+    const preparationKey = JSON.stringify([recipe.signature, effect.phase, effect.visualResult?.kind,
+      effect.visualResult?.status, (effect.visualResult?.stages || 0) < 0, effect.feedback?.kind])
     const qualityHost = canvas.closest('[class*="battle-vfx-quality--"]')
     const quality = qualityHost?.classList.contains('battle-vfx-quality--lite') ? 'lite'
       : qualityHost?.classList.contains('battle-vfx-quality--high') ? 'high' : 'standard'
@@ -63,8 +84,8 @@ export function BattleMoveEffect({ effect, onDone }) {
       width = nextWidth; height = nextHeight
       dpr = getBattleCanvasScale(width, height, window.devicePixelRatio || 1, quality) * renderScaleRef.current
       const pixelsWide = Math.round(width * dpr), pixelsHigh = Math.round(height * dpr)
-      if (canvas.width !== pixelsWide) canvas.width = pixelsWide
-      if (canvas.height !== pixelsHigh) canvas.height = pixelsHigh
+      if (canvas.width !== pixelsWide) { canvas.width = pixelsWide; preparedEffectsRef.current.clear(); preparedSceneRef.current = false }
+      if (canvas.height !== pixelsHigh) { canvas.height = pixelsHigh; preparedEffectsRef.current.clear(); preparedSceneRef.current = false }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       if (renderer) renderer.render(lastProgress, width, height)
     }
@@ -127,7 +148,9 @@ export function BattleMoveEffect({ effect, onDone }) {
           const slow = frameIntervals.filter(ms => ms > Math.max(24, refreshMs * 1.5)).length
           if (slow / frameIntervals.length > .18) renderScaleRef.current = Math.max(.7, renderScaleRef.current * .85)
         }
-        completed = true; effect.onComplete?.(); liveRef.current.onDone?.()
+        completed = true
+        effect.onComplete?.()
+        finishEffect()
       }
     }
     void preloadBattleVfxAtlas().then(image => {
@@ -148,16 +171,50 @@ export function BattleMoveEffect({ effect, onDone }) {
         renderer.render(.01, width, height)
         frame = requestAnimationFrame(() => {
           if (disposed) return
+          if (!preparedEffectsRef.current.has(preparationKey)) {
+            // Prime the full-size impact path as well as the small windup.
+            // Clear it in this same task so no impact frame is presented early.
+            // A one-pixel fence completes deferred GPU uploads before timing;
+            // each recipe/phase is prepared once per backing allocation.
+            renderer.render(.46, width, height)
+            ctx.getImageData(0, 0, 1, 1)
+            preparedEffectsRef.current.add(preparationKey)
+          }
           ctx.clearRect(0, 0, width, height)
-          frame = requestAnimationFrame(now => {
+          let previousPreparationFrame = null, stablePreparationFrames = 0, preparationStartedAt = null
+          const beginWhenSceneSettles = now => {
             if (disposed) return
+            // The first scene also commits actor/HUD compositor layers. Wait
+            // for a short stable refresh window once, while gameplay and actor
+            // clocks remain paused. Repeated hits take no additional wait.
+            if (!preparedSceneRef.current) {
+              if (document.hidden) {
+                previousPreparationFrame = preparationStartedAt = null
+                stablePreparationFrames = 0
+                frame = requestAnimationFrame(beginWhenSceneSettles)
+                return
+              }
+              preparationStartedAt ??= now
+              if (previousPreparationFrame !== null) stablePreparationFrames = now - previousPreparationFrame < 50 ? stablePreparationFrames + 1 : 0
+              previousPreparationFrame = now
+              if (stablePreparationFrames < 8 && now - preparationStartedAt < 600) {
+                frame = requestAnimationFrame(beginWhenSceneSettles)
+                return
+              }
+              preparedSceneRef.current = true
+            }
             if (isLab) canvas.dataset.ready = 'true'
             animate(now)
-          })
+          }
+          frame = requestAnimationFrame(beginWhenSceneSettles)
         })
       })
     }).catch(error => {
-      if (!disposed) { console.warn('[BattleVfx]', error); effect.onCancel?.(error); liveRef.current.onDone?.() }
+      if (!disposed) {
+        console.warn('[BattleVfx]', error)
+        effect.onCancel?.(error)
+        finishEffect()
+      }
     })
     return () => {
       disposed = true; cancelAnimationFrame(frame); observer.disconnect(); actorPlayback?.dispose()
@@ -166,11 +223,13 @@ export function BattleMoveEffect({ effect, onDone }) {
       if (!completed && !hasFixedProgress) effect.onCancel?.()
     }
   }, [effect?.id])
-  if (!effect) return <canvas ref={canvasRef} className="battle-material-surface" hidden aria-hidden="true" />
+  // Retain the transparent compositor surface between consecutive hits. A
+  // display:none canvas makes WebKit tear down/rebuild its backing layer.
+  if (!effect) return <canvas ref={canvasRef} className="battle-material-surface" aria-hidden="true" />
   const move = effect.move || MOVES[effect.moveKey] || effect
   const config = getMoveEffectConfig(effect.moveKey, move)
   const recipe = getMoveVfxRecipe(effect.moveKey, move, config)
-  return <canvas ref={canvasRef} className="battle-material-effect" aria-hidden="true"
+  return <canvas ref={canvasRef} className="battle-material-surface battle-material-effect" aria-hidden="true"
     data-move={effect.moveKey} data-move-signature={recipe.signature} data-technique={recipe.technique}
     data-power-level={recipe.powerLevel} data-phase={effect.phase || 'hit'} />
 }
@@ -202,7 +261,7 @@ export function BattleImpactFeedback({ feedback, anchors = BATTLE_EFFECT_FALLBAC
   return (
     <div ref={nodeRef}
       className={`battle-feedback-surface ${feedback ? 'battle-impact-feedback' : ''} battle-impact-feedback--${safeClassName(shown.kind, 'damage')} battle-impact-feedback--${safeClassName(shown.intensity, 'medium')} ${shown.crit ? 'battle-impact-feedback--crit' : ''}`}
-      style={{ '--feedback-x': target.x, '--feedback-y': target.y, opacity: 0 }} aria-live="polite" aria-hidden={!feedback}>
+      style={{ '--feedback-x': target.x, '--feedback-y': `calc(${target.y} - ${Math.max(28, Math.min(56, (target.radius || 60) * .6))}px)`, opacity: 0 }} aria-live="polite" aria-hidden={!feedback}>
       <strong>{shown.amount > 0 ? `${amountPrefix}${shown.amount}` : '0'}</strong>
       <span>{shown.label || (shown.kind === 'immune' ? '免疫' : '')}</span>
       <small>{hitCounter ? `连击 ${hitCounter}` : ''}</small>

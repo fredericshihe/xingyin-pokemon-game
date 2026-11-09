@@ -45,6 +45,9 @@ class ThreeMapLazyErrorBoundary extends Component {
 
 function GameCanvas({
   playerPos,
+  hasBicycle = false,
+  hasSportsCar = false,
+  equippedVehicle = null,
   mapGrid,
   onPlayerMove,
   useRealMaps,
@@ -63,6 +66,7 @@ function GameCanvas({
   loadingOverlayManaged = false,
   collectedEventIds = [],
   springRestoreAnimation = null,
+  fishingActivity = null,
   currentMapBossCompleted = false,
   mapEventVisualState = {},
   encounterZoneLocks = {}
@@ -106,6 +110,9 @@ function GameCanvas({
     >
       <ThreeLowPolyMap
         playerPos={playerPos}
+        hasBicycle={hasBicycle}
+      hasSportsCar={hasSportsCar}
+      equippedVehicle={equippedVehicle}
         mapGrid={mapGrid}
         currentMapName={currentMapName}
         mapConfig={mapConfig}
@@ -124,6 +131,7 @@ function GameCanvas({
         onEncounterCooldownChange={onEncounterCooldownChange}
         collectedEventIds={collectedEventIds}
         springRestoreAnimation={springRestoreAnimation}
+        fishingActivity={fishingActivity}
         currentMapBossCompleted={currentMapBossCompleted}
         mapEventVisualState={mapEventVisualState}
         encounterZoneLocks={encounterZoneLocks}

@@ -7162,6 +7162,14 @@ body {
   font-weight: 800;
 }
 
+.teacher-gameplay-log__student {
+  display: inline-block;
+  margin-top: 3px;
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
 .teacher-gameplay-log__body p {
   margin: 4px 0 0;
   color: #334155;

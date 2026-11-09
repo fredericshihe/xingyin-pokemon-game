@@ -1,0 +1,54 @@
+[
+  {
+    "name": "bush_large",
+    "label": "统一阔叶灌木",
+    "themeTags": [
+      "nature",
+      "bush",
+      "edge"
+    ],
+    "triangles": 432,
+    "file": "/assets/3d/xingyin-environment-v2/nature/bush_large.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  },
+  {
+    "name": "rock_large",
+    "label": "统一低多边形巨石",
+    "themeTags": [
+      "nature",
+      "rock",
+      "boundary"
+    ],
+    "triangles": 40,
+    "file": "/assets/3d/xingyin-environment-v2/nature/rock_large.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  },
+  {
+    "name": "flower_yellow_cluster",
+    "label": "统一黄花簇",
+    "themeTags": [
+      "nature",
+      "flower",
+      "yellow"
+    ],
+    "triangles": 360,
+    "file": "/assets/3d/xingyin-environment-v2/nature/flower_yellow_cluster.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  },
+  {
+    "name": "flower_red_cluster",
+    "label": "统一红花簇",
+    "themeTags": [
+      "nature",
+      "flower",
+      "red"
+    ],
+    "triangles": 360,
+    "file": "/assets/3d/xingyin-environment-v2/nature/flower_red_cluster.glb",
+    "grounded": true,
+    "material": "vertex-colour satin palette"
+  }
+]

@@ -15,9 +15,9 @@ setup()
 # Village: hand-made ceramics, small domestic gardens and a flowering magnolia.
 def village(i):
     if i==0:
-        path([(0,0,0),(-.18,0,1.1),(.06,0,2.5)],.16,'A47759')
-        for a,h in [(0,2),(2.1,2.25),(4.2,1.8)]:
-            x,y=.86*math.cos(a),.65*math.sin(a); limb((0,0,1.4),(x,y,h),.1,.04,'A47759')
+        path([(0,0,0),(-.18,0,1.4),(.06,0,3.55)],.17,'A47759')
+        for a,h in [(0,3.25),(2.1,3.5),(4.2,3.05)]:
+            x,y=.86*math.cos(a),.65*math.sin(a); limb((0,0,2.35),(x,y,h),.11,.045,'A47759')
             orb((x,y,h),(.88,.68,.54),'A6BE85',2)
             for b in range(3): blossom((x+.38*math.cos(b*2),y+.4*math.sin(b*2)-.2,h+.37),.33,'F5CECE')
     elif i==1:
@@ -275,10 +275,10 @@ def shore(i):
         for x in [-.6,.6]: limb((x,.35,1.6),(x,.35,2.52),.07,.05,'9F8568')
         for z in [.2,.55,.9,1.25]: box((0,-.5,z),(.6,.12,.08),'C1A47E')
     elif i==5:
-        path([(-.2,0,0),(-.08,0,1),(.15,0,1.8),(.55,0,2.6)],.14,'B8A076')
+        path([(-.2,0,0),(-.08,0,1.5),(.15,0,2.85),(.55,0,4.0)],.15,'B8A076')
         for a in range(6):
-            t=a*math.tau/6; leaf((.55,0,2.6),(.55+1.3*math.cos(t),1.1*math.sin(t),2.3),.28,'89B58D')
-        for x in [.35,.66]: orb((x,-.1,2.42),(.16,.14,.18),'B79665')
+            t=a*math.tau/6; leaf((.55,0,4.0),(.55+1.3*math.cos(t),1.1*math.sin(t),3.7),.28,'89B58D')
+        for x in [.35,.66]: orb((x,-.1,3.82),(.16,.14,.18),'B79665')
     elif i==6:
         for k in range(9):
             a=k*math.pi/8; limb((0,0,.08),(.87*math.cos(a),.35*math.sin(a),.16+.83*math.sin(a)),.1,.045,'E8C4AF')
@@ -806,14 +806,22 @@ GROUND_NAMES={
  'champion':'礼仪剪篱 象牙花坛 勋章步台 月桂冠木列'
 }
 manifest=[]
-for slug,map_id,title,recipe,names in SETS:
+only = set(sys.argv[sys.argv.index('--only')+1:]) if '--only' in sys.argv else None
+for set_index,(slug,map_id,title,recipe,names) in enumerate(SETS):
     objects=[]
     for i,label in enumerate((names+' '+GROUND_NAMES[slug]).split()):
-        random.seed(6100+len(manifest)*17)
+        name=f'{slug}_{i+1:02d}'
+        if only is not None and name not in only: continue
+        random.seed(6100+(set_index*16+i)*17)
         if i<12: recipe(i)
         else: landscape(slug,i-12)
-        name=f'{slug}_{i+1:02d}'; obj,triangles=finish(name,OUT/f'{name}.glb')
+        obj,triangles=finish(name,OUT/f'{name}.glb')
         objects.append(obj); manifest.append(dict(name=name,label=label,mapId=map_id,mapName=title,setId=slug,slot=i,triangles=triangles))
+    if not objects: continue
+    if only is not None:
+        for obj in objects: bpy.data.objects.remove(obj,do_unlink=True)
+        print('EXCLUSIVE_SET_COMPLETE',slug,flush=True)
+        continue
     # One editable .blend per map; assets remain at ground origin when exported.
     for j,obj in enumerate(objects): obj.location=((j%4)*5,(j//4)*5,0)
     bpy.context.preferences.filepaths.save_version=0
@@ -830,5 +838,6 @@ for slug,map_id,title,recipe,names in SETS:
         bpy.data.objects.remove(light,do_unlink=True);bpy.data.objects.remove(cam,do_unlink=True)
     for obj in objects: bpy.data.objects.remove(obj,do_unlink=True)
     print('EXCLUSIVE_SET_COMPLETE',slug,flush=True)
-(OUT/'authoring-metadata.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
-subprocess.run(['node','scripts/prepare-exclusive-environment-assets.mjs'],cwd=ROOT,check=True)
+if only is None:
+    (OUT/'authoring-metadata.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+    subprocess.run(['node','scripts/prepare-exclusive-environment-assets.mjs'],cwd=ROOT,check=True)

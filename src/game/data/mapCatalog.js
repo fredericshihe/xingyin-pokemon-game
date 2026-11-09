@@ -1,5 +1,14 @@
 import starterMap from './godotMaps/my_first_map.js'
 import { composeMapEnvironment } from './mapEnvironmentComposition.js'
+import { alignMapCollisionToVisibleModels } from '../mapVisualCollision.js'
+import { normalizeMapModelScales } from '../mapModelScaleNormalization.js'
+import { narrowBridgeDecksToModels } from '../bridgeDeckCollision.js'
+import { fixCatalogWarpLandings } from '../mapWarpLandings.js'
+import { addFishingMapEvents } from '../fishingMapEvents.js'
+import { applyCharacterMapIdentities } from '../characterMapIdentity.js'
+
+// 生成标准尺寸表时要读统一之前的原始尺寸
+const SKIP_MODEL_SCALE_NORMALIZATION = typeof process !== 'undefined' && process.env?.SKIP_MODEL_SCALE_NORMALIZATION === '1'
 import {
   GODOT_REGION_MAP_CONFIGS,
   GODOT_REGION_MAP_IDS,
@@ -209,12 +218,18 @@ function buildCatalogEntry({
   sources,
   chainOrder
 }) {
-  const normalizedMapInfo = composeMapEnvironment({
+  // Bridge decks are narrowed to the bridge model, scenery is composed, every
+  // model is brought to its one canonical size, then collision follows the
+  // visible solid models.
+  const composedMapInfo = composeMapEnvironment(narrowBridgeDecksToModels({
     ...mapInfo,
     id,
     name: id,
     renderMode: mapInfo.renderMode || DEFAULT_RENDER_MODE
-  })
+  }))
+  const normalizedMapInfo = applyCharacterMapIdentities(addFishingMapEvents(alignMapCollisionToVisibleModels(
+    SKIP_MODEL_SCALE_NORMALIZATION ? composedMapInfo : normalizeMapModelScales(composedMapInfo)
+  )))
   const normalizedStartPosition = normalizeStartPosition(normalizedMapInfo.startPosition)
   const displayName = config.displayName || normalizedMapInfo.displayName || normalizedMapInfo.name || id
   const normalizedConfig = {
@@ -284,6 +299,8 @@ const starterCatalogEntry = buildCatalogEntry({
 })
 
 const catalogEntries = [starterCatalogEntry, ...regionCatalogEntries]
+// 跨图落点朝向需要目标地图的最终地形，目录装配完再统一修正
+fixCatalogWarpLandings(catalogEntries)
 
 export const MAP_CHAIN = catalogEntries
   .slice()

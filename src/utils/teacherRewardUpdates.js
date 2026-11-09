@@ -8,10 +8,30 @@ export const getStudentTeacherUpdateChannelName = (studentId) => (
   `student-teacher-updates:${studentId}`
 )
 
-export async function broadcastStudentTeacherUpdate(supabaseClient, studentId, eventName) {
+export function normalizeTeacherResourceRewardUpdate(value) {
+  if (value?.source !== 'teacher' || typeof value.id !== 'string' || !value.id.trim()) return null
+  const goldDelta = value.goldDelta ?? 0
+  const maxEnergyDelta = value.maxEnergyDelta ?? 0
+  if (![goldDelta, maxEnergyDelta].every((amount) => Number.isSafeInteger(amount) && amount >= 0)) return null
+  if (goldDelta === 0 && maxEnergyDelta === 0) return null
+  return { id: value.id.trim(), source: 'teacher', goldDelta, maxEnergyDelta }
+}
+
+export function createTeacherResourceRewardUpdate({ goldDelta = 0, maxEnergyDelta = 0 } = {}) {
+  return normalizeTeacherResourceRewardUpdate({
+    id: `teacher-resource-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    source: 'teacher',
+    goldDelta,
+    maxEnergyDelta
+  })
+}
+
+export async function broadcastStudentTeacherUpdate(supabaseClient, studentId, eventName, resourceReward = null) {
   const normalizedStudentId = typeof studentId === 'string' ? studentId : String(studentId || '')
   if (!supabaseClient?.channel || !normalizedStudentId || !eventName) return false
 
+  const reward = eventName === TEACHER_UPDATE_EVENTS.resourcesChanged
+    ? normalizeTeacherResourceRewardUpdate(resourceReward) : null
   const channel = supabaseClient.channel(getStudentTeacherUpdateChannelName(normalizedStudentId))
   let timeoutId = null
 
@@ -37,7 +57,7 @@ export async function broadcastStudentTeacherUpdate(supabaseClient, studentId, e
             await channel.send({
               type: 'broadcast',
               event: eventName,
-              payload: { sentAt: new Date().toISOString() }
+              payload: { sentAt: new Date().toISOString(), ...(reward ? { resourceReward: reward } : {}) }
             })
             finish(true)
           } catch (error) {

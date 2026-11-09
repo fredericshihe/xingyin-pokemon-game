@@ -1,0 +1,5970 @@
+[
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/champion_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__champion_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/dragon_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__dragon_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/farm_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__farm_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/frost_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__frost_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/grave_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__grave_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/highland_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__highland_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/iron_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__iron_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/lake_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__lake_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/meadow_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__meadow_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ridge_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ridge_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/ruins_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__ruins_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/shore_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__shore_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/tide_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__tide_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_01.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_02.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_03.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_04.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_05.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_06.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_07.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_08.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_09.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_10.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_11.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_12.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_13.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_13.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_14.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_14.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_15.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_15.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-exclusive-v3/village_16.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-exclusive-v3__village_16.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v1/farm_windmill.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v1__farm_windmill.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v1/ruin_arch.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v1__ruin_arch.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v1/starwatch_marker.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v1__starwatch_marker.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/champion_laurel_garden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__champion_laurel_garden.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/dragon_basalt_cluster.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__dragon_basalt_cluster.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/dragon_bone_spires.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__dragon_bone_spires.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/farm_orchard_group.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__farm_orchard_group.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/forest_canopy_group.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__forest_canopy_group.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/forest-trees/tree_default.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__forest-trees__tree_default.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/forest-trees/tree_oak.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__forest-trees__tree_oak.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/forest-trees/tree_pineTallA_detailed.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__forest-trees__tree_pineTallA_detailed.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/frost_crystal_garden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__frost_crystal_garden.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/grave_memorial_group.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__grave_memorial_group.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/highland_star_garden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__highland_star_garden.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/iron_forge_cluster.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__iron_forge_cluster.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/iron_ore_rack.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__iron_ore_rack.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/iron_vent_stack.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__iron_vent_stack.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/meadow_flower_island.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__meadow_flower_island.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/nature/bush_large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__nature__bush_large.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/nature/flower_red_cluster.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__nature__flower_red_cluster.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/nature/flower_yellow_cluster.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__nature__flower_yellow_cluster.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/nature/rock_large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__nature__rock_large.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/ridge_pine_outcrop.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__ridge_pine_outcrop.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/ruin_column_garden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__ruin_column_garden.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/shore_palm_island.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__shore_palm_island.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/tide_coral_garden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__tide_coral_garden.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/tide_shell_rocks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__tide_shell_rocks.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-environment-v2/wetland_willow_island.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-environment-v2__wetland_willow_island.glb",
+    "category": "biomes",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/champion_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__champion_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/dragon_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__dragon_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/farm_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__farm_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/frost_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__frost_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/grave_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__grave_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/highland_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__highland_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/iron_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__iron_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/lake_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__lake_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/meadow_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__meadow_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ridge_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ridge_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/ruins_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__ruins_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/tide_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__tide_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_01.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_01.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_02.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_02.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_03.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_03.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_04.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_04.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_05.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_05.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_06.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_06.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_07.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_07.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_08.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_08.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_09.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_09.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_10.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_10.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_11.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_11.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/map-boundaries-v5/village_12.glb",
+    "output": "/assets/3d/xingyin-refined-v1/map-boundaries-v5__village_12.glb",
+    "category": "boundaries",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_a.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_a.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_b.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_b.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_c.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_c.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_d.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_d.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_e.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_e.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/blocky_character_f.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__blocky_character_f.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_dragon_examiner.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_dragon_examiner.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_dragon_gatekeeper.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_dragon_gatekeeper.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_dragon_hunter.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_dragon_hunter.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_dragon_master.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_dragon_master.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_frost_master.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_frost_master.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_frost_mystic.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_frost_mystic.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_frost_sentinel.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_frost_sentinel.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_frost_warden.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_frost_warden.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_iron_engineer.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_iron_engineer.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_iron_master.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_iron_master.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_iron_royal_guard.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_iron_royal_guard.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_iron_smith.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_iron_smith.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_tide_diver.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_tide_diver.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_tide_hunter.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_tide_hunter.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_tide_master.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_tide_master.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/elite_tide_priest.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__elite_tide_priest.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/grave_character_ghost.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__grave_character_ghost.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/grave_character_skeleton.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__grave_character_skeleton.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/grave_character_zombie.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__grave_character_zombie.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/player_bicycle.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__player_bicycle.glb",
+    "category": "characters",
+    "meshes": 12,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/player_child_adventurer.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__player_child_adventurer.glb",
+    "category": "characters",
+    "meshes": 6,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/trainer_boss.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__trainer_boss.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/trainer_challenge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__trainer_challenge.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/trainer_lieutenant.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__trainer_lieutenant.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/xingyin-characters-v1/trainer_merchant.glb",
+    "output": "/assets/3d/xingyin-refined-v1/xingyin-characters-v1__trainer_merchant.glb",
+    "category": "characters",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/rock-small.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__rock-small.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/rocks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__rocks.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/grass-forest.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__grass-forest.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/stone-hill.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__stone-hill.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/stone-rocks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__stone-rocks.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/water-rocks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__water-rocks.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/campfire_stones.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__campfire_stones.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/canoe.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__canoe.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/crop_carrot.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__crop_carrot.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/crop_pumpkin.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__crop_pumpkin.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/crops_wheatStageA.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__crops_wheatStageA.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/crops_wheatStageB.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__crops_wheatStageB.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/fence_planks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__fence_planks.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/fence_simple.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__fence_simple.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/flower_purpleA.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__flower_purpleA.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/flower_redB.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__flower_redB.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/flower_redC.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__flower_redC.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/flower_yellowB.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__flower_yellowB.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/flower_yellowC.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__flower_yellowC.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/grass_leafs.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__grass_leafs.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/grass_leafsLarge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__grass_leafsLarge.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/grass.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__grass.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/lily_large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__lily_large.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/log_stack.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__log_stack.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/log.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__log.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/mushroom_redGroup.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__mushroom_redGroup.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/mushroom_redTall.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__mushroom_redTall.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/path_stone.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__path_stone.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/plant_bush.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__plant_bush.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/plant_bushDetailed.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__plant_bushDetailed.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/plant_bushTriangle.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__plant_bushTriangle.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/rock_smallH.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__rock_smallH.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/rock_tallH.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__rock_tallH.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/sign.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__sign.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stone_largeA.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stone_largeA.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stone_smallFlatA.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stone_smallFlatA.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stone_smallFlatB.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stone_smallFlatB.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stone_smallFlatC.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stone_smallFlatC.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stump_old.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stump_old.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/stump_roundDetailed.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__stump_roundDetailed.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/tent_detailedOpen.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__tent_detailedOpen.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-nature/tent_smallOpen.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-nature__tent_smallOpen.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/grass-patch.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__grass-patch.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/rocks-sand-a.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__rocks-sand-a.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/rocks-sand-b.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__rocks-sand-b.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/rocks-sand-c.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__rocks-sand-c.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/block-grass-edge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__block-grass-edge.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/flowers-tall.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__flowers-tall.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/flowers.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__flowers.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/rocks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__rocks.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/stones.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__stones.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/grass-large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__grass-large.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/patch-grass-large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__patch-grass-large.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/patch-grass.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__patch-grass.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/rock-a.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__rock-a.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/rock-b.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__rock-b.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/rock-c.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__rock-c.glb",
+    "category": "nature",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/cart-high.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__cart-high.glb",
+    "category": "structures",
+    "meshes": 3,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/cart.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__cart.glb",
+    "category": "structures",
+    "meshes": 3,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/fence-broken.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__fence-broken.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/fountain-round.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__fountain-round.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/hedge-large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__hedge-large.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/hedge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__hedge.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/lantern.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__lantern.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/stall-bench.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__stall-bench.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/stall-green.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__stall-green.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/stall-red.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__stall-red.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/stall-stool.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__stall-stool.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/watermill.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__watermill.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/windmill.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__windmill.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/bench-damaged.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__bench-damaged.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/candle-multiple.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__candle-multiple.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/candle.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__candle.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/coffin-old.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__coffin-old.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/cross-wood.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__cross-wood.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/gravestone-broken.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__gravestone-broken.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/gravestone-cross.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__gravestone-cross.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/gravestone-round.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__gravestone-round.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/iron-fence-border.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__iron-fence-border.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/iron-fence-damaged.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__iron-fence-damaged.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/lantern-glass.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__lantern-glass.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/pumpkin-carved.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__pumpkin-carved.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/pumpkin.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__pumpkin.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/stone-wall-damaged.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__stone-wall-damaged.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-graveyard/urn-round.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-graveyard__urn-round.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/bridge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__bridge.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-cabin.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-cabin.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-dock.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-dock.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-farm.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-farm.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-market.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-market.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-mine.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-mine.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-port.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-port.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/building-watermill.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__building-watermill.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/barrel.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__barrel.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/boat-row-large.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__boat-row-large.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/boat-row-small.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__boat-row-small.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/bottle.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__bottle.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/cannon.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__cannon.glb",
+    "category": "structures",
+    "meshes": 3,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/chest.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__chest.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/crate.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__crate.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/flag-pennant.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__flag-pennant.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/flag.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__flag.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/mast.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__mast.glb",
+    "category": "structures",
+    "meshes": 3,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/patch-sand-foliage.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__patch-sand-foliage.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/patch-sand.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__patch-sand.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/ship-wreck.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__ship-wreck.glb",
+    "category": "structures",
+    "meshes": 16,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/structure-fence.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__structure-fence.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/structure-platform-dock-small.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__structure-platform-dock-small.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/barrel.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__barrel.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/chest.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__chest.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/crate-strong.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__crate-strong.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/crate.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__crate.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/fence-low-straight.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__fence-low-straight.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/fence-straight.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__fence-straight.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/flag.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__flag.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/hedge.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__hedge.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/lever.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__lever.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/mushrooms.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__mushrooms.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/platform-overhang.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__platform-overhang.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/barrel.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__barrel.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/bedroll-packed.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__bedroll-packed.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/bedroll.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__bedroll.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/box.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__box.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/campfire-fishing-stand.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__campfire-fishing-stand.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/campfire-pit.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__campfire-pit.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/chest.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__chest.glb",
+    "category": "structures",
+    "meshes": 2,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/fence.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__fence.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/metal-panel.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__metal-panel.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/resource-planks.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__resource-planks.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/resource-wood.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__resource-wood.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/signpost.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__signpost.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/structure-canvas.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__structure-canvas.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/tent.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__tent.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/tool-axe.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__tool-axe.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/tool-pickaxe.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__tool-pickaxe.glb",
+    "category": "structures",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/workbench.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__workbench.glb",
+    "category": "structures",
+    "meshes": 3,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials",
+      "subtle edge bevels",
+      "weighted normals"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/tree-high.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__tree-high.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-fantasy-town/tree.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-fantasy-town__tree.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-hexagon/unit-tree.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-hexagon__unit-tree.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-pirate/palm-detailed-straight.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-pirate__palm-detailed-straight.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-platformer/tree-pine.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-platformer__tree-pine.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  },
+  {
+    "source": "/assets/3d/kenney-survival/tree-log.glb",
+    "output": "/assets/3d/xingyin-refined-v1/kenney-survival__tree-log.glb",
+    "category": "trees",
+    "meshes": 1,
+    "operations": [
+      "mesh cleanup",
+      "consistent satin materials"
+    ]
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-10-01T13:26:24.091Z",
+  "sourcePath": "reports/timber-league/realistic/runs.jsonl.gz",
+  "sourceSha256": "dc09934390a3735b801cc895c2aa69b46c4beeef6845e781e5dda7417ecd9722",
+  "cohort": "Three fixed six-member Lv.80 parties, type policy, up to two max potions, enemy switch cap two",
+  "denominator": "won battles",
+  "attempts": 3024,
+  "wins": 1825,
+  "losses": 1167,
+  "unresolved": 32,
+  "thresholds": {
+    "silver": 19,
+    "gold": 16
+  },
+  "counts": {
+    "bronze": 731,
+    "silver": 671,
+    "gold": 423
+  },
+  "percentPerWin": {
+    "bronze": 40.05,
+    "silver": 36.77,
+    "gold": 23.18
+  },
+  "percentPerAttempt": {
+    "bronze": 24.17,
+    "silver": 22.19,
+    "gold": 13.99
+  },
+  "historicalTarget": {
+    "descendingMedals": [
+      "bronze",
+      "silver",
+      "gold"
+    ],
+    "maxGoldPercentPerWin": 30
+  },
+  "historicalSnapshot": true,
+  "historicallyAppliedToNewBattles": true,
+  "existingBattleThresholdsPreserved": true
+}

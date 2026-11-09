@@ -23,8 +23,13 @@ const requiredShopTextChecks = [
       /getPokeballEffectText\(item\)/.test(read('src/components/Teacher/Dashboard.jsx')),
   },
   {
-    name: 'purchase_accepts_all_three_shop_item_types',
+    name: 'purchase_accepts_all_shop_item_types',
     passed: /itemType === 'expPotion' \? EXP_POTIONS\[itemKey\][\s\S]*?itemType === 'pokeball' \? POKEBALLS\[itemKey\][\s\S]*?itemType === 'potion' \? POTIONS\[itemKey\]/.test(originalGame),
+  },
+  {
+    name: 'purchase_accepts_stat_boost_shop_items',
+    passed: /itemType === 'statBoost' \? STAT_BOOST_ITEMS\[itemKey\]/.test(originalGame) &&
+      /statBoost: STAT_BOOST_ITEMS/.test(deferredGamePanels),
   },
   {
     name: 'battle_ai_knows_fourth_potion_tier',
@@ -46,7 +51,7 @@ const isPositivePrice = (item) => Number.isFinite(Number(item?.price)) && Number
 const isAscending = (values) => values.every((value, index) => index === 0 || value > values[index - 1])
 
 await withViteAuditServer(async ({ loadModule }) => {
-  const [{ POKEBALLS, POTIONS, EXP_POTIONS }, { getPokeballEffectText, getPotionEffectText, getPotionRecoveryProfile }] = await Promise.all([
+  const [{ POKEBALLS, POTIONS, EXP_POTIONS, STAT_BOOST_ITEMS }, { getExpPotionEffectText, getPokeballEffectText, getPotionEffectText, getPotionRecoveryProfile, getStatBoostEffectText }] = await Promise.all([
     loadModule('/src/utils/gameData.js'),
     loadModule('/src/utils/inventoryItems.js'),
   ])
@@ -54,6 +59,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const ballKeys = ['pokeball_basic', 'pokeball_great', 'pokeball_ultra', 'pokeball_master']
   const potionKeys = ['potion', 'super_potion', 'hyper_potion', 'max_potion']
   const expPotionKeys = ['exp_potion_small', 'exp_potion_medium', 'exp_potion_large', 'exp_potion_super']
+  const statBoostKeys = ['hp_stone', 'attack_stone', 'defense_stone', 'sp_attack_stone', 'sp_defense_stone', 'speed_stone']
 
   const checks = [
     ...requiredShopTextChecks,
@@ -86,7 +92,19 @@ await withViteAuditServer(async ({ loadModule }) => {
       name: 'four_sellable_exp_potion_tiers',
       passed: expPotionKeys.every((key) => isPositivePrice(EXP_POTIONS[key])) &&
         isAscending(expPotionKeys.map((key) => Number(EXP_POTIONS[key].price))) &&
-        isAscending(expPotionKeys.map((key) => Number(EXP_POTIONS[key].expAmount))),
+        isAscending(expPotionKeys.slice(0, 3).map((key) => Number(EXP_POTIONS[key].expAmount))) &&
+        EXP_POTIONS.exp_potion_super.levelGain === 1 &&
+        EXP_POTIONS.exp_potion_super.expAmount === undefined &&
+        getExpPotionEffectText(EXP_POTIONS.exp_potion_super) === '直接升1级',
+    },
+    {
+      name: 'six_sellable_single_stat_gems',
+      passed: statBoostKeys.every((key) => {
+        const item = STAT_BOOST_ITEMS[key]
+        return isPositivePrice(item) && item.effect === 'stat_boost' &&
+          Number(item.boostAmount) > 0 && typeof item.stat === 'string' &&
+          getStatBoostEffectText(item).includes('+')
+      }) && STAT_BOOST_ITEMS.rare_candy?.notForSale === true,
     },
   ]
 
@@ -100,7 +118,8 @@ await withViteAuditServer(async ({ loadModule }) => {
     shopTiers: {
       pokeballs: ballKeys.map((key) => ({ key, name: POKEBALLS[key]?.name, price: POKEBALLS[key]?.price, effect: getPokeballEffectText(POKEBALLS[key]) })),
       potions: potionKeys.map((key) => ({ key, name: POTIONS[key]?.name, price: POTIONS[key]?.price, effect: getPotionEffectText(POTIONS[key]) })),
-      expPotions: expPotionKeys.map((key) => ({ key, name: EXP_POTIONS[key]?.name, price: EXP_POTIONS[key]?.price, expAmount: EXP_POTIONS[key]?.expAmount })),
+      expPotions: expPotionKeys.map((key) => ({ key, name: EXP_POTIONS[key]?.name, price: EXP_POTIONS[key]?.price, effect: getExpPotionEffectText(EXP_POTIONS[key]) })),
+      statBoosts: statBoostKeys.map((key) => ({ key, name: STAT_BOOST_ITEMS[key]?.name, price: STAT_BOOST_ITEMS[key]?.price, effect: getStatBoostEffectText(STAT_BOOST_ITEMS[key]) })),
     },
     checks,
   }, null, 2))

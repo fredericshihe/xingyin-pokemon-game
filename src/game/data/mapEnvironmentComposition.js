@@ -1,5 +1,6 @@
 import { MAP_BOUNDARY_SETS, MAP_BOUNDARY_MEASUREMENTS } from './mapBoundaryAssets.generated.js'
 import { MAP_ENVIRONMENT_LAYOUTS } from './mapEnvironmentLayouts.generated.js'
+import { getEnvironmentObjectKey } from './mapEnvironmentObjectKey.js'
 import { MAP_ASSET_CATALOG } from './mapAssetCatalog.js'
 import { ENVIRONMENT_MODEL_FOOTPRINTS } from './environmentModelFootprints.generated.js'
 import { ENVIRONMENT_ORIGINAL_MEASUREMENTS } from './environmentOriginalMeasurements.generated.js'
@@ -9,7 +10,15 @@ import { ENVIRONMENT_SCENERY_MEASUREMENTS as LEGACY_MEASUREMENTS } from './envir
 import { MAP_EXCLUSIVE_MEASUREMENTS } from './mapExclusiveAssets.generated.js'
 const ENVIRONMENT_SCENERY_MEASUREMENTS = { ...LEGACY_MEASUREMENTS, ...MAP_EXCLUSIVE_MEASUREMENTS, ...MAP_BOUNDARY_MEASUREMENTS, ...ENVIRONMENT_ORIGINAL_MEASUREMENTS }
 
-export const ENVIRONMENT_COMPOSITION_REVISION = 'environment-20260918-interior-v5'
+export const ENVIRONMENT_COMPOSITION_REVISION = 'environment-20260928-themed-boundaries-v6'
+
+// Maps without a natural tree canopy need repeated local landmarks to break up
+// long sightlines. Reuse their own Blender boundary set rather than mixing biomes.
+const DENSE_BOUNDARY_MAPS = new Set([
+  'GodotMapV2_MistLake', 'GodotMapV2_HexRuins', 'GodotMapV2_BossHighland',
+  'GodotMapV2_TideDojo', 'GodotMapV2_IronDojo',
+  'GodotMapV2_DragonDojo', 'GodotMapV2_ChampionTower'
+])
 
 const roadPointCache = new WeakMap()
 const SCENERY_GROUND = new Set([0, 1, 13, 17, 20])
@@ -236,7 +245,11 @@ export function planMapEnvironment(map) {
       }
       if (distance <= 4) candidates.push({ x,y,distance })
     }
-    for (const [index,type] of MAP_BOUNDARY_SETS[map.id].entries()) {
+    const boundarySet = MAP_BOUNDARY_SETS[map.id]
+    const boundaryCount = boundarySet.length * (DENSE_BOUNDARY_MAPS.has(map.id) ? 3 : 1)
+    for (let index = 0; index < boundaryCount; index++) {
+      const type = boundarySet[index % boundarySet.length]
+      const pass = Math.floor(index / boundarySet.length)
       const measured = MAP_BOUNDARY_MEASUREMENTS[type]
       const targetHeight = measured.height > 2.2 ? 4.8 + (index%3)*.45 : 2.1 + (index%4)*.38
       const targetScale = Math.min(targetHeight/measured.height, (3.0 + (index%3)*.3)/Math.max(measured.footprint.width,measured.footprint.height))
@@ -252,7 +265,7 @@ export function planMapEnvironment(map) {
           if (!fits(object,box,[])) continue
           // Group with the landform, never draw a uniform dotted outline.
           const separation=boundaries.length ? Math.min(...boundaries.map(o=>Math.hypot(o.x-point.x,o.y-point.y))) : 9
-          if (separation < 2.6) continue
+          if (separation < (pass ? 2.1 : 2.6)) continue
           const score=Math.min(separation,9)*1.3-Math.abs(point.distance-2)*.75+
             (isEnvironmentInterior(map,object)?1.4:0)+Math.sin(point.x*1.31+point.y*2.17+index)*.6
           if (!best||score>best.score) best={object,box,score}
@@ -294,18 +307,25 @@ export function planMapEnvironment(map) {
 export function composeMapEnvironment(map) {
   const layout = MAP_ENVIRONMENT_LAYOUTS[map.id]
   if (!layout) return map
+  // A layout is generated from the authored terrain snapshot. Keep stale
+  // entries out of the live mask when a later map edit turns that tile into a
+  // wall, road, water or interaction tile; scenery collision only belongs on
+  // ordinary ground.
+  const blockedTiles = new Set((layout.blockedTiles || []).filter((key) => {
+    const [x, y] = String(key).split(',').map(Number)
+    return [0, 13, 17].includes(map.mapGrid?.[y]?.[x])
+  }))
   return {
     ...map,
     decorativeObjects: [
-      ...(map.decorativeObjects || []).map((object,index) => ({ ...object,
-        ...(layout.renderScales[index] ? { environmentRenderScale: layout.renderScales[index] } : {}),
-        ...(layout.hiddenOriginals.includes(index) ? { environmentHiddenBoundary: true } : {})
+      ...(map.decorativeObjects || []).map((object) => ({ ...object,
+        ...layout.objectOverrides[getEnvironmentObjectKey(object)]
       })),
       ...layout.additions, ...layout.boundaries
     ],
     environmentGroundPatches: layout.groundPatches,
     environmentBoundaryTheme: layout.boundaryTheme,
-    environmentBlockedTiles: new Set(layout.blockedTiles),
+    environmentBlockedTiles: blockedTiles,
     generationNotes: { ...map.generationNotes, environmentRevision: layout.revision, environmentComposition: layout.notes }
   }
 }

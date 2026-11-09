@@ -4,10 +4,14 @@ import { Group } from 'three'
 import { ADVENTURE_MAP_CHAIN, getAdventureMapInfo } from './data/overworldMaps'
 import { MAP_MODEL_MANIFEST } from './data/mapModelManifest.generated.js'
 import { MAP_ASSET_CATALOG } from './data/mapAssetCatalog'
-import { PLAYER_CHARACTER_KEY, resolveCharacterModelKey } from './data/characterAssets.js'
+import { CHARACTER_ASSET_VERSION, PLAYER_CHARACTER_KEY, resolveCharacterModelKey } from './data/characterAssets.js'
 import { assetUrl, versionedAssetUrl } from '../utils/assetUrl'
+import { LEGACY_MODEL_KEYS, getDecorativeModel } from './decorativeModelSpec.js'
+import { REFINED_MODEL_ASSETS } from './data/refinedModelAssets.generated.js'
 
 const MODEL_BASE = assetUrl('/assets/3d/kenney-nature/')
+const ORIGINAL_FOREST_TREE_BASE = assetUrl('/assets/3d/xingyin-environment-v2/forest-trees/')
+const ORIGINAL_NATURE_BASE = assetUrl('/assets/3d/xingyin-environment-v2/nature/')
 const SURVIVAL_MODEL_BASE = assetUrl('/assets/3d/kenney-survival/')
 const PIRATE_MODEL_BASE = assetUrl('/assets/3d/kenney-pirate/')
 const FANTASY_TOWN_MODEL_BASE = assetUrl('/assets/3d/kenney-fantasy-town/')
@@ -20,18 +24,20 @@ const CATALOG_MODEL_URLS = Object.fromEntries(
 )
 
 const MODEL_URLS_RAW = {
+  player_bicycle: assetUrl(`/assets/3d/${CHARACTER_ASSET_VERSION}/player_bicycle.glb`),
+  player_sports_car: assetUrl(`/assets/3d/${CHARACTER_ASSET_VERSION}/player_sports_car.glb`),
   ...CATALOG_MODEL_URLS,
   grass: `${MODEL_BASE}grass.glb`,
   grassLarge: `${MODEL_BASE}grass_leafsLarge.glb`,
-  bush: `${MODEL_BASE}plant_bushLarge.glb`,
-  treeOak: `${MODEL_BASE}tree_oak.glb`,
-  treeDefault: `${MODEL_BASE}tree_default.glb`,
-  treePine: `${MODEL_BASE}tree_pineTallA_detailed.glb`,
-  rock: `${MODEL_BASE}rock_largeA.glb`,
+  bush: `${ORIGINAL_NATURE_BASE}bush_large.glb`,
+  treeOak: `${ORIGINAL_FOREST_TREE_BASE}tree_oak.glb`,
+  treeDefault: `${ORIGINAL_FOREST_TREE_BASE}tree_default.glb`,
+  treePine: `${ORIGINAL_FOREST_TREE_BASE}tree_pineTallA_detailed.glb`,
+  rock: `${ORIGINAL_NATURE_BASE}rock_large.glb`,
   stone: `${MODEL_BASE}stone_largeA.glb`,
   logStack: `${MODEL_BASE}log_stack.glb`,
-  flowerYellow: `${MODEL_BASE}flower_yellowA.glb`,
-  flowerRed: `${MODEL_BASE}flower_redA.glb`,
+  flowerYellow: `${ORIGINAL_NATURE_BASE}flower_yellow_cluster.glb`,
+  flowerRed: `${ORIGINAL_NATURE_BASE}flower_red_cluster.glb`,
   mushroom: `${MODEL_BASE}mushroom_redGroup.glb`,
   campfire: `${MODEL_BASE}campfire_stones.glb`,
   tent: `${MODEL_BASE}tent_smallOpen.glb`,
@@ -50,11 +56,24 @@ const MODEL_URLS_RAW = {
 }
 
 const MODEL_URLS = Object.fromEntries(
-  Object.entries(MODEL_URLS_RAW).map(([key, url]) => [key, versionedAssetUrl(url)])
+  Object.entries(MODEL_URLS_RAW).map(([key, url]) => {
+    const logicalPath = url.slice(url.indexOf('/assets/'))
+    const refinedPath = REFINED_MODEL_ASSETS[logicalPath]
+    return [key, versionedAssetUrl(refinedPath ? assetUrl(refinedPath) : url)]
+  })
 )
+if (import.meta.env?.DEV) {
+  const missing = LEGACY_MODEL_KEYS.filter((key) => !MODEL_URLS_RAW[key])
+  const extra = Object.keys(MODEL_URLS_RAW).filter((key) => !CATALOG_MODEL_URLS[key] && !LEGACY_MODEL_KEYS.includes(key))
+  if (missing.length || extra.length) console.warn('[threeLowPolyModelCache] LEGACY_MODEL_KEYS out of sync:', { missing, extra })
+}
 
 export function getModelAssetUrl(key) {
   return MODEL_URLS[key] || null
+}
+
+export function getOriginalModelAssetUrl(key) {
+  return MODEL_URLS_RAW[key] || null
 }
 
 const SHARED_GLTF_LOADER = new GLTFLoader()
@@ -88,6 +107,8 @@ const withModelRetryQuery = (url, attempt) => {
 }
 
 function resolveModelPreloadOptions(overrides = {}) {
+  // Optional callers pass undefined; only defined overrides may replace defaults.
+  const provided = Object.fromEntries(Object.entries(overrides).filter(([, value]) => value != null))
   const base = {
     timeoutMs: DEFAULT_MODEL_TIMEOUT_MS,
     concurrency: DEFAULT_MODEL_CONCURRENCY,
@@ -95,7 +116,7 @@ function resolveModelPreloadOptions(overrides = {}) {
   }
 
   if (typeof navigator === 'undefined') {
-    return { ...base, ...overrides }
+    return { ...base, ...provided }
   }
 
   const connection = navigator.connection
@@ -114,7 +135,7 @@ function resolveModelPreloadOptions(overrides = {}) {
     base.retries = 5
   }
 
-  return { ...base, ...overrides }
+  return { ...base, ...provided }
 }
 
 export function resetModelLoadCache() {
@@ -166,73 +187,7 @@ const CORE_MODEL_KEYS = new Set([
   'sign'
 ])
 
-export function getDecorativeModel(type, decoration = {}) {
-  const characterKey = resolveCharacterModelKey(type, decoration)
-  if (characterKey !== type) return { key: characterKey, scale: 1 }
-  switch (type) {
-    case 'tent':
-      return { key: 'tent', scale: 2.25 }
-    case 'campfire':
-      return { key: 'campfire', scale: 1.55 }
-    case 'sign':
-      return { key: 'sign', scale: 2.15 }
-    case 'tree-oak':
-      return { key: 'treeOak', scale: 1.42 }
-    case 'tree-default':
-      return { key: 'treeDefault', scale: 1.35 }
-    case 'tree-pine':
-      return { key: 'treePine', scale: 1.55 }
-    case 'bush-large':
-    case 'nature_bush_large':
-      return { key: 'bush', scale: 1.18 }
-    case 'rock-large':
-    case 'nature_rock_large':
-      return { key: 'rock', scale: 1.08 }
-    case 'stone-large':
-    case 'nature_stone_large':
-      return { key: 'stone', scale: 1.02 }
-    case 'nature_log_stack':
-      return { key: 'logStack', scale: 1.0 }
-    case 'grass-small':
-      return { key: 'grass', scale: 1.05 }
-    case 'grass-large':
-      return { key: 'grassLarge', scale: 1.12 }
-    case 'flower-yellow':
-      return { key: 'flowerYellow', scale: 1.1 }
-    case 'flower-red':
-      return { key: 'flowerRed', scale: 1.08 }
-    case 'mushroom-red':
-      return { key: 'mushroom', scale: 1.05 }
-    case 'wetland_reed_clump':
-      return { key: 'wetlandReedClump', scale: 1.05 }
-    case 'shore_dock_small':
-      return { key: 'shoreDockSmall', scale: 1.05 }
-    case 'shore_rowboat':
-      return { key: 'shoreRowboat', scale: 1.05 }
-    case 'town_fence_low':
-      return { key: 'townFenceLow', scale: 1.05 }
-    case 'town_stall_green':
-      return { key: 'townStallGreen', scale: 1.0 }
-    case 'farm_cart_high':
-      return { key: 'farmCartHigh', scale: 1.0 }
-    case 'grave_lantern_glass':
-      return { key: 'graveLanternGlass', scale: 1.0 }
-    case 'grave_iron_fence_broken':
-      return { key: 'graveIronFenceBroken', scale: 1.0 }
-    case 'ridge_block_grass_edge':
-      return { key: 'ridgeBlockGrassEdge', scale: 1.0 }
-    case 'mine_crate_strong':
-      return { key: 'mineCrateStrong', scale: 1.0 }
-    case 'mine_control_lever':
-      return { key: 'mineControlLever', scale: 1.0 }
-    default:
-      if (MAP_ASSET_CATALOG[type]?.procedural) {
-        return { key: type, scale: MAP_ASSET_CATALOG[type].defaultScale ?? 1 }
-      }
-      if (MODEL_URLS[type]) return { key: type, scale: 1.0 }
-      return null
-  }
-}
+export { getDecorativeModel }
 
 export function getRequiredModelKeys(mapInfo) {
   const keys = new Set(CORE_MODEL_KEYS)

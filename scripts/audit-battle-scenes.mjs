@@ -52,6 +52,20 @@ const requiredRoleClasses = [
   'battle-scene-role-challenge'
 ]
 
+const requiredThemeClasses = [
+  'battle-theme-neutral',
+  'battle-theme-ember',
+  'battle-theme-water',
+  'battle-theme-frost',
+  'battle-theme-storm',
+  'battle-theme-verdant',
+  'battle-theme-mystic',
+  'battle-theme-arcane',
+  'battle-theme-dragon',
+  'battle-theme-earth',
+  'battle-theme-iron'
+]
+
 const errors = []
 const rows = []
 
@@ -68,6 +82,19 @@ for (const roleClass of requiredRoleClasses) {
   if (!css.includes(`.${roleClass}`)) {
     errors.push(`CSS imports from index.css are missing role overlay selector for ${roleClass}`)
   }
+}
+
+for (const themeClass of requiredThemeClasses) {
+  if (!css.includes(`.${themeClass}`)) {
+    errors.push(`CSS imports from index.css are missing opponent theme selector for ${themeClass}`)
+  }
+}
+
+if (!source.includes('battlePresentationClasses') || !source.includes('className="battle-theme-visual"')) {
+  errors.push('BattleScene must render the stable opponent-led theme visual layer')
+}
+if ((source.match(/opponentSnapshot:\s*snapshotBattleOpponent/g) || []).length < 2) {
+  errors.push('Wild and trainer battle creation must persist opponentSnapshot')
 }
 
 const battleSceneClassBlock = source.match(/const battleSceneClass = useMemo\(\(\) => \{[\s\S]*?\n\s*\}, \[[^\]]*\]\);/)

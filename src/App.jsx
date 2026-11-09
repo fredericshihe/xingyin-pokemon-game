@@ -15,6 +15,19 @@ import LazyRouteErrorBoundary from './components/LazyRouteErrorBoundary'
 const Login = lazyWithRetry(() => import('./components/Auth/Login'))
 const Register = lazyWithRetry(() => import('./components/Auth/Register'))
 const TeacherDashboard = lazyWithRetry(() => import('./components/Teacher/Dashboard'))
+const UiDesignPreview = import.meta.env.DEV ? lazyWithRetry(() => import('./design/UiDesignPreview')) : null
+const AdventureItemsPreview = import.meta.env.DEV
+  ? lazyWithRetry(() => import('./game/AdventureItemsPreview'))
+  : null
+const TimberBankPreview = import.meta.env.DEV
+  ? lazyWithRetry(() => import('./game/TimberBankPreview'))
+  : null
+const FishingPreview = import.meta.env.DEV
+  ? lazyWithRetry(() => import('./game/FishingPreview'))
+  : null
+const CharacterUpgradePreview = import.meta.env.DEV
+  ? lazyWithRetry(() => import('./game/CharacterUpgradePreview'))
+  : null
 const MapRuntimePreview = lazyWithRetry(() => import('./game/MapRuntimePreview'))
 const BattleVfxLab = lazyWithRetry(() => import('./game/BattleVfxLab'))
 
@@ -28,20 +41,6 @@ const AUTH_LOCAL_IMAGE_ASSETS = [
   pokemonArtPngUrl(133)
 ]
 
-function GlobalLogoutButton({ onLogout }) {
-  return (
-    <button
-      onClick={onLogout}
-      className="fixed right-3 top-3 z-[9999] game-danger-button px-3 text-sm"
-      aria-label="退出登录"
-      title="退出登录"
-    >
-      <i className="fa-solid fa-right-from-bracket mr-1"></i>
-      退出
-    </button>
-  )
-}
-
 function preloadStudentGameModule(setStudentGameComponent) {
   return import('./components/Game/GameWrapper').then((module) => {
     setStudentGameComponent(() => module.default)
@@ -51,6 +50,9 @@ function preloadStudentGameModule(setStudentGameComponent) {
 function App() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
+  // The table-password auth model has no Supabase auth session. Keep the
+  // teacher credential in memory only for privileged teacher RPCs.
+  const [teacherPassword, setTeacherPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const [authView, setAuthView] = useState('login') // 'login' or 'register'
   const [StudentGameComponent, setStudentGameComponent] = useState(null)
@@ -152,6 +154,7 @@ function App() {
       const storedProfile = authService.getStoredProfile()
       setUser(storedProfile)
       setProfile(storedProfile)
+      setTeacherPassword(storedProfile?.role === 'teacher' ? String(password || '') : '')
       void loadGameStyles()
       if (storedProfile?.role === 'student') {
         primeStudentSession()
@@ -179,6 +182,7 @@ function App() {
     await authService.logout()
     setUser(null)
     setProfile(null)
+    setTeacherPassword('')
     setStudentGameComponent(null)
   }
 
@@ -193,6 +197,24 @@ function App() {
         <MapRuntimePreview />
       </Suspense>
     )
+  }
+
+  if (import.meta.env.DEV && window.location.pathname === '/ui-preview') {
+    return <Suspense fallback={<UnifiedBootScreen phase="正在打开界面设计预览…" showProgressBar={false} />}><UiDesignPreview /></Suspense>
+  }
+  if (import.meta.env.DEV && window.location.pathname === '/adventure-items-preview') {
+    return <Suspense fallback={<UnifiedBootScreen phase="正在打开道具预览..." showProgressBar={false} />}><AdventureItemsPreview /></Suspense>
+  }
+
+  if (import.meta.env.DEV && window.location.pathname === '/timber-bank-preview') {
+    return <Suspense fallback={<UnifiedBootScreen phase="正在打开银行预览..." showProgressBar={false} />}><TimberBankPreview /></Suspense>
+  }
+
+  if (import.meta.env.DEV && window.location.pathname === '/fishing-preview') {
+    return <Suspense fallback={<UnifiedBootScreen phase="正在打开钓鱼预览..." showProgressBar={false} />}><FishingPreview /></Suspense>
+  }
+  if (import.meta.env.DEV && window.location.pathname === '/character-preview') {
+    return <Suspense fallback={<UnifiedBootScreen phase="正在打开人物图册…" showProgressBar={false} />}><CharacterUpgradePreview /></Suspense>
   }
 
   const battleVfxLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_BATTLE_VFX_LAB === 'true'
@@ -235,7 +257,7 @@ function App() {
   const basename = import.meta.env.BASE_URL || '/'
   return (
     <>
-      {profile.role !== 'student' && <GlobalLogoutButton onLogout={handleLogout} />}
+
       <Router basename={basename} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <LazyRouteErrorBoundary>
           {profile.role === 'student' ? (
@@ -254,7 +276,7 @@ function App() {
               <Routes>
                 <Route
                   path="/*"
-                  element={<TeacherDashboard profile={profile} />}
+                  element={<TeacherDashboard profile={profile} teacherPassword={teacherPassword} onLogout={handleLogout} />}
                 />
               </Routes>
             </Suspense>

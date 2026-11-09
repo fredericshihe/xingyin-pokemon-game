@@ -4517,7 +4517,7 @@ export const MAP_EXCLUSIVE_MEASUREMENTS = {
       "width": 2.19,
       "height": 1.79
     },
-    "height": 2.812408685684204
+    "height": 4.058774471282959
   },
   "exclusive_village_02": {
     "footprint": {
@@ -5000,7 +5000,7 @@ export const MAP_EXCLUSIVE_MEASUREMENTS = {
       "width": 2.39,
       "height": 1.23
     },
-    "height": 2.6654138565063477
+    "height": 4.050474643707275
   },
   "exclusive_shore_07": {
     "footprint": {

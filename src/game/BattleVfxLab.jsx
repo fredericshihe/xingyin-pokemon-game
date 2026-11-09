@@ -45,7 +45,7 @@ function BattleMaterialLab() {
   const profile = getBattleCinematicProfile(moveKey, move, config, { phase })
   const recipe = getMoveVfxRecipe(moveKey, move, config)
   const fixedFrame = new URLSearchParams(location.search).has('frame')
-  const targetSide = config.target === 'self' ? attackerSide : attackerSide === 'player' ? 'enemy' : 'player'
+  const targetSide = move.category === 'status' && config.target === 'self' ? attackerSide : attackerSide === 'player' ? 'enemy' : 'player'
 
   const moveOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -64,8 +64,11 @@ function BattleMaterialLab() {
   const play = useCallback(() => {
     const currentMove = MOVES[moveKey]
     const currentConfig = getMoveEffectConfig(moveKey, currentMove)
-    const currentProfile = getBattleCinematicProfile(moveKey, currentMove, currentConfig, { phase })
-    const currentTargetSide = currentConfig.target === 'self'
+    const params = new URLSearchParams(location.search)
+    const hitCount = Math.max(1,Number(params.get('hits')) || currentMove.multiHit?.min || 1)
+    const hitIndex = Math.min(hitCount-1,Math.max(0,Number(params.get('hit')) || 0))
+    const currentProfile = getBattleCinematicProfile(moveKey, currentMove, currentConfig, { phase, hitCount, hitIndex })
+    const currentTargetSide = currentMove.category === 'status' && currentConfig.target === 'self'
       ? attackerSide
       : attackerSide === 'player' ? 'enemy' : 'player'
     const currentFeedback = phase === 'hit' && currentMove.category !== 'status'
@@ -76,6 +79,7 @@ function BattleMaterialLab() {
         targetSide: currentTargetSide,
         moveType: currentMove.type,
         intensity: currentProfile.intensity,
+        hitCount, hitIndex,
       })
       : null
     const id = `lab-${moveKey}-${phase}-${Date.now()}`
@@ -126,13 +130,13 @@ function BattleMaterialLab() {
         <div className="battle-environment-props" aria-hidden="true"><span className="battle-env-prop battle-env-prop--horizon" /><span className="battle-env-prop battle-env-prop--foreground" /></div>
         <BattleMoveEffect effect={effect} onDone={() => { setEffect(null); setFeedback(null) }} />
         <BattleImpactFeedback feedback={feedback} anchors={LAB_ANCHORS} />
-        <div className="battle-vfx-lab__mon battle-vfx-lab__mon--enemy">
+        <div className="battle-vfx-lab__mon battle-vfx-lab__mon--enemy" style={{left:LAB_ANCHORS.enemy.x,top:LAB_ANCHORS.enemy.y,right:'auto',transform:'translate(-50%,-50%)'}}>
           <img src={pokemonArtUrl(150)} onError={(event) => { event.currentTarget.src = pokemonArtPngUrl(150) }} alt="敌方宝可梦" />
         </div>
-        <div className="battle-vfx-lab__mon battle-vfx-lab__mon--player">
+        <div className="battle-vfx-lab__mon battle-vfx-lab__mon--player" style={{left:LAB_ANCHORS.player.x,top:LAB_ANCHORS.player.y,bottom:'auto',transform:'translate(-50%,-50%)'}}>
           <img src={pokemonArtUrl(25)} onError={(event) => { event.currentTarget.src = pokemonArtPngUrl(25) }} alt="我方宝可梦" />
         </div>
-        <div className="battle-vfx-lab__move-title">
+        <div className="battle-vfx-lab__move-title" style={{top:'auto',bottom:8,left:8,padding:'5px 10px',pointerEvents:'none'}}>
           <span>{move.type} · {move.category}</span>
           <strong>{move.name}</strong>
           <small>{moveKey} · 威力 {move.power || '—'} · {recipe.technique}/{recipe.material}</small>

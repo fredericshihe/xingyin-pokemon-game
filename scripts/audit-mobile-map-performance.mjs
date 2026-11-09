@@ -6,7 +6,7 @@ import { existsSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { MAP_CATALOG, MAP_CHAIN } from '../src/game/data/mapCatalog.js'
+import { withViteAuditServer } from './load-vite-module.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,7 +19,7 @@ const DEFAULT_DEVICES = [
   { id: 'ipad_mini', label: 'iPad Mini 768x1024 DPR2 CPUx3', width: 768, height: 1024, dpr: 2, cpuThrottle: 3 }
 ]
 
-const REGION_MAPS = MAP_CHAIN.filter((mapId) => mapId !== 'GodotMap')
+let MAP_CATALOG, MAP_CHAIN, REGION_MAPS
 
 function parseArgs(argv) {
   const args = {
@@ -610,6 +610,8 @@ function sleep(ms) {
 export { launchChrome, createPage, preparePage, navigateAndWait, evaluate, waitForSceneReady, sleep }
 
 if (process.argv.slice(1).some((arg) => path.resolve(arg) === __filename)) {
+;({ MAP_CATALOG, MAP_CHAIN } = await withViteAuditServer(({ loadModule }) => loadModule('/src/game/data/mapCatalog.js')))
+REGION_MAPS = MAP_CHAIN.filter((mapId) => mapId !== 'GodotMap')
 const args = parseArgs(process.argv.slice(2))
 const startedAt = new Date()
 const { maps, devices, results } = await runBenchmark(args)

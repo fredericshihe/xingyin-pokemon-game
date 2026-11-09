@@ -18,7 +18,16 @@ export function isEliteRouteBlockerEvent(mapEvent) {
 export function isEliteRouteBlockerCleared(mapEvent, visualState = 'available', currentMapBossCompleted = false) {
   if (!isEliteRouteBlockerEvent(mapEvent)) return false
   if (mapEvent.type === 'boss' && currentMapBossCompleted) return true
+  if (visualState && typeof visualState === 'object') {
+    return visualState.routeCleared === true || CLEARED_ROUTE_BLOCKER_STATES.has(visualState.status)
+  }
   return CLEARED_ROUTE_BLOCKER_STATES.has(visualState)
+}
+
+export function shouldRouteBattleEventToInfo(mapEvent, mapEventVisualState) {
+  if (!mapEvent || !['trainer', 'boss', 'challenge'].includes(mapEvent.type)) return false
+  const status = mapEventVisualState?.[mapEvent.id]?.status || 'available'
+  return ['daily_complete', 'cleared', 'completed', 'locked'].includes(status)
 }
 
 export function getEliteRouteStepAsideOffset(mapEvent) {

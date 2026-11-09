@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-10-01T13:11:54.424Z",
+  "battles": 864,
+  "scenarios": 48,
+  "samplesPerScenario": 18,
+  "allPerBattleFieldsIdentical": true,
+  "sourceFiles": {
+    "scripts/audit-timber-league-realistic.mjs": "1c108c0e7e8e1bacf4beb0075a691e421fd035c1bfa19ca0177072efedddbcdd",
+    "scripts/timber-league-runtime.mjs": "f943f2144e27b58378f54187e4f3e8b35e2eb2368154adedd205911e5c18a54e",
+    "src/components/Game/OriginalGame.jsx": "c312418fe0058a993dfcc0713176ae4541c40d56d5896c36080f10e2d4dcb743",
+    "src/game/timberLeague.js": "83ff50165d85ccd489b0ad14c223c45d4b5ec27a1f64f1737329a1af6c6225ae",
+    "src/game/data/godotMaps/godot_region_maps.js": "08055b73c0c85b8eb1848a71a88f6371c8aee89ff0ce469325389326618d1186",
+    "src/utils/gameData.js": "cb1f5672c65c5e30dd7f07657fe3fc3e0896ec3cf5eb12170a303e8e0f2e4b59",
+    "src/utils/pokemonStats.js": "b24cf1f6a33d1d21811780f637506bb76ce99a841d735c9e2354f8281fa210b9",
+    "src/utils/battleDamage.js": "dcfd0ea828a34e52c3d6ddf272d4c97871da6325ea2d641331091cfae9c7dbbb",
+    "src/utils/battleAi.js": "461d35d7efc385aac3b084f07e0bc34cd239bff8d2188fabdacad31497a474e2",
+    "src/utils/inventoryItems.js": "aea3a1735620c8a992782b721384661ffd5d6d4f80f94d1581e407688c68b74e",
+    "src/utils/gameBalance.js": "a52581623843e1e503e64953adaba20593469ad65653b194df760d37db9d7871",
+    "src/utils/constants.js": "59a7a34f450d020e9ef9e97cbc779f7914b66c9671bf19d02f2b32414629d826"
+  }
+}

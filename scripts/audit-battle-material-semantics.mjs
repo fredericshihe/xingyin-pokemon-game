@@ -8,7 +8,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const { createBattleVfxRenderer } = await loadModule('/src/utils/battleVfxRenderer.js')
   let allocations = 0, lastPoint = null, straightLength = 0, currentSegments = [], blends = []
   const ctx = {
-    save() {}, restore() {}, clearRect() {}, fillRect() {}, translate() {}, rotate() {}, drawImage() {},
+    save() {}, restore() {}, clearRect() {}, fillRect() {}, translate() {}, rotate() {}, scale() {}, drawImage() {},
     beginPath() { lastPoint = null; currentSegments = [] }, closePath() {}, fill() {},
     moveTo(x,y) { lastPoint = [x,y] },
     lineTo(x,y) { if(lastPoint)currentSegments.push(Math.hypot(x-lastPoint[0],y-lastPoint[1]));lastPoint=[x,y] },

@@ -81,8 +81,8 @@ export const TRAINER_ROLE_BALANCE = {
     maxTeamSize: 3,
     levelOffset: 0,
     rewardMultiplier: 0.72,
-    goldMultiplier: 1,
-    goldCapMultiplier: 1,
+    goldMultiplier: 1.5,
+    goldCapMultiplier: 3.1,
     aiSkill: 0.5,
     switchChance: 0.08,
     switchScoreGap: 34,
@@ -97,8 +97,8 @@ export const TRAINER_ROLE_BALANCE = {
     maxTeamSize: 3,
     levelOffset: 0,
     rewardMultiplier: 0.72,
-    goldMultiplier: 1,
-    goldCapMultiplier: 1,
+    goldMultiplier: 1.5,
+    goldCapMultiplier: 3.1,
     aiSkill: 0.5,
     switchChance: 0.08,
     switchScoreGap: 34,
@@ -129,8 +129,8 @@ export const TRAINER_ROLE_BALANCE = {
     maxTeamSize: 5,
     levelOffset: 1,
     rewardMultiplier: 1.14,
-    goldMultiplier: 1.25,
-    goldCapMultiplier: 1.2,
+    goldMultiplier: 1.8,
+    goldCapMultiplier: 3.5,
     aiSkill: 0.72,
     switchChance: 0.18,
     switchScoreGap: 30,
@@ -145,8 +145,8 @@ export const TRAINER_ROLE_BALANCE = {
     maxTeamSize: 6,
     levelOffset: 2,
     rewardMultiplier: 1.5,
-    goldMultiplier: 1.75,
-    goldCapMultiplier: 1.8,
+    goldMultiplier: 2.2,
+    goldCapMultiplier: 3.75,
     aiSkill: 0.92,
     switchChance: 0.26,
     switchScoreGap: 24,
@@ -161,8 +161,8 @@ export const TRAINER_ROLE_BALANCE = {
     maxTeamSize: 6,
     levelOffset: 1,
     rewardMultiplier: 1.2,
-    goldMultiplier: 1.35,
-    goldCapMultiplier: 1.35,
+    goldMultiplier: 1.95,
+    goldCapMultiplier: 3.6,
     aiSkill: 0.78,
     switchChance: 0.2,
     switchScoreGap: 28,
@@ -582,6 +582,9 @@ export const getItemRewardWarning = ({ itemKey, quantity }) => {
   const value = Number(quantity)
   const expPotion = EXP_POTIONS[itemKey]
   if (expPotion) {
+    if (expPotion.levelGain === 1 && value > 0) {
+      return `超级经验药水每瓶直接提升1级，本次最多提升 ${Math.trunc(value)} 级（最高100级），请按当前成长进度发放。`
+    }
     const totalExp = Math.max(0, (Number(expPotion.expAmount) || 0) * Math.max(0, value || 0))
     if (itemKey === 'exp_potion_large' && value >= TEACHER_REWARD_GUARDRAILS.largeExpPotionQuantityWarning) {
       return `大经验药水数量较高（${value}），可能让学生快速跨过多个等级段。`

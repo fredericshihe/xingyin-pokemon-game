@@ -83,6 +83,11 @@ const checks = [
     passed: /const showBootScreen = \([\s\S]*?playtimeLoading[\s\S]*?Boolean\(playtimeError\)[\s\S]*?!playtimeStatus/.test(originalGame),
   },
   {
+    name: 'visible_status_response_is_applied',
+    passed: /const loadStudentPlaytimeStatus = useCallback\([\s\S]*?requestEpoch !== playtimeLifecycleEpochRef\.current \|\| !playtimePageVisibleRef\.current[\s\S]*?applyStudentPlaytimeStatus\(row\)/.test(originalGame) &&
+      !/loadStudentPlaytimeStatus = useCallback\([\s\S]*?requestEpoch !== playtimeLifecycleEpochRef\.current \|\| playtimePageVisibleRef\.current/.test(originalGame),
+  },
+  {
     name: 'boot_error_allows_retry_and_logout',
     passed: /actionLabel=\{bootError[\s\S]*?重新校验时长[\s\S]*?secondaryActionLabel=\{showLogoutAction[\s\S]*?退出登录/.test(originalGame) &&
       /\{onSecondaryAction && secondaryActionLabel \? \([\s\S]*?onClick=\{onSecondaryAction\}/.test(bootScreen),

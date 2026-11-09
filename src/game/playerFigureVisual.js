@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { getCachedModelScene } from './threeLowPolyModelCache'
-import { PLAYER_CHARACTER_KEY } from './data/characterAssets.js'
+import { PLAYER_CHARACTER_KEY, CHARACTER_ASSET_VERSION } from './data/characterAssets.js'
+import { configureCharacterSurfaceMaterial } from './characterSurfaceMaterial.js'
+import { getCharacterGaitBodyOffset, solveCharacterLegGait } from './characterGait.js'
 
 const WALK_CYCLE_MS = 540
 const PREVIEW_CACHE = new Map()
@@ -165,6 +167,10 @@ function applyLowPolyPlayerPose(rig, blend, phase) {
     rotX: counterStride * 0.3 + rightFootLift * 0.08,
     rotZ: -counterStride * 0.02
   })
+  setAnimatedTransform(rig.parts.leftForearm, rig.base.leftForearm, blend, { rotX: -.12 - Math.max(counterStride, 0) * .25 })
+  setAnimatedTransform(rig.parts.rightForearm, rig.base.rightForearm, blend, { rotX: -.12 - Math.max(stride, 0) * .25 })
+  setAnimatedTransform(rig.parts.leftShin, rig.base.leftShin, blend, { rotX: Math.max(-stride, 0) * .62 })
+  setAnimatedTransform(rig.parts.rightShin, rig.base.rightShin, blend, { rotX: Math.max(-counterStride, 0) * .62 })
 }
 
 function disposeObject(object) {
@@ -311,6 +317,7 @@ export function createLowPolyPlayer() {
       // Each map/portrait owns its GPU buffers; disposing a preview cannot invalidate the cache.
       child.geometry = child.geometry.clone()
       child.material = child.material.clone()
+      configureCharacterSurfaceMaterial(child.material, child.geometry)
       child.castShadow = true
       child.receiveShadow = true
       parts[child.name] = child
@@ -332,25 +339,55 @@ export function setLowPolyPlayerPose(player, { moving = false, phase = 0 } = {})
   const rig = player?.userData?.rig
   if (!rig) return
   rig.walkBlend = moving ? 1 : 0
+  rig.gaitDuty = .5
+  rig.gaitHalfStride = .16
   if (rig.authored) applyAuthoredPlayerPose(rig, rig.walkBlend, phase)
   else applyLowPolyPlayerPose(rig, rig.walkBlend, phase)
 }
 
-function applyAuthoredPlayerPose(rig, blend, phase) {
+function applyAuthoredPlayerPose(rig, blend, phase, now = 0) {
   const stride = Math.sin(phase) * blend
-  const bounce = Math.abs(Math.sin(phase)) * .018 * blend
+  const upperLength = Math.abs(rig.base.leftShin?.position.y || 0)
+  const lowerLength = Math.hypot(rig.base.leftFoot?.position.y || 0, rig.base.leftFoot?.position.z || 0)
+  const halfStride = rig.gaitHalfStride ?? .16
+  const bodyOffset = upperLength && lowerLength ? getCharacterGaitBodyOffset({
+    phase, blend, legLength: upperLength + lowerLength, standingHeight: upperLength + Math.abs(rig.base.leftFoot.position.y), halfStride, stanceFraction: rig.gaitDuty ?? .5
+  }) : 0
   Object.entries(rig.parts).forEach(([name, part]) => {
     const base = rig.base[name]
     part.position.copy(base.position)
     part.rotation.copy(base.rotation)
-    part.position.y += bounce
+    // Nested forearms and shins inherit the torso-side bounce from their parent.
+    if (part.parent === rig.parts.leftArm || part.parent === rig.parts.rightArm || part.parent === rig.parts.leftLeg || part.parent === rig.parts.rightLeg || part.parent === rig.parts.leftShin || part.parent === rig.parts.rightShin) return
+    // Keep the head, coat and shoulders stable. Only the covered hip joints
+    // follow the contact arc; rapid foot cycles must not shake the whole body.
+    if (name === 'leftLeg' || name === 'rightLeg') part.position.y += bodyOffset
   })
   for (const [name, angle] of Object.entries({ leftArm: -stride * .46, rightArm: stride * .46, leftLeg: stride * .40, rightLeg: -stride * .40 })) {
     const part = rig.parts[name]
     if (part) part.rotateX(angle)
   }
-  rig.parts.body?.rotateY(stride * .035)
-  rig.parts.head?.rotateZ(-stride * .015)
+  rig.parts.body?.rotateY(stride * .012)
+  rig.parts.leftForearm?.rotateX(-Math.max(-stride, 0) * .24)
+  rig.parts.rightForearm?.rotateX(-Math.max(stride, 0) * .24)
+  rig.parts.leftShin?.rotateX(Math.max(-stride, 0) * .58)
+  rig.parts.rightShin?.rotateX(Math.max(stride, 0) * .58)
+  for (const [side, offset] of [['left', 0], ['right', Math.PI]]) {
+    const thigh = rig.parts[`${side}Leg`], shin = rig.parts[`${side}Shin`]
+    if (!thigh || !shin || blend < .001) continue
+    const upperLength = Math.abs(rig.base[`${side}Shin`].position.y)
+    const foot = rig.parts[`${side}Foot`]
+    const footBase = rig.base[`${side}Foot`]?.position
+    const lowerLength = foot ? Math.hypot(footBase.y, footBase.z) : upperLength * .38 / .33
+    const ankleY = rig.base[`${side}Leg`].position.y - upperLength - Math.abs(footBase?.y ?? lowerLength)
+    const gait = solveCharacterLegGait({ phase: phase + offset, blend, hipY: thigh.position.y, upperLength, lowerLength, ankleY,
+      halfStride, lowerBindAngle: Math.atan2(footBase?.z || 0, Math.abs(footBase?.y ?? lowerLength)), stanceFraction: rig.gaitDuty ?? .5 })
+    thigh.rotation.x = rig.base[`${side}Leg`].rotation.x + gait.upperAngle
+    shin.rotation.x = rig.base[`${side}Shin`].rotation.x + gait.lowerAngle
+    if (foot) foot.rotation.x = rig.base[`${side}Foot`].rotation.x - gait.upperAngle - gait.lowerAngle
+  }
+  const breath = Math.sin(now * .00165) * .004 * (1 - blend)
+  for (const name of ['body','head','leftArm','rightArm']) if (rig.parts[name]) rig.parts[name].position.y += breath
 }
 
 export function animateLowPolyPlayer(player, moving, now, dt) {
@@ -362,7 +399,30 @@ export function animateLowPolyPlayer(player, moving, now, dt) {
   const smooth = 1 - Math.pow(moving ? 0.001 : 0.02, delta)
   rig.walkBlend = THREE.MathUtils.lerp(rig.walkBlend ?? 0, blendTarget, smooth)
   const phase = (now / WALK_CYCLE_MS) * Math.PI * 2
-  if (rig.authored) applyAuthoredPlayerPose(rig, rig.walkBlend, phase)
+  if (rig.authored) {
+    rig.motionPoint ||= new THREE.Vector3()
+    player.getWorldPosition(rig.motionPoint)
+    const previous = rig.previousMotionPoint
+    const distance = previous ? Math.hypot(rig.motionPoint.x - previous.x, rig.motionPoint.z - previous.z) : 0
+    rig.previousMotionPoint ||= new THREE.Vector3()
+    rig.previousMotionPoint.copy(rig.motionPoint)
+    rig.gaitPhase ??= 0
+    if (moving) {
+      const seconds = Math.max(.001, delta)
+      if (distance > .00001 && distance < .5) {
+        const speed = distance / seconds, duty = THREE.MathUtils.clamp(.5 - speed * .04, .28, .5)
+        rig.gaitDuty = THREE.MathUtils.lerp(rig.gaitDuty ?? .5, duty, 1 - Math.exp(-seconds * 12))
+        rig.gaitHalfStride = THREE.MathUtils.clamp(.14 + speed * .015, .14, .22)
+        // The support foot moves backward by exactly the travelled distance.
+        rig.gaitPhase += distance / (2 * rig.gaitHalfStride / rig.gaitDuty) * Math.PI * 2
+      } else {
+        rig.gaitDuty = .5
+        rig.gaitHalfStride = .16
+        rig.gaitPhase += seconds / (WALK_CYCLE_MS / 1000) * Math.PI * 2
+      }
+    }
+    applyAuthoredPlayerPose(rig, rig.walkBlend, rig.gaitPhase, now)
+  }
   else applyLowPolyPlayerPose(rig, rig.walkBlend, phase)
 }
 
@@ -372,9 +432,12 @@ export function getLowPolyPlayerFigureDataUrl({
   width = 176,
   height = 176,
   scale = 1,
-  cameraPreset = 'portrait'
+  cameraPreset = 'portrait',
+  requireAuthored = false
 } = {}) {
   if (typeof document === 'undefined') return null
+  const cached = getCachedModelScene(PLAYER_CHARACTER_KEY)
+  if (requireAuthored && (!cached || cached.name.startsWith('missing-model:'))) return null
 
   const safeDirection = PREVIEW_DIRECTION_ROTATIONS[direction] != null ? direction : 'right'
   const safePose = pose === 'run' ? 'run' : 'idle'
@@ -383,7 +446,7 @@ export function getLowPolyPlayerFigureDataUrl({
   const safeScale = Math.max(0.6, Number(scale) || 1)
   const safeCameraPreset = PREVIEW_CAMERA_PRESETS[cameraPreset] ? cameraPreset : 'portrait'
   const cameraConfig = PREVIEW_CAMERA_PRESETS[safeCameraPreset]
-  const modelFamily = getCachedModelScene(PLAYER_CHARACTER_KEY) ? 'blender-v1' : 'fallback'
+  const modelFamily = cached ? CHARACTER_ASSET_VERSION : 'fallback'
   const cacheKey = `${modelFamily}:${safeDirection}:${safePose}:${safeWidth}:${safeHeight}:${safeScale.toFixed(2)}:${safeCameraPreset}`
 
   if (PREVIEW_CACHE.has(cacheKey)) {

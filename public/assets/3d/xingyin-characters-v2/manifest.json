@@ -1,0 +1,3333 @@
+{
+  "version": "xingyin-characters-v2",
+  "characters": [
+    {
+      "id": "player_child_adventurer",
+      "name": "星音 · 主角",
+      "file": "player_child_adventurer.glb",
+      "height": 1.55,
+      "triangles": 12610,
+      "meshes": 12,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "adventurer",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 60596,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.329192116856575,
+          0,
+          -0.2558916211128235
+        ],
+        "max": [
+          0.3291963264346123,
+          1.5500023066997528,
+          0.26044946908950806
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_a",
+      "name": "野外训练家",
+      "file": "blocky_character_a.glb",
+      "height": 2.5,
+      "triangles": 10344,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "ranger",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40868,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5112103223800659,
+          0,
+          -0.4050711393356323
+        ],
+        "max": [
+          0.5111908912658691,
+          2.499999973922968,
+          0.3081681728363037
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_b",
+      "name": "学院训练家",
+      "file": "blocky_character_b.glb",
+      "height": 2.5,
+      "triangles": 9847,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "academy",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39152,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5348239541053772,
+          0,
+          -0.3965514600276947
+        ],
+        "max": [
+          0.5348826050758362,
+          2.500000210478902,
+          0.2916620075702667
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_c",
+      "name": "研究员",
+      "file": "blocky_character_c.glb",
+      "height": 2.5,
+      "triangles": 9908,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "scholar",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38972,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5451749563217163,
+          0,
+          -0.2998059093952179
+        ],
+        "max": [
+          0.5451321601867676,
+          2.500000210478902,
+          0.31271931529045105
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_d",
+      "name": "旅行少女",
+      "file": "blocky_character_d.glb",
+      "height": 2.5,
+      "triangles": 10150,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "traveler",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40236,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5348239541053772,
+          0,
+          -0.5282745361328125
+        ],
+        "max": [
+          0.5348826050758362,
+          2.500000210478902,
+          0.2916303277015686
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_e",
+      "name": "海岸向导",
+      "file": "blocky_character_e.glb",
+      "height": 2.5,
+      "triangles": 9769,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "sailor",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38548,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5208740234375,
+          0,
+          -0.3192606270313263
+        ],
+        "max": [
+          0.5209070444107056,
+          2.5000000707805157,
+          0.4200728237628937
+        ]
+      }
+    },
+    {
+      "id": "blocky_character_f",
+      "name": "城镇居民",
+      "file": "blocky_character_f.glb",
+      "height": 2.5,
+      "triangles": 9522,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "artisan",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 37676,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5148186087608337,
+          0,
+          -0.30309319496154785
+        ],
+        "max": [
+          0.5147547125816345,
+          2.4999999683350325,
+          0.28074371814727783
+        ]
+      }
+    },
+    {
+      "id": "trainer_lieutenant",
+      "name": "精英训练家",
+      "file": "trainer_lieutenant.glb",
+      "height": 2.5,
+      "triangles": 9667,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "officer",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38428,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.549946129322052,
+          0,
+          -0.4030214250087738
+        ],
+        "max": [
+          0.5499746203422546,
+          2.500000210478902,
+          0.2912959158420563
+        ]
+      }
+    },
+    {
+      "id": "trainer_boss",
+      "name": "地区首领",
+      "file": "trainer_boss.glb",
+      "height": 2.5,
+      "triangles": 9753,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "commander",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 36464,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.530846118927002,
+          0,
+          -0.39242884516716003
+        ],
+        "max": [
+          0.5307726860046387,
+          2.499999977648258,
+          0.2962423264980316
+        ]
+      }
+    },
+    {
+      "id": "trainer_merchant",
+      "name": "旅行商人",
+      "file": "trainer_merchant.glb",
+      "height": 2.5,
+      "triangles": 10436,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "merchant",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41240,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5112103223800659,
+          0,
+          -0.4050711393356323
+        ],
+        "max": [
+          0.5111908912658691,
+          2.499999973922968,
+          0.3081681728363037
+        ]
+      }
+    },
+    {
+      "id": "trainer_breeder",
+      "name": "星雾宝可梦饲养家",
+      "file": "trainer_breeder.glb",
+      "height": 2.5,
+      "triangles": 13381,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "breeder",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 51348,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.7309620976448059,
+          0,
+          -0.5144954323768616
+        ],
+        "max": [
+          0.6616399884223938,
+          2.5000000707805157,
+          0.4200098514556885
+        ]
+      }
+    },
+    {
+      "id": "trainer_challenge",
+      "name": "铁木计时员",
+      "file": "trainer_challenge.glb",
+      "height": 2.5,
+      "triangles": 11157,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "challenge",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 43600,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5501348972320557,
+          0,
+          -0.30309319496154785
+        ],
+        "max": [
+          0.954931378364563,
+          2.4999999683350325,
+          0.35475337505340576
+        ]
+      }
+    },
+    {
+      "id": "grave_character_ghost",
+      "name": "幽谷引路人",
+      "file": "grave_character_ghost.glb",
+      "height": 2.5,
+      "triangles": 10560,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "mystic",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41624,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5451749563217163,
+          0,
+          -0.4030214250087738
+        ],
+        "max": [
+          0.5451321601867676,
+          2.500000210478902,
+          0.29190632700920105
+        ]
+      }
+    },
+    {
+      "id": "grave_character_skeleton",
+      "name": "遗迹守望者",
+      "file": "grave_character_skeleton.glb",
+      "height": 2.5,
+      "triangles": 10272,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "guard",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40444,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5607293844223022,
+          0,
+          -0.2998059093952179
+        ],
+        "max": [
+          0.5607075691223145,
+          2.500000210478902,
+          0.29166093468666077
+        ]
+      }
+    },
+    {
+      "id": "grave_character_zombie",
+      "name": "荒园守卫",
+      "file": "grave_character_zombie.glb",
+      "height": 2.5,
+      "triangles": 9852,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "ranger",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38968,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5112103223800659,
+          0,
+          -0.3597196638584137
+        ],
+        "max": [
+          0.5111908912658691,
+          2.499999973922968,
+          0.30819830298423767
+        ]
+      }
+    },
+    {
+      "id": "elite_frost_sentinel",
+      "name": "霜纹哨兵",
+      "file": "elite_frost_sentinel.glb",
+      "height": 2.63,
+      "triangles": 11545,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "frost",
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42472,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5898873209953308,
+          0,
+          -0.34031960368156433
+        ],
+        "max": [
+          0.5898643136024475,
+          2.630000051110983,
+          0.3067859709262848
+        ]
+      }
+    },
+    {
+      "id": "elite_frost_mystic",
+      "name": "镜湖术士",
+      "file": "elite_frost_mystic.glb",
+      "height": 2.63,
+      "triangles": 10334,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "frost",
+      "rank": "lieutenant",
+      "style": "mystic",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38508,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5317589044570923,
+          0,
+          -0.39310362935066223
+        ],
+        "max": [
+          0.5317672491073608,
+          2.6299999337643385,
+          0.2845030128955841
+        ]
+      }
+    },
+    {
+      "id": "elite_frost_warden",
+      "name": "白雾守卫",
+      "file": "elite_frost_warden.glb",
+      "height": 2.63,
+      "triangles": 9381,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "frost",
+      "rank": "lieutenant",
+      "style": "ranger",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 34684,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5415891408920288,
+          0,
+          -0.31885403394699097
+        ],
+        "max": [
+          0.5415219068527222,
+          2.629999939352274,
+          0.2953423261642456
+        ]
+      }
+    },
+    {
+      "id": "elite_frost_master",
+      "name": "霜镜天王",
+      "file": "elite_frost_master.glb",
+      "height": 2.96,
+      "triangles": 13358,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "frost",
+      "rank": "master",
+      "style": "sovereign",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 48740,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.6155568957328796,
+          0,
+          -0.4424284100532532
+        ],
+        "max": [
+          0.6155632138252258,
+          2.9600000996142626,
+          0.33411312103271484
+        ]
+      }
+    },
+    {
+      "id": "elite_tide_diver",
+      "name": "潮汐潜员",
+      "file": "elite_tide_diver.glb",
+      "height": 2.63,
+      "triangles": 10645,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "tide",
+      "rank": "lieutenant",
+      "style": "diver",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38992,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5785433053970337,
+          0,
+          -0.397039532661438
+        ],
+        "max": [
+          0.5785732269287109,
+          2.630000051110983,
+          0.3290478587150574
+        ]
+      }
+    },
+    {
+      "id": "elite_tide_hunter",
+      "name": "深海猎手",
+      "file": "elite_tide_hunter.glb",
+      "height": 2.63,
+      "triangles": 10607,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "tide",
+      "rank": "lieutenant",
+      "style": "sailor",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39424,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5377932786941528,
+          0,
+          -0.40525898337364197
+        ],
+        "max": [
+          0.5377727746963501,
+          2.629999930039048,
+          0.32419952750205994
+        ]
+      }
+    },
+    {
+      "id": "elite_tide_priest",
+      "name": "漩涡祭司",
+      "file": "elite_tide_priest.glb",
+      "height": 2.63,
+      "triangles": 9994,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "tide",
+      "rank": "lieutenant",
+      "style": "mystic",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 36736,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5520710349082947,
+          0,
+          -0.31885403394699097
+        ],
+        "max": [
+          0.5520697236061096,
+          2.629999939352274,
+          0.2959844470024109
+        ]
+      }
+    },
+    {
+      "id": "elite_tide_master",
+      "name": "深潮天王",
+      "file": "elite_tide_master.glb",
+      "height": 2.96,
+      "triangles": 12486,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "tide",
+      "rank": "master",
+      "style": "sovereign",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 45708,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.6354237198829651,
+          0,
+          -0.456707626581192
+        ],
+        "max": [
+          0.6354448199272156,
+          2.9599999114871025,
+          0.3447670042514801
+        ]
+      }
+    },
+    {
+      "id": "elite_iron_smith",
+      "name": "铸盾工匠",
+      "file": "elite_iron_smith.glb",
+      "height": 2.63,
+      "triangles": 9472,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "iron",
+      "rank": "lieutenant",
+      "style": "artisan",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 35204,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5626348257064819,
+          0,
+          -0.3153958320617676
+        ],
+        "max": [
+          0.5626963376998901,
+          2.630000051110983,
+          0.306827187538147
+        ]
+      }
+    },
+    {
+      "id": "elite_iron_engineer",
+      "name": "磁轨技师",
+      "file": "elite_iron_engineer.glb",
+      "height": 2.63,
+      "triangles": 10688,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "iron",
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39568,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5735240578651428,
+          0,
+          -0.4239785373210907
+        ],
+        "max": [
+          0.5734789967536926,
+          2.630000051110983,
+          0.3289177715778351
+        ]
+      }
+    },
+    {
+      "id": "elite_iron_royal_guard",
+      "name": "王座禁卫",
+      "file": "elite_iron_royal_guard.glb",
+      "height": 2.63,
+      "triangles": 11375,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "iron",
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41820,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.567822277545929,
+          0,
+          -0.31885403394699097
+        ],
+        "max": [
+          0.5677828192710876,
+          2.629999939352274,
+          0.2953423261642456
+        ]
+      }
+    },
+    {
+      "id": "elite_iron_master",
+      "name": "铁壁天王",
+      "file": "elite_iron_master.glb",
+      "height": 2.96,
+      "triangles": 13167,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "iron",
+      "rank": "master",
+      "style": "sovereign",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 47944,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.6464542746543884,
+          0,
+          -0.4646357595920563
+        ],
+        "max": [
+          0.6464566588401794,
+          2.9599999226629734,
+          0.35075095295906067
+        ]
+      }
+    },
+    {
+      "id": "elite_dragon_examiner",
+      "name": "龙牙试炼官",
+      "file": "elite_dragon_examiner.glb",
+      "height": 2.63,
+      "triangles": 9164,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "dragon",
+      "rank": "lieutenant",
+      "style": "martial",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 33928,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5626348257064819,
+          0,
+          -0.3153958320617676
+        ],
+        "max": [
+          0.5626963376998901,
+          2.630000051110983,
+          0.306827187538147
+        ]
+      }
+    },
+    {
+      "id": "elite_dragon_hunter",
+      "name": "天穹追猎者",
+      "file": "elite_dragon_hunter.glb",
+      "height": 2.63,
+      "triangles": 10617,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "dragon",
+      "rank": "lieutenant",
+      "style": "ranger",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39368,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5377932786941528,
+          0,
+          -0.40525898337364197
+        ],
+        "max": [
+          0.5377727746963501,
+          2.629999930039048,
+          0.32419952750205994
+        ]
+      }
+    },
+    {
+      "id": "elite_dragon_gatekeeper",
+      "name": "终焉守门人",
+      "file": "elite_dragon_gatekeeper.glb",
+      "height": 2.63,
+      "triangles": 10474,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "dragon",
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38828,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.5667011737823486,
+          0,
+          -0.30095431208610535
+        ],
+        "max": [
+          0.5666564702987671,
+          2.629999866709113,
+          0.2793697416782379
+        ]
+      }
+    },
+    {
+      "id": "elite_dragon_master",
+      "name": "龙穹天王",
+      "file": "elite_dragon_master.glb",
+      "height": 2.96,
+      "triangles": 12408,
+      "meshes": 1,
+      "materials": 1,
+      "theme": "dragon",
+      "rank": "master",
+      "style": "sovereign",
+      "eventId": null,
+      "mapId": null,
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 45204,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.6378082036972046,
+          0,
+          -0.43354272842407227
+        ],
+        "max": [
+          0.6377580165863037,
+          2.960000218823552,
+          0.3272801637649536
+        ]
+      }
+    },
+    {
+      "id": "npc_valley_trainer_camp_path",
+      "name": "营地练习生",
+      "file": "npc_valley_trainer_camp_path.glb",
+      "height": 1.48,
+      "triangles": 9566,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "academy",
+      "eventId": "valley_trainer_camp_path",
+      "mapId": "GodotMap",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 37656,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.27752166986465454,
+          0,
+          -0.24557866156101227
+        ],
+        "max": [
+          0.27751225233078003,
+          1.4799999799579382,
+          0.24865807592868805
+        ]
+      }
+    },
+    {
+      "id": "npc_valley_trainer_grove_guard",
+      "name": "密林守卫",
+      "file": "npc_valley_trainer_grove_guard.glb",
+      "height": 1.58,
+      "triangles": 10501,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "guard",
+      "eventId": "valley_trainer_grove_guard",
+      "mapId": "GodotMap",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41476,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3934183418750763,
+          0,
+          -0.18133577704429626
+        ],
+        "max": [
+          0.39344730973243713,
+          1.5800000950694084,
+          0.17636549472808838
+        ]
+      }
+    },
+    {
+      "id": "npc_valley_trainer_flower_hill",
+      "name": "花丘学员",
+      "file": "npc_valley_trainer_flower_hill.glb",
+      "height": 1.58,
+      "triangles": 12041,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "traveler",
+      "eventId": "valley_trainer_flower_hill",
+      "mapId": "GodotMap",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46524,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.2950337827205658,
+          0,
+          -0.2597532272338867
+        ],
+        "max": [
+          0.29499492049217224,
+          1.5800000736489892,
+          0.1785731017589569
+        ]
+      }
+    },
+    {
+      "id": "npc_valley_trainer_lake_path",
+      "name": "湖畔观察员",
+      "file": "npc_valley_trainer_lake_path.glb",
+      "height": 1.58,
+      "triangles": 10628,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "valley_trainer_lake_path",
+      "mapId": "GodotMap",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41320,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33166247606277466,
+          0,
+          -0.19155490398406982
+        ],
+        "max": [
+          0.3316616415977478,
+          1.5799999572336674,
+          0.2066517472267151
+        ]
+      }
+    },
+    {
+      "id": "npc_fishing_merchant_valley",
+      "name": "山谷渔夫·阿川",
+      "file": "npc_fishing_merchant_valley.glb",
+      "height": 1.48,
+      "triangles": 10711,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "merchant",
+      "style": "fisher",
+      "eventId": "fishing_merchant_valley",
+      "mapId": "GodotMap",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42412,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3911276161670685,
+          0,
+          -0.23980210721492767
+        ],
+        "max": [
+          0.2724016010761261,
+          1.4799999576061964,
+          0.1824355572462082
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_meadow_hermit_reward",
+      "name": "隐居老人",
+      "file": "npc_npc_meadow_hermit_reward.glb",
+      "height": 1.52,
+      "triangles": 9488,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "npc_meadow_hermit_reward",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 37536,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.38833826780319214,
+          0,
+          -0.24748247861862183
+        ],
+        "max": [
+          0.3883155584335327,
+          1.5200000330805779,
+          0.20694953203201294
+        ]
+      }
+    },
+    {
+      "id": "npc_region_trainer_1",
+      "name": "草径露营客",
+      "file": "npc_region_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 12124,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "ranger",
+      "eventId": "region_trainer_1",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 47020,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32308492064476013,
+          0,
+          -0.257307767868042
+        ],
+        "max": [
+          0.3230726420879364,
+          1.579999971203506,
+          0.19480964541435242
+        ]
+      }
+    },
+    {
+      "id": "npc_region_trainer_2",
+      "name": "南坡飞羽客",
+      "file": "npc_region_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 11061,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "traveler",
+      "eventId": "region_trainer_2",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 43464,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.2962731420993805,
+          0,
+          -0.3251610994338989
+        ],
+        "max": [
+          0.29626306891441345,
+          1.5800000540912151,
+          0.2654462456703186
+        ]
+      }
+    },
+    {
+      "id": "npc_region_trainer_3",
+      "name": "花田采集员",
+      "file": "npc_region_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 11967,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "artisan",
+      "eventId": "region_trainer_3",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46072,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32308492064476013,
+          0,
+          -0.22734281420707703
+        ],
+        "max": [
+          0.3230726420879364,
+          1.579999971203506,
+          0.19478130340576172
+        ]
+      }
+    },
+    {
+      "id": "npc_region_trainer_4",
+      "name": "东岗电气迷",
+      "file": "npc_region_trainer_4.glb",
+      "height": 1.48,
+      "triangles": 9734,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "engineer",
+      "eventId": "region_trainer_4",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38208,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.2904691994190216,
+          0,
+          -0.22023725509643555
+        ],
+        "max": [
+          0.2904915511608124,
+          1.4800000172108412,
+          0.18510732054710388
+        ]
+      }
+    },
+    {
+      "id": "npc_region_lieutenant_1",
+      "name": "苔坡巡队长",
+      "file": "npc_region_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 9864,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "region_lieutenant_1",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38984,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4256649613380432,
+          0,
+          -0.2689167559146881
+        ],
+        "max": [
+          0.42567360401153564,
+          1.7199999447911978,
+          0.19481027126312256
+        ]
+      }
+    },
+    {
+      "id": "npc_region_lieutenant_2",
+      "name": "花径哨卫",
+      "file": "npc_region_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 11556,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "region_lieutenant_2",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 45172,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33255937695503235,
+          0,
+          -0.26132017374038696
+        ],
+        "max": [
+          0.33253249526023865,
+          1.7200000351294875,
+          0.19684258103370667
+        ]
+      }
+    },
+    {
+      "id": "npc_region_lieutenant_3",
+      "name": "湖畔督导员",
+      "file": "npc_region_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10594,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": "region_lieutenant_3",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41360,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3610502779483795,
+          0,
+          -0.20852813124656677
+        ],
+        "max": [
+          0.36104950308799744,
+          1.7200000183656812,
+          0.20711493492126465
+        ]
+      }
+    },
+    {
+      "id": "npc_region_boss",
+      "name": "星音首领",
+      "file": "npc_region_boss.glb",
+      "height": 1.84,
+      "triangles": 11396,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "commander",
+      "eventId": "region_boss",
+      "mapId": "GodotMapV2",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41632,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.45321524143218994,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.4532512426376343,
+          1.8400000231340528,
+          0.21803435683250427
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_trainer_1",
+      "name": "雾岸观测员",
+      "file": "npc_mistlake_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 11394,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "mistlake_trainer_1",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 44520,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33415985107421875,
+          0,
+          -0.24306249618530273
+        ],
+        "max": [
+          0.3341792821884155,
+          1.5800000736489892,
+          0.20818698406219482
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_trainer_2",
+      "name": "潮滩潜水客",
+      "file": "npc_mistlake_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 10202,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "diver",
+      "eventId": "mistlake_trainer_2",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39608,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3128093481063843,
+          0,
+          -0.2385256439447403
+        ],
+        "max": [
+          0.31280624866485596,
+          1.5800000876188278,
+          0.19767896831035614
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_trainer_3",
+      "name": "湖心占星者",
+      "file": "npc_mistlake_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 11533,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "mistlake_trainer_3",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 44612,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.31009548902511597,
+          0,
+          -0.25470954179763794
+        ],
+        "max": [
+          0.3101193904876709,
+          1.5800000876188278,
+          0.18448475003242493
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_trainer_4",
+      "name": "苇湾垂钓者",
+      "file": "npc_mistlake_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 12197,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "fisher",
+      "eventId": "mistlake_trainer_4",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 47492,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4337140619754791,
+          0,
+          -0.2560049593448639
+        ],
+        "max": [
+          0.32306185364723206,
+          1.579999971203506,
+          0.19476228952407837
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_lieutenant_1",
+      "name": "芦苇巡队长",
+      "file": "npc_mistlake_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 10642,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "mistlake_lieutenant_1",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42164,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.41952258348464966,
+          0,
+          -0.26503628492355347
+        ],
+        "max": [
+          0.41953253746032715,
+          1.7199999894946814,
+          0.21202409267425537
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_lieutenant_2",
+      "name": "湖湾守望员",
+      "file": "npc_mistlake_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 11466,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "mistlake_lieutenant_2",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 44736,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33814743161201477,
+          0,
+          -0.353972852230072
+        ],
+        "max": [
+          0.3381780683994293,
+          1.7200000155717134,
+          0.2889667749404907
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_lieutenant_3",
+      "name": "深水督导员",
+      "file": "npc_mistlake_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10210,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "diver",
+      "eventId": "mistlake_lieutenant_3",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39660,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3783629238605499,
+          0,
+          -0.25966084003448486
+        ],
+        "max": [
+          0.3783825933933258,
+          1.720000091008842,
+          0.21519485116004944
+        ]
+      }
+    },
+    {
+      "id": "npc_mistlake_boss",
+      "name": "雾湖首领",
+      "file": "npc_mistlake_boss.glb",
+      "height": 1.84,
+      "triangles": 11825,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "sovereign",
+      "eventId": "mistlake_boss",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42920,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3896200954914093,
+          0,
+          -0.28552839159965515
+        ],
+        "max": [
+          0.3895973265171051,
+          1.8399999011307955,
+          0.2156057059764862
+        ]
+      }
+    },
+    {
+      "id": "npc_fishing_merchant_lake",
+      "name": "雾湖鱼商·芦伯",
+      "file": "npc_fishing_merchant_lake.glb",
+      "height": 1.52,
+      "triangles": 10504,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "merchant",
+      "style": "fisher",
+      "eventId": "fishing_merchant_lake",
+      "mapId": "GodotMapV2_MistLake",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41496,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.36054643988609314,
+          0,
+          -0.24628326296806335
+        ],
+        "max": [
+          0.3605327308177948,
+          1.5200000815093517,
+          0.19868531823158264
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_trainer_1",
+      "name": "田埂园丁",
+      "file": "npc_farmtown_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 11988,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "artisan",
+      "eventId": "farmtown_trainer_1",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46612,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.37477850914001465,
+          0,
+          -0.22734281420707703
+        ],
+        "max": [
+          0.37476426362991333,
+          1.579999971203506,
+          0.19478130340576172
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_trainer_2",
+      "name": "谷仓跑腿员",
+      "file": "npc_farmtown_trainer_2.glb",
+      "height": 1.48,
+      "triangles": 10303,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "traveler",
+      "eventId": "farmtown_trainer_2",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40596,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.27752166986465454,
+          0,
+          -0.24433521926403046
+        ],
+        "max": [
+          0.27751225233078003,
+          1.4799999799579382,
+          0.24872712790966034
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_trainer_3",
+      "name": "牧栏学徒",
+      "file": "npc_farmtown_trainer_3.glb",
+      "height": 1.48,
+      "triangles": 10862,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "breeder",
+      "eventId": "farmtown_trainer_3",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42200,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3166157901287079,
+          0,
+          -0.21193847060203552
+        ],
+        "max": [
+          0.3166504204273224,
+          1.4800000172108412,
+          0.1724478006362915
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_trainer_4",
+      "name": "风车巡看员",
+      "file": "npc_farmtown_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 9991,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "engineer",
+      "eventId": "farmtown_trainer_4",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39528,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3293378949165344,
+          0,
+          -0.22734281420707703
+        ],
+        "max": [
+          0.3293570876121521,
+          1.579999971203506,
+          0.19478130340576172
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_lieutenant_1",
+      "name": "田垄巡队长",
+      "file": "npc_farmtown_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 10759,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "farmtown_lieutenant_1",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42328,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4224837124347687,
+          0,
+          -0.2669070065021515
+        ],
+        "max": [
+          0.4224506914615631,
+          1.7200000183656812,
+          0.1929355263710022
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_lieutenant_2",
+      "name": "仓场守备员",
+      "file": "npc_farmtown_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 10189,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "farmtown_lieutenant_2",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40248,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.42863208055496216,
+          0,
+          -0.2202850580215454
+        ],
+        "max": [
+          0.42858582735061646,
+          1.7200000351294875,
+          0.19682782888412476
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_lieutenant_3",
+      "name": "坡地监督员",
+      "file": "npc_farmtown_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 11037,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": "farmtown_lieutenant_3",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 43224,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.337572306394577,
+          0,
+          -0.2728273868560791
+        ],
+        "max": [
+          0.33759835362434387,
+          1.720000091008842,
+          0.21515166759490967
+        ]
+      }
+    },
+    {
+      "id": "npc_farmtown_boss",
+      "name": "风车首领",
+      "file": "npc_farmtown_boss.glb",
+      "height": 1.84,
+      "triangles": 12694,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "commander",
+      "eventId": "farmtown_boss",
+      "mapId": "GodotMapV2_FarmTown",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46116,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.45321524143218994,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.4532512426376343,
+          1.8400000231340528,
+          0.21803435683250427
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_shore_pirate_reward",
+      "name": "老海盗",
+      "file": "npc_npc_shore_pirate_reward.glb",
+      "height": 1.52,
+      "triangles": 8430,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "sailor",
+      "eventId": "npc_shore_pirate_reward",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 33792,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3607603907585144,
+          0,
+          -0.14861010015010834
+        ],
+        "max": [
+          0.3607826232910156,
+          1.5199999827891588,
+          0.19597147405147552
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_trainer_1",
+      "name": "沙洲赶海客",
+      "file": "npc_pirateshore_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 10294,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "fisher",
+      "eventId": "pirateshore_trainer_1",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40756,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4367753863334656,
+          0,
+          -0.25781193375587463
+        ],
+        "max": [
+          0.325401246547699,
+          1.5799999572336674,
+          0.17723536491394043
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_trainer_2",
+      "name": "礁湾潜水员",
+      "file": "npc_pirateshore_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 10225,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "diver",
+      "eventId": "pirateshore_trainer_2",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39924,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.40317651629447937,
+          0,
+          -0.2385256439447403
+        ],
+        "max": [
+          0.40317031741142273,
+          1.5800000876188278,
+          0.19767896831035614
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_trainer_3",
+      "name": "贝丘化石迷",
+      "file": "npc_pirateshore_trainer_3.glb",
+      "height": 1.48,
+      "triangles": 10857,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "pirateshore_trainer_3",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42912,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.2776443660259247,
+          0,
+          -0.22439336776733398
+        ],
+        "max": [
+          0.2776605188846588,
+          1.4799999576061964,
+          0.18248692154884338
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_trainer_4",
+      "name": "沉船瞭望手",
+      "file": "npc_pirateshore_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 10059,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "sailor",
+      "eventId": "pirateshore_trainer_4",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39628,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33800873160362244,
+          0,
+          -0.3338695168495178
+        ],
+        "max": [
+          0.33804574608802795,
+          1.5800000876188278,
+          0.21468937397003174
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_lieutenant_1",
+      "name": "潮头巡队长",
+      "file": "npc_pirateshore_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 10551,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "pirateshore_lieutenant_1",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41732,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.42745304107666016,
+          0,
+          -0.2700464129447937
+        ],
+        "max": [
+          0.4274551272392273,
+          1.7200000155717134,
+          0.2890087366104126
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_lieutenant_2",
+      "name": "礁岩守备员",
+      "file": "npc_pirateshore_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 11875,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "pirateshore_lieutenant_2",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46128,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3695104122161865,
+          0,
+          -0.23591820895671844
+        ],
+        "max": [
+          0.36949223279953003,
+          1.7200000351294875,
+          0.19683770835399628
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_lieutenant_3",
+      "name": "船坞督导员",
+      "file": "npc_pirateshore_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 9741,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "engineer",
+      "eventId": "pirateshore_lieutenant_3",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38364,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4483449459075928,
+          0,
+          -0.20626647770404816
+        ],
+        "max": [
+          0.4351196885108948,
+          1.720000091008842,
+          0.2151508778333664
+        ]
+      }
+    },
+    {
+      "id": "npc_pirateshore_boss",
+      "name": "海岸首领",
+      "file": "npc_pirateshore_boss.glb",
+      "height": 1.84,
+      "triangles": 11091,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "commander",
+      "eventId": "pirateshore_boss",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40420,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4451620280742645,
+          0,
+          -0.2836954593658447
+        ],
+        "max": [
+          0.4451315104961395,
+          1.8399999281391501,
+          0.20542126893997192
+        ]
+      }
+    },
+    {
+      "id": "npc_fishing_merchant_shore",
+      "name": "海产商·贝露",
+      "file": "npc_fishing_merchant_shore.glb",
+      "height": 1.58,
+      "triangles": 10265,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "merchant",
+      "style": "fisher",
+      "eventId": "fishing_merchant_shore",
+      "mapId": "GodotMapV2_PirateShore",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40676,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4367753863334656,
+          0,
+          -0.25781193375587463
+        ],
+        "max": [
+          0.325401246547699,
+          1.5799999572336674,
+          0.1774282455444336
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_grave_keeper_reward",
+      "name": "墓园守护者",
+      "file": "npc_npc_grave_keeper_reward.glb",
+      "height": 1.52,
+      "triangles": 10204,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "guard",
+      "eventId": "npc_grave_keeper_reward",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40380,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.39547115564346313,
+          0,
+          -0.1822819858789444
+        ],
+        "max": [
+          0.39547061920166016,
+          1.5199999501928687,
+          0.20497797429561615
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_trainer_1",
+      "name": "墓道夜巡者",
+      "file": "npc_graveyard_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 9904,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "ranger",
+      "eventId": "graveyard_trainer_1",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39428,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32348501682281494,
+          0,
+          -0.2563219666481018
+        ],
+        "max": [
+          0.323444128036499,
+          1.5800000950694084,
+          0.17650720477104187
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_trainer_2",
+      "name": "梦魇占卜师",
+      "file": "npc_graveyard_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 11889,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "graveyard_trainer_2",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 45936,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.30074387788772583,
+          0,
+          -0.2470282018184662
+        ],
+        "max": [
+          0.300761342048645,
+          1.5800000736489892,
+          0.17876073718070984
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_trainer_3",
+      "name": "毒雾拾荒者",
+      "file": "npc_graveyard_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 9243,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "artisan",
+      "eventId": "graveyard_trainer_3",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 36864,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3920901417732239,
+          0,
+          -0.18947733938694
+        ],
+        "max": [
+          0.39207518100738525,
+          1.5800000876188278,
+          0.18432967364788055
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_trainer_4",
+      "name": "灵灯看守人",
+      "file": "npc_graveyard_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 10774,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "graveyard_trainer_4",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 42444,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32974573969841003,
+          0,
+          -0.24376505613327026
+        ],
+        "max": [
+          0.3297208249568939,
+          1.5800000950694084,
+          0.17643028497695923
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_lieutenant_1",
+      "name": "墓园巡队长",
+      "file": "npc_graveyard_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 9948,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "graveyard_lieutenant_1",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39272,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4256649613380432,
+          0,
+          -0.2689167559146881
+        ],
+        "max": [
+          0.42567360401153564,
+          1.7199999447911978,
+          0.19481027126312256
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_lieutenant_2",
+      "name": "黑雾守备员",
+      "file": "npc_graveyard_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 11990,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "graveyard_lieutenant_2",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46700,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4282781779766083,
+          0,
+          -0.19740350544452667
+        ],
+        "max": [
+          0.42830976843833923,
+          1.7200000314041972,
+          0.1919928342103958
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_lieutenant_3",
+      "name": "夜巡督导员",
+      "file": "npc_graveyard_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10377,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": "graveyard_lieutenant_3",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40672,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3610502779483795,
+          0,
+          -0.20852813124656677
+        ],
+        "max": [
+          0.36104950308799744,
+          1.7200000183656812,
+          0.20711493492126465
+        ]
+      }
+    },
+    {
+      "id": "npc_graveyard_boss",
+      "name": "月影首领",
+      "file": "npc_graveyard_boss.glb",
+      "height": 1.84,
+      "triangles": 12714,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "sovereign",
+      "eventId": "graveyard_boss",
+      "mapId": "GodotMapV2_Graveyard",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46092,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.39412209391593933,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.3940803110599518,
+          1.8400000231340528,
+          0.21803435683250427
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_hex_relic_buyer",
+      "name": "遗迹回收商",
+      "file": "npc_npc_hex_relic_buyer.glb",
+      "height": 1.58,
+      "triangles": 12539,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "merchant",
+      "style": "merchant",
+      "eventId": "npc_hex_relic_buyer",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 48292,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.37477850914001465,
+          0,
+          -0.22734281420707703
+        ],
+        "max": [
+          0.37476426362991333,
+          1.579999971203506,
+          0.20645073056221008
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_hex_researcher_reward",
+      "name": "遗迹研究员",
+      "file": "npc_npc_hex_researcher_reward.glb",
+      "height": 1.58,
+      "triangles": 10405,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "npc_hex_researcher_reward",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40596,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33166247606277466,
+          0,
+          -0.19155490398406982
+        ],
+        "max": [
+          0.3316616415977478,
+          1.5799999572336674,
+          0.19025671482086182
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_trainer_1",
+      "name": "线圈维护员",
+      "file": "npc_hexruins_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 9627,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "engineer",
+      "eventId": "hexruins_trainer_1",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 38040,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3355635702610016,
+          0,
+          -0.2289855033159256
+        ],
+        "max": [
+          0.33557239174842834,
+          1.5800000540912151,
+          0.2654697299003601
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_trainer_2",
+      "name": "终端勘测员",
+      "file": "npc_hexruins_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 11041,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "hexruins_trainer_2",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 43152,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.31009548902511597,
+          0,
+          -0.2506205141544342
+        ],
+        "max": [
+          0.3101193904876709,
+          1.5800000876188278,
+          0.19763928651809692
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_trainer_3",
+      "name": "岩层修复师",
+      "file": "npc_hexruins_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 11145,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "artisan",
+      "eventId": "hexruins_trainer_3",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 43644,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3755526840686798,
+          0,
+          -0.20235489308834076
+        ],
+        "max": [
+          0.37553319334983826,
+          1.580000076442957,
+          0.18080691993236542
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_trainer_4",
+      "name": "幻象记录员",
+      "file": "npc_hexruins_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 10565,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "hexruins_trainer_4",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41280,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.31009548902511597,
+          0,
+          -0.3338695168495178
+        ],
+        "max": [
+          0.3101193904876709,
+          1.5800000876188278,
+          0.1845031976699829
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_lieutenant_1",
+      "name": "电枢巡队长",
+      "file": "npc_hexruins_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 9954,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "hexruins_lieutenant_1",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39364,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4256649613380432,
+          0,
+          -0.2689167559146881
+        ],
+        "max": [
+          0.42567360401153564,
+          1.7199999447911978,
+          0.19460028409957886
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_lieutenant_2",
+      "name": "岩壁守望员",
+      "file": "npc_hexruins_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 10592,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "hexruins_lieutenant_2",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41752,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.42863208055496216,
+          0,
+          -0.2202850580215454
+        ],
+        "max": [
+          0.42858582735061646,
+          1.7200000351294875,
+          0.19682782888412476
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_lieutenant_3",
+      "name": "中枢监理员",
+      "file": "npc_hexruins_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10433,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": "hexruins_lieutenant_3",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40852,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3610502779483795,
+          0,
+          -0.20852813124656677
+        ],
+        "max": [
+          0.36104950308799744,
+          1.7200000183656812,
+          0.20711493492126465
+        ]
+      }
+    },
+    {
+      "id": "npc_hexruins_boss",
+      "name": "遗迹首领",
+      "file": "npc_hexruins_boss.glb",
+      "height": 1.84,
+      "triangles": 11379,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "commander",
+      "eventId": "hexruins_boss",
+      "mapId": "GodotMapV2_HexRuins",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41408,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3907027840614319,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.39064860343933105,
+          1.8400000231340528,
+          0.21803435683250427
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_ridge_training_reward",
+      "name": "铁木教官",
+      "file": "npc_npc_ridge_training_reward.glb",
+      "height": 1.58,
+      "triangles": 9897,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "officer",
+      "eventId": "npc_ridge_training_reward",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39104,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3910178244113922,
+          0,
+          -0.2470282018184662
+        ],
+        "max": [
+          0.39102575182914734,
+          1.5800000736489892,
+          0.17856785655021667
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_trainer_1",
+      "name": "峡口力士",
+      "file": "npc_survivalridge_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 8412,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "martial",
+      "eventId": "survivalridge_trainer_1",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 33764,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.41596198081970215,
+          0,
+          -0.1631278544664383
+        ],
+        "max": [
+          0.3959784507751465,
+          1.5800000224262476,
+          0.18627946078777313
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_trainer_2",
+      "name": "岩壁猎手",
+      "file": "npc_survivalridge_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 11937,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "ranger",
+      "eventId": "survivalridge_trainer_2",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46396,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3054317533969879,
+          0,
+          -0.2560049593448639
+        ],
+        "max": [
+          0.29076912999153137,
+          1.579999971203506,
+          0.19476228952407837
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_trainer_3",
+      "name": "营地技师",
+      "file": "npc_survivalridge_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 12108,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "engineer",
+      "eventId": "survivalridge_trainer_3",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46768,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3355635702610016,
+          0,
+          -0.20177271962165833
+        ],
+        "max": [
+          0.33557239174842834,
+          1.5800000540912151,
+          0.2654860317707062
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_trainer_4",
+      "name": "高坡驯兽员",
+      "file": "npc_survivalridge_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 10040,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "breeder",
+      "eventId": "survivalridge_trainer_4",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39660,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33800873160362244,
+          0,
+          -0.3338695168495178
+        ],
+        "max": [
+          0.33804574608802795,
+          1.5800000876188278,
+          0.1845031976699829
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_lieutenant_1",
+      "name": "山脊巡队长",
+      "file": "npc_survivalridge_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 10615,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "survivalridge_lieutenant_1",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41912,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.41952258348464966,
+          0,
+          -0.26503628492355347
+        ],
+        "max": [
+          0.41953253746032715,
+          1.7199999894946814,
+          0.21202409267425537
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_lieutenant_2",
+      "name": "钢壁守备员",
+      "file": "npc_survivalridge_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 10164,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "survivalridge_lieutenant_2",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40112,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.42863208055496216,
+          0,
+          -0.2202850580215454
+        ],
+        "max": [
+          0.42858582735061646,
+          1.7200000351294875,
+          0.19682782888412476
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_lieutenant_3",
+      "name": "峡谷监理员",
+      "file": "npc_survivalridge_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10444,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "engineer",
+      "eventId": "survivalridge_lieutenant_3",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40796,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3610502779483795,
+          0,
+          -0.20852813124656677
+        ],
+        "max": [
+          0.36104950308799744,
+          1.7200000183656812,
+          0.20711493492126465
+        ]
+      }
+    },
+    {
+      "id": "npc_survivalridge_boss",
+      "name": "铁木首领",
+      "file": "npc_survivalridge_boss.glb",
+      "height": 1.84,
+      "triangles": 11007,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "commander",
+      "eventId": "survivalridge_boss",
+      "mapId": "GodotMapV2_SurvivalRidge",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 40208,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.45321524143218994,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.4532512426376343,
+          1.8400000231340528,
+          0.24150750041007996
+        ]
+      }
+    },
+    {
+      "id": "npc_npc_peak_stargazer_reward",
+      "name": "星雾观测者",
+      "file": "npc_npc_peak_stargazer_reward.glb",
+      "height": 1.52,
+      "triangles": 9977,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "scholar",
+      "eventId": "npc_peak_stargazer_reward",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39264,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.33146631717681885,
+          0,
+          -0.1822819858789444
+        ],
+        "max": [
+          0.3314403295516968,
+          1.5199999501928687,
+          0.20497797429561615
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_trainer_1",
+      "name": "天幕园艺师",
+      "file": "npc_bosshighland_trainer_1.glb",
+      "height": 1.58,
+      "triangles": 11892,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "artisan",
+      "eventId": "bosshighland_trainer_1",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 45752,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32308492064476013,
+          0,
+          -0.22734281420707703
+        ],
+        "max": [
+          0.3230726420879364,
+          1.579999971203506,
+          0.19478130340576172
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_trainer_2",
+      "name": "峰顶潜修者",
+      "file": "npc_bosshighland_trainer_2.glb",
+      "height": 1.58,
+      "triangles": 8492,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "martial",
+      "eventId": "bosshighland_trainer_2",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 33776,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.30724382400512695,
+          0,
+          -0.1631278544664383
+        ],
+        "max": [
+          0.3072810173034668,
+          1.5800000224262476,
+          0.18656878173351288
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_trainer_3",
+      "name": "岩龙勘察员",
+      "file": "npc_bosshighland_trainer_3.glb",
+      "height": 1.58,
+      "triangles": 10607,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "ranger",
+      "eventId": "bosshighland_trainer_3",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41880,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.37477850914001465,
+          0,
+          -0.2560049593448639
+        ],
+        "max": [
+          0.37476426362991333,
+          1.579999971203506,
+          0.19476228952407837
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_trainer_4",
+      "name": "云海看守人",
+      "file": "npc_bosshighland_trainer_4.glb",
+      "height": 1.58,
+      "triangles": 10574,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "normal",
+      "style": "mystic",
+      "eventId": "bosshighland_trainer_4",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41412,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32974573969841003,
+          0,
+          -0.3195236325263977
+        ],
+        "max": [
+          0.3297208249568939,
+          1.5800000950694084,
+          0.1765711009502411
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_lieutenant_1",
+      "name": "高地巡队长",
+      "file": "npc_bosshighland_lieutenant_1.glb",
+      "height": 1.72,
+      "triangles": 9947,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "officer",
+      "eventId": "bosshighland_lieutenant_1",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 39412,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.4256649613380432,
+          0,
+          -0.2689167559146881
+        ],
+        "max": [
+          0.42567360401153564,
+          1.7199999447911978,
+          0.19502022862434387
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_lieutenant_2",
+      "name": "星雾守备员",
+      "file": "npc_bosshighland_lieutenant_2.glb",
+      "height": 1.72,
+      "triangles": 11199,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "guard",
+      "eventId": "bosshighland_lieutenant_2",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 44156,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.3695104122161865,
+          0,
+          -0.26132017374038696
+        ],
+        "max": [
+          0.36949223279953003,
+          1.7200000351294875,
+          0.19684258103370667
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_lieutenant_3",
+      "name": "天穹监理员",
+      "file": "npc_bosshighland_lieutenant_3.glb",
+      "height": 1.72,
+      "triangles": 10560,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "lieutenant",
+      "style": "scholar",
+      "eventId": "bosshighland_lieutenant_3",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 41068,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.32494527101516724,
+          0,
+          -0.20852813124656677
+        ],
+        "max": [
+          0.3249235153198242,
+          1.7200000183656812,
+          0.22496271133422852
+        ]
+      }
+    },
+    {
+      "id": "npc_bosshighland_boss",
+      "name": "星雾首领",
+      "file": "npc_bosshighland_boss.glb",
+      "height": 1.84,
+      "triangles": 12702,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": "boss",
+      "style": "sovereign",
+      "eventId": "bosshighland_boss",
+      "mapId": "GodotMapV2_BossHighland",
+      "surfaceRegions": true,
+      "source": "Blender 5.2 / Xingyin identity collection v2",
+      "bytes": 46108,
+      "compression": "KHR_draco_mesh_compression",
+      "bounds": {
+        "min": [
+          -0.39412209391593933,
+          0,
+          -0.2888276278972626
+        ],
+        "max": [
+          0.3940803110599518,
+          1.8400000231340528,
+          0.21803435683250427
+        ]
+      }
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "player_bicycle",
+      "name": "旅行自行车",
+      "file": "player_bicycle.glb",
+      "source": "Blender / Xingyin character v2",
+      "frontAxis": "+Z",
+      "wheelAxis": "X",
+      "wheelNodes": [
+        "frontWheel",
+        "rearWheel"
+      ],
+      "compression": "KHR_draco_mesh_compression",
+      "triangles": 15106,
+      "bytes": 81408,
+      "bounds": {
+        "min": [
+          -0.3019312620162964,
+          0.004999952909573002,
+          -0.8650000095367432
+        ],
+        "max": [
+          0.3019312620162964,
+          1.7503698466844704,
+          0.8650000095367432
+        ]
+      }
+    },
+    {
+      "id": "player_sports_car",
+      "name": "旅行跑车",
+      "file": "player_sports_car.glb",
+      "source": "Blender / Xingyin character v2",
+      "frontAxis": "+Z",
+      "wheelAxis": "X",
+      "wheelNodes": [
+        "frontLeftWheel",
+        "frontRightWheel",
+        "rearLeftWheel",
+        "rearRightWheel"
+      ],
+      "compression": "KHR_draco_mesh_compression",
+      "triangles": 12696,
+      "bytes": 63500,
+      "bounds": {
+        "min": [
+          -0.5950000286102295,
+          0,
+          -1.0299999713897705
+        ],
+        "max": [
+          0.594971776008606,
+          1.4392147064208984,
+          1.0534999370574951
+        ]
+      }
+    }
+  ]
+}

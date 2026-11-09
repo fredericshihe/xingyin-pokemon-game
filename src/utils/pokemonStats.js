@@ -34,6 +34,48 @@ export const normalizeBaseStatBoosts = (boosts = {}) => {
   }, {})
 }
 
+export const STAT_GEM_TOTAL_LIMIT = 10
+export const STAT_GEM_PER_STAT_LIMIT = 4
+export const STAT_GEM_RULE_TEXT = '每只最多10颗，同一项最多4颗；战斗外使用'
+
+// Old bonuses have mixed sources and amounts. Never infer usage from statBoosts.
+export const normalizeStatGemUses = (uses = {}) => Object.fromEntries(
+  OFFICIAL_STAT_KEYS.flatMap((key) => {
+    const amount = Number(uses?.[key])
+    return Number.isSafeInteger(amount) && amount > 0 ? [[key, amount]] : []
+  })
+)
+
+export const getStatGemUsage = (monster, item) => {
+  const statKey = item?.effect === 'stat_boost' ? resolveBaseStatBoostKey(item.stat) : null
+  if (!statKey) return null
+  const uses = normalizeStatGemUses(monster?.statGemUses)
+  const total = Object.values(uses).reduce((sum, count) => sum + count, 0)
+  const statCount = uses[statKey] || 0
+  const remaining = Math.max(0, Math.min(STAT_GEM_TOTAL_LIMIT - total, STAT_GEM_PER_STAT_LIMIT - statCount))
+  return {
+    statKey, uses, total, statCount, remaining, canUse: remaining > 0,
+    message: total >= STAT_GEM_TOTAL_LIMIT
+      ? '这只宝可梦已用满10颗宝石。'
+      : statCount >= STAT_GEM_PER_STAT_LIMIT ? '这一项已用满4颗宝石。' : '',
+  }
+}
+
+export const prepareStatBoostItemUse = (monster, item) => {
+  const amount = Math.trunc(Number(item?.boostAmount))
+  const usage = getStatGemUsage(monster, item)
+  if (!Number.isSafeInteger(amount) || amount <= 0 || (!usage && item?.effect !== 'stat_boost_all')) {
+    return { success: false, message: '属性提升道具无效。' }
+  }
+  if (usage && !usage.canUse) return { success: false, message: usage.message }
+  const statBoosts = { ...normalizeBaseStatBoosts(monster?.statBoosts) }
+  const statGemUses = { ...normalizeStatGemUses(monster?.statGemUses) }
+  const keys = usage ? [usage.statKey] : OFFICIAL_STAT_KEYS
+  keys.forEach((key) => { statBoosts[key] = (statBoosts[key] || 0) + amount })
+  if (usage) statGemUses[usage.statKey] = usage.statCount + 1
+  return { success: true, statBoosts, statGemUses }
+}
+
 export const applyBaseStatBoosts = (baseStats = {}, boosts = {}) => {
   const normalizedBoosts = normalizeBaseStatBoosts(boosts)
   return {

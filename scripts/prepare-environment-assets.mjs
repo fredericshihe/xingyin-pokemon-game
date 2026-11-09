@@ -16,7 +16,7 @@ await withViteAuditServer(async ({ loadModule }) => {
   const keys = new Set(Object.values(MAP_ENVIRONMENT_ANCHORS).flatMap(objects => objects.map(object => object.type)))
   const sceneTypes = new Set(Object.values(MAP_ENVIRONMENT_VIGNETTES).flatMap(scenes => scenes.flatMap(scene => scene.props.map(prop => prop.type))))
   for (const type of sceneTypes) keys.add(type)
-  keys.add('nature_tree_pine')
+  for (const type of ['nature_tree_oak', 'nature_tree_default', 'nature_tree_pine']) keys.add(type)
   keys.add('town_tree')
   for (const type of ['grave_gravestone_round', 'grave_gravestone_broken', 'grave_gravestone_cross', 'grave_cross_wood']) keys.add(type)
   const footprints = {}, measurements = {}, manifest = []

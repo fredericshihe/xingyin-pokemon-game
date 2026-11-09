@@ -1,0 +1,153 @@
+#root .teacher-dashboard {
+  --teacher-padding: 24px;
+  font-family: var(--ui-font); color: var(--ui-text);
+  background: var(--ui-bg); height: 100dvh; padding: var(--teacher-padding);
+  display: flex; gap: 20px; overflow: hidden; max-width: 100%;
+}
+#root .teacher-dashboard::before, #root .teacher-dashboard::after { display: none; }
+#root .teacher-dashboard :is(h1, h2, h3, h4, p) { margin-top: 0; }
+#root .teacher-dashboard :is(.game-card, .teacher-header) { background: white; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-card); box-shadow: var(--ui-shadow-card); }
+#root .teacher-dashboard .teacher-header { padding: 16px 20px; max-width: 1360px; border: 1px solid var(--ui-border); border-radius: 16px; background: white; box-shadow: var(--ui-shadow-card); gap: 16px; }
+#root .teacher-header__title { font-size: 24px; font-weight: 700; line-height: 1.4; }
+#root .teacher-header__subtitle { font-size: 13px; font-weight: 400; margin: 4px 0 0; }
+#root .teacher-header__icon { background: var(--ui-primary-soft); color: var(--ui-primary); border-radius: 12px; box-shadow: none; width: 44px; height: 44px; }
+#root .teacher-header__stats { align-items: center; gap: 12px; }
+#root .teacher-stat-pill { font-size: 13px; font-weight: 500; padding: 6px 10px; color: var(--ui-muted); background: white; border: 1px solid var(--ui-border); border-radius: 8px; }
+#root .teacher-stat-pill--pending { color: var(--ui-warning); background: #fff9ed; }
+#root .teacher-layout { max-width: 1360px; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; overflow: hidden; }
+#root .teacher-sidebar { padding: 20px; gap: 16px; }
+#root .teacher-sidebar__head h2 { font-size: 16px; font-weight: 600; }
+#root .teacher-sidebar__count { background: var(--ui-primary-soft); color: var(--ui-primary); font-weight: 600; width: 24px; height: 24px; min-width: 24px; }
+#root .teacher-input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--ui-border); border-radius: 10px; background: white; font: 400 14px/1.5 var(--ui-font); color: var(--ui-text); box-shadow: none; outline: none; box-sizing: border-box; }
+#root select.teacher-input { appearance: none; padding-right: 32px; text-overflow: ellipsis; background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23796d5d' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center; }
+#root .teacher-input:hover { border-color: var(--ui-primary-border); }
+#root .teacher-input:focus { border-color: var(--ui-primary); }
+#root .teacher-approval-box { padding: 12px; background: #fffaf0; border: 1px solid #eee1c4; border-radius: 12px; flex-shrink: 0; }
+#root .teacher-approval-box__head { cursor: pointer; font-size: 13px; font-weight: 600; min-height: 24px; list-style: none; }
+#root .teacher-approval-box__head h3 { margin: 0; font-size: 13px; font-weight: 600; }
+#root .teacher-approval-list { margin-top: 12px; max-height: 220px; }
+#root .teacher-approval-card { background: white; box-shadow: none; border: 1px solid var(--ui-border); }
+#root .teacher-approval-card__body strong { font-size: 14px; font-weight: 600; }
+#root .teacher-approval-card__body :is(span, time) { font-size: 12px; font-weight: 400; }
+#root .teacher-approval-card__actions { grid-template-columns: 1fr 1fr; gap: 8px; }
+#root .teacher-approval-card__actions button { min-height: 32px; border-radius: 8px; font-size: 12px; font-weight: 600; background: white; border: 1px solid var(--ui-border); }
+#root .teacher-approval-card__actions .teacher-approval-card__approve { color: var(--ui-primary); background: var(--ui-primary-soft); }
+#root .teacher-approval-card__actions .teacher-approval-card__delete { grid-column: 1 / -1; color: var(--ui-danger); }
+#root .teacher-student-list { gap: 8px; }
+#root .teacher-student-card { min-height: 76px; padding: 12px; gap: 12px; grid-template-columns: 36px minmax(0, 1fr) auto; border-radius: 10px; border: 1px solid transparent; background: white; box-shadow: none; }
+#root .teacher-student-card:hover { background: var(--ui-control-soft); border-color: var(--ui-border); }
+#root .teacher-student-card--active { border-color: var(--ui-primary-border); background: var(--ui-primary-soft); box-shadow: none; }
+#root .teacher-avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--ui-surface-soft); color: var(--ui-primary); border: 0; font-size: 14px; font-weight: 600; }
+#root .teacher-student-card__name { font-size: 14px; font-weight: 600; color: var(--ui-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#root .teacher-student-card__user { font-size: 12px; font-weight: 400; }
+#root .teacher-student-card__gold { font-size: 13px; line-height: 1.5; font-weight: 600; color: #926d2e; }
+#root .teacher-student-card__gold i, #root .teacher-student-card__energy i { font-size: 10px; }
+#root .teacher-student-card__energy { font-size: 12px; font-weight: 400; color: var(--ui-muted); }
+#root .teacher-student-card__playtime { display: none; }
+#root .teacher-main { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 4px; }
+#root .teacher-profile { display: grid; grid-template-columns: 44px minmax(140px, 1fr) auto; align-items: center; gap: 16px; padding: 20px 24px; }
+#root .teacher-profile > .teacher-avatar { width: 44px; height: 44px; grid-row: auto; }
+#root .teacher-profile__info h2 { font-size: 18px; font-weight: 700; line-height: 1.5; margin: 0; }
+#root .teacher-profile__info p { font-size: 13px; font-weight: 400; margin: 4px 0 0; }
+#root .teacher-profile__grid { display: grid; grid-column: auto; grid-template-columns: repeat(4, auto); gap: 24px; margin: 0; }
+#root .teacher-profile__grid dt { font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--ui-muted); }
+#root .teacher-profile__grid dd { font-size: 14px; font-weight: 600; margin: 4px 0 0; color: var(--ui-text); }
+#root .teacher-profile__gold { font-size: 16px !important; color: #926d2e !important; }
+#root .teacher-profile__playtime, #root .teacher-profile__energy { color: var(--ui-text) !important; }
+#root .teacher-tabs { gap: 4px; padding: 4px; border: 1px solid var(--ui-border); border-radius: 12px; background: var(--ui-surface-soft); flex-wrap: nowrap; }
+#root .teacher-tab { flex: 1; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; font-size: 14px; font-weight: 500; color: var(--ui-muted); box-shadow: none; }
+#root .teacher-tab--active { background: white; color: var(--ui-primary); border-color: var(--ui-border); box-shadow: 0 1px 3px rgb(92 59 24 / 5%); font-weight: 600; }
+#root .teacher-panel { min-height: 300px; flex: 1 0 auto; padding: 0; overflow: visible; }
+#root .teacher-panel__head { padding: 20px 24px; background: transparent; border-bottom: 1px solid var(--ui-border); }
+#root .teacher-panel__head h3 { font-size: 18px; font-weight: 600; }
+#root .teacher-panel__target { color: var(--ui-muted); font-size: 12px; font-weight: 400; }
+#root .teacher-form, #root .teacher-logs { padding: 24px; gap: 20px; overflow: visible; }
+#root .teacher-form { max-width: 720px; width: 100%; flex: 0 0 auto; }
+#root .teacher-form > button[type='submit'] { width: auto; align-self: flex-start; min-width: 144px; }
+#root .teacher-form-row { gap: 16px; }
+#root .teacher-form-row--3 { grid-template-columns: minmax(100px, 1fr) minmax(160px, 2fr) 88px; }
+#root .teacher-field { gap: 8px; }
+#root .teacher-field__label { font-size: 13px; font-weight: 600; color: var(--ui-text); }
+#root .teacher-field__hint { font-size: 12px; font-weight: 400; color: var(--ui-muted); line-height: 1.6; }
+#root .teacher-presets { gap: 8px; }
+#root .teacher-preset-chip, #root .teacher-gameplay-filter { min-height: 32px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--ui-border); background: white; color: var(--ui-muted); font-size: 12px; font-weight: 500; box-shadow: none; }
+#root .teacher-preset-chip:hover { background: var(--ui-primary-soft); color: var(--ui-primary); }
+#root .teacher-segment { border-radius: 10px; padding: 4px; gap: 4px; background: var(--ui-surface-soft); border: 1px solid var(--ui-border); }
+#root .teacher-segment__btn { min-height: 36px; padding: 8px 12px; font-size: 13px; font-weight: 500; border-radius: 8px; color: var(--ui-muted); }
+#root .teacher-segment__btn--active { background: white; color: var(--ui-primary); box-shadow: 0 1px 3px rgb(92 59 24 / 5%); }
+#root .teacher-checkbox { font-size: 13px; font-weight: 400; padding: 12px; border-radius: 10px; background: var(--ui-control-soft); }
+#root .teacher-checkbox input { width: 18px; height: 18px; accent-color: var(--ui-primary); }
+#root .teacher-alert { padding: 12px 16px; font-size: 13px; font-weight: 400; line-height: 1.6; border-radius: 10px; box-shadow: none; margin: 0 auto; max-width: 1360px; width: 100%; box-sizing: border-box; }
+#root .teacher-alert--success { color: var(--ui-success); background: #f0f8f4; border-color: #cfe6d9; }
+#root .teacher-alert--error { color: var(--ui-danger); background: var(--ui-danger-soft); }
+#root .teacher-alert--warning { color: var(--ui-warning); background: #fffaf0; }
+#root .teacher-alert__close { min-width: 32px; min-height: 32px; }
+#root .teacher-account { padding: 24px; display: grid; gap: 24px; }
+#root .teacher-account__section { max-width: 680px; }
+#root .teacher-account h4 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+#root .teacher-profile__playtime-form { background: transparent; border: 0; padding: 0; border-radius: 0; margin: 0 0 24px; grid-template-columns: minmax(0, 280px) auto; gap: 16px; align-items: start; max-width: 420px; }
+#root .teacher-profile__playtime-btn { margin-top: 28px; }
+#root .teacher-profile__password { padding-top: 24px; gap: 16px; margin: 0; }
+#root .teacher-profile__password-copy strong { font-size: 15px; font-weight: 600; }
+#root .teacher-profile__password-copy span { font-size: 12px; font-weight: 400; }
+#root .teacher-profile__password-btn { width: auto; align-self: flex-start; }
+#root .teacher-profile__playtime-control span { font-size: 13px; font-weight: 400; }
+#root .teacher-danger-zone { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid var(--ui-border); padding-top: 24px; }
+#root .teacher-danger-zone h4 { margin: 0 0 4px; color: var(--ui-danger); }
+#root .teacher-danger-zone p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--ui-muted); }
+#root .teacher-log-item { border: 0; border-bottom: 1px solid var(--ui-border); border-radius: 0; padding: 16px 0; background: white; }
+#root .teacher-log-item__reason { font-size: 14px; font-weight: 500; }
+#root :is(.teacher-log-item__time, .teacher-log-item__meta) { font-size: 12px; font-weight: 400; }
+#root .teacher-log-item__amount { font-size: 16px; font-weight: 600; }
+#root .teacher-gameplay-log { border-radius: 12px; padding: 16px; box-shadow: none; }
+#root .teacher-gameplay-log__head strong { font-size: 14px; font-weight: 600; }
+#root .teacher-gameplay-log__head time { font-size: 12px; font-weight: 400; }
+#root .teacher-gameplay-log__body p { font-size: 13px; font-weight: 400; line-height: 1.7; }
+#root :is(.teacher-gameplay-log__student, .teacher-gameplay-log__meta span) { font-size: 12px; font-weight: 400; }
+#root .teacher-gameplay-filter--active { color: var(--ui-primary); background: var(--ui-primary-soft); border-color: var(--ui-primary-border); }
+#root .teacher-gameplay-filters { gap: 8px; }
+#root .teacher-gameplay-controls { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) auto; align-items: end; gap: 16px; }
+#root .teacher-gameplay-log-list { max-height: none; }
+#root .teacher-main-empty { padding: 48px 24px; display: grid; place-content: center; text-align: center; min-height: 360px; }
+#root .teacher-main-empty h2 { font-size: 20px; font-weight: 600; margin: 16px 0 8px; }
+#root .teacher-main-empty p { font-size: 14px; color: var(--ui-muted); font-weight: 400; }
+#root .teacher-main-empty p { max-width: 520px; margin: 0; }
+#root .teacher-main-empty__icon { font-size: 32px; color: var(--ui-primary-border); }
+#root .teacher-empty-inline { font-size: 13px; font-weight: 400; padding: 16px 0; margin: 0; }
+#root .teacher-mobile-back { display: none; }
+@media (max-width: 1120px) {
+  #root .teacher-dashboard { --teacher-padding: 20px; }
+  #root .teacher-layout { grid-template-columns: 272px minmax(0, 1fr); gap: 20px; }
+  #root .teacher-profile__grid { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-top: 16px; border-top: 1px solid var(--ui-border); }
+  #root .teacher-profile { grid-template-columns: 44px minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  #root .teacher-dashboard { --teacher-padding: 16px; overflow-y: auto; min-height: 100dvh; height: auto; gap: 16px; }
+  #root .teacher-header { align-items: flex-start; gap: 16px; }
+  #root .teacher-header__title { font-size: 20px; }
+  #root .teacher-header__stats { width: 100%; flex-wrap: wrap; gap: 8px; }
+  #root .teacher-layout { display: block; overflow: visible; }
+  #root .teacher-sidebar { max-height: none; }
+  #root .teacher-student-list { max-height: 55dvh; }
+  #root .teacher-dashboard[data-student-open='true'] .teacher-sidebar { display: none; }
+  #root .teacher-dashboard[data-student-open='false'] .teacher-main { display: none; }
+  #root .teacher-mobile-back { display: inline-flex; align-self: flex-start; }
+  #root .teacher-main { height: auto; overflow: visible; padding: 0; }
+  #root .teacher-profile { padding: 16px; }
+  #root .teacher-profile__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  #root .teacher-tab { padding: 8px 4px; min-height: 44px; font-size: 13px; gap: 4px; }
+  #root .teacher-tab i { display: none; }
+  #root :is(.teacher-form, .teacher-logs, .teacher-account) { padding: 20px 16px; }
+  #root .teacher-panel__head { padding: 16px; }
+  #root .teacher-form-row--3 { grid-template-columns: 1fr; }
+  #root .teacher-form-row { grid-template-columns: 1fr; }
+  #root .teacher-input { font-size: 16px; }
+  #root .teacher-profile__playtime-form { grid-template-columns: 1fr; }
+  #root .teacher-profile__playtime-btn { width: auto; justify-self: start; margin-top: 0; }
+  #root .teacher-gameplay-log__head { flex-wrap: wrap; gap: 4px; }
+  #root .teacher-gameplay-controls { grid-template-columns: 1fr; }
+  #root .teacher-log-item { gap: 12px; }
+}
+@media (pointer: coarse) {
+  #root :is(.teacher-preset-chip, .teacher-gameplay-filter, .teacher-approval-card__actions button) { min-height: 44px; }
+}

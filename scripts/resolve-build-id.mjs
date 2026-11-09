@@ -6,7 +6,10 @@ export function resolveBuildId() {
   }
   try {
     const gitId = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
-    if (gitId) return gitId
+    if (gitId) {
+      const dirty = execSync('git status --porcelain --untracked-files=normal', { encoding: 'utf8' }).trim().length > 0
+      return dirty ? `${gitId}-w${Date.now().toString(36)}` : gitId
+    }
   } catch {
     // ignore — not a git repo or git unavailable
   }

@@ -5,6 +5,7 @@ import { NodeIO, getBounds } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import draco3d from 'draco3dgltf'
 import * as THREE from 'three'
+import { CHARACTER_ASSET_VERSION } from '../src/game/data/characterAssets.js'
 import {
   attachNpcWalkShadows,
   configureNpcWalkMaterial,
@@ -20,10 +21,10 @@ const npcKeys = [
   'grave_character_ghost', 'grave_character_skeleton', 'grave_character_zombie'
 ]
 const limbSpecs = [
-  { name: 'leftArm', swing: -0.46, side: -1, pivotRatio: 1.51 / 0.27, minY: 1.35, maxY: 1.75 },
-  { name: 'rightArm', swing: 0.46, side: 1, pivotRatio: 1.51 / 0.27, minY: 1.35, maxY: 1.75 },
-  { name: 'leftLeg', swing: 0.4, side: -1, pivotRatio: 0.94 / 0.135, minY: 0.8, maxY: 1.1 },
-  { name: 'rightLeg', swing: -0.4, side: 1, pivotRatio: 0.94 / 0.135, minY: 0.8, maxY: 1.1 }
+  { name: 'leftArm', swing: -0.46, side: -1, pivotRatio: (1.51 - .0195) / 0.27, minY: 1.35, maxY: 1.75 },
+  { name: 'rightArm', swing: 0.46, side: 1, pivotRatio: (1.51 - .0195) / 0.27, minY: 1.35, maxY: 1.75 },
+  { name: 'leftLeg', swing: 0.4, side: -1, pivotRatio: (0.94 - .0195) / 0.135, minY: 0.8, maxY: 1.1 },
+  { name: 'rightLeg', swing: -0.4, side: 1, pivotRatio: (0.94 - .0195) / 0.135, minY: 0.8, maxY: 1.1 }
 ]
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
   'draco3d.decoder': await draco3d.createDecoderModule()
@@ -46,7 +47,7 @@ function readAttribute(attribute, index) {
 let checkedVertices = 0
 let sourceGeometry = null
 for (const key of npcKeys) {
-  const file = new URL(`../public/assets/3d/xingyin-characters-v1/${key}.glb`, import.meta.url)
+  const file = new URL(`../public/assets/3d/${CHARACTER_ASSET_VERSION}/${key}.glb`, import.meta.url)
   const document = await io.read(fileURLToPath(file))
   const root = document.getRoot()
   assert.ok(root.listExtensionsUsed().some((extension) => extension.extensionName === 'KHR_draco_mesh_compression'), `${key}: resource is not Draco compressed`)
@@ -175,7 +176,7 @@ for (const [label, animatedMaterial, shader] of [
   const program = { vertexShader: shader.vertexShader, fragmentShader: shader.fragmentShader, uniforms: {} }
   animatedMaterial.onBeforeCompile(program, null)
   assert.match(program.vertexShader, /attribute vec3 _npc_pivot;/, `${label}: missing pivot binding`)
-  assert.match(program.vertexShader, /attribute float npcWalkStride;/, `${label}: missing per-instance stride`)
+  assert.match(program.vertexShader, /attribute vec2 npcWalkStride;/, `${label}: missing per-instance stride`)
   assert.match(program.vertexShader, /transformed\s*=\s*_npc_pivot\s*\+\s*npcWalkRotate\(transformed\s*-\s*_npc_pivot\)/, `${label}: missing limb deformation`)
   assert.match(program.vertexShader, /abs\(_npc_swing\)\s*<\s*0\.001/, `${label}: Draco near-zero weights can deform the torso`)
   if (label === 'surface') assert.match(program.vertexShader, /objectNormal\s*=\s*npcWalkRotate\(objectNormal\)/, 'surface normals do not follow limbs')

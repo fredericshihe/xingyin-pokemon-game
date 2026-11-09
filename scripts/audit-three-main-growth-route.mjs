@@ -38,7 +38,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     { calculateStatsForLevel },
     { calculateBattleRewards, getPlayerAverageLevel },
     { getOfficialExpToNextLevel },
-    { simulateMonsterExpGain },
+    { getExpPotionExpAmount, simulateMonsterExpGain },
     { resolveTrainerBattleTeamConfig },
     { getEncounterTable },
     { buildEcologySurveyRewardPlan, MAIN_ROUTE_TARGET_EXIT_LEVEL_BY_MAP },
@@ -139,7 +139,7 @@ await withViteAuditServer(async ({ loadModule }) => {
         const targetIndex = pickLowestGrowthTargetIndex(nextTeam)
         const targetMon = nextTeam[targetIndex]
         nextTeam = nextTeam.map((mon, monIndex) => (
-          monIndex === targetIndex ? applyExpToMon(targetMon, expPotion.expAmount) : mon
+          monIndex === targetIndex ? applyExpToMon(targetMon, getExpPotionExpAmount(targetMon, expPotion, getBaseMonsterDefinition)) : mon
         ))
       }
     })

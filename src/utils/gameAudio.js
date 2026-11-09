@@ -643,6 +643,30 @@ class GameAudioController {
     })
   }
 
+  playFishing({ phase = 'cast', tier = 'common', perfect = false } = {}) {
+    if (!this.canPlay()) return
+    this.withReadyContext((context) => {
+      const start = context.currentTime + 0.005
+      if (phase === 'cast') {
+        this.scheduleNoise({ start, duration: .15, gain: .025, highpass: 600, lowpass: 2100 })
+        this.scheduleTone({ start: start + .08, frequency: 480, toFrequency: 210, duration: .1, gain: .018, waveform: 'sine' })
+      } else if (phase === 'bite') {
+        const note = ['epic', 'legendary'].includes(tier) ? 880 : 660
+        this.scheduleTone({ start, frequency: note, duration: .06, gain: .035, waveform: 'sine', release: .09 })
+        this.scheduleTone({ start: start + .11, frequency: note * 1.25, duration: .08, gain: .026, waveform: 'sine', release: .1 })
+      } else if (phase === 'reel') {
+        this.scheduleNoise({ start, duration: .1, gain: .018, highpass: 450, lowpass: 1600 })
+        this.scheduleTone({ start, frequency: 330, toFrequency: 660, duration: .13, gain: .018, waveform: 'triangle' })
+      } else if (phase === 'success') {
+        const notes = perfect ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 659.25, 783.99]
+        notes.forEach((frequency, index) => this.scheduleTone({ start: start + index * .07,
+          frequency, duration: .12, gain: .024, waveform: 'sine', attack: .008, release: .17 }))
+      } else if (phase === 'miss') {
+        this.scheduleTone({ start, frequency: 392, toFrequency: 293.66, duration: .18, gain: .018, waveform: 'sine', release: .12 })
+      }
+    })
+  }
+
   playMapTouch(kindOrOptions = 'npc') {
     if (!this.canPlay()) return
     const options = typeof kindOrOptions === 'string' ? { kind: kindOrOptions } : (kindOrOptions || {})

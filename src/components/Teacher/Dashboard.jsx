@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { supabase } from '../../supabaseClient'
+import ConfirmDialog from '../ui/ConfirmDialog'
+import './teacherDashboard.css'
 import { OFFICIAL_DEX_MONSTERS, POKEBALLS, POTIONS, EXP_POTIONS } from '../../utils/gameData'
-import { getPokeballEffectText, getPotionEffectText } from '../../utils/inventoryItems'
-import { GAMEPLAY_LOG_FILTERS, fetchStudentGameplayLogs, getGameplayLogEventMeta } from '../../utils/gameplayLogs'
-import { TEACHER_UPDATE_EVENTS, broadcastStudentTeacherUpdate } from '../../utils/teacherRewardUpdates'
+import { getExpPotionEffectText, getPokeballEffectText, getPotionEffectText } from '../../utils/inventoryItems'
+import { GAMEPLAY_LOG_FILTERS, fetchStudentGameplayLogs, fetchTeacherGameplayLogs, formatFishingGameplayLogDetails, getGameplayLogEventMeta } from '../../utils/gameplayLogs'
+import { TEACHER_UPDATE_EVENTS, broadcastStudentTeacherUpdate, createTeacherResourceRewardUpdate } from '../../utils/teacherRewardUpdates'
 import {
   GOLD_REWARD_PRESETS,
   ENERGY_REWARD_PRESETS,
@@ -23,7 +25,7 @@ const SHOP_REWARD_ITEMS = {
 
 const getRewardItemEffectText = (itemType, item = {}) => {
   if (itemType === 'potion') return getPotionEffectText(item)
-  if (itemType === 'expPotion') return `经验 +${item.expAmount || 0}`
+  if (itemType === 'expPotion') return getExpPotionEffectText(item)
   if (itemType === 'pokeball') return getPokeballEffectText(item)
   return ''
 }
@@ -37,11 +39,11 @@ const PANEL_TABS = [
   { id: 'gold', label: '金币', icon: 'fa-coins' },
   { id: 'energy', label: '能量', icon: 'fa-bolt' },
   { id: 'reward', label: '奖励', icon: 'fa-gift' },
-  { id: 'logs', label: '记录', icon: 'fa-clock-rotate-left' }
+  { id: 'logs', label: '记录', icon: 'fa-clock-rotate-left' },
+  { id: 'account', label: '账号', icon: 'fa-user-gear' }
 ]
 
-const inputClass =
-  'teacher-input w-full rounded-xl border border-slate-200/90 bg-white/90 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200'
+const inputClass = 'teacher-input'
 
 const DEFAULT_DAILY_PLAYTIME_LIMIT_MINUTES = 30
 
@@ -135,21 +137,36 @@ function LogList({ logs, emptyText, renderAmount, renderMeta }) {
 }
 
 function formatGameplayLogDetail(log) {
+  if (log?.event_type?.startsWith('fishing_')) return formatFishingGameplayLogDetails(log)
   const details = log?.details && typeof log.details === 'object' ? log.details : {}
   const parts = []
 
   if (details.pokemonName) parts.push(details.pokemonLevel ? `${details.pokemonName} Lv.${details.pokemonLevel}` : details.pokemonName)
   if (details.enemyName && !details.pokemonName) parts.push(details.enemyLevel ? `${details.enemyName} Lv.${details.enemyLevel}` : details.enemyName)
+  if (Array.isArray(details.enemyTeam) && details.enemyTeam.length > 0) {
+    const teamText = details.enemyTeam
+      .map((member) => member?.name ? `${member.name}${member.level ? ` Lv.${member.level}` : ''}` : '')
+      .filter(Boolean)
+      .join('、')
+    if (teamText) parts.push(`对手：${teamText}`)
+  }
   if (details.itemName) parts.push(details.quantity ? `${details.itemName} x${details.quantity}` : details.itemName)
   if (details.gold != null) parts.push(`金币 ${details.gold}`)
   if (details.exp != null) parts.push(`经验 ${details.exp}`)
   if (details.energyCost != null) parts.push(`能量 -${details.energyCost}`)
-  if (details.result) parts.push(details.result)
+  if (details.turns != null) parts.push(`回合 ${details.turns}`)
+  if (details.switches != null) parts.push(`换人 ${details.switches}`)
+  if (details.enemySwitches != null) parts.push(`对手换人 ${details.enemySwitches}`)
+  if (details.potions != null) parts.push(`用药 ${details.potions}`)
+  if (details.fromMapDisplayName && details.targetMapDisplayName) {
+    parts.push(`${details.fromMapDisplayName} → ${details.targetMapDisplayName}`)
+  }
+  if (typeof details.result === 'string') parts.push(details.result)
 
-  return parts.filter(Boolean).slice(0, 3).join(' · ')
+  return parts.filter(Boolean).slice(0, 6).join(' · ')
 }
 
-function GameplayLogList({ logs, emptyText }) {
+export function GameplayLogList({ logs, emptyText }) {
   if (!logs.length) return <p className="teacher-empty-inline">{emptyText}</p>
 
   return (
@@ -167,6 +184,12 @@ function GameplayLogList({ logs, emptyText }) {
                 <strong>{log.title || meta.label}</strong>
                 <time>{formatDate(log.created_at)}</time>
               </div>
+              {log.student_nickname || log.student_username ? (
+                <span className="teacher-gameplay-log__student">
+                  {log.student_nickname || log.student_username}
+                  {log.student_username && log.student_nickname ? ` · @${log.student_username}` : ''}
+                </span>
+              ) : null}
               {log.summary ? <p>{log.summary}</p> : null}
               <div className="teacher-gameplay-log__meta">
                 <span>{meta.label}</span>
@@ -181,8 +204,11 @@ function GameplayLogList({ logs, emptyText }) {
   )
 }
 
-export default function TeacherDashboard({ profile }) {
+export default function TeacherDashboard({ profile, teacherPassword = '', client = supabase, previewGameplayLogs = null, onLogout }) {
   const [students, setStudents] = useState([])
+  const [studentsLoading, setStudentsLoading] = useState(true)
+  const selectedKeyRef = useRef(null)
+  const removedStudentIds = useRef(new Set())
   const [pendingStudents, setPendingStudents] = useState([])
   const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [studentSearch, setStudentSearch] = useState('')
@@ -204,6 +230,7 @@ export default function TeacherDashboard({ profile }) {
   const [energyLogs, setEnergyLogs] = useState([])
   const [gameplayLogs, setGameplayLogs] = useState([])
   const [gameplayLogFilter, setGameplayLogFilter] = useState('all')
+  const [gameplayLogScope, setGameplayLogScope] = useState('all')
   const [gameplayLogsLoading, setGameplayLogsLoading] = useState(false)
   const [rewardMode, setRewardMode] = useState('item')
   const [rewardItemType, setRewardItemType] = useState('pokeball')
@@ -215,6 +242,62 @@ export default function TeacherDashboard({ profile }) {
   const [resetPassword, setResetPassword] = useState('')
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState('')
   const [passwordResetLoading, setPasswordResetLoading] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [confirmation, setConfirmation] = useState(null)
+  const confirmationResolve = useRef(null)
+  const deletionInFlight = useRef(false)
+  const requestConfirmation = (options) => new Promise((resolve) => {
+    confirmationResolve.current = resolve
+    setConfirmation(options)
+  })
+  const finishConfirmation = (value) => {
+    confirmationResolve.current?.(value)
+    confirmationResolve.current = null
+    setConfirmation(null)
+  }
+  useEffect(() => () => confirmationResolve.current?.(false), [])
+
+  const handleDeleteStudent = async (teacherPassword) => {
+    if (!deleteTarget || deletionInFlight.current) return
+    const target = deleteTarget
+    deletionInFlight.current = true
+    setDeleteBusy(true)
+    setDeleteError('')
+    try {
+      const { data, error } = await client.rpc('teacher_delete_student', {
+        p_teacher_id: profile.id,
+        p_student_id: target.id,
+        p_teacher_password: teacherPassword,
+        p_expected_username: target.username
+      })
+      if (error) throw error
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      if (!result?.success) {
+        setDeleteError(result?.error || '删除失败，请重试')
+        return
+      }
+      removedStudentIds.current.add(target.id)
+      setStudents((previous) => previous.filter((student) => student.id !== target.id))
+      setPendingStudents((previous) => previous.filter((student) => student.id !== target.id))
+      setGameplayLogs((previous) => previous.filter((log) => log.student_id !== target.id))
+      if (selectedStudentId === String(target.id)) {
+        selectedKeyRef.current = null
+        setSelectedStudentId(null)
+        setGoldLogs([])
+        setEnergyLogs([])
+      }
+      setDeleteTarget(null)
+      setMessage({ type: 'success', text: `已删除 ${target.nickname || target.username} 的账号及关联数据` })
+      await Promise.all([loadStudents(), loadPendingStudents()])
+    } catch (error) {
+      setDeleteError(error.code === 'PGRST202' ? '账号删除功能尚未部署，请联系管理员' : '删除未确认，请重试；系统会校验账号当前状态')
+    } finally {
+      deletionInFlight.current = false
+      setDeleteBusy(false)
+    }
+  }
 
   const goldWarning = getGoldRewardWarning(goldAmount)
   const energyWarning = getEnergyRewardWarning(energyAmount) || getMaxEnergyWarning(energyMax)
@@ -225,9 +308,9 @@ export default function TeacherDashboard({ profile }) {
   const selectedRewardItem = SHOP_REWARD_ITEMS[rewardItemType]?.items?.[rewardItemKey]
   const selectedRewardItemHint = selectedRewardItem ? getRewardItemEffectText(rewardItemType, selectedRewardItem) : ''
 
-  const notifyStudentTeacherUpdate = useCallback((studentId, eventName) => {
-    void broadcastStudentTeacherUpdate(supabase, studentId, eventName)
-  }, [])
+  const notifyStudentTeacherUpdate = useCallback((studentId, eventName, resourceReward = null) => {
+    void broadcastStudentTeacherUpdate(client, studentId, eventName, resourceReward)
+  }, [client])
 
   const filteredStudents = useMemo(() => {
     const q = studentSearch.trim().toLowerCase()
@@ -252,14 +335,6 @@ export default function TeacherDashboard({ profile }) {
     })
   }, [gameplayLogFilter, gameplayLogs])
 
-  const studentById = useMemo(() => {
-    const map = new Map()
-    students.forEach((student) => {
-      map.set(String(student.id), student)
-    })
-    return map
-  }, [students])
-
   useEffect(() => {
     loadStudents()
     loadPendingStudents()
@@ -269,13 +344,13 @@ export default function TeacherDashboard({ profile }) {
     if (selectedStudentId) {
       loadGoldLogs(selectedStudentId)
       loadEnergyLogs(selectedStudentId)
-      loadGameplayLogs(selectedStudentId)
+      loadGameplayLogs(selectedStudentId, gameplayLogScope)
     } else {
       setGoldLogs([])
       setEnergyLogs([])
       setGameplayLogs([])
     }
-  }, [selectedStudentId])
+  }, [gameplayLogScope, selectedStudentId])
 
   useEffect(() => {
     if (selectedStudentId && students.length > 0 && !students.some((student) => String(student.id) === selectedStudentId)) {
@@ -296,27 +371,23 @@ export default function TeacherDashboard({ profile }) {
 
   const selectStudent = useCallback((student) => {
     if (!student?.id) return
+    selectedKeyRef.current = String(student.id)
+    setGoldLogs([])
+    setEnergyLogs([])
+    setGameplayLogs([])
+    setGoldAmount('')
+    setReason('')
+    setEnergyAmount('')
+    setEnergyMax('')
+    setEnergyReason('')
+    setEnergyFillToMax(false)
+    setRewardReason('')
     setSelectedStudentId(String(student.id))
     setMessage(null)
     setActivePanel('gold')
     setLogTab('gold')
     setGameplayLogFilter('all')
   }, [])
-
-  const handleStudentListActivate = useCallback((event) => {
-    const target = event.target instanceof Element ? event.target : null
-    const card = target?.closest?.('[data-student-id]')
-    const studentId = card?.getAttribute('data-student-id')
-    if (!studentId) return
-    const student = studentById.get(String(studentId))
-    if (student) selectStudent(student)
-  }, [selectStudent, studentById])
-
-  const handleStudentKeyDown = useCallback((event, student) => {
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    event.preventDefault()
-    selectStudent(student)
-  }, [selectStudent])
 
   const patchStudent = (studentId, patch) => {
     setStudents((prev) => prev.map((student) => (
@@ -325,26 +396,30 @@ export default function TeacherDashboard({ profile }) {
   }
 
   const loadStudents = async () => {
+    setStudentsLoading(true)
     try {
-      const { data, error } = await supabase.rpc('get_teacher_students', {
+      const { data, error } = await client.rpc('get_teacher_students', {
         p_teacher_id: profile.id
       })
 
       if (error) throw error
-      setStudents(data || [])
+      setStudents((data || []).filter((student) => !removedStudentIds.current.has(student.id)))
     } catch (error) {
       console.error('Error loading students:', error)
+      setMessage({ type: 'error', text: '学生列表读取失败，请点击刷新重试' })
+    } finally {
+      setStudentsLoading(false)
     }
   }
 
   const loadPendingStudents = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_teacher_pending_students', {
+      const { data, error } = await client.rpc('get_teacher_pending_students', {
         p_teacher_id: profile.id
       })
 
       if (error) throw error
-      setPendingStudents(data || [])
+      setPendingStudents((data || []).filter((student) => !removedStudentIds.current.has(student.id)))
     } catch (error) {
       console.error('Error loading pending students:', error)
     }
@@ -352,13 +427,13 @@ export default function TeacherDashboard({ profile }) {
 
   const handleReviewStudent = async (student, approved) => {
     if (!student?.id) return
-    const rejectionReason = approved ? '' : window.prompt('请输入拒绝原因（可留空）：', '')
-    if (!approved && rejectionReason === null) return
+    const rejectionReason = approved ? '' : await requestConfirmation({ title: '拒绝注册申请', description: `学生：${student.nickname || student.username}（@${student.username}）`, fieldLabel: '拒绝原因（可选）', optional: true, confirmLabel: '拒绝申请', danger: true })
+    if (!approved && rejectionReason === false) return
 
     setApprovalLoadingId(student.id)
     setMessage(null)
     try {
-      const { data, error } = await supabase.rpc('review_student_registration', {
+      const { data, error } = await client.rpc('review_student_registration', {
         p_teacher_id: profile.id,
         p_student_id: student.id,
         p_approved: approved,
@@ -388,13 +463,13 @@ export default function TeacherDashboard({ profile }) {
 
   const loadGoldLogs = async (studentId) => {
     try {
-      const { data, error } = await supabase.rpc('get_student_gold_logs', {
+      const { data, error } = await client.rpc('get_student_gold_logs', {
         p_teacher_id: profile.id,
         p_student_id: studentId,
         p_limit: 20
       })
       if (error) throw error
-      setGoldLogs(data || [])
+      if (selectedKeyRef.current === String(studentId)) setGoldLogs(data || [])
     } catch (error) {
       console.error('Error loading gold logs:', error)
     }
@@ -402,27 +477,25 @@ export default function TeacherDashboard({ profile }) {
 
   const loadEnergyLogs = async (studentId) => {
     try {
-      const { data, error } = await supabase.rpc('get_student_energy_logs', {
+      const { data, error } = await client.rpc('get_student_energy_logs', {
         p_teacher_id: profile.id,
         p_student_id: studentId,
         p_limit: 20
       })
       if (error) throw error
-      setEnergyLogs(data || [])
+      if (selectedKeyRef.current === String(studentId)) setEnergyLogs(data || [])
     } catch (error) {
       console.error('Error loading energy logs:', error)
     }
   }
 
-  const loadGameplayLogs = async (studentId) => {
+  const loadGameplayLogs = async (studentId, scope = gameplayLogScope) => {
     setGameplayLogsLoading(true)
     try {
-      const logs = await fetchStudentGameplayLogs({
-        teacherId: profile.id,
-        studentId,
-        limit: 100
-      })
-      setGameplayLogs(logs)
+      const logs = previewGameplayLogs !== null ? previewGameplayLogs.filter((log) => scope === 'all' || log.student_id === studentId) : scope === 'all'
+        ? await fetchTeacherGameplayLogs({ teacherId: profile.id, limit: 1000 })
+        : await fetchStudentGameplayLogs({ teacherId: profile.id, studentId, limit: 300 })
+      if (selectedKeyRef.current === String(studentId)) setGameplayLogs(logs.filter((log) => !removedStudentIds.current.has(log.student_id)))
     } catch (error) {
       console.error('Error loading gameplay logs:', error)
       setGameplayLogs([])
@@ -431,18 +504,23 @@ export default function TeacherDashboard({ profile }) {
     }
   }
 
+  const handleGameplayScopeChange = (scope) => {
+    setGameplayLogScope(scope)
+    void loadGameplayLogs(selectedStudent?.id, scope)
+  }
+
   const handleGrantGold = async () => {
     if (!selectedStudent || !goldAmount || goldAmount <= 0) {
       setMessage({ type: 'error', text: '请输入有效的金币数量' })
       return
     }
     const warning = getGoldRewardWarning(goldAmount)
-    if (warning && !window.confirm(`${warning}\n\n确认继续发放吗？`)) return
+    if (warning && !await requestConfirmation({ title: '确认发放', description: warning, confirmLabel: '继续发放' })) return
 
     setLoading(true)
     setMessage(null)
     try {
-      const { data, error } = await supabase.rpc('grant_gold', {
+      const { data, error } = await client.rpc('grant_gold', {
         p_teacher_id: profile.id,
         p_student_id: selectedStudent.id,
         p_amount: parseInt(goldAmount),
@@ -455,7 +533,8 @@ export default function TeacherDashboard({ profile }) {
         setGoldAmount('')
         setReason('')
         patchStudent(selectedStudent.id, { gold: result.goldAfter })
-        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged)
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged,
+          createTeacherResourceRewardUpdate({ goldDelta: result.goldAfter - result.goldBefore }))
         await loadStudents()
         await loadGoldLogs(selectedStudent.id)
       } else {
@@ -481,7 +560,7 @@ export default function TeacherDashboard({ profile }) {
       return
     }
     const warning = getEnergyRewardWarning(amount) || getMaxEnergyWarning(maxValue)
-    if (warning && !window.confirm(`${warning}\n\n确认继续操作吗？`)) return
+    if (warning && !await requestConfirmation({ title: '确认调整', description: warning, confirmLabel: '继续调整' })) return
 
     const defaultEnergyReason = energyFillToMax
       ? '老师补满能量'
@@ -490,7 +569,7 @@ export default function TeacherDashboard({ profile }) {
     setLoading(true)
     setMessage(null)
     try {
-      const { data, error } = await supabase.rpc('grant_energy', {
+      const { data, error } = await client.rpc('grant_energy', {
         p_teacher_id: profile.id,
         p_student_id: selectedStudent.id,
         p_amount: amount > 0 ? amount : 0,
@@ -510,7 +589,8 @@ export default function TeacherDashboard({ profile }) {
           energy: result.energyAfter,
           max_energy: result.maxEnergyAfter
         })
-        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged)
+        notifyStudentTeacherUpdate(selectedStudent.id, TEACHER_UPDATE_EVENTS.resourcesChanged,
+          createTeacherResourceRewardUpdate({ maxEnergyDelta: Math.max(0, result.maxEnergyAfter - result.maxEnergyBefore) }))
         await loadStudents()
         await loadEnergyLogs(selectedStudent.id)
       } else {
@@ -539,10 +619,14 @@ export default function TeacherDashboard({ profile }) {
     setPlaytimeLimitLoading(true)
     setMessage(null)
     try {
-      const { data, error } = await supabase.rpc('set_student_daily_playtime_limit', {
+      if (!teacherPassword) {
+        throw new Error('教师验证已过期，请退出后重新登录教师账号。')
+      }
+      const { data, error } = await client.rpc('set_student_daily_playtime_limit', {
         p_teacher_id: profile.id,
         p_student_id: selectedStudent.id,
-        p_limit_minutes: nextLimit
+        p_limit_minutes: nextLimit,
+        p_teacher_password: teacherPassword
       })
       if (error) throw error
       const result = typeof data === 'string' ? JSON.parse(data) : data
@@ -613,8 +697,8 @@ export default function TeacherDashboard({ profile }) {
           return
         }
         const warning = getItemRewardWarning({ itemKey: rewardItemKey, quantity })
-        if (warning && !window.confirm(`${warning}\n\n确认继续发放吗？`)) return
-        const result = await supabase.rpc('grant_item_reward', {
+        if (warning && !await requestConfirmation({ title: '确认发放', description: warning, confirmLabel: '继续发放' })) return
+        const result = await client.rpc('grant_item_reward', {
           p_teacher_id: profile.id,
           p_student_id: selectedStudent.id,
           p_item_type: rewardItemType,
@@ -632,8 +716,8 @@ export default function TeacherDashboard({ profile }) {
           return
         }
         const warning = getPokemonRewardWarning(level)
-        if (warning && !window.confirm(`${warning}\n\n确认继续发放吗？`)) return
-        const result = await supabase.rpc('grant_pokemon_reward', {
+        if (warning && !await requestConfirmation({ title: '确认发放', description: warning, confirmLabel: '继续发放' })) return
+        const result = await client.rpc('grant_pokemon_reward', {
           p_teacher_id: profile.id,
           p_student_id: selectedStudent.id,
           p_pokemon_id: pokemonId,
@@ -678,14 +762,14 @@ export default function TeacherDashboard({ profile }) {
       setMessage({ type: 'error', text: '两次输入的新密码不一致' })
       return
     }
-    if (!window.confirm(`确认更新 ${selectedStudent.nickname || selectedStudent.username} 的登录密码吗？\n\n旧密码会立即失效。`)) {
+    if (!await requestConfirmation({ title: '更新学生密码', description: `${selectedStudent.nickname || selectedStudent.username} 的旧密码将立即失效。`, confirmLabel: '更新密码' })) {
       return
     }
 
     setPasswordResetLoading(true)
     setMessage(null)
     try {
-      const { data, error } = await supabase.rpc('teacher_reset_student_password', {
+      const { data, error } = await client.rpc('teacher_reset_student_password', {
         p_teacher_id: profile.id,
         p_student_id: selectedStudent.id,
         p_new_password: nextPassword
@@ -713,7 +797,7 @@ export default function TeacherDashboard({ profile }) {
   const panelTitle = PANEL_TABS.find((t) => t.id === activePanel)?.label
 
   return (
-    <div className="teacher-dashboard game-app-bg">
+    <div className="teacher-dashboard game-app-bg" data-student-open={Boolean(selectedStudent)}>
       <header className="teacher-header">
         <div className="teacher-header__brand">
           <span className="teacher-header__icon">
@@ -733,7 +817,8 @@ export default function TeacherDashboard({ profile }) {
             <i className="fa-solid fa-user-clock" />
             {pendingStudents.length} 个待确认
           </span>
-          <span className="teacher-stat-pill teacher-stat-pill--muted">学生奖励与云端数据管理</span>
+          <button type="button" className="game-soft-button" onClick={() => { loadStudents(); loadPendingStudents() }} aria-label="刷新学生列表"><i className="fa-solid fa-rotate-right" />刷新</button>
+          {onLogout && <button type="button" className="game-soft-button" onClick={onLogout}><i className="fa-solid fa-right-from-bracket" />退出</button>}
         </div>
       </header>
 
@@ -747,17 +832,18 @@ export default function TeacherDashboard({ profile }) {
           </div>
           <input
             type="search"
+            aria-label="搜索学生"
             value={studentSearch}
             onChange={(e) => setStudentSearch(e.target.value)}
             placeholder="搜索昵称或用户名"
             className={inputClass}
           />
 
-          <section className="teacher-approval-box">
-            <div className="teacher-approval-box__head">
+          <details className="teacher-approval-box">
+            <summary className="teacher-approval-box__head">
               <h3>注册待确认</h3>
               <span>{pendingStudents.length}</span>
-            </div>
+            </summary>
             {pendingStudents.length === 0 ? (
               <p className="teacher-empty-inline">暂无学生注册申请</p>
             ) : (
@@ -787,14 +873,15 @@ export default function TeacherDashboard({ profile }) {
                       >
                         拒绝
                       </button>
+                      <button type="button" className="teacher-approval-card__delete" onClick={() => { setDeleteError(''); setDeleteTarget({ ...student }) }}>删除账号</button>
                     </div>
                   </article>
                 ))}
               </div>
             )}
-          </section>
+          </details>
 
-          {students.length === 0 ? (
+          {studentsLoading && students.length === 0 ? <p className="teacher-empty-inline" role="status">正在读取学生列表…</p> : students.length === 0 ? (
             <div className="teacher-empty">
               <i className="fa-solid fa-user-plus teacher-empty__icon" />
               <p>还没有学生</p>
@@ -804,57 +891,36 @@ export default function TeacherDashboard({ profile }) {
             <p className="teacher-empty-inline">没有匹配的学生</p>
           ) : (
             <>
-              <div className={cn('teacher-selected-strip', selectedStudent && 'teacher-selected-strip--active')}>
-                {selectedStudent ? (
-                  <>
-                    <i className="fa-solid fa-circle-check" />
-                    已选：{selectedStudent.nickname || selectedStudent.username}
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-hand-pointer" />
-                    点击学生卡片进行选择
-                  </>
-                )}
-              </div>
-              <ul
-                className="teacher-student-list"
-                onClickCapture={handleStudentListActivate}
-                onPointerDownCapture={handleStudentListActivate}
-              >
+              <ul className="teacher-student-list" aria-label="学生列表">
               {filteredStudents.map((student) => {
                 const active = selectedStudentId === String(student.id)
                 return (
                   <li key={student.id}>
-                    <article
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
+                      disabled={loading || passwordResetLoading || playtimeLimitLoading || deleteBusy}
                       onClick={() => selectStudent(student)}
-                      onPointerDown={() => selectStudent(student)}
-                      onKeyDown={(event) => handleStudentKeyDown(event, student)}
                       className={cn('teacher-student-card', active && 'teacher-student-card--active')}
                       data-student-id={student.id}
-                      aria-selected={active}
+                      aria-pressed={active}
                       aria-label={`选择学生 ${student.nickname || student.username}`}
                     >
                       <StudentAvatar name={student.nickname} />
                       <div className="teacher-student-card__body">
                         <span className="teacher-student-card__name">{student.nickname}</span>
                         <span className="teacher-student-card__user">@{student.username}</span>
-                        <span className="teacher-student-card__meta">
-                          建档 {formatDate(student.created_at)}
-                        </span>
+
                       </div>
                       <div className="teacher-student-card__stats">
-                        <span className="teacher-student-card__gold">{student.gold ?? 0}</span>
+                        <span className="teacher-student-card__gold"><i className="fa-solid fa-coins" aria-hidden="true" /> {student.gold ?? 0}</span>
                         <span className="teacher-student-card__energy">
-                          {student.energy ?? 0}/{student.max_energy ?? 0}
+                          <i className="fa-solid fa-bolt" aria-hidden="true" /> {student.energy ?? 0}/{student.max_energy ?? 0}
                         </span>
                         <span className="teacher-student-card__playtime">
                           {getStudentPlaytimeLimitMinutes(student)} 分钟/天
                         </span>
                       </div>
-                    </article>
+                    </button>
                   </li>
                 )
               })}
@@ -872,6 +938,7 @@ export default function TeacherDashboard({ profile }) {
             </section>
           ) : (
             <>
+              <button type="button" className="teacher-mobile-back game-soft-button" onClick={() => { selectedKeyRef.current = null; setSelectedStudentId(null) }}><i className="fa-solid fa-arrow-left" />学生列表</button>
               <section className="teacher-profile game-card">
                 <StudentAvatar name={selectedStudent.nickname} />
                 <div className="teacher-profile__info">
@@ -900,76 +967,6 @@ export default function TeacherDashboard({ profile }) {
                     </dd>
                   </div>
                 </dl>
-                <form
-                  className="teacher-profile__playtime-form"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleUpdatePlaytimeLimit()
-                  }}
-                >
-                  <Field label="每日游玩时长" hint="保存后学生端立即生效">
-                    <div className="teacher-profile__playtime-control">
-                      <input
-                        type="number"
-                        value={playtimeLimitMinutes}
-                        onChange={(e) => setPlaytimeLimitMinutes(e.target.value)}
-                        min="0"
-                        max="1440"
-                        className={inputClass}
-                      />
-                      <span>分钟/天</span>
-                    </div>
-                  </Field>
-                  <button
-                    type="submit"
-                    disabled={playtimeLimitLoading || !selectedStudent}
-                    className="game-soft-button teacher-profile__playtime-btn"
-                  >
-                    <i className={cn('fa-solid', playtimeLimitLoading ? 'fa-rotate fa-spin' : 'fa-floppy-disk')} />
-                    {playtimeLimitLoading ? '保存中…' : '保存时长'}
-                  </button>
-                </form>
-                <form
-                  className="teacher-profile__password"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    handleResetStudentPassword()
-                  }}
-                >
-                  <div className="teacher-profile__password-copy">
-                    <strong>重设学生登录密码</strong>
-                    <span>后台不再显示旧密码。设置成功后，学生需要使用新密码重新登录。</span>
-                  </div>
-                  <div className="teacher-form-row">
-                    <Field label="新密码" hint="至少 6 位，提交后旧密码立即失效">
-                      <input
-                        type="password"
-                        value={resetPassword}
-                        onChange={(e) => setResetPassword(e.target.value)}
-                        autoComplete="new-password"
-                        placeholder="输入新的登录密码"
-                        className={inputClass}
-                      />
-                    </Field>
-                    <Field label="确认新密码">
-                      <input
-                        type="password"
-                        value={resetPasswordConfirm}
-                        onChange={(e) => setResetPasswordConfirm(e.target.value)}
-                        autoComplete="new-password"
-                        placeholder="再次输入新密码"
-                        className={inputClass}
-                      />
-                    </Field>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={passwordResetLoading}
-                    className="game-primary-button teacher-profile__password-btn"
-                  >
-                    {passwordResetLoading ? '更新中…' : '更新学生密码'}
-                  </button>
-                </form>
               </section>
 
               <nav className="teacher-tabs" aria-label="操作分类">
@@ -978,6 +975,7 @@ export default function TeacherDashboard({ profile }) {
                     key={tab.id}
                     type="button"
                     onClick={() => setActivePanel(tab.id)}
+                    aria-pressed={activePanel === tab.id}
                     className={cn('teacher-tab', activePanel === tab.id && 'teacher-tab--active')}
                   >
                     <i className={cn('fa-solid', tab.icon)} />
@@ -991,6 +989,89 @@ export default function TeacherDashboard({ profile }) {
                   <h3>{panelTitle}</h3>
                   <span className="teacher-panel__target">目标：{selectedStudent.nickname}</span>
                 </header>
+
+                {activePanel === 'account' && (
+                  <div className="teacher-account">
+                    <section className="teacher-account__section">
+                      <h4>游玩设置</h4>
+                      <form
+                        className="teacher-profile__playtime-form"
+                        onSubmit={(e) => {
+                          e.preventDefault()
+                          handleUpdatePlaytimeLimit()
+                        }}
+                      >
+                        <Field label="每日游玩时长" hint="保存后学生端立即生效">
+                          <div className="teacher-profile__playtime-control">
+                            <input
+                              type="number"
+                              value={playtimeLimitMinutes}
+                              onChange={(e) => setPlaytimeLimitMinutes(e.target.value)}
+                              min="0"
+                              max="1440"
+                              className={inputClass}
+                            />
+                            <span>分钟/天</span>
+                          </div>
+                        </Field>
+                        <button
+                          type="submit"
+                          disabled={playtimeLimitLoading || !selectedStudent}
+                          className="game-soft-button teacher-profile__playtime-btn"
+                        >
+                          <i className={cn('fa-solid', playtimeLimitLoading ? 'fa-rotate fa-spin' : 'fa-floppy-disk')} />
+                          {playtimeLimitLoading ? '保存中…' : '保存时长'}
+                        </button>
+                      </form>
+                      <form
+                        className="teacher-profile__password"
+                        onSubmit={(e) => {
+                          e.preventDefault()
+                          handleResetStudentPassword()
+                        }}
+                      >
+                        <div className="teacher-profile__password-copy">
+                          <strong>重设学生登录密码</strong>
+                          <span>至少 6 位，更新后请将新密码告知学生。</span>
+                        </div>
+                        <div className="teacher-form-row">
+                          <Field label="新密码" hint="至少 6 位，提交后旧密码立即失效">
+                            <input
+                              type="password"
+                              value={resetPassword}
+                              onChange={(e) => setResetPassword(e.target.value)}
+                              autoComplete="new-password"
+                              placeholder="输入新的登录密码"
+                              className={inputClass}
+                            />
+                          </Field>
+                          <Field label="确认新密码">
+                            <input
+                              type="password"
+                              value={resetPasswordConfirm}
+                              onChange={(e) => setResetPasswordConfirm(e.target.value)}
+                              autoComplete="new-password"
+                              placeholder="再次输入新密码"
+                              className={inputClass}
+                            />
+                          </Field>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={passwordResetLoading}
+                          className="game-primary-button teacher-profile__password-btn"
+                        >
+                          {passwordResetLoading ? '更新中…' : '更新学生密码'}
+                        </button>
+                      </form>
+
+                    </section>
+                    <section className="teacher-danger-zone">
+                      <div><h4>删除学生账号</h4><p>删除账号及存档、鱼获、银行、奖励和记录，无法恢复。</p></div>
+                      <button type="button" className="game-danger-button" disabled={loading || passwordResetLoading || playtimeLimitLoading} onClick={() => { setDeleteError(''); setDeleteTarget({ ...selectedStudent }) }}>删除账号</button>
+                    </section>
+                  </div>
+                )}
 
                 {activePanel === 'gold' && (
                   <form
@@ -1132,7 +1213,6 @@ export default function TeacherDashboard({ profile }) {
                       </button>
                     </div>
                     <PresetRow presets={ITEM_REWARD_PRESETS} onSelect={applyItemPreset} />
-                    <WarningBanner text="进化已统一改为等级触发，老师后台不再发放进化道具。" />
                     {rewardMode === 'item' ? (
                       <div className="teacher-form-row teacher-form-row--3">
                         <Field label="道具分类">
@@ -1269,25 +1349,19 @@ export default function TeacherDashboard({ profile }) {
                       />
                     ) : (
                       <div className="teacher-gameplay-logs">
-                        <div className="teacher-gameplay-filters" role="tablist" aria-label="游玩日志筛选">
-                          {GAMEPLAY_LOG_FILTERS.map((filter) => (
-                            <button
-                              key={filter.id}
-                              type="button"
-                              className={cn('teacher-gameplay-filter', gameplayLogFilter === filter.id && 'teacher-gameplay-filter--active')}
-                              onClick={() => setGameplayLogFilter(filter.id)}
-                            >
-                              {filter.label}
-                            </button>
-                          ))}
-                          <button
-                            type="button"
-                            className="teacher-gameplay-filter teacher-gameplay-filter--refresh"
-                            onClick={() => selectedStudent && loadGameplayLogs(selectedStudent.id)}
-                            disabled={gameplayLogsLoading}
-                          >
-                            <i className="fa-solid fa-rotate-right" />
-                            刷新
+                        <div className="teacher-gameplay-controls">
+                          <Field label="查看范围">
+                            <select className={inputClass} value={gameplayLogScope} onChange={(event) => handleGameplayScopeChange(event.target.value)}>
+                              <option value="all">全部学生</option><option value="student">当前学生</option>
+                            </select>
+                          </Field>
+                          <Field label="记录类型">
+                            <select className={inputClass} value={gameplayLogFilter} onChange={(event) => setGameplayLogFilter(event.target.value)}>
+                              {GAMEPLAY_LOG_FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
+                            </select>
+                          </Field>
+                          <button type="button" className="game-soft-button" onClick={() => loadGameplayLogs(selectedStudent?.id, gameplayLogScope)} disabled={gameplayLogsLoading}>
+                            <i className="fa-solid fa-rotate-right" />{gameplayLogsLoading ? '读取中…' : '刷新'}
                           </button>
                         </div>
                         <GameplayLogList
@@ -1303,6 +1377,8 @@ export default function TeacherDashboard({ profile }) {
           )}
         </main>
       </div>
+      {confirmation && <ConfirmDialog key={confirmation.title} {...confirmation} onConfirm={finishConfirmation} onCancel={() => finishConfirmation(false)} />}
+      {deleteTarget && <ConfirmDialog title="删除学生账号" description={`${deleteTarget.nickname || deleteTarget.username}（@${deleteTarget.username}）\n账号、存档与游戏记录将永久删除，无法恢复。`} confirmLabel="确认删除" danger fieldLabel="你的教师登录密码" fieldType="password" busy={deleteBusy} error={deleteError} onConfirm={handleDeleteStudent} onCancel={() => setDeleteTarget(null)} />}
     </div>
   )
 }

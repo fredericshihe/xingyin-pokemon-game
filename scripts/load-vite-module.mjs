@@ -5,13 +5,15 @@ import { createServer } from 'vite'
 
 export const ROOT_DIR = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 
-export async function withViteAuditServer(run) {
+export async function withViteAuditServer(run, { define = {} } = {}) {
   const server = await createServer({
     root: ROOT_DIR,
     configFile: false,
     publicDir: false,
     appType: 'custom',
     logLevel: 'error',
+    define,
+    optimizeDeps: { noDiscovery: true, include: [] },
     server: {
       middlewareMode: true,
       hmr: false,

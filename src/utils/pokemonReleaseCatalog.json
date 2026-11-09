@@ -1,0 +1,1277 @@
+{
+  "version": 1,
+  "tiers": {
+    "common": {
+      "label": "常见",
+      "multiplier": 1
+    },
+    "uncommon": {
+      "label": "少见",
+      "multiplier": 1.5
+    },
+    "rare": {
+      "label": "稀有",
+      "multiplier": 2.5
+    },
+    "precious": {
+      "label": "珍稀",
+      "multiplier": 4
+    }
+  },
+  "species": [
+    {
+      "baseId": 1,
+      "dexNo": 1,
+      "name": "妙蛙种子",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 2,
+      "dexNo": 4,
+      "name": "小火龙",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 3,
+      "dexNo": 7,
+      "name": "杰尼龟",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 4,
+      "dexNo": 25,
+      "name": "皮卡丘",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 5,
+      "dexNo": 79,
+      "name": "呆呆兽",
+      "tier": "common"
+    },
+    {
+      "baseId": 6,
+      "dexNo": 94,
+      "name": "耿鬼",
+      "tier": "rare"
+    },
+    {
+      "baseId": 7,
+      "dexNo": 59,
+      "name": "风速狗",
+      "tier": "rare"
+    },
+    {
+      "baseId": 8,
+      "dexNo": 130,
+      "name": "暴鲤龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 9,
+      "dexNo": 131,
+      "name": "拉普拉斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 10,
+      "dexNo": 143,
+      "name": "卡比兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 11,
+      "dexNo": 65,
+      "name": "胡地",
+      "tier": "rare"
+    },
+    {
+      "baseId": 12,
+      "dexNo": 149,
+      "name": "快龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 13,
+      "dexNo": 133,
+      "name": "伊布",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 14,
+      "dexNo": 54,
+      "name": "可达鸭",
+      "tier": "common"
+    },
+    {
+      "baseId": 15,
+      "dexNo": 39,
+      "name": "胖丁",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 16,
+      "dexNo": 129,
+      "name": "鲤鱼王",
+      "tier": "common"
+    },
+    {
+      "baseId": 17,
+      "dexNo": 34,
+      "name": "尼多王",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 18,
+      "dexNo": 67,
+      "name": "豪力",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 19,
+      "dexNo": 85,
+      "name": "嘟嘟利",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 20,
+      "dexNo": 92,
+      "name": "鬼斯",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 21,
+      "dexNo": 93,
+      "name": "鬼斯通",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 22,
+      "dexNo": 95,
+      "name": "大岩蛇",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 23,
+      "dexNo": 123,
+      "name": "飞天螳螂",
+      "tier": "rare"
+    },
+    {
+      "baseId": 24,
+      "dexNo": 142,
+      "name": "化石翼龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 25,
+      "dexNo": 146,
+      "name": "火焰鸟",
+      "tier": "precious"
+    },
+    {
+      "baseId": 26,
+      "dexNo": 144,
+      "name": "急冻鸟",
+      "tier": "precious"
+    },
+    {
+      "baseId": 27,
+      "dexNo": 145,
+      "name": "闪电鸟",
+      "tier": "precious"
+    },
+    {
+      "baseId": 28,
+      "dexNo": 26,
+      "name": "雷丘",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 29,
+      "dexNo": 38,
+      "name": "九尾",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 30,
+      "dexNo": 45,
+      "name": "霸王花",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 31,
+      "dexNo": 53,
+      "name": "猫老大",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 32,
+      "dexNo": 57,
+      "name": "火暴猴",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 33,
+      "dexNo": 62,
+      "name": "蚊香泳士",
+      "tier": "rare"
+    },
+    {
+      "baseId": 34,
+      "dexNo": 68,
+      "name": "怪力",
+      "tier": "rare"
+    },
+    {
+      "baseId": 35,
+      "dexNo": 76,
+      "name": "隆隆岩",
+      "tier": "rare"
+    },
+    {
+      "baseId": 36,
+      "dexNo": 78,
+      "name": "烈焰马",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 37,
+      "dexNo": 80,
+      "name": "呆壳兽",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 38,
+      "dexNo": 82,
+      "name": "三合一磁怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 39,
+      "dexNo": 83,
+      "name": "大葱鸭",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 40,
+      "dexNo": 87,
+      "name": "白海狮",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 41,
+      "dexNo": 89,
+      "name": "臭臭泥",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 42,
+      "dexNo": 91,
+      "name": "刺甲贝",
+      "tier": "rare"
+    },
+    {
+      "baseId": 43,
+      "dexNo": 97,
+      "name": "引梦貘人",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 44,
+      "dexNo": 99,
+      "name": "巨钳蟹",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 45,
+      "dexNo": 101,
+      "name": "顽皮雷弹",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 46,
+      "dexNo": 103,
+      "name": "椰蛋树",
+      "tier": "rare"
+    },
+    {
+      "baseId": 47,
+      "dexNo": 105,
+      "name": "嘎啦嘎啦",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 48,
+      "dexNo": 106,
+      "name": "飞腿郎",
+      "tier": "rare"
+    },
+    {
+      "baseId": 49,
+      "dexNo": 107,
+      "name": "快拳郎",
+      "tier": "rare"
+    },
+    {
+      "baseId": 50,
+      "dexNo": 110,
+      "name": "双弹瓦斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 51,
+      "dexNo": 112,
+      "name": "钻角犀兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 52,
+      "dexNo": 113,
+      "name": "吉利蛋",
+      "tier": "rare"
+    },
+    {
+      "baseId": 53,
+      "dexNo": 115,
+      "name": "袋兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 54,
+      "dexNo": 117,
+      "name": "海刺龙",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 55,
+      "dexNo": 121,
+      "name": "宝石海星",
+      "tier": "rare"
+    },
+    {
+      "baseId": 56,
+      "dexNo": 122,
+      "name": "魔墙人偶",
+      "tier": "rare"
+    },
+    {
+      "baseId": 57,
+      "dexNo": 124,
+      "name": "迷唇姐",
+      "tier": "rare"
+    },
+    {
+      "baseId": 58,
+      "dexNo": 125,
+      "name": "电击兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 59,
+      "dexNo": 126,
+      "name": "鸭嘴火兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 60,
+      "dexNo": 127,
+      "name": "凯罗斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 61,
+      "dexNo": 128,
+      "name": "肯泰罗",
+      "tier": "rare"
+    },
+    {
+      "baseId": 62,
+      "dexNo": 134,
+      "name": "水伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 63,
+      "dexNo": 135,
+      "name": "雷伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 64,
+      "dexNo": 136,
+      "name": "火伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 65,
+      "dexNo": 137,
+      "name": "多边兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 66,
+      "dexNo": 139,
+      "name": "多刺菊石兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 67,
+      "dexNo": 141,
+      "name": "镰刀盔",
+      "tier": "rare"
+    },
+    {
+      "baseId": 68,
+      "dexNo": 150,
+      "name": "超梦",
+      "tier": "precious"
+    },
+    {
+      "baseId": 69,
+      "dexNo": 151,
+      "name": "梦幻",
+      "tier": "precious"
+    },
+    {
+      "baseId": 70,
+      "dexNo": 55,
+      "name": "哥达鸭",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 71,
+      "dexNo": 2,
+      "name": "妙蛙草",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 72,
+      "dexNo": 3,
+      "name": "妙蛙花",
+      "tier": "rare"
+    },
+    {
+      "baseId": 73,
+      "dexNo": 5,
+      "name": "火恐龙",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 74,
+      "dexNo": 6,
+      "name": "喷火龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 75,
+      "dexNo": 8,
+      "name": "卡咪龟",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 76,
+      "dexNo": 9,
+      "name": "水箭龟",
+      "tier": "rare"
+    },
+    {
+      "baseId": 77,
+      "dexNo": 116,
+      "name": "墨海马",
+      "tier": "common"
+    },
+    {
+      "baseId": 78,
+      "dexNo": 90,
+      "name": "大舌贝",
+      "tier": "common"
+    },
+    {
+      "baseId": 79,
+      "dexNo": 98,
+      "name": "大钳蟹",
+      "tier": "common"
+    },
+    {
+      "baseId": 80,
+      "dexNo": 120,
+      "name": "海星星",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 81,
+      "dexNo": 138,
+      "name": "菊石兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 82,
+      "dexNo": 140,
+      "name": "化石盔",
+      "tier": "rare"
+    },
+    {
+      "baseId": 83,
+      "dexNo": 58,
+      "name": "卡蒂狗",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 84,
+      "dexNo": 37,
+      "name": "六尾",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 85,
+      "dexNo": 77,
+      "name": "小火马",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 86,
+      "dexNo": 230,
+      "name": "刺龙王",
+      "tier": "rare"
+    },
+    {
+      "baseId": 87,
+      "dexNo": 44,
+      "name": "臭臭花",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 88,
+      "dexNo": 102,
+      "name": "蛋蛋",
+      "tier": "common"
+    },
+    {
+      "baseId": 89,
+      "dexNo": 10,
+      "name": "绿毛虫",
+      "tier": "common"
+    },
+    {
+      "baseId": 90,
+      "dexNo": 81,
+      "name": "小磁怪",
+      "tier": "common"
+    },
+    {
+      "baseId": 91,
+      "dexNo": 100,
+      "name": "霹雳电球",
+      "tier": "common"
+    },
+    {
+      "baseId": 92,
+      "dexNo": 239,
+      "name": "电击怪",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 93,
+      "dexNo": 238,
+      "name": "迷唇娃",
+      "tier": "rare"
+    },
+    {
+      "baseId": 94,
+      "dexNo": 467,
+      "name": "鸭嘴炎兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 95,
+      "dexNo": 240,
+      "name": "鸭嘴宝宝",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 96,
+      "dexNo": 66,
+      "name": "腕力",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 97,
+      "dexNo": 56,
+      "name": "猴怪",
+      "tier": "common"
+    },
+    {
+      "baseId": 98,
+      "dexNo": 32,
+      "name": "尼多朗",
+      "tier": "common"
+    },
+    {
+      "baseId": 99,
+      "dexNo": 33,
+      "name": "尼多力诺",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 100,
+      "dexNo": 88,
+      "name": "臭泥",
+      "tier": "common"
+    },
+    {
+      "baseId": 101,
+      "dexNo": 109,
+      "name": "瓦斯弹",
+      "tier": "common"
+    },
+    {
+      "baseId": 102,
+      "dexNo": 74,
+      "name": "小拳石",
+      "tier": "common"
+    },
+    {
+      "baseId": 103,
+      "dexNo": 75,
+      "name": "隆隆石",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 104,
+      "dexNo": 464,
+      "name": "超甲狂犀",
+      "tier": "rare"
+    },
+    {
+      "baseId": 105,
+      "dexNo": 111,
+      "name": "独角犀牛",
+      "tier": "common"
+    },
+    {
+      "baseId": 106,
+      "dexNo": 84,
+      "name": "嘟嘟",
+      "tier": "common"
+    },
+    {
+      "baseId": 107,
+      "dexNo": 96,
+      "name": "催眠貘",
+      "tier": "common"
+    },
+    {
+      "baseId": 108,
+      "dexNo": 233,
+      "name": "多边兽２型",
+      "tier": "rare"
+    },
+    {
+      "baseId": 109,
+      "dexNo": 474,
+      "name": "多边兽乙型",
+      "tier": "rare"
+    },
+    {
+      "baseId": 110,
+      "dexNo": 63,
+      "name": "凯西",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 111,
+      "dexNo": 64,
+      "name": "勇基拉",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 112,
+      "dexNo": 439,
+      "name": "魔尼尼",
+      "tier": "rare"
+    },
+    {
+      "baseId": 113,
+      "dexNo": 446,
+      "name": "小卡比兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 114,
+      "dexNo": 174,
+      "name": "宝宝丁",
+      "tier": "common"
+    },
+    {
+      "baseId": 115,
+      "dexNo": 40,
+      "name": "胖可丁",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 116,
+      "dexNo": 440,
+      "name": "小福蛋",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 117,
+      "dexNo": 242,
+      "name": "幸福蛋",
+      "tier": "rare"
+    },
+    {
+      "baseId": 118,
+      "dexNo": 11,
+      "name": "铁甲蛹",
+      "tier": "common"
+    },
+    {
+      "baseId": 119,
+      "dexNo": 52,
+      "name": "喵喵",
+      "tier": "common"
+    },
+    {
+      "baseId": 120,
+      "dexNo": 438,
+      "name": "盆才怪",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 121,
+      "dexNo": 236,
+      "name": "无畏小子",
+      "tier": "rare"
+    },
+    {
+      "baseId": 122,
+      "dexNo": 466,
+      "name": "电击魔兽",
+      "tier": "rare"
+    },
+    {
+      "baseId": 123,
+      "dexNo": 12,
+      "name": "巴大蝶",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 124,
+      "dexNo": 108,
+      "name": "大舌头",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 125,
+      "dexNo": 900,
+      "name": "劈斧螳螂",
+      "tier": "rare"
+    },
+    {
+      "baseId": 126,
+      "dexNo": 979,
+      "name": "弃世猴",
+      "tier": "rare"
+    },
+    {
+      "baseId": 127,
+      "dexNo": 463,
+      "name": "大舌舔",
+      "tier": "rare"
+    },
+    {
+      "baseId": 128,
+      "dexNo": 147,
+      "name": "迷你龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 129,
+      "dexNo": 148,
+      "name": "哈克龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 130,
+      "dexNo": 246,
+      "name": "幼基拉斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 131,
+      "dexNo": 247,
+      "name": "沙基拉斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 132,
+      "dexNo": 196,
+      "name": "太阳伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 133,
+      "dexNo": 470,
+      "name": "叶伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 134,
+      "dexNo": 471,
+      "name": "冰伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 135,
+      "dexNo": 185,
+      "name": "树才怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 136,
+      "dexNo": 182,
+      "name": "美丽花",
+      "tier": "rare"
+    },
+    {
+      "baseId": 137,
+      "dexNo": 197,
+      "name": "月亮伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 138,
+      "dexNo": 199,
+      "name": "呆呆王",
+      "tier": "rare"
+    },
+    {
+      "baseId": 139,
+      "dexNo": 208,
+      "name": "大钢蛇",
+      "tier": "rare"
+    },
+    {
+      "baseId": 140,
+      "dexNo": 212,
+      "name": "巨钳螳螂",
+      "tier": "rare"
+    },
+    {
+      "baseId": 141,
+      "dexNo": 237,
+      "name": "战舞郎",
+      "tier": "rare"
+    },
+    {
+      "baseId": 142,
+      "dexNo": 248,
+      "name": "班基拉斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 143,
+      "dexNo": 462,
+      "name": "自爆磁怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 144,
+      "dexNo": 700,
+      "name": "仙子伊布",
+      "tier": "rare"
+    },
+    {
+      "baseId": 145,
+      "dexNo": 863,
+      "name": "喵头目",
+      "tier": "rare"
+    },
+    {
+      "baseId": 146,
+      "dexNo": 865,
+      "name": "葱游兵",
+      "tier": "rare"
+    },
+    {
+      "baseId": 147,
+      "dexNo": 866,
+      "name": "踏冰人偶",
+      "tier": "rare"
+    },
+    {
+      "baseId": 148,
+      "dexNo": 13,
+      "name": "独角虫",
+      "tier": "common"
+    },
+    {
+      "baseId": 149,
+      "dexNo": 14,
+      "name": "铁壳蛹",
+      "tier": "common"
+    },
+    {
+      "baseId": 150,
+      "dexNo": 15,
+      "name": "大针蜂",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 151,
+      "dexNo": 16,
+      "name": "波波",
+      "tier": "common"
+    },
+    {
+      "baseId": 152,
+      "dexNo": 17,
+      "name": "比比鸟",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 153,
+      "dexNo": 18,
+      "name": "大比鸟",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 154,
+      "dexNo": 19,
+      "name": "小拉达",
+      "tier": "common"
+    },
+    {
+      "baseId": 155,
+      "dexNo": 20,
+      "name": "拉达",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 156,
+      "dexNo": 21,
+      "name": "烈雀",
+      "tier": "common"
+    },
+    {
+      "baseId": 157,
+      "dexNo": 22,
+      "name": "大嘴雀",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 158,
+      "dexNo": 23,
+      "name": "阿柏蛇",
+      "tier": "common"
+    },
+    {
+      "baseId": 159,
+      "dexNo": 24,
+      "name": "阿柏怪",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 160,
+      "dexNo": 27,
+      "name": "穿山鼠",
+      "tier": "common"
+    },
+    {
+      "baseId": 161,
+      "dexNo": 28,
+      "name": "穿山王",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 162,
+      "dexNo": 29,
+      "name": "尼多兰",
+      "tier": "common"
+    },
+    {
+      "baseId": 163,
+      "dexNo": 30,
+      "name": "尼多娜",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 164,
+      "dexNo": 31,
+      "name": "尼多后",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 165,
+      "dexNo": 35,
+      "name": "皮皮",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 166,
+      "dexNo": 36,
+      "name": "皮可西",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 167,
+      "dexNo": 41,
+      "name": "超音蝠",
+      "tier": "common"
+    },
+    {
+      "baseId": 168,
+      "dexNo": 42,
+      "name": "大嘴蝠",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 169,
+      "dexNo": 43,
+      "name": "走路草",
+      "tier": "common"
+    },
+    {
+      "baseId": 170,
+      "dexNo": 46,
+      "name": "派拉斯",
+      "tier": "common"
+    },
+    {
+      "baseId": 171,
+      "dexNo": 47,
+      "name": "派拉斯特",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 172,
+      "dexNo": 48,
+      "name": "毛球",
+      "tier": "common"
+    },
+    {
+      "baseId": 173,
+      "dexNo": 49,
+      "name": "摩鲁蛾",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 174,
+      "dexNo": 50,
+      "name": "地鼠",
+      "tier": "common"
+    },
+    {
+      "baseId": 175,
+      "dexNo": 51,
+      "name": "三地鼠",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 176,
+      "dexNo": 60,
+      "name": "蚊香蝌蚪",
+      "tier": "common"
+    },
+    {
+      "baseId": 177,
+      "dexNo": 61,
+      "name": "蚊香君",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 178,
+      "dexNo": 69,
+      "name": "喇叭芽",
+      "tier": "common"
+    },
+    {
+      "baseId": 179,
+      "dexNo": 70,
+      "name": "口呆花",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 180,
+      "dexNo": 71,
+      "name": "大食花",
+      "tier": "rare"
+    },
+    {
+      "baseId": 181,
+      "dexNo": 72,
+      "name": "玛瑙水母",
+      "tier": "common"
+    },
+    {
+      "baseId": 182,
+      "dexNo": 73,
+      "name": "毒刺水母",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 183,
+      "dexNo": 86,
+      "name": "小海狮",
+      "tier": "common"
+    },
+    {
+      "baseId": 184,
+      "dexNo": 104,
+      "name": "卡拉卡拉",
+      "tier": "common"
+    },
+    {
+      "baseId": 185,
+      "dexNo": 114,
+      "name": "蔓藤怪",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 186,
+      "dexNo": 118,
+      "name": "角金鱼",
+      "tier": "common"
+    },
+    {
+      "baseId": 187,
+      "dexNo": 119,
+      "name": "金鱼王",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 188,
+      "dexNo": 132,
+      "name": "百变怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 189,
+      "dexNo": 282,
+      "name": "沙奈朵",
+      "tier": "rare"
+    },
+    {
+      "baseId": 190,
+      "dexNo": 407,
+      "name": "罗丝雷朵",
+      "tier": "rare"
+    },
+    {
+      "baseId": 191,
+      "dexNo": 468,
+      "name": "波克基斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 192,
+      "dexNo": 350,
+      "name": "美纳斯",
+      "tier": "rare"
+    },
+    {
+      "baseId": 193,
+      "dexNo": 245,
+      "name": "水君",
+      "tier": "precious"
+    },
+    {
+      "baseId": 194,
+      "dexNo": 272,
+      "name": "乐天河童",
+      "tier": "rare"
+    },
+    {
+      "baseId": 195,
+      "dexNo": 257,
+      "name": "火焰鸡",
+      "tier": "rare"
+    },
+    {
+      "baseId": 196,
+      "dexNo": 286,
+      "name": "斗笠菇",
+      "tier": "rare"
+    },
+    {
+      "baseId": 197,
+      "dexNo": 241,
+      "name": "大奶罐",
+      "tier": "rare"
+    },
+    {
+      "baseId": 198,
+      "dexNo": 160,
+      "name": "大力鳄",
+      "tier": "rare"
+    },
+    {
+      "baseId": 199,
+      "dexNo": 260,
+      "name": "巨沼怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 200,
+      "dexNo": 319,
+      "name": "巨牙鲨",
+      "tier": "rare"
+    },
+    {
+      "baseId": 201,
+      "dexNo": 169,
+      "name": "叉字蝠",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 202,
+      "dexNo": 477,
+      "name": "黑夜魔灵",
+      "tier": "rare"
+    },
+    {
+      "baseId": 203,
+      "dexNo": 609,
+      "name": "水晶灯火灵",
+      "tier": "rare"
+    },
+    {
+      "baseId": 204,
+      "dexNo": 376,
+      "name": "巨金怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 205,
+      "dexNo": 448,
+      "name": "路卡利欧",
+      "tier": "rare"
+    },
+    {
+      "baseId": 206,
+      "dexNo": 681,
+      "name": "坚盾剑怪",
+      "tier": "rare"
+    },
+    {
+      "baseId": 207,
+      "dexNo": 373,
+      "name": "暴飞龙",
+      "tier": "rare"
+    },
+    {
+      "baseId": 208,
+      "dexNo": 445,
+      "name": "烈咬陆鲨",
+      "tier": "uncommon"
+    },
+    {
+      "baseId": 209,
+      "dexNo": 635,
+      "name": "三首恶龙",
+      "tier": "rare"
+    }
+  ]
+}

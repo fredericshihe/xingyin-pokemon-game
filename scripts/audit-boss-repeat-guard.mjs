@@ -1,6 +1,12 @@
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  getEliteRouteBlockerInteractionTile,
+  isEliteRouteBlockerCleared,
+  shouldRouteBattleEventToInfo
+} from '../src/game/eliteRouteBlocker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -85,8 +91,24 @@ const requiredSnippets = [
     snippet: 'const completionMeta = getConfiguredBattleCompletionMeta({\n          snapshot: committedSnapshot,'
   },
   {
-    label: 'lieutenant completion gets a permanent immediate lock',
-    snippet: "const isPermanentTrainerEvent = eventType === 'trainer' && normalizeTrainerRole(resolvedEventRole) !== 'normal';"
+    label: 'lieutenant and boss rematches use a daily immediate lock',
+    snippet: "!isDailyRematchBattleEvent(eventType, resolvedEventRole);"
+  },
+  {
+    label: 'completed boss rematches cannot repeat first-clear rewards',
+    snippet: 'firstClearEligible: !isCompletedBattleEvent,'
+  },
+  {
+    label: 'rematches receive a same-day lock after reward settlement',
+    snippet: 'isDailyRematchBattleEvent(rewardCompletionMeta.eventType, rewardCompletionMeta.eventRole)'
+  },
+  {
+    label: 'cleared bosses bypass legacy first-clear lieutenant gates on rematch',
+    snippet: 'if (!(isDailyRematchBattle && isCompletedBattleEvent) && missingRequiredTrainerCount > 0) {'
+  },
+  {
+    label: 'cleared bosses bypass legacy first-clear device gates on rematch',
+    snippet: 'if (!(isDailyRematchBattle && isCompletedBattleEvent) && unlockTaskGate && !unlockTaskGate.completed) {'
   },
   {
     label: 'victory settlement tolerates reward-phase daily precompletion',
@@ -134,6 +156,23 @@ if (failures.length > 0) {
     console.error(`- Missing ${failure.label}`);
   }
   process.exit(1);
+}
+
+for (const type of ['trainer', 'boss']) {
+  const event = {
+    id: `${type}_rematch`,
+    type,
+    position: { x: 4, y: 5 },
+    properties: { blocksRouteUntilDefeated: true, stepAsideDirection: 'right' }
+  };
+  const available = { [event.id]: { status: 'available', routeCleared: true } };
+  const completed = { [event.id]: { status: 'daily_complete', routeCleared: true } };
+  assert.equal(isEliteRouteBlockerCleared(event, available[event.id]), true);
+  assert.deepEqual(getEliteRouteBlockerInteractionTile(event, available[event.id]), { x: 5, y: 5 });
+  assert.equal(shouldRouteBattleEventToInfo(event, available), false);
+  assert.equal(shouldRouteBattleEventToInfo(event, completed), true);
+  assert.equal(isEliteRouteBlockerCleared(event, { status: 'available' }), false);
+  assert.deepEqual(getEliteRouteBlockerInteractionTile(event, 'available'), { x: 4, y: 5 });
 }
 
 console.log('Trainer repeat guard audit passed.');

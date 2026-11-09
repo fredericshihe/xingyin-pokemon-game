@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './shell.css'
+import './design/ui-system.css'
+import './design/game-ui.css'
 import App from './App.jsx'
 import { dismissUpdateOverlay, ensureClientMatchesBuild, initPwaUpdates } from './utils/clientUpdate'
 

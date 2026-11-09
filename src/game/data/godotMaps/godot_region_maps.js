@@ -10,9 +10,12 @@ import {
 import { FAST_TRAVEL_COST, FAST_TRAVEL_EVENT_TYPE, getFastTravelStation, getFastTravelStationMeta } from '../fastTravel.js'
 import { getMapEventTile } from '../mapEventTypes.js'
 import { MAP_ASSET_CATALOG } from '../mapAssetCatalog.js'
+import { MAP_BOUNDARY_SETS } from '../mapBoundaryAssets.generated.js'
 import { ENVIRONMENT_REVISION, refineMapEnvironmentDefinition, finishEnvironmentDecorations, isEnvironmentPointInWater, environmentDecorationRotation } from '../mapEnvironmentDesign.js'
 import { getEliteRouteStepAsideTile, isEliteRouteBlockerEvent } from '../../eliteRouteBlocker.js'
 import { LONG_TERM_PROGRESSION_FLAGS, getChampionTowerFloor, getEliteUnlockObjectiveEvents } from '../longTermProgression.js'
+import { getTreeModelScale } from '../../modelScaleReference.js'
+import { hasRegionForestWallTrees } from '../../forestWallScenery.js'
 
 const DEFAULT_WIDTH = 40
 const DEFAULT_HEIGHT = 32
@@ -183,20 +186,20 @@ const MAP_VISUAL_PALETTES = {
     bridgeRoughness: 0.34
   },
   GodotMapV2_ChampionTower: {
-    terrainTop: 0x252437,
-    terrainBase: 0x12121d,
-    forestFloor: 0x171622,
+    terrainTop: 0x39364d,
+    terrainBase: 0x252337,
+    forestFloor: 0x292638,
     sandPatch: 0xd8ae4c,
-    paleGrassPatch: 0x55466f,
-    path: 0x4c455f,
-    pathEdge: 0x181522,
+    paleGrassPatch: 0x6a5a83,
+    path: 0x625a79,
+    pathEdge: 0x302a43,
     pathHighlight: 0xf6d365,
     pathMetalness: 0.38,
     water: 0x3d2b61,
     waterDeep: 0x100b1c,
     waterBank: 0x6d4f8e,
     bridgeStyle: 'elite',
-    bridgeDeck: 0x383047,
+    bridgeDeck: 0x4a405d,
     bridgeRail: 0xc59737,
     bridgeAccent: 0xf7d879,
     bridgeEmissive: 0xe6b84f,
@@ -215,7 +218,9 @@ export function getRegionMapVisualPalette(mapId) {
  */
 export const THEME_LANDMARK_SCALES = {
   champion_obelisk: 0.74,
-  nature_tree_oak: 1.85,
+  nature_tree_oak: getTreeModelScale('nature_tree_oak') ?? 0.9,
+  nature_tree_default: getTreeModelScale('nature_tree_default') ?? 0.9,
+  nature_tree_pine: getTreeModelScale('nature_tree_pine') ?? 0.9,
   nature_lily_large: 1.65,
   nature_canoe: 2.05,
   nature_tent_detailed_open: 2.35,
@@ -274,7 +279,7 @@ export const THEME_LANDMARK_SCALES = {
   grave_gravestone_cross: 2.0,
   hex_stone_rocks: 2.35,
   hex_unit_tree: 2.15,
-  hex_grass_forest: 2.35,
+  hex_grass_forest: getTreeModelScale('hex_grass_forest') ?? 0.922,
   survival_rock_a: 2.2,
   survival_rock_b: 2.2,
   survival_rock_c: 2.2,
@@ -322,6 +327,18 @@ export function resolveThemeLandmarkRenderScale(type, objectScale) {
   return THEME_LANDMARK_SCALES[type] ?? 1
 }
 
+// The hex kit's buildings include a small tile base; each visible model is
+// scaled by its measured height to read as a usable ~2 m building.
+const HEX_BUILDING_RENDER_SCALES = {
+  hex_building_farm: 5,
+  hex_building_mine: 3.72,
+  hex_building_dock: 3.46,
+  hex_building_watermill: 3.85,
+  hex_building_cabin: 2.6,
+  hex_building_market: 3.45,
+  hex_building_port: 2.79
+}
+
 function themeLandmark(type, x, y, extra = {}) {
   const { scale: scaleOverride, height, ...rest } = extra
   return {
@@ -329,6 +346,7 @@ function themeLandmark(type, x, y, extra = {}) {
     x,
     y,
     scale: resolveThemeLandmarkRenderScale(type, scaleOverride),
+    ...(HEX_BUILDING_RENDER_SCALES[type] ? { environmentRenderScale: HEX_BUILDING_RENDER_SCALES[type] } : {}),
     landmark: true,
     height: height ?? 0.2,
     ...rest
@@ -1159,7 +1177,10 @@ function merchant(id, x, y, {
   title = '道具回收商',
   facing = 'down',
   message = '用不上的补给，我可以回收。',
-  shopMode = 'sell_items'
+  shopMode = 'sell_items',
+  characterModel = '',
+  bankTrigger = false,
+  npcWanderExclusionRadius = null
 } = {}) {
   return event('merchant', id, x, y, {
     properties: {
@@ -1168,7 +1189,10 @@ function merchant(id, x, y, {
       name,
       title,
       message,
-      shopMode
+      shopMode,
+      ...(bankTrigger ? { bankTrigger: true } : {}),
+      ...(Number.isFinite(Number(npcWanderExclusionRadius)) ? { npcWanderExclusionRadius: Number(npcWanderExclusionRadius) } : {}),
+      ...(characterModel ? { characterModel } : {})
     }
   })
 }
@@ -1307,6 +1331,7 @@ function minigameTrainer(id, x, y, {
   name,
   title,
   facing = 'down',
+  characterModel = 'trainer_challenge',
   beforeBattleText,
   ruleDescription,
   defeatedText,
@@ -1315,6 +1340,7 @@ function minigameTrainer(id, x, y, {
   return event('trainer', id, x, y, {
     properties: {
       role: 'minigame',
+      characterModel,
       facing,
       name,
       title,
@@ -2052,7 +2078,7 @@ const LOW_VEGETATION_TAGS = new Set(['grass', 'flower', 'mushroom', 'reed'])
 const SOFTENABLE_BOUNDARY_BLOCKER_TYPES = new Set([])
 const BOUNDARY_BLOCKER_FLAT_DECOR_TYPES = ['nature_stone_flat_a', 'nature_stone_flat_b', 'nature_stone_flat_c']
 
-const DECORATIVE_FOOTPRINT_OVERRIDES = {
+export const DECORATIVE_FOOTPRINT_OVERRIDES = {
   nature_fence_simple: { width: 2, height: 1 },
   nature_fence_planks: { width: 2, height: 1 },
   nature_log_stack: { width: 2, height: 1.2 },
@@ -2076,6 +2102,7 @@ const DECORATIVE_FOOTPRINT_OVERRIDES = {
   hex_building_mine: { width: 3, height: 2.6 },
   hex_building_cabin: { width: 2.6, height: 2.4 },
   hex_building_market: { width: 3, height: 2.6 },
+  timber_bank_building: { width: 3.2, height: 2.35 },
   hex_grass_forest: { width: 1.4, height: 1.4 },
   hex_unit_tree: { width: 1.35, height: 1.35 },
   hex_water_rocks: { width: 1.35, height: 1.25 },
@@ -2174,6 +2201,7 @@ const PATH_BLOCKING_DECORATION_TYPES = new Set([
   'hex_building_mine',
   'hex_building_cabin',
   'hex_building_market',
+  'timber_bank_building',
   'hex_building_port',
   'hex_building_watermill',
   'hex_building_dock',
@@ -2789,7 +2817,7 @@ function isPirateShoreMap(mapId) {
 }
 
 function shouldRenderInstancedForestWallTrees(mapId) {
-  return false // Theme-specific border assets include palms; generic pines do not belong on the beach.
+  return hasRegionForestWallTrees(mapId)
 }
 
 function shouldRenderForestWallUndergrowth(mapId) {
@@ -6819,6 +6847,8 @@ function buildManualRuntimeTrainerDecoration(evt, index = 0) {
     ? 'boss'
     : role === 'lieutenant'
       ? 'lieutenant'
+      : role === 'minigame'
+        ? 'challenge'
       : 'normal'
   const isBoss = npcRole === 'boss'
   const isLieutenant = npcRole === 'lieutenant'
@@ -6848,8 +6878,10 @@ function buildManualRuntimeTrainerDecoration(evt, index = 0) {
 function buildManualRuntimeMerchantDecoration(evt, index = 0) {
   const { x, y } = evt.position || {}
   if (!Number.isFinite(x) || !Number.isFinite(y)) return []
-  return [{
-    type: REGION_TRAINER_CHARACTER_TYPES[(index + 3) % REGION_TRAINER_CHARACTER_TYPES.length],
+  const breeder = evt.properties?.shopMode === 'pokemon_breeder'
+  const bank = evt.properties?.shopMode === 'timber_bank'
+  const actor = {
+    type: evt.properties?.characterModel || REGION_TRAINER_CHARACTER_TYPES[(index + 3) % REGION_TRAINER_CHARACTER_TYPES.length],
     x,
     y,
     scale: PLAYER_MATCHED_NPC_SCALE,
@@ -6859,7 +6891,40 @@ function buildManualRuntimeMerchantDecoration(evt, index = 0) {
     sourceId: `${evt.id}_npc`,
     eventId: evt.id,
     eventType: evt.type
-  }]
+  }
+  if (bank) return [
+    ...(evt.properties?.bankTrigger ? [] : [actor]),
+    { type: 'timber_bank_building', x, y: y + 1.45, scale: 1, height: 0.04, rotation: Math.PI,
+      sourceId: `${evt.id}_bank_house`, fixedSceneEventType: 'merchant', blocksPath: true },
+    { type: 'survival_workbench', x: x - 1.15, y: y + 1.25, scale: 0.86, height: 0.14,
+      sourceId: `${evt.id}_counter`, fixedSceneEventType: 'merchant', blocksPath: false },
+    { type: 'survival_chest', x: x - 1.8, y: y + 1.3, scale: 1.4, height: 0.14,
+      sourceId: `${evt.id}_vault_left`, fixedSceneEventType: 'merchant', blocksPath: false },
+    { type: 'survival_chest', x: x + 1.8, y: y + 1.3, scale: 1.4, height: 0.14,
+      sourceId: `${evt.id}_vault_right`, fixedSceneEventType: 'merchant', blocksPath: false },
+    { type: 'survival_signpost', x, y: y - 0.65, scale: 1.7, height: 0.14,
+      sourceId: `${evt.id}_bank_sign`, fixedSceneEventType: 'merchant', blocksPath: false }
+  ]
+  if (!breeder) return [actor]
+  return [
+    actor,
+    {
+      type: 'breeder_nursery_stall', x: x + 0.9, y: y + 1.55,
+      scale: 0.86, height: 0.12, rotation: Math.PI,
+      sourceId: `${evt.id}_nursery_stall`,
+      blocksPath: false, preserveRoadPosition: true
+    },
+    {
+      type: 'breeder_egg_basket', x: x - 0.9, y: y + 1.05,
+      scale: 0.9, height: 0.12, blocksPath: false,
+      sourceId: `${evt.id}_egg_basket`
+    },
+    {
+      type: 'nature_flower_yellow_b', x: x + 2.35, y: y + 1.0,
+      scale: 0.85, height: 0.14, blocksPath: false,
+      sourceId: `${evt.id}_flower_right`
+    }
+  ]
 }
 
 function makeFixedSceneObject(evt, suffix, type, dx, dy, {
@@ -7033,9 +7098,9 @@ function buildFixedFastTravelStationScene(evt) {
 }
 
 const HIDDEN_GATE_MARKER_PROFILES = {
-  meadow: { type: 'nature_tree_oak', scale: 2.0, lockedScale: 2.55, height: 0.2 },
-  lake: { type: 'nature_tree_pine', scale: 1.9, lockedScale: 2.4, height: 0.2 },
-  farm: { type: 'nature_tree_default', scale: 1.8, lockedScale: 2.3, height: 0.2 },
+  meadow: { type: 'nature_tree_oak', scale: getTreeModelScale('nature_tree_oak'), lockedScale: getTreeModelScale('nature_tree_oak', 2.18), height: 0.2 },
+  lake: { type: 'nature_tree_pine', scale: getTreeModelScale('nature_tree_pine'), lockedScale: getTreeModelScale('nature_tree_pine', 2.5), height: 0.2 },
+  farm: { type: 'nature_tree_default', scale: getTreeModelScale('nature_tree_default'), lockedScale: getTreeModelScale('nature_tree_default', 1.98), height: 0.2 },
   shore: { type: 'pirate_flag_pennant', scale: 1.08, lockedScale: 1.48, height: 0.24 },
   grave: { type: 'grave_lantern_glass', scale: 1.55, lockedScale: 2.12, height: 0.22 },
   ruins: { type: 'hex_stone_hill', scale: 1.2, lockedScale: 1.55, height: 0.2 },
@@ -7066,16 +7131,27 @@ function buildFixedHiddenEncounterGateScene(evt, definition) {
   ]
 }
 
-function getWarpApproachLayout(evt) {
+function getWarpApproachLayout(evt, definition) {
   const x = Number(evt?.position?.x)
   const y = Number(evt?.position?.y)
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return { dx: 0, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_DOWN }
   }
-  if (x <= 2) return { dx: 0.9, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_ROTATIONS.right }
-  if (x >= WIDTH - 2) return { dx: -0.9, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_ROTATIONS.left }
-  if (y <= 2) return { dx: 0, dy: 0.9, px: 1, py: 0, signRotation: SIGN_FACE_ROTATIONS.down }
-  if (y >= HEIGHT - 2) return { dx: 0, dy: -0.9, px: 1, py: 0, signRotation: SIGN_FACE_ROTATIONS.up }
+  const width = definition?.width || WIDTH
+  const height = definition?.height || HEIGHT
+  const landing = evt?.properties?.returnLanding
+  // Interior portals use their local approach, not the destination map's
+  // spawn direction. The posts and accents sit across that approach.
+  let inward = null
+  if (landing && Math.abs(landing.x - x) + Math.abs(landing.y - y) === 1) {
+    inward = landing.x > x ? 'right' : landing.x < x ? 'left' : landing.y > y ? 'down' : 'up'
+  } else {
+    inward = x <= 2 ? 'right' : x >= width - 2 ? 'left' : y <= 2 ? 'down' : y >= height - 2 ? 'up' : null
+  }
+  if (inward === 'right') return { dx: 0.9, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_ROTATIONS.right }
+  if (inward === 'left') return { dx: -0.9, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_ROTATIONS.left }
+  if (inward === 'down') return { dx: 0, dy: 0.9, px: 1, py: 0, signRotation: SIGN_FACE_ROTATIONS.down }
+  if (inward === 'up') return { dx: 0, dy: -0.9, px: 1, py: 0, signRotation: SIGN_FACE_ROTATIONS.up }
   return { dx: 0, dy: 0, px: 0, py: 1, signRotation: SIGN_FACE_DOWN }
 }
 
@@ -7090,8 +7166,8 @@ function getWarpDestinationTheme(targetMapName = '') {
   return 'meadow'
 }
 
-function buildFixedWarpConnectionScene(evt) {
-  const layout = getWarpApproachLayout(evt)
+function buildFixedWarpConnectionScene(evt, definition) {
+  const layout = getWarpApproachLayout(evt, definition)
   const eliteTheme = evt?.properties?.visualTheme
   const eliteProfiles = {
     frost: { center: 'elite_frost_portal', accent: 'elite_frost_crystal', centerScale: 0.82, accentScale: 0.5 },
@@ -7184,7 +7260,7 @@ function buildFixedRuntimeEventSceneDecorations(definition, runtimeEvents, gener
   let manualTrainerVisualIndex = 0
   let manualMerchantVisualIndex = 0
   return (runtimeEvents || []).flatMap((evt) => {
-    if (evt.type === 'warp') return buildFixedWarpConnectionScene(evt)
+    if (evt.type === 'warp') return buildFixedWarpConnectionScene(evt, definition)
     if (evt.type === 'heal') return buildFixedHealingSpringScene(evt)
     if (evt.type === FAST_TRAVEL_EVENT_TYPE) return buildFixedFastTravelStationScene(evt)
     if (isHiddenEncounterGateEvent(evt)) return buildFixedHiddenEncounterGateScene(evt, definition)
@@ -7270,7 +7346,9 @@ const HIDDEN_ZONE_PERIMETER_PROFILES = {
   },
   farm: {
     types: ['survival_fence'],
-    scaleRange: [2.06, 2.06],
+    // The authored fence is half the width of the other kits. Enlarge it so
+    // adjacent cells touch continuously instead of leaving picket-sized gaps.
+    scaleRange: [3.25, 3.25],
     overlapScale: 1.05
   },
   shore: {
@@ -7294,6 +7372,25 @@ const HIDDEN_ZONE_PERIMETER_PROFILES = {
     overlapScale: 1.05
   }
 }
+
+// The hidden-zone fence models come from several Kenney kits whose authored
+// origins are not centred on the visible mesh.  Keep this small bit of source
+// geometry here so the visual centre and the collision cell stay aligned. The
+// values are in the model's exported world units and are intentionally kept
+// separate from gameplay footprints.
+const HIDDEN_ZONE_PERIMETER_GEOMETRY = {
+  town_hedge_large: { min: [0.1, -0.5], max: [0.5, 0.5] },
+  nature_fence_planks: { min: [-0.5, -0.5259], max: [0.5, -0.43] },
+  survival_fence: { min: [-0.25, -0.25], max: [0.25, -0.20722] },
+  pirate_structure_fence: { min: [-1.25, -1.25], max: [1.25, 1.25] },
+  grave_iron_fence_border: { min: [-0.5, -0.4], max: [0.5, -0.25] },
+  grave_stone_wall_damaged: { min: [-0.5, -0.5], max: [0.5, -0.3] },
+  platformer_fence_straight: { min: [-0.5, 0.35], max: [0.5, 0.49] }
+}
+
+const HIDDEN_ZONE_WORLD_CELL_SIZE = 1.55
+const HIDDEN_ZONE_CORNER_CAP_SCALE = 0.78
+const HIDDEN_ZONE_CORNER_CAP_TYPES = 4
 
 const HIDDEN_ZONE_LINEAR_PERIMETER_TYPES = new Set([
   'nature_fence_planks',
@@ -7334,6 +7431,55 @@ function getHiddenZoneLinearPerimeterRotation(type, side) {
   return sideAlignedRotation + typeOffset
 }
 
+function getHiddenZonePerimeterVisualCenterOffset(type, rotation, scale) {
+  const geometry = HIDDEN_ZONE_PERIMETER_GEOMETRY[type]
+  if (!geometry) return { x: 0, y: 0 }
+  const localX = ((geometry.min[0] + geometry.max[0]) / 2) * scale / HIDDEN_ZONE_WORLD_CELL_SIZE
+  const localZ = ((geometry.min[1] + geometry.max[1]) / 2) * scale / HIDDEN_ZONE_WORLD_CELL_SIZE
+  const cos = Math.cos(rotation)
+  const sin = Math.sin(rotation)
+  return {
+    x: cos * localX + sin * localZ,
+    y: -sin * localX + cos * localZ
+  }
+}
+
+function getHiddenZoneCornerCapModelTypes(mapId) {
+  const models = Array.isArray(MAP_BOUNDARY_SETS[mapId])
+    ? MAP_BOUNDARY_SETS[mapId].slice(0, HIDDEN_ZONE_CORNER_CAP_TYPES)
+    : Object.values(MAP_ASSET_CATALOG)
+      .filter((asset) => asset?.ownerMap === mapId && /^exclusive_/.test(asset.id || ''))
+      .slice(0, HIDDEN_ZONE_CORNER_CAP_TYPES)
+      .map((asset) => asset.id)
+  return models.length === HIDDEN_ZONE_CORNER_CAP_TYPES ? models : []
+}
+
+function createHiddenZoneCornerCapDecorations(zone, mapId, existingCount = 0) {
+  const modelTypes = getHiddenZoneCornerCapModelTypes(mapId)
+  if (modelTypes.length !== HIDDEN_ZONE_CORNER_CAP_TYPES) return []
+  const corners = [
+    { id: 'north_west', x: zone.x - 0.5, y: zone.y - 0.5, rotation: -Math.PI / 4 },
+    { id: 'north_east', x: zone.x + zone.width - 0.5, y: zone.y - 0.5, rotation: Math.PI / 4 },
+    { id: 'south_west', x: zone.x - 0.5, y: zone.y + zone.height - 0.5, rotation: -Math.PI * 3 / 4 },
+    { id: 'south_east', x: zone.x + zone.width - 0.5, y: zone.y + zone.height - 0.5, rotation: Math.PI * 3 / 4 }
+  ]
+  return corners.map((corner, index) => themeLandmark(modelTypes[index], corner.x, corner.y, {
+    scale: HIDDEN_ZONE_CORNER_CAP_SCALE,
+    rotation: corner.rotation,
+    sourceId: `${zone.id}_corner_${corner.id}_${existingCount + index}`,
+    hiddenZoneCorner: true,
+    hiddenZoneId: zone.id,
+    hiddenZoneCornerId: corner.id,
+    hiddenZoneCornerCellX: Math.round(corner.x),
+    hiddenZoneCornerCellY: Math.round(corner.y),
+    blocksPath: false,
+    forcePathBlocking: false,
+    preserveRoadPosition: true,
+    preserveBridgePosition: true,
+    landmark: true
+  }))
+}
+
 function getHiddenZoneCornerOutwardOffset(zone, candidate) {
   return 0
 }
@@ -7347,8 +7493,8 @@ function createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, in
   const cornerOffset = getHiddenZoneCornerOutwardOffset(zone, candidate)
   const { dx, dy } = getHiddenZonePerimeterOutwardDelta(candidate.side)
   const totalOutwardOffset = outwardOffset + cornerOffset
-  const x = Number((candidate.x + dx * totalOutwardOffset).toFixed(2))
-  const y = Number((candidate.y + dy * totalOutwardOffset).toFixed(2))
+  const baseX = candidate.x + dx * totalOutwardOffset
+  const baseY = candidate.y + dy * totalOutwardOffset
   const minScale = profile.scaleRange[0]
   const maxScale = profile.scaleRange[1]
   const baseScale = minScale + seededRandom(candidate.x, candidate.y, 940 + index) * (maxScale - minScale)
@@ -7356,6 +7502,12 @@ function createHiddenZonePerimeterDecoration(zone, theme, profile, candidate, in
   const rotation = HIDDEN_ZONE_LINEAR_PERIMETER_TYPES.has(type)
     ? getHiddenZoneLinearPerimeterRotation(type, candidate.side)
     : seededRandom(candidate.x, candidate.y, 980 + index) * Math.PI * 2
+  const centerOffset = getHiddenZonePerimeterVisualCenterOffset(type, rotation, scale)
+  // Shift by the authored mesh centre so the visible wall sits on the same
+  // cell centre that the movement grid seals. Corner caps below close the
+  // diagonal turn without changing the gameplay footprint.
+  const x = Number((baseX - centerOffset.x).toFixed(2))
+  const y = Number((baseY - centerOffset.y).toFixed(2))
 
   return themeLandmark(type, x, y, {
     scale: Number(scale.toFixed(2)),
@@ -7645,6 +7797,24 @@ export function getHiddenEncounterGatePassageTiles(mapSource, grid, gateEvent, r
   return { lockedTiles, sealedTiles }
 }
 
+function sealHiddenEncounterGatePassageTiles(mapSource, grid, runtimeEvents = mapSource?.runtimeEvents || []) {
+  if (!mapSource || !Array.isArray(grid) || grid.length === 0) return
+  ;(mapSource.encounterZones || [])
+    .filter((zone) => zone?.depth === 'deep')
+    .forEach((zone) => {
+      const gateEvent = (runtimeEvents || []).find((event) => (
+        isHiddenEncounterGateEvent(event) &&
+        event?.properties?.hiddenZoneId === zone.id
+      ))
+      if (!gateEvent) return
+      const { lockedTiles, sealedTiles } = getHiddenEncounterGatePassageTiles(mapSource, grid, gateEvent, runtimeEvents)
+      ;[...sealedTiles, ...lockedTiles].forEach(({ x, y }) => {
+        if (!isGridPositionInBounds(grid, x, y)) return
+        grid[y][x] = TILE.objectBlocker
+      })
+    })
+}
+
 function buildHiddenEncounterPerimeterDecorations(
   definition,
   grid,
@@ -7744,6 +7914,9 @@ function ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, d
         output.push(perimeterObject)
         existingKeys.add(hiddenZonePerimeterCellKey(candidate))
       })
+
+      const cornerCaps = createHiddenZoneCornerCapDecorations(zone, definition.id, output.length)
+      cornerCaps.forEach((cornerCap) => output.push(cornerCap))
 
     })
 
@@ -8004,10 +8177,21 @@ export function buildGodotRegionMap(rawDefinition) {
   visibleDecorations = finishEnvironmentDecorations(visibleDecorations, definition)
   visibleDecorations = ensureHiddenZonePerimeterDecorations(definition, grid, runtimeEvents, visibleDecorations, bridges)
   visibleDecorations = filterHiddenGateEntranceClearanceDecorations(visibleDecorations, runtimeEvents)
+  if (definition.id === 'GodotMapV2_SurvivalRidge') {
+    visibleDecorations = visibleDecorations.filter((object) => !(
+      object.type === 'survival_tree_log' &&
+      String(object.sourceId || '').startsWith('corridor_theme_') &&
+      Math.hypot(Number(object.x) - 13, Number(object.y) - 20.5) < 4.5
+    ))
+  }
   paintBlockingDecorationFootprints(grid, visibleDecorations, runtimeEvents)
   enforceStrictEliteRouteCorridors(grid, definition, runtimeEvents)
   visibleDecorations = filterBlockedLowVegetationDecorations(visibleDecorations, grid)
   paintRuntimeEventTiles(grid, runtimeEvents)
+  // Keep the authoring snapshot collision-safe as well as the live save
+  // synchronisation path. This makes previews and fresh starts respect the
+  // same sealed perimeter before an encounter gate is unlocked.
+  sealHiddenEncounterGatePassageTiles({ encounterZones: definition.encounterZones }, grid, runtimeEvents)
   const visualPaths = deriveVisualPathsFromGrid(grid, definition.roadPaths, runtimeEvents)
   visibleDecorations = filterDuplicateInteractiveEventDecorations(visibleDecorations)
 
@@ -8157,9 +8341,12 @@ const ALL_REGIONS = [
       { x: 29.6, y: 27, rx: 1.0, ry: 0.68, rotation: 0.08 }
     ],
     roadPaths: [
-      { points: [[1, 16], [38, 16]], width: 3, bridgeExtraLength: 1.2 },
+      { points: [[1, 16], [36, 16]], width: 3, bridgeExtraLength: 1.2 },
       { points: [[14, 16], [14, 8], [21, 8]], width: 3 },
-      { points: [[36, 16], [36, 24], [21, 24], [21, 30]], width: 3 },
+      // 南路只通到挑战石；雾湖（星音草径东侧）与风车农庄（草径南侧）是斜对角，不直接相连
+      { points: [[36, 16], [36, 24], [21, 24]], width: 3 },
+      // 贝壳海岸在雾湖南方（海岸北口 ↔ 雾湖南口），出口放在南边
+      { points: [[36, 24], [36, 30]], width: 3 },
       { points: [[30, 24], [28, 24], [28, 23]], width: 1 },
       // 新增：环形路线连接北支路和治疗点
       { points: [[21, 8], [28, 8], [28, 23]], width: 1.5 }
@@ -8176,10 +8363,9 @@ const ALL_REGIONS = [
     ],
     runtimeEvents: [
       warp('warp_lake_to_meadow', 1, 16, 'GodotMapV2', { x: 36, y: 16, direction: 'left' }, '返回星音草径'),
-      warp('warp_lake_to_shore', 38, 16, 'GodotMapV2_PirateShore', { x: 20, y: 3, direction: 'down' }, '前往贝壳海岸'),
-      warp('warp_lake_to_farm', 21, 30, 'GodotMapV2_FarmTown', { x: 28, y: 3, direction: 'down' }, '前往风车农庄'),
+      warp('warp_lake_to_shore', 36, 30, 'GodotMapV2_PirateShore', { x: 20, y: 3, direction: 'down' }, '前往贝壳海岸（农庄通关后捷径）'),
       heal('heal_lake_spring', 28, 26, '雾湖泉水'),
-      sign('sign_lake_reeds', 2, 14, '雾湖苇岸 Lv.11-18：东海岸，南农庄。'),
+      sign('sign_lake_reeds', 2, 14, '雾湖苇岸：西返草径，东南通海岸（农庄通关）'),
       hiddenEncounterGate('hidden_gate_lake_path', 25, 8, {
         hiddenZoneId: 'lake_hidden_path',
         hiddenZoneName: '环湖秘径',
@@ -8225,7 +8411,8 @@ const ALL_REGIONS = [
       { points: [[20, 1], [20, 16], [38, 16]], width: 3 },
       { points: [[20, 16], [20, 30]], width: 3 },
       { points: [[5, 16], [20, 16]], width: 3 },
-      { points: [[28, 1], [28, 16]], width: 3 },
+      // 北路只到训练家和隐藏道具；农庄北口只通星音草径（雾湖在东北斜对角，不直接相连）
+      { points: [[28, 11], [28, 16]], width: 3 },
       { points: [[12, 16], [12, 12]], width: 3 },
       // 新增：隐藏支路通往西北角风车塔顶
       { points: [[12, 12], [8, 12], [8, 8]], width: 1.5 }
@@ -8240,7 +8427,6 @@ const ALL_REGIONS = [
     waterBodies: [{ type: 'pond', x: 11.8, y: 10.1, rx: 1.55, ry: 1.2, rotation: -0.08, salt: 320 }],
     runtimeEvents: [
       warp('warp_farm_to_meadow', 20, 1, 'GodotMapV2', { x: 20, y: 28, direction: 'up' }, '返回星音草径'),
-      warp('warp_farm_to_lake', 28, 1, 'GodotMapV2_MistLake', { x: 21, y: 28, direction: 'up' }, '前往雾湖苇岸'),
       warp('warp_farm_to_shore', 38, 16, 'GodotMapV2_PirateShore', { x: 3, y: 16, direction: 'right' }, '前往贝壳海岸'),
       warp('warp_farm_to_grave', 20, 30, 'GodotMapV2_Graveyard', { x: 20, y: 3, direction: 'down' }, '前往月影墓园'),
       heal('heal_farm_spring', 13, 12, '农庄泉水'),
@@ -8290,8 +8476,9 @@ const ALL_REGIONS = [
     sandTiles: [{ x: 25, y: 16, rx: 11, ry: 8 }],
     roadPaths: [
       { points: [[1, 16], [20, 16], [20, 1]], width: 3 },
-      { points: [[20, 16], [38, 16]], width: 3, bridgeExtraLength: 0.1 },
-      { points: [[31, 16], [31, 28]], width: 3, bridgeExtraLength: 0.1 },
+      { points: [[20, 16], [31, 16]], width: 3, bridgeExtraLength: 0.1 },
+      // 六角遗迹在海岸南方（遗迹北口 ↔ 海岸南口），出口放在南边
+      { points: [[31, 16], [31, 30]], width: 3, bridgeExtraLength: 0.1 },
       { points: [[20, 11], [23, 11]], width: 3 },
       // 新增：隐藏支路通往沉船深处
       { points: [[31, 28], [36, 28], [36, 27]], width: 1.5 }
@@ -8309,10 +8496,10 @@ const ALL_REGIONS = [
     waterBodies: [{ type: 'lake', x: 32, y: 16, rx: 5.7, ry: 10.95, rotation: 0.04, salt: 42 }],
     runtimeEvents: [
       warp('warp_shore_to_farm', 1, 16, 'GodotMapV2_FarmTown', { x: 36, y: 16, direction: 'left' }, '返回风车农庄'),
-      warp('warp_shore_to_lake', 20, 1, 'GodotMapV2_MistLake', { x: 36, y: 16, direction: 'left' }, '返回雾湖苇岸'),
-      warp('warp_shore_to_hex', 38, 16, 'GodotMapV2_HexRuins', { x: 20, y: 3, direction: 'down' }, '前往六角遗迹'),
+      warp('warp_shore_to_lake', 20, 1, 'GodotMapV2_MistLake', { x: 36, y: 28, direction: 'up' }, '返回雾湖苇岸'),
+      warp('warp_shore_to_hex', 31, 30, 'GodotMapV2_HexRuins', { x: 20, y: 3, direction: 'down' }, '前往六角遗迹（墓园通关后捷径）'),
       heal('heal_shore_spring', 30, 14, '海岸泉水'),
-      sign('sign_shore_cargo', 2, 14, '贝壳海岸 Lv.23-30：东遗迹，北雾湖。'),
+      sign('sign_shore_cargo', 2, 14, '贝壳海岸：西返农庄，北通雾湖，东南通遗迹（墓园通关）'),
       hiddenEncounterGate('hidden_gate_shore_wreck', 36, 27, {
         hiddenZoneId: 'shore_wreck_inner',
         hiddenZoneName: '沉船内舱',
@@ -8497,7 +8684,7 @@ const ALL_REGIONS = [
     ],
     runtimeEvents: [
       warp('warp_hex_to_grave', 1, 16, 'GodotMapV2_Graveyard', { x: 36, y: 16, direction: 'left' }, '返回月影墓园'),
-      warp('warp_hex_to_shore', 20, 1, 'GodotMapV2_PirateShore', { x: 36, y: 16, direction: 'left' }, '返回贝壳海岸'),
+      warp('warp_hex_to_shore', 20, 1, 'GodotMapV2_PirateShore', { x: 31, y: 28, direction: 'up' }, '返回贝壳海岸'),
       warp('warp_hex_to_ridge', 38, 16, 'GodotMapV2_SurvivalRidge', { x: 3, y: 16, direction: 'right' }, '前往铁木营地'),
       heal('heal_hex_spring', 26, 12, '遗迹泉水'),
       sign('sign_hex_ruin', 2, 14, '六角遗迹 Lv.35-42：东营地，北海岸。'),
@@ -8599,21 +8786,27 @@ const ALL_REGIONS = [
       heal('heal_ridge_spring', 15, 10, '铁木泉水'),
       sign('sign_ridge_camp', 2, 14, '铁木营地 Lv.41-47：东星雾高地。'),
       sign('sign_ridge_training_grove', 20, 11, '训练林 Lv.41-47：快拳郎/飞腿郎/葱游兵更多。'),
+      merchant('npc_ridge_timber_bank', 15, 17, {
+        name: '铁木银行门前金库牌', title: '铁木银行 · 门前触发点', facing: 'up',
+        message: '靠近金币徽记即可打开铁木银行。',
+        shopMode: 'timber_bank', bankTrigger: true, npcWanderExclusionRadius: 2.5,
+        characterModel: 'trainer_merchant'
+      }),
       minigameTrainer('npc_ridge_coin_sprint', 20, 10, {
         name: '铁木计时员',
-        title: '铁木计时员 · 练习赛',
+        title: '铁木计时员 · 训练联赛',
         facing: 'left',
         team: [
           { pokemonId: 34, level: 43 },
-          { pokemonId: 48, level: 43 },
-          { pokemonId: 49, level: 44 },
-          { pokemonId: 141, level: 44 },
-          { pokemonId: 35, level: 45 },
-          { pokemonId: 51, level: 45 }
+          { pokemonId: 58, level: 44 },
+          { pokemonId: 46, level: 45 },
+          { pokemonId: 139, level: 45 },
+          { pokemonId: 29, level: 46 },
+          { pokemonId: 55, level: 47 }
         ],
-        beforeBattleText: '铁木计时员：准备好就开始计时挑战。',
-        ruleDescription: '连胜越多，对手越强，最高会成长到 Lv.100。',
-        defeatedText: '铁木计时员：打得好，下一轮我会更认真。'
+        beforeBattleText: '铁木计时员：一场对战六只对手，赢得越快，凭证越多！',
+        ruleDescription: '每场花2个能量，赢了就有凭证。凭证可在商店买超级经验药水。',
+        defeatedText: '铁木计时员：做得好！凭证和金币已经发给你了。'
       }),
       { id: 'treasure_ridge_camp', type: 'item', position: { x: 4, y: 5 }, properties: { itemType: 'statBoost', itemKey: 'attack_stone', quantity: 1, text: '训练林深处宝箱' } },
       { id: 'treasure_ridge_defense', type: 'item', position: { x: 12, y: 29 }, properties: { itemType: 'statBoost', itemKey: 'defense_stone', quantity: 1, text: '南岭防御补给箱' } },
@@ -8695,6 +8888,14 @@ const ALL_REGIONS = [
       warp('warp_peak_to_frost_dojo', 38, 16, 'GodotMapV2_FrostDojo', { x: 14, y: 20, direction: 'up' }, '前往霜镜道馆'),
       heal('heal_peak_spring', 19, 12, '星雾泉水'),
       sign('sign_peak_final', 1, 14, '星雾高地 Lv.52-60：清图补强，再挑战北Boss。'),
+      merchant('npc_peak_pokemon_breeder', 7, 18, {
+        name: '宝可梦饲养家',
+        title: '星雾饲养家 · 宝可梦寄售',
+        facing: 'up',
+        message: '每天都有新的宝可梦，想换一批也可以。',
+        shopMode: 'pokemon_breeder',
+        characterModel: 'trainer_breeder'
+      }),
       hiddenEncounterGate('hidden_gate_peak_starwatch', 7, 11, {
         hiddenZoneId: 'peak_starwatch_path',
         hiddenZoneName: '观星秘径',

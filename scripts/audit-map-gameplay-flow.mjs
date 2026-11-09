@@ -761,11 +761,31 @@ function bridgeDirection(bridge) {
   }
 }
 
+function isOnOtherBridgeDeck(map, bridge, x, y) {
+  return (map.bridges || []).some((other) => {
+    if (other === bridge) return false
+    const rotation = Number(other.rotation) || 0
+    const dx = x - Number(other.x)
+    const dy = y - Number(other.y)
+    const along = dx * Math.cos(rotation) + dy * Math.sin(rotation)
+    const across = -dx * Math.sin(rotation) + dy * Math.cos(rotation)
+    return Math.abs(along) <= (Number(other.length) || 1) / 2 + 0.05 &&
+      Math.abs(across) <= (Number(other.width) || 1) / 2 + 0.3
+  })
+}
+
 function findBridgeRoadConnection(map, bridge, side) {
   const length = Number(bridge?.length) || 0
   const width = Number(bridge?.width) || 1
   const direction = bridgeDirection(bridge)
   const lateralOffsets = [0, -Math.min(0.55, width / 2), Math.min(0.55, width / 2)]
+
+  // T 字形栈桥：桥头落在另一座桥的桥面上也算接通
+  for (const inset of [0.1, 0.45]) {
+    const x = Number(bridge.x) + direction.x * side * (length / 2 - inset)
+    const y = Number(bridge.y) + direction.y * side * (length / 2 - inset)
+    if (isOnOtherBridgeDeck(map, bridge, x, y)) return { x: Math.round(x), y: Math.round(y), tile: BRIDGE_TILE }
+  }
 
   for (let distance = 0.35; distance <= 2.25; distance += 0.25) {
     for (const offset of lateralOffsets) {

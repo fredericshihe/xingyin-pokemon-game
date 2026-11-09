@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import '../game.css'
 import EliteFourCeremonyOverlay from '../components/Game/EliteFourCeremonyOverlay'
 import EliteUnlockMinigameOverlay from '../components/Game/EliteUnlockMinigameOverlay'
 import MapSceneLayer from './MapSceneLayer'
+import MapWarpFade, { MAP_WARP_FADE_OUT_MS, MAP_WARP_SCENE_TIMEOUT_MS } from './MapWarpFade'
 import { createEliteFourCeremony } from './data/eliteFourCeremony'
 import { ELITE_UNLOCK_TASKS, ELITE_UNLOCK_TASK_BY_ID } from './data/longTermProgression'
 import {
@@ -77,6 +78,7 @@ export default function MapRuntimePreview() {
     return ['entry', 'victory'].includes(phase) ? phase : null
   }, [])
   const [mapName, setMapName] = useState(initialMapName)
+  const activeMapNameRef = useRef(initialMapName)
   const [mapGrid, setMapGrid] = useState(() => loadPreviewGrid(initialMapName))
   const [playerPos, setPlayerPos] = useState(() => {
     // QA-only route: reproduce an old saved position or inspect a tight passage.
@@ -94,7 +96,28 @@ export default function MapRuntimePreview() {
   const [sceneRevision, setSceneRevision] = useState(0)
   const [previewPanel, setPreviewPanel] = useState(null)
   const [readyTransitions, setReadyTransitions] = useState([])
-  const recordReady = useCallback(({ ready }) => setReadyTransitions(previous => [...previous, ready]), [])
+  const [warpTransit, setWarpTransit] = useState(null)
+  const warpTransitRef = useRef(null)
+  const recordReady = useCallback(({ mapName: readyMap, ready, error }) => {
+    setReadyTransitions(previous => [...previous, ready])
+    const transit = warpTransitRef.current
+    if (!transit || readyMap !== transit.targetMapName) return
+    if (error) {
+      warpTransitRef.current = null
+      setWarpTransit(null)
+    } else {
+      setWarpTransit(current => {
+        if (current?.id !== transit.id || current.phase === 'departing') return current
+        return { ...current, phase: ready ? 'arriving' : 'loading' }
+      })
+    }
+  }, [])
+  const finishWarpReveal = useCallback(transit => {
+    if (warpTransitRef.current?.id !== transit.id) return
+    warpTransitRef.current = null
+    setWarpTransit(null)
+  }, [])
+  useEffect(() => () => { warpTransitRef.current = null }, [])
   const [zoneName, setZoneName] = useState('')
   const [previewCeremony, setPreviewCeremony] = useState(() => (
     initialCeremonyPhase ? createEliteFourCeremony(initialMapName, initialCeremonyPhase) : null
@@ -106,6 +129,20 @@ export default function MapRuntimePreview() {
   const [logs, setLogs] = useState(() => [
     makeEventLine('info', `${initialMapName} runtime preview ready`)
   ])
+  const pushLog = useCallback((type, message) => {
+    setLogs((current) => [makeEventLine(type, message), ...current].slice(0, 5))
+  }, [])
+  useEffect(() => {
+    if (!warpTransit) return undefined
+    const transitId = warpTransit.id
+    const timeoutId = window.setTimeout(() => {
+      if (warpTransitRef.current?.id !== transitId) return
+      warpTransitRef.current = null
+      setWarpTransit(null)
+      pushLog('warning', '地图加载较慢，已结束过场；可重新选择地图重建。')
+    }, MAP_WARP_SCENE_TIMEOUT_MS)
+    return () => window.clearTimeout(timeoutId)
+  }, [pushLog, warpTransit])
 
   const mapInfo = useMemo(() => getAdventureMapInfo(mapName), [mapName])
   const previewMapEventVisualState = useMemo(() => {
@@ -158,11 +195,9 @@ export default function MapRuntimePreview() {
     ELITE_UNLOCK_TASKS.filter((task) => task.mapId === mapName && task.minigame)
   ), [mapName])
 
-  const pushLog = useCallback((type, message) => {
-    setLogs((current) => [makeEventLine(type, message), ...current].slice(0, 5))
-  }, [])
-
   const switchMap = useCallback((nextMapName) => {
+    if (warpTransitRef.current) return
+    activeMapNameRef.current = nextMapName
     setMapName(nextMapName)
     setMapGrid(loadPreviewGrid(nextMapName))
     setPlayerPos(getMapStartPosition(nextMapName))
@@ -171,12 +206,16 @@ export default function MapRuntimePreview() {
   }, [pushLog])
 
   const handlePlayerMove = useCallback((nextPos) => {
+    // Map switches and their final source-scene callbacks can share one React
+    // batch. Only the scene that owns the active map may update its position.
+    if (activeMapNameRef.current !== mapName) return
     setPlayerPos(nextPos)
     const zone = getEncounterZoneAt(mapName, nextPos.x, nextPos.y)
     if (zone?.name) setZoneName(zone.name)
   }, [mapName])
 
   const jumpTo = useCallback((position, label) => {
+    if (warpTransitRef.current) return
     setPlayerPos(position)
     setSceneRevision((current) => current + 1)
     const zone = getEncounterZoneAt(mapName, position.x, position.y)
@@ -184,12 +223,20 @@ export default function MapRuntimePreview() {
     pushLog('jump', `Jumped to ${label} (${position.x}, ${position.y})`)
   }, [mapName, pushLog])
 
-  const handlePreviewWarp = useCallback((warp) => {
+  const handlePreviewWarp = useCallback(async (warp) => {
+    if (activeMapNameRef.current !== mapName || warpTransitRef.current) return
     const targetMapName = warp?.target?.mapName
     if (!targetMapName) {
       pushLog('warp', `Warp ${warp?.id || 'unknown'}`)
       return
     }
+    const transit = { id: `${mapName}:${targetMapName}:${Date.now()}`, targetMapName, phase: 'departing' }
+    warpTransitRef.current = transit
+    setWarpTransit(transit)
+    await new Promise(resolve => window.setTimeout(resolve, MAP_WARP_FADE_OUT_MS))
+    if (warpTransitRef.current !== transit) return
+    setWarpTransit({ ...transit, phase: 'loading' })
+    activeMapNameRef.current = targetMapName
     setMapName(targetMapName)
     setMapGrid(loadPreviewGrid(targetMapName))
     setPlayerPos(warp.target.position || getMapStartPosition(targetMapName))
@@ -207,6 +254,7 @@ export default function MapRuntimePreview() {
         <div>
           <p className="map-runtime-preview__eyebrow">Map Runtime Preview</p>
           <h1>{mapInfo.displayName || mapName}</h1>
+          <small>自由预览 · 不读取通关存档；正式冒险按首领进度解锁</small>
         </div>
 
         <div className="map-runtime-preview__switcher" role="group" aria-label="地图预览选择">
@@ -215,6 +263,7 @@ export default function MapRuntimePreview() {
               type="button"
               key={id}
               className={id === mapName ? 'is-active' : ''}
+              disabled={Boolean(warpTransit)}
               onClick={() => switchMap(id)}
             >
               {id}
@@ -229,7 +278,10 @@ export default function MapRuntimePreview() {
             key={`${mapName}:${sceneRevision}`}
             active={!previewPanel}
             onSceneReadyChange={recordReady}
+            loadingOverlayManaged={Boolean(warpTransit)}
             playerTeam={[]}
+            hasBicycle={getPreviewSearchParams().get('bicycle') === '1'}
+            hasSportsCar={getPreviewSearchParams().get('sports_car') === '1'}
             playerPos={playerPos}
             mapGrid={mapGrid}
             onPlayerMove={handlePlayerMove}
@@ -249,14 +301,15 @@ export default function MapRuntimePreview() {
             }}
             encounterCooldownSteps={0}
             onEncounterCooldownChange={() => {}}
-            cloudBlocked={Boolean(previewMinigame)}
+            cloudBlocked={Boolean(previewMinigame) || Boolean(warpTransit)}
           />
+          <MapWarpFade transit={warpTransit} onRevealComplete={finishWarpReveal} />
           {previewPanel && <div role="dialog" aria-label="窗口切换检查" style={{ padding: 24, background: '#fff', height: '100%' }}>
             <h2>{previewPanel}</h2>
             <input aria-label="面板输入检查" placeholder="方向键只操作本窗口" />
             <button type="button" onClick={() => setPreviewPanel(null)}>关闭窗口</button>
           </div>}
-          <output hidden data-ready-transitions={JSON.stringify(readyTransitions)} />
+          <output hidden data-ready-transitions={JSON.stringify(readyTransitions)} data-player-position={JSON.stringify(playerPos)} data-map-name={mapName} />
         </section>
 
         {!perfMode && <aside className="map-runtime-preview__panel" aria-label="地图数据">
@@ -277,6 +330,7 @@ export default function MapRuntimePreview() {
               <button
                 type="button"
                 key={jump.id}
+                disabled={Boolean(warpTransit)}
                 onClick={() => jumpTo(jump.position, jump.label)}
               >
                 {jump.label}

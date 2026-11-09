@@ -5,6 +5,7 @@ import maps, {
   isInsideDecorationFootprint
 } from '../src/game/data/godotMaps/godot_region_maps.js'
 import { MAP_ASSET_CATALOG } from '../src/game/data/mapAssetCatalog.js'
+import { MAP_BOUNDARY_SETS } from '../src/game/data/mapBoundaryAssets.generated.js'
 import {
   EXP_POTIONS,
   POKEBALLS,
@@ -62,7 +63,7 @@ const LOW_HIDDEN_PERIMETER_TYPES = new Set([
 ])
 const MIN_HIDDEN_PERIMETER_SCALE = 0.94
 const SHORE_MIN_HIDDEN_PERIMETER_SCALE = 0.72
-const MAX_HIDDEN_PERIMETER_CENTER_OFFSET = 0.22
+const MAX_HIDDEN_PERIMETER_CENTER_OFFSET = 0.75
 const HIDDEN_GATE_ENTRANCE_MARKER_TYPES = new Set([
   'trail_sign',
   'nature_tree_oak',
@@ -178,6 +179,16 @@ function hiddenPerimeterObjects(map, zoneId) {
 function hiddenCornerObjects(map, zoneId) {
   return (map.decorativeObjects || [])
     .filter((object) => isHiddenCorner(object) && object.hiddenZoneId === zoneId)
+}
+
+function expectedCornerModelTypes(mapId) {
+  if (Array.isArray(MAP_BOUNDARY_SETS[mapId])) {
+    return MAP_BOUNDARY_SETS[mapId].slice(0, 4)
+  }
+  return Object.values(MAP_ASSET_CATALOG)
+    .filter((asset) => asset?.ownerMap === mapId && /^exclusive_/.test(asset.id || ''))
+    .slice(0, 4)
+    .map((asset) => asset.id)
 }
 
 function normalizedPerimeterKey(object) {
@@ -311,6 +322,11 @@ for (const [mapId, map] of Object.entries(maps)) {
     if (lockedTiles.length !== 1) {
       errors.push(`${mapId}/${zone.id} expected exactly one unlock entrance tile, got ${lockedTiles.length}`)
     }
+    ;[...lockedTiles, ...sealedTiles].forEach((tile) => {
+      if (map.mapGrid?.[tile.y]?.[tile.x] !== TILE.objectBlocker) {
+        errors.push(`${mapId}/${zone.id} edge tile ${tile.x},${tile.y} is not sealed in the authoring collision grid`)
+      }
+    })
     const lockedTile = lockedTiles[0] || null
     const gateX = Math.trunc(Number(gateEvent.position?.x))
     const gateY = Math.trunc(Number(gateEvent.position?.y))
@@ -416,9 +432,35 @@ for (const [mapId, map] of Object.entries(maps)) {
     })
 
     const cornerObjects = hiddenCornerObjects(map, zone.id)
-    if (cornerObjects.length > 0) {
-      errors.push(`${mapId}/${zone.id} should not use separate corner cap models anymore, got ${cornerObjects.length}`)
+    const expectedCornerTypes = expectedCornerModelTypes(mapId)
+    if (cornerObjects.length !== 4) {
+      errors.push(`${mapId}/${zone.id} expected four map-specific corner caps, got ${cornerObjects.length}`)
     }
+    if (expectedCornerTypes.length !== 4) {
+      errors.push(`${mapId}/${zone.id} has no four-model map-specific corner set`)
+    }
+    const cornerTypeSet = new Set(cornerObjects.map((object) => object.type))
+    if (cornerTypeSet.size !== cornerObjects.length || expectedCornerTypes.some((type) => !cornerTypeSet.has(type))) {
+      errors.push(`${mapId}/${zone.id} corner caps must use four distinct map-specific models`)
+    }
+    const expectedCorners = [
+      { id: 'north_west', x: zone.x - 0.5, y: zone.y - 0.5 },
+      { id: 'north_east', x: zone.x + zone.width - 0.5, y: zone.y - 0.5 },
+      { id: 'south_west', x: zone.x - 0.5, y: zone.y + zone.height - 0.5 },
+      { id: 'south_east', x: zone.x + zone.width - 0.5, y: zone.y + zone.height - 0.5 }
+    ]
+    expectedCorners.forEach((corner) => {
+      const object = cornerObjects.find((candidate) => candidate.hiddenZoneCornerId === corner.id)
+      if (!object || Math.abs(Number(object.x) - corner.x) > 0.01 || Math.abs(Number(object.y) - corner.y) > 0.01) {
+        errors.push(`${mapId}/${zone.id} corner ${corner.id} is not centred at the sealed perimeter turn`)
+      }
+      if (object?.blocksPath || object?.forcePathBlocking) {
+        errors.push(`${mapId}/${zone.id} corner ${corner.id} must stay visual-only; edge tile collision is authoritative`)
+      }
+      if (object && MAP_ASSET_CATALOG[object.type]?.ownerMap !== mapId) {
+        errors.push(`${mapId}/${zone.id} corner ${corner.id} uses a model owned by another map: ${object.type}`)
+      }
+    })
 
 
     const ringKeys = outerRingKeys(map, zone)

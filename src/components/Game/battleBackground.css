@@ -1,0 +1,61 @@
+.battle-background-plate {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: 50% 48%;
+  pointer-events: none;
+  user-select: none;
+  animation: battlePlateReveal 400ms ease-out both;
+}
+
+.anime-battle-bg.battle-background-ready::before,
+.anime-battle-bg.battle-background-ready::after,
+.anime-battle-bg.battle-background-ready .battle-environment-props {
+  display: none;
+}
+
+.anime-battle-bg.battle-background-ready .battle-atmosphere {
+  background: linear-gradient(180deg, rgba(10, 22, 28, .03), transparent 42%, rgba(10, 22, 28, .12));
+  box-shadow: inset 0 -24px 40px rgba(10, 22, 28, .1);
+}
+
+.anime-battle-bg.battle-background-ready .battle-theme-visual {
+  z-index: 1;
+  opacity: .22;
+  mix-blend-mode: soft-light;
+}
+
+.anime-battle-bg.battle-background-ready.battle-presentation-boss .battle-theme-visual {
+  opacity: .44;
+}
+
+.anime-battle-bg.battle-background-ready.battle-presentation-challenge .battle-theme-visual {
+  opacity: .36;
+}
+
+.battle-background-ready.battle-presentation-league .battle-theme-visual::before {
+  inset: 0;
+  filter: none;
+  background: linear-gradient(90deg, rgba(20, 184, 166, .23), transparent 18% 82%, rgba(244, 196, 81, .22));
+}
+
+.battle-background-ready.battle-presentation-tower .battle-theme-visual::before {
+  inset: 0;
+  filter: none;
+  background: linear-gradient(180deg, rgba(242, 203, 118, .16), transparent 50%, rgba(77, 128, 163, .12));
+}
+
+@keyframes battlePlateReveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-background-plate { animation: none; }
+  .battle-theme-visual,
+  .battle-theme-visual::after { animation: none; }
+}

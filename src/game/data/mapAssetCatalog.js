@@ -1,7 +1,7 @@
 import { MAP_BOUNDARY_ASSETS } from './mapBoundaryAssets.generated.js'
+import { CHARACTER_MODEL_KEYS, characterAssetPath } from './characterAssets.js'
 import { ENVIRONMENT_BIOME_ASSETS } from './environmentBiomeAssets.js'
 import { MAP_EXCLUSIVE_ASSETS } from './mapExclusiveAssets.generated.js'
-import { CHARACTER_MODEL_KEYS, characterAssetPath } from './characterAssets.js'
 
 const ALL_AREAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
 
@@ -55,6 +55,19 @@ const makeAsset = ({
 
 // assetPath 在 GitHub Pages 等子路径部署时需要带 BASE_URL 前缀，这里只存“逻辑路径”，由加载器统一补前缀。
 export const MAP_ASSET_CATALOG = {
+  timber_bank_building: makeAsset({
+    id: 'timber_bank_building',
+    sourcePackage: 'xingyin-original-blender',
+    ownerMap: 'GodotMapV2_SurvivalRidge',
+    assetPath: '/assets/3d/xingyin-environment-v2/timber_bank.glb',
+    sourceAssetName: 'timber_bank.glb',
+    themeTags: ['survival', 'bank', 'camp', 'landmark'],
+    allowedAreas: ['J'],
+    heightClass: 'medium',
+    defaultBlocking: true,
+    footprint: { width: 3.2, height: 2.35 },
+    defaultScale: 1
+  }),
   nature_grass_small: makeAsset({
     id: 'nature_grass_small',
     sourcePackage: 'kenney_nature-kit',
@@ -77,9 +90,9 @@ export const MAP_ASSET_CATALOG = {
   }),
   nature_bush_large: makeAsset({
     id: 'nature_bush_large',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/plant_bushLarge.glb',
-    sourceAssetName: 'plant_bushLarge.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/nature/bush_large.glb',
+    sourceAssetName: 'bush_large.glb',
     themeTags: ['nature', 'bush', 'edge'],
     heightClass: 'medium',
     defaultBlocking: true,
@@ -88,45 +101,45 @@ export const MAP_ASSET_CATALOG = {
   }),
   nature_tree_oak: makeAsset({
     id: 'nature_tree_oak',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/tree_oak.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/forest-trees/tree_oak.glb',
     sourceAssetName: 'tree_oak.glb',
     themeTags: ['nature', 'tree', 'boundary'],
     allowedAreas: ['A', 'B', 'C', 'D', 'G', 'H', 'I'],
     heightClass: 'tall',
     defaultBlocking: true,
     footprint: { width: 2, height: 2 },
-    defaultScale: 1.42
+    defaultScale: 0.9
   }),
   nature_tree_default: makeAsset({
     id: 'nature_tree_default',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/tree_default.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/forest-trees/tree_default.glb',
     sourceAssetName: 'tree_default.glb',
     themeTags: ['nature', 'tree', 'boundary'],
     allowedAreas: ['A', 'B', 'C', 'D', 'G', 'H', 'I'],
     heightClass: 'tall',
     defaultBlocking: true,
     footprint: { width: 2, height: 2 },
-    defaultScale: 1.35
+    defaultScale: 0.9
   }),
   nature_tree_pine: makeAsset({
     id: 'nature_tree_pine',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/tree_pineTallA_detailed.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/forest-trees/tree_pineTallA_detailed.glb',
     sourceAssetName: 'tree_pineTallA_detailed.glb',
     themeTags: ['nature', 'tree', 'ridge'],
     allowedAreas: ['A', 'B', 'G', 'H', 'K'],
     heightClass: 'tall',
     defaultBlocking: true,
     footprint: { width: 2, height: 2 },
-    defaultScale: 1.55
+    defaultScale: 0.9
   }),
   nature_rock_large: makeAsset({
     id: 'nature_rock_large',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/rock_largeA.glb',
-    sourceAssetName: 'rock_largeA.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/nature/rock_large.glb',
+    sourceAssetName: 'rock_large.glb',
     themeTags: ['nature', 'rock', 'boundary', 'landmark'],
     allowedAreas: ['A', 'B', 'C', 'D', 'G', 'H', 'K'],
     heightClass: 'medium',
@@ -148,9 +161,9 @@ export const MAP_ASSET_CATALOG = {
   }),
   nature_flower_yellow: makeAsset({
     id: 'nature_flower_yellow',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/flower_yellowA.glb',
-    sourceAssetName: 'flower_yellowA.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/nature/flower_yellow_cluster.glb',
+    sourceAssetName: 'flower_yellow_cluster.glb',
     themeTags: ['nature', 'flower', 'filler'],
     allowedAreas: ['A', 'C', 'D', 'G', 'I'],
     heightClass: 'low',
@@ -159,9 +172,9 @@ export const MAP_ASSET_CATALOG = {
   }),
   nature_flower_red: makeAsset({
     id: 'nature_flower_red',
-    sourcePackage: 'kenney_nature-kit',
-    assetPath: '/assets/3d/kenney-nature/flower_redA.glb',
-    sourceAssetName: 'flower_redA.glb',
+    sourcePackage: 'xingyin-original-blender',
+    assetPath: '/assets/3d/xingyin-environment-v2/nature/flower_red_cluster.glb',
+    sourceAssetName: 'flower_red_cluster.glb',
     themeTags: ['nature', 'flower', 'filler'],
     allowedAreas: ['A', 'C', 'D', 'G', 'I'],
     heightClass: 'low',
@@ -291,6 +304,32 @@ export const MAP_ASSET_CATALOG = {
     heightClass: 'medium',
     defaultBlocking: true,
     footprint: { width: 2, height: 2 },
+    defaultScale: 1
+  }),
+  breeder_nursery_stall: makeAsset({
+    id: 'breeder_nursery_stall',
+    sourcePackage: 'kenney-fantasy-town-kit_2',
+    ownerMap: 'GodotMapV2_BossHighland',
+    assetPath: '/assets/3d/kenney-fantasy-town/stall-green.glb',
+    sourceAssetName: 'stall-green.glb',
+    themeTags: ['breeder', 'nursery', 'stall'],
+    allowedAreas: ['K'],
+    heightClass: 'medium',
+    decorativeOnly: true,
+    footprint: { width: 2.4, height: 1.5 },
+    defaultScale: 0.86
+  }),
+  breeder_egg_basket: makeAsset({
+    id: 'breeder_egg_basket',
+    sourcePackage: 'kenney-survival-kit',
+    ownerMap: 'GodotMapV2_BossHighland',
+    assetPath: '/assets/3d/kenney-survival/box.glb',
+    sourceAssetName: 'box.glb',
+    themeTags: ['breeder', 'nursery', 'eggs'],
+    allowedAreas: ['K'],
+    heightClass: 'low',
+    decorativeOnly: true,
+    footprint: { width: 0.6, height: 0.6 },
     defaultScale: 1
   }),
   farm_cart_high: makeAsset({
@@ -434,8 +473,8 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['town_windmill', 'kenney_fantasy-town-kit_2', 'kenney-fantasy-town', 'windmill.glb', ['town', 'farm', 'landmark'], ['I'], { defaultScale: 0.58 }],
   ['town_watermill', 'kenney_fantasy-town-kit_2', 'kenney-fantasy-town', 'watermill.glb', ['town', 'water', 'landmark'], ['J', 'I'], { defaultScale: 0.58 }],
   ['town_rock_small', 'kenney_fantasy-town-kit_2', 'kenney-fantasy-town', 'rock-small.glb', ['town', 'rock', 'filler'], ['C', 'F', 'I'], { defaultScale: 0.9 }],
-  ['town_tree', 'kenney_fantasy-town-kit_2', 'kenney-fantasy-town', 'tree.glb', ['town', 'tree', 'filler'], ['F', 'I'], { defaultScale: 0.78 }],
-  ['town_tree_high', 'kenney_fantasy-town-kit_2', 'kenney-fantasy-town', 'tree-high.glb', ['town', 'tree', 'landmark'], ['F', 'I'], { defaultScale: 0.68 }],
+  ['town_tree', 'xingyin-original-blender', 'xingyin-environment-v2/forest-trees', 'tree_default.glb', ['town', 'tree', 'filler'], ['F', 'I'], { defaultScale: 0.922 }],
+  ['town_tree_high', 'xingyin-original-blender', 'xingyin-environment-v2/forest-trees', 'tree_oak.glb', ['town', 'tree', 'landmark'], ['F', 'I'], { defaultScale: 0.918 }],
 
   ['grave_gravestone_round', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'gravestone-round.glb', ['graveyard', 'stone', 'ruin'], ['H'], { defaultScale: 0.78 }],
   ['grave_gravestone_broken', 'kenney_graveyard-kit_5', 'kenney-graveyard', 'gravestone-broken.glb', ['graveyard', 'stone', 'ruin'], ['H'], { defaultScale: 0.78 }],
@@ -466,7 +505,7 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['platformer_fence_straight', 'kenney_platformer-kit', 'kenney-platformer', 'fence-straight.glb', ['platformer', 'fence', 'edge'], ['F', 'I', 'K'], { defaultScale: 0.85 }],
   ['platformer_fence_low_straight', 'kenney_platformer-kit', 'kenney-platformer', 'fence-low-straight.glb', ['platformer', 'fence', 'edge'], ['F', 'I', 'K'], { defaultScale: 0.88 }],
   ['platformer_hedge', 'kenney_platformer-kit', 'kenney-platformer', 'hedge.glb', ['platformer', 'hedge', 'edge'], ['F', 'I'], { defaultScale: 0.82 }],
-  ['platformer_tree_pine', 'kenney_platformer-kit', 'kenney-platformer', 'tree-pine.glb', ['platformer', 'tree', 'edge'], ['B', 'G', 'H', 'K'], { defaultScale: 0.86 }],
+  ['platformer_tree_pine', 'xingyin-original-blender', 'xingyin-environment-v2/forest-trees', 'tree_pineTallA_detailed.glb', ['platformer', 'tree', 'edge'], ['B', 'G', 'H', 'K'], { defaultScale: 0.906 }],
   ['platformer_platform_overhang', 'kenney_platformer-kit', 'kenney-platformer', 'platform-overhang.glb', ['platformer', 'mine', 'height'], ['K'], { defaultScale: 0.7 }],
   ['platformer_flag', 'kenney_platformer-kit', 'kenney-platformer', 'flag.glb', ['platformer', 'flag', 'landmark'], ['F', 'K'], { defaultScale: 0.86 }],
   ['platformer_lever', 'kenney_platformer-kit', 'kenney-platformer', 'lever.glb', ['platformer', 'lever', 'landmark'], ['K'], { defaultScale: 0.86 }],
@@ -541,10 +580,10 @@ const EXTRA_MAP_ASSET_SPECS = [
   ['hex_building_cabin', 'kenney_hexagon-kit', 'kenney-hexagon', 'building-cabin.glb', ['hexagon', 'cabin', 'landmark'], ['F', 'G', 'J'], { defaultScale: 0.58 }],
   ['hex_building_market', 'kenney_hexagon-kit', 'kenney-hexagon', 'building-market.glb', ['hexagon', 'market', 'outpost'], ['F'], { defaultScale: 0.54 }],
   ['hex_building_port', 'kenney_hexagon-kit', 'kenney-hexagon', 'building-port.glb', ['hexagon', 'port', 'shore'], ['E'], { defaultScale: 0.52 }],
-  ['hex_unit_tree', 'kenney_hexagon-kit', 'kenney-hexagon', 'unit-tree.glb', ['hexagon', 'tree', 'filler'], ['B', 'G', 'H'], { defaultScale: 0.62 }],
+  ['hex_unit_tree', 'xingyin-original-blender', 'xingyin-environment-v2/forest-trees', 'tree_default.glb', ['hexagon', 'tree', 'filler'], ['B', 'G', 'H'], { defaultScale: 0.922 }],
   ['hex_stone_rocks', 'kenney_hexagon-kit', 'kenney-hexagon', 'stone-rocks.glb', ['hexagon', 'rock', 'filler'], ['B', 'K'], { defaultScale: 0.62 }],
   ['hex_stone_hill', 'kenney_hexagon-kit', 'kenney-hexagon', 'stone-hill.glb', ['hexagon', 'rock', 'landmark'], ['B', 'K'], { defaultScale: 0.58 }],
-  ['hex_grass_forest', 'kenney_hexagon-kit', 'kenney-hexagon', 'grass-forest.glb', ['hexagon', 'forest', 'filler'], ['B', 'G', 'H'], { defaultScale: 0.58 }],
+  ['hex_grass_forest', 'xingyin-original-blender', 'xingyin-environment-v2/forest-trees', 'tree_default.glb', ['hexagon', 'forest', 'tree', 'filler'], ['B', 'G', 'H'], { defaultScale: 0.922 }],
   ['hex_water_rocks', 'kenney_hexagon-kit', 'kenney-hexagon', 'water-rocks.glb', ['hexagon', 'water', 'shore'], ['D', 'E', 'J'], { defaultScale: 0.56 }],
   ['hex_bridge', 'kenney_hexagon-kit', 'kenney-hexagon', 'bridge.glb', ['hexagon', 'bridge', 'shore'], ['D', 'E', 'J'], { defaultScale: 0.55 }],
 

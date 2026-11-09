@@ -19,20 +19,28 @@ export function isEnvironmentTileBlocked(map, x, y) {
 }
 
 export function findEnvironmentSpawn(map, position, grid = map.mapGrid) {
-  if (!isEnvironmentTileBlocked(map, position.x, position.y)) return position
-  // Old saves can point to a newly furnished tile. Recover locally; never move
-  // a valid save, and don't count recovery as a step or trigger an encounter.
-  const queue = [{ x: position.x, y: position.y }], seen = new Set()
+  const walkable = (x, y) => Number.isInteger(x) && Number.isInteger(y) &&
+    grid[y]?.[x] != null && !BLOCKED_LEGACY_TILES.has(grid[y][x]) && !isEnvironmentTileBlocked(map, x, y)
+  if (walkable(position?.x, position?.y)) return position
+  // Invalid saves may sit in native walls/water, not only the scenery mask.
+  // Recover within the entrance's reachable component, never across a gate.
+  const origin = map.startPosition
+  const queue = walkable(origin?.x, origin?.y) ? [{ x: origin.x, y: origin.y }] : []
+  const seen = new Set()
+  const events = new Set((map.runtimeEvents || []).map(event => environmentTileKey(event.position.x, event.position.y)))
+  let best = null, bestDistance = Infinity
   for (let i = 0; i < queue.length; i++) {
     const p = queue[i], key = environmentTileKey(p.x, p.y)
-    if (seen.has(key)) continue
+    if (seen.has(key) || !walkable(p.x, p.y)) continue
     seen.add(key)
-    const tile = grid[p.y]?.[p.x]
-    if (tile == null || BLOCKED_LEGACY_TILES.has(tile)) continue
-    if (!isEnvironmentTileBlocked(map, p.x, p.y)) return { ...position, ...p }
+    // Avoid spawning on an interaction or walking through a live route blocker.
+    if (events.has(key) && ![3, 4, 9].includes(grid[p.y][p.x])) continue
+    const distance = Math.hypot(p.x - (Number.isFinite(position?.x) ? position.x : origin.x),
+      p.y - (Number.isFinite(position?.y) ? position.y : origin.y))
+    if (!events.has(key) && distance < bestDistance) { best = p; bestDistance = distance }
     for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0]]) queue.push({ x: p.x + dx, y: p.y + dy })
   }
-  return { ...position, ...map.startPosition }
+  return best ? { ...position, ...best } : { ...position, ...map.startPosition }
 }
 
 export function createEnvironmentConnectivityGuard(map) {

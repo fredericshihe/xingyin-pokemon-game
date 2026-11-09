@@ -1,0 +1,12 @@
+.battle-mp-toast {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 45;
+  width: max-content; max-width: calc(100% - 24px); padding: 8px 14px; border-radius: 10px;
+  border: 1px solid #f5be7880; background: #222437ed; color: #ffe8bd;
+  font-size: 13px; line-height: 1.4; font-weight: 700; text-align: center; pointer-events: none;
+  animation: battle-mp-toast-in 150ms ease-out;
+}
+.battle-move-button.battle-move-button--mp-short { position: relative; opacity: .62; }
+.battle-move-mp-flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; border: 2px solid #ffbb70; animation: battle-mp-flash 400ms ease-out both; }
+@keyframes battle-mp-toast-in { from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0 0; } }
+@keyframes battle-mp-flash { from { background: #ffb45740; opacity: 1; } to { background: transparent; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .battle-mp-toast, .battle-move-mp-flash { animation: none; } }

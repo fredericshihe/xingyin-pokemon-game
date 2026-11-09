@@ -1,0 +1,199 @@
+{
+  "model": "Seeded approximate battle simulation using actual species, level stats, move sets, damage, accuracy, critical hits, MP costs and minigame trainer AI (including switches, no opponent potions). One match against six opponents; levels use the strongest three party members with a floor tied to the highest level. Average parties sample six distinct final species with base-stat totals from 440 to 560. Does not model statuses, experience gains or manual tactical switching. Player super potions restore 50 HP/30 MP and are used automatically at low HP/MP.",
+  "averageFinalSpeciesCount": 91,
+  "levelBias": 0,
+  "results": [
+    {
+      "scenario": "six-lv50-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 0,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 88,
+      "averageGoldPerAttempt": 2216,
+      "goldOnFullClear": 2518,
+      "goldPercent": 33,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 14,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "silverPercent": 69.3,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        42,
+        43,
+        44,
+        44,
+        45,
+        46
+      ],
+      "medalDistribution": {
+        "gold": 132,
+        "silver": 145,
+        "bronze": 75
+      },
+      "averageVouchersPerAttempt": 1.9
+    },
+    {
+      "scenario": "six-lv60-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 9,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 83.3,
+      "averageGoldPerAttempt": 2537,
+      "goldOnFullClear": 3048,
+      "goldPercent": 27.8,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 14,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "silverPercent": 65,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        52,
+        53,
+        54,
+        54,
+        55,
+        56
+      ],
+      "medalDistribution": {
+        "gold": 111,
+        "silver": 149,
+        "bronze": 73
+      },
+      "averageVouchersPerAttempt": 1.76
+    },
+    {
+      "scenario": "six-lv70-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 19,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 83.3,
+      "averageGoldPerAttempt": 2979,
+      "goldOnFullClear": 3578,
+      "goldPercent": 30.5,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 13,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "silverPercent": 66.8,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        62,
+        63,
+        64,
+        64,
+        65,
+        66
+      ],
+      "medalDistribution": {
+        "gold": 122,
+        "silver": 145,
+        "bronze": 66
+      },
+      "averageVouchersPerAttempt": 1.81
+    },
+    {
+      "scenario": "six-lv80-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 29,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 79.5,
+      "averageGoldPerAttempt": 3244,
+      "goldOnFullClear": 4080,
+      "goldPercent": 28,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 14,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "silverPercent": 65.5,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        72,
+        73,
+        74,
+        74,
+        75,
+        76
+      ],
+      "medalDistribution": {
+        "gold": 112,
+        "silver": 150,
+        "bronze": 56
+      },
+      "averageVouchersPerAttempt": 1.73
+    },
+    {
+      "scenario": "six-lv90-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 39,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 76.5,
+      "averageGoldPerAttempt": 3140,
+      "goldOnFullClear": 4104,
+      "goldPercent": 26.3,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 14,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 19,
+      "silverPercent": 63.3,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        82,
+        83,
+        84,
+        84,
+        85,
+        86
+      ],
+      "medalDistribution": {
+        "gold": 105,
+        "silver": 148,
+        "bronze": 53
+      },
+      "averageVouchersPerAttempt": 1.66
+    },
+    {
+      "scenario": "six-lv100-average-two-items",
+      "route": "training",
+      "opponentLevelOffset": 49,
+      "betweenStages": "actual-carry",
+      "runs": 400,
+      "winPercent": 71.8,
+      "averageGoldPerAttempt": 2945,
+      "goldOnFullClear": 4104,
+      "goldPercent": 25.5,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 13,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 19,
+      "silverPercent": 56.8,
+      "goldThreshold": 14,
+      "silverThreshold": 18,
+      "opponentLevels": [
+        92,
+        93,
+        94,
+        94,
+        95,
+        96
+      ],
+      "medalDistribution": {
+        "gold": 102,
+        "silver": 125,
+        "bronze": 60
+      },
+      "averageVouchersPerAttempt": 1.54
+    }
+  ]
+}

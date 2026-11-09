@@ -128,7 +128,8 @@ export default defineConfig({
             options: {
               cacheName: `game-glb-${appBuildId}`,
               expiration: {
-                maxEntries: 220,
+                // Independent NPCs add 78 GLBs; retain the complete map asset set.
+                maxEntries: 640,
                 maxAgeSeconds: 60 * 60 * 24 * 180
               }
             }
@@ -182,6 +183,8 @@ export default defineConfig({
     })
   ],
   optimizeDeps: {
+    // Archived previews under output/ are not application entry points.
+    entries: ['index.html'],
     include: [
       'three',
       'three/examples/jsm/loaders/GLTFLoader.js',

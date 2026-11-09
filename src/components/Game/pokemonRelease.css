@@ -1,0 +1,14 @@
+.pokemon-release-summary { display: grid; gap: 14px; margin-top: 14px; text-align: left; }
+.pokemon-release-summary__partner { display: flex; gap: 14px; align-items: center; }
+.pokemon-release-summary__partner img { width: 64px; height: 64px; object-fit: contain; background: #eef3f6; border-radius: 18px; padding: 5px; }
+.pokemon-release-summary__partner strong { display: block; color: #1e293b; font-size: 18px; }
+.pokemon-release-summary__partner span { display: flex; gap: 10px; align-items: center; margin-top: 5px; font-size: 13px; color: #64748b; }
+.pokemon-release-summary__partner b { padding: 3px 9px; border-radius: 999px; background: #e2e8f0; color: #475569; }
+.pokemon-release-summary[data-rarity="rare"] .pokemon-release-summary__partner b { background: #ede9fe; color: #6d28d9; }
+.pokemon-release-summary[data-rarity="precious"] .pokemon-release-summary__partner b { background: #fef3c7; color: #92400e; }
+.pokemon-release-summary__coins { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 9px; padding: 16px 12px; border: 1px solid #f5d675; border-radius: 16px; background: #fffbeb; color: #92400e; font-size: 13px; font-weight: 700; }
+.pokemon-release-summary__coins strong { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.pokemon-release-summary__coins i { margin-right: 7px; font-size: 20px; color: #d99710; }
+.pokemon-release-summary .pokemon-release-summary__warning { margin: 0; color: #64748b; font-size: 13px; line-height: 1.7; }
+.pokemon-release-summary .pokemon-release-summary__rare { margin: 0; padding: 8px 10px; border-radius: 9px; background: #fff1f2; color: #be123c; font-size: 13px; font-weight: 700; }
+.pokemon-release-quote { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; white-space: nowrap; }

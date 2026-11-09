@@ -62,6 +62,10 @@ const canUseLocalStorage = (relativeFile, lines, index) => {
     return context.includes('mapVisualQuality')
   }
 
+  if (relativeFile === 'src/game/mapCameraRig.js') {
+    return context.includes('mapCameraMode') || context.includes('localStorage 不可用时走默认')
+  }
+
   if (relativeFile === 'src/utils/clientUpdate.js') {
     return context.includes('BUILD_STORAGE_KEY') || context.includes('ENTRY_HASH_STORAGE_KEY')
   }
@@ -370,8 +374,12 @@ const trainerDailyCloudMarkers = [
     message: '普通云端提交被接受后必须立即应用本次提交快照，避免胜利后的每日训练家锁在本地交互中短暂丢失。',
   },
   {
-    marker: 'world: migrateLegacyLongTermProgress(normalizeWorldState(gameData.world',
+    marker: 'world: migrateLegacyLongTermProgress(normalizeWorldState({',
     message: '云端快照必须先通过 normalizeWorldState，再完成长线进度兼容迁移，避免新增 world 字段只停留在本地状态。',
+  },
+  {
+    marker: 'timberLeague: snapshotTimberLeague',
+    message: '训练联赛凭证与待领进度必须进入云端 world 快照。',
   },
 ]
 

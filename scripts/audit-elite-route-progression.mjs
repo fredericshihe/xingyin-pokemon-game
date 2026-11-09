@@ -2,15 +2,15 @@
 
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { GODOT_REGION_MAPS } from '../src/game/data/godotMaps/godot_region_maps.js'
 import { BLOCKED_LEGACY_TILES } from '../src/game/world/constants.js'
 import {
   getEliteRouteBlockerInteractionTile,
   getEliteRouteStepAsideTile,
   isEliteRouteBlockerCleared,
-  isEliteRouteBlockerEvent
+  isEliteRouteBlockerEvent,
+  shouldRouteBattleEventToInfo
 } from '../src/game/eliteRouteBlocker.js'
-import { getEliteUnlockTasksForMap } from '../src/game/data/longTermProgression.js'
+import { withViteAuditServer } from './load-vite-module.mjs'
 
 const ELITE_ROUTE_CONFIGS = {
   GodotMapV2_FrostDojo: { goalEventId: 'warp_frost_to_tide', style: '折镜阶梯' },
@@ -170,6 +170,12 @@ function isPointOnBridgeModel(mapInfo, x, y) {
   })
 }
 
+await withViteAuditServer(async ({ loadModule }) => {
+const [{ GODOT_REGION_MAPS }, { getEliteUnlockTasksForMap }] = await Promise.all([
+  loadModule('/src/game/data/godotMaps/godot_region_maps.js'),
+  loadModule('/src/game/data/longTermProgression.js')
+])
+
 for (const [mapId, config] of Object.entries(ELITE_ROUTE_CONFIGS)) {
   const mapInfo = GODOT_REGION_MAPS[mapId]
   if (!mapInfo) {
@@ -209,6 +215,20 @@ for (const [mapId, config] of Object.entries(ELITE_ROUTE_CONFIGS)) {
     }
     if (isEliteRouteBlockerCleared(event, 'available') || isEliteRouteBlockerCleared(event, 'locked')) {
       failures.push(`${label} · ${eventName}: 未击败状态被错误判定为已让路。`)
+    }
+    const rematchAvailable = { status: 'available', routeCleared: true }
+    const rematchComplete = { status: 'daily_complete', routeCleared: true }
+    if (!isEliteRouteBlockerCleared(event, rematchAvailable) ||
+      !isEliteRouteBlockerCleared(event, rematchComplete)) {
+      failures.push(`${label} · ${eventName}: 每日复战状态不应重新封路。`)
+    }
+    const rematchTile = getEliteRouteBlockerInteractionTile(event, rematchAvailable)
+    if (!asideTile || rematchTile?.x !== asideTile.x || rematchTile?.y !== asideTile.y) {
+      failures.push(`${label} · ${eventName}: 每日复战交互没有留在旁侧站位。`)
+    }
+    if (shouldRouteBattleEventToInfo(event, { [event.id]: rematchAvailable }) ||
+      !shouldRouteBattleEventToInfo(event, { [event.id]: rematchComplete })) {
+      failures.push(`${label} · ${eventName}: 每日复战的可挑战与已挑战交互判定错误。`)
     }
     const clearedState = event.type === 'boss' ? 'completed' : 'cleared'
     if (!isEliteRouteBlockerCleared(event, clearedState)) {
@@ -333,3 +353,4 @@ console.log(JSON.stringify({
   routes: reports
 }, null, 2))
 console.log('[audit-elite-route-progression] OK: every Elite Four gate blocks progression until defeated and all four routes are distinct.')
+})

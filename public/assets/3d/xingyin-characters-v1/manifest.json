@@ -153,18 +153,16 @@
     },
     {
       "id": "trainer_challenge",
-      "name": "试炼导师",
+      "name": "铁木计时员",
       "file": "trainer_challenge.glb",
       "height": 2.5,
-      "triangles": 9380,
+      "triangles": 15570,
       "meshes": 1,
       "materials": 1,
       "theme": null,
       "rank": null,
-      "style": "martial",
-      "source": "Blender 5.2 / original Xingyin collection",
-      "bytes": 34780,
-      "compression": "KHR_draco_mesh_compression"
+      "style": "challenge",
+      "source": "Blender 5.2 / original Xingyin collection"
     },
     {
       "id": "grave_character_ghost",
@@ -450,6 +448,37 @@
       "source": "Blender 5.2 / original Xingyin collection",
       "bytes": 41292,
       "compression": "KHR_draco_mesh_compression"
+    },
+    {
+      "id": "trainer_breeder",
+      "name": "星雾宝可梦饲养家",
+      "file": "trainer_breeder.glb",
+      "height": 2.5,
+      "triangles": 18868,
+      "meshes": 1,
+      "materials": 1,
+      "theme": null,
+      "rank": null,
+      "style": "breeder",
+      "source": "Blender 5.2 / original Xingyin collection"
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "player_sports_car",
+      "name": "旅行跑车",
+      "file": "player_sports_car.glb",
+      "source": "Blender / original Xingyin tourer",
+      "frontAxis": "+Z",
+      "wheelAxis": "X",
+      "wheelNodes": [
+        "frontLeftWheel",
+        "frontRightWheel",
+        "rearLeftWheel",
+        "rearRightWheel"
+      ],
+      "meshes": 5,
+      "materials": 1
     }
   ]
 }

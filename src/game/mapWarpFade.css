@@ -1,0 +1,35 @@
+.map-warp-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 96;
+  background: #000;
+  opacity: 1;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.map-warp-fade--departing {
+  animation: map-warp-darken var(--warp-fade-out) ease-out both;
+}
+
+.map-warp-fade--arriving {
+  animation: map-warp-reveal var(--warp-fade-in) ease-in both;
+}
+
+/* The destination must remain fully hidden until its first rendered frame.
+   Semi-transparent loading states exposed the previous map through the fade. */
+.map-warp-fade--syncing,
+.map-warp-fade--loading {
+  background: #000;
+  opacity: 1;
+}
+
+@keyframes map-warp-darken {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes map-warp-reveal {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

@@ -7,10 +7,10 @@ import { NodeIO, getBounds } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import draco3d from 'draco3dgltf'
 import { MAP_ASSET_CATALOG } from '../src/game/data/mapAssetCatalog.js'
-import { GODOT_REGION_MAPS } from '../src/game/data/godotMaps/godot_region_maps.js'
-import { isCharacterModelKey } from '../src/game/data/characterAssets.js'
+import { getMapInfo } from '../src/game/data/mapCatalog.js'
+import { CHARACTER_ASSET_VERSION, isCharacterModelKey } from '../src/game/data/characterAssets.js'
 
-const manifest = JSON.parse(await fs.readFile(new URL('../public/assets/3d/xingyin-characters-v1/manifest.json', import.meta.url), 'utf8'))
+const manifest = JSON.parse(await fs.readFile(new URL(`../public/assets/3d/${CHARACTER_ASSET_VERSION}/manifest.json`, import.meta.url), 'utf8'))
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'draco3d.decoder': await draco3d.createDecoderModule() })
 
 const ELITE_MAP_EXPECTATIONS = {
@@ -58,7 +58,7 @@ const visualSignatures = new Set()
 const report = []
 
 for (const [mapId, expectation] of Object.entries(ELITE_MAP_EXPECTATIONS)) {
-  const mapInfo = GODOT_REGION_MAPS[mapId]
+  const mapInfo = getMapInfo(mapId)
   if (!mapInfo) {
     failures.push(`${mapId}: 地图不存在。`)
     continue
@@ -104,7 +104,7 @@ for (const [mapId, expectation] of Object.entries(ELITE_MAP_EXPECTATIONS)) {
     }
 
     const asset = MAP_ASSET_CATALOG[modelType]
-    if (!asset || asset.procedural || !asset.assetPath?.includes('xingyin-characters-v1')) {
+    if (!asset || asset.procedural || !asset.assetPath?.includes(CHARACTER_ASSET_VERSION)) {
       failures.push(`${label}: ${modelType} 未使用新版 Blender GLB。`)
       continue
     }
@@ -142,7 +142,7 @@ for (const [mapId, expectation] of Object.entries(ELITE_MAP_EXPECTATIONS)) {
     if (meshCount !== 1) {
       failures.push(`${label}: 应合并为一个网格降低移动端绘制开销，实际 ${meshCount}。`)
     }
-    if (renderedHeight < 1.9 || renderedHeight > 3.6) {
+    if (renderedHeight < 1.65 || renderedHeight > 2.05) {
       failures.push(`${label}: 渲染高度 ${renderedHeight.toFixed(2)} 超出地图角色安全范围。`)
     }
     if (dimensions.x * renderScale > 2.35 || dimensions.z * renderScale > 1.65) {

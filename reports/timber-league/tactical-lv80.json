@@ -1,0 +1,1136 @@
+{
+  "generatedAt": "2026-10-01T03:07:46.519Z",
+  "sourceSha256": "df72d3f8e735b129d2d745ee654e9de261e9f72aa7c56ea55d895ba024a01bd4",
+  "level": 80,
+  "poolSize": 91,
+  "sourceFiles": {
+    "scripts/audit-timber-league-tactics.mjs": "09b8d0e71a87cdb0309a37d0d7d2484eeb6ce38b596490983e873dccb31cc77d",
+    "src/components/Game/OriginalGame.jsx": "df72d3f8e735b129d2d745ee654e9de261e9f72aa7c56ea55d895ba024a01bd4",
+    "src/utils/gameData.js": "cb1f5672c65c5e30dd7f07657fe3fc3e0896ec3cf5eb12170a303e8e0f2e4b59",
+    "src/utils/pokemonStats.js": "b24cf1f6a33d1d21811780f637506bb76ce99a841d735c9e2354f8281fa210b9",
+    "src/utils/battleDamage.js": "dcfd0ea828a34e52c3d6ddf272d4c97871da6325ea2d641331091cfae9c7dbbb",
+    "src/utils/battleAi.js": "461d35d7efc385aac3b084f07e0bc34cd239bff8d2188fabdacad31497a474e2",
+    "src/utils/inventoryItems.js": "aea3a1735620c8a992782b721384661ffd5d6d4f80f94d1581e407688c68b74e",
+    "src/game/timberLeague.js": "51e647b1fa17f308aad29482c910a23d3b0ef27af61df337d6727df7106d9b1d"
+  },
+  "thresholds": {
+    "silver": 21,
+    "gold": 16
+  },
+  "potion": {
+    "key": "max_potion",
+    "name": "超级伤药",
+    "price": 1000
+  },
+  "model": "Production executeBattleMove, turn-start/end statuses, stat stages, charge, multi-hit, healing/drain, recoil, accuracy, speed order, damage and trainer AI. Animation/audio/cloud persistence are stubbed. All parties use six distinct ordinary final species, base stat totals 440-560, default level-80 moves, no permanent stat boosts. No mid-battle experience/level growth. Enemy variants sampled equally. Player decision policy uses current visible state and expected damage, never future actions or RNG. Targeted draft selects one of the top three counters for each visible opponent, with general coverage as tie-breaker. Active-only healing, capped at 0/1/2 full-restores; no fainted-member revival or bench healing. Voluntary switch consumes a turn, enemy responds against the replacement; forced switch costs none. Player policy does not plan multi-turn buffs/status combos, and is not optimal play.",
+  "validation": {
+    "deterministicReplay": true,
+    "potionFullRecoveryAndStatusCure": true,
+    "actionTurnAccounting": true,
+    "replacementTakesEnemyReply": true,
+    "sleepPreventsAction": true,
+    "poisonResidualDamage": true,
+    "opponentPotionsDisabled": true
+  },
+  "opponents": [
+    {
+      "variant": 0,
+      "team": [
+        {
+          "name": "怪力",
+          "speciesId": 34,
+          "level": 80,
+          "moves": [
+            "mach_punch",
+            "close_combat",
+            "double_edge",
+            "drain_punch"
+          ]
+        },
+        {
+          "name": "电击兽",
+          "speciesId": 58,
+          "level": 80,
+          "moves": [
+            "quickattack",
+            "thunder",
+            "giga_impact",
+            "thunderbolt"
+          ]
+        },
+        {
+          "name": "椰蛋树",
+          "speciesId": 46,
+          "level": 80,
+          "moves": [
+            "bullet_seed",
+            "leaf_storm",
+            "uproar",
+            "extrasensory"
+          ]
+        },
+        {
+          "name": "大钢蛇",
+          "speciesId": 139,
+          "level": 80,
+          "moves": [
+            "tackle",
+            "iron_tail",
+            "rock_slide",
+            "bulldoze"
+          ]
+        },
+        {
+          "name": "九尾",
+          "speciesId": 29,
+          "level": 80,
+          "moves": [
+            "quickattack",
+            "fire_blast",
+            "flamethrower",
+            "tail_whip"
+          ]
+        },
+        {
+          "name": "宝石海星",
+          "speciesId": 55,
+          "level": 80,
+          "moves": [
+            "tackle",
+            "psychic",
+            "power_gem",
+            "psybeam"
+          ]
+        }
+      ]
+    },
+    {
+      "variant": 1,
+      "team": [
+        {
+          "name": "叉字蝠",
+          "speciesId": 201,
+          "level": 80,
+          "moves": [
+            "gust",
+            "poison_jab",
+            "leech_life",
+            "air_slash"
+          ]
+        },
+        {
+          "name": "雷丘",
+          "speciesId": 28,
+          "level": 80,
+          "moves": [
+            "quickattack",
+            "thunder",
+            "iron_tail",
+            "thunderbolt"
+          ]
+        },
+        {
+          "name": "水箭龟",
+          "speciesId": 76,
+          "level": 80,
+          "moves": [
+            "tackle",
+            "wave_crash",
+            "flash_cannon",
+            "water_pulse"
+          ]
+        },
+        {
+          "name": "隆隆岩",
+          "speciesId": 35,
+          "level": 80,
+          "moves": [
+            "tackle",
+            "earthquake",
+            "explosion",
+            "bulldoze"
+          ]
+        },
+        {
+          "name": "喷火龙",
+          "speciesId": 74,
+          "level": 80,
+          "moves": [
+            "scratch",
+            "flare_blitz",
+            "dragonclaw",
+            "heat_wave"
+          ]
+        },
+        {
+          "name": "胡地",
+          "speciesId": 11,
+          "level": 80,
+          "moves": [
+            "psychic",
+            "zen_headbutt",
+            "confusion",
+            "psycho_cut"
+          ]
+        }
+      ]
+    },
+    {
+      "variant": 2,
+      "team": [
+        {
+          "name": "飞天螳螂",
+          "speciesId": 23,
+          "level": 80,
+          "moves": [
+            "quickattack",
+            "air_slash",
+            "slash",
+            "leer"
+          ]
+        },
+        {
+          "name": "尼多王",
+          "speciesId": 17,
+          "level": 80,
+          "moves": [
+            "sludge_wave",
+            "earth_power",
+            "megahorn",
+            "poison_jab"
+          ]
+        },
+        {
+          "name": "蚊香泳士",
+          "speciesId": 33,
+          "level": 80,
+          "moves": [
+            "dynamic_punch",
+            "bubble_beam",
+            "bodyslam",
+            "hypnosis"
+          ]
+        },
+        {
+          "name": "风速狗",
+          "speciesId": 7,
+          "level": 80,
+          "moves": [
+            "flare_blitz",
+            "flamethrower",
+            "play_rough",
+            "fire_fang"
+          ]
+        },
+        {
+          "name": "耿鬼",
+          "speciesId": 6,
+          "level": 80,
+          "moves": [
+            "shadowball",
+            "hex",
+            "dream_eater",
+            "dark_pulse"
+          ]
+        },
+        {
+          "name": "卡比兽",
+          "speciesId": 10,
+          "level": 80,
+          "moves": [
+            "tackle",
+            "giga_impact",
+            "belch",
+            "bodyslam"
+          ]
+        }
+      ]
+    }
+  ],
+  "example": {
+    "won": true,
+    "turns": 11,
+    "variant": 0,
+    "potionsUsed": 0,
+    "switches": 3,
+    "team": [
+      {
+        "id": 132,
+        "name": "太阳伊布"
+      },
+      {
+        "id": 139,
+        "name": "大钢蛇"
+      },
+      {
+        "id": 64,
+        "name": "火伊布"
+      },
+      {
+        "id": 192,
+        "name": "美纳斯"
+      },
+      {
+        "id": 104,
+        "name": "超甲狂犀"
+      },
+      {
+        "id": 46,
+        "name": "椰蛋树"
+      }
+    ],
+    "timeout": false,
+    "trace": [
+      {
+        "turn": 1,
+        "player": "太阳伊布",
+        "enemy": "怪力",
+        "hp": 194,
+        "action": "move",
+        "move": "预知未来"
+      },
+      {
+        "turn": 2,
+        "player": "太阳伊布",
+        "enemy": "电击兽",
+        "hp": 194,
+        "action": "switch",
+        "target": "大钢蛇"
+      },
+      {
+        "turn": 3,
+        "player": "大钢蛇",
+        "enemy": "电击兽",
+        "hp": 182,
+        "action": "move",
+        "move": "重踏"
+      },
+      {
+        "turn": 4,
+        "player": "大钢蛇",
+        "enemy": "电击兽",
+        "hp": 160,
+        "action": "move",
+        "move": "重踏"
+      },
+      {
+        "turn": 5,
+        "player": "大钢蛇",
+        "enemy": "椰蛋树",
+        "hp": 139,
+        "action": "switch",
+        "target": "火伊布"
+      },
+      {
+        "turn": 6,
+        "player": "火伊布",
+        "enemy": "椰蛋树",
+        "hp": 111,
+        "action": "move",
+        "move": "闪焰冲锋"
+      },
+      {
+        "turn": 7,
+        "player": "火伊布",
+        "enemy": "大钢蛇",
+        "hp": 65,
+        "action": "move",
+        "move": "喷烟"
+      },
+      {
+        "turn": 8,
+        "player": "火伊布",
+        "enemy": "椰蛋树",
+        "hp": 65,
+        "action": "move",
+        "move": "闪焰冲锋"
+      },
+      {
+        "turn": 9,
+        "player": "超甲狂犀",
+        "enemy": "九尾",
+        "hp": 274,
+        "action": "move",
+        "move": "岩石炮"
+      },
+      {
+        "turn": 10,
+        "player": "超甲狂犀",
+        "enemy": "宝石海星",
+        "hp": 274,
+        "action": "switch",
+        "target": "椰蛋树"
+      },
+      {
+        "turn": 11,
+        "player": "椰蛋树",
+        "enemy": "宝石海星",
+        "hp": 177,
+        "action": "move",
+        "move": "飞叶风暴"
+      }
+    ]
+  },
+  "results": [
+    {
+      "scenario": "random-no-potions",
+      "runs": 1000,
+      "wins": 437,
+      "winPercent": 43.7,
+      "medalCounts": {
+        "gold": 229,
+        "silver": 189,
+        "bronze": 19
+      },
+      "medalPercentPerAttempt": {
+        "gold": 22.9,
+        "silver": 18.9,
+        "bronze": 1.9
+      },
+      "averageWinningTurns": 16.45,
+      "medianWinningTurns": 16,
+      "winningTurnsP25": 15,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "averagePotionsPerAttempt": 0,
+      "averageSwitchesPerAttempt": 0,
+      "timeouts": 0,
+      "byOpponent": [
+        {
+          "variant": 0,
+          "runs": 334,
+          "wins": 177,
+          "winPercent": 52.99,
+          "medalCounts": {
+            "gold": 93,
+            "silver": 77,
+            "bronze": 7
+          },
+          "medalPercentPerAttempt": {
+            "gold": 27.84,
+            "silver": 23.05,
+            "bronze": 2.1
+          },
+          "averageWinningTurns": 16.65,
+          "medianWinningTurns": 16,
+          "winningTurnsP25": 15,
+          "winningTurnsP75": 18,
+          "winningTurnsP90": 21,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        },
+        {
+          "variant": 1,
+          "runs": 333,
+          "wins": 119,
+          "winPercent": 35.74,
+          "medalCounts": {
+            "gold": 58,
+            "silver": 60,
+            "bronze": 1
+          },
+          "medalPercentPerAttempt": {
+            "gold": 17.42,
+            "silver": 18.02,
+            "bronze": 0.3
+          },
+          "averageWinningTurns": 16.45,
+          "medianWinningTurns": 17,
+          "winningTurnsP25": 15,
+          "winningTurnsP75": 18,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        },
+        {
+          "variant": 2,
+          "runs": 333,
+          "wins": 141,
+          "winPercent": 42.34,
+          "medalCounts": {
+            "gold": 78,
+            "silver": 52,
+            "bronze": 11
+          },
+          "medalPercentPerAttempt": {
+            "gold": 23.42,
+            "silver": 15.62,
+            "bronze": 3.3
+          },
+          "averageWinningTurns": 16.2,
+          "medianWinningTurns": 16,
+          "winningTurnsP25": 13,
+          "winningTurnsP75": 18,
+          "winningTurnsP90": 21,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        }
+      ],
+      "winningTurnCounts": {
+        "10": 1,
+        "11": 14,
+        "12": 22,
+        "13": 36,
+        "14": 34,
+        "15": 59,
+        "16": 63,
+        "17": 56,
+        "18": 52,
+        "19": 39,
+        "20": 20,
+        "21": 22,
+        "22": 8,
+        "23": 8,
+        "24": 2,
+        "25": 1
+      }
+    },
+    {
+      "scenario": "targeted-no-potions",
+      "runs": 1000,
+      "wins": 753,
+      "winPercent": 75.3,
+      "medalCounts": {
+        "gold": 657,
+        "silver": 94,
+        "bronze": 2
+      },
+      "medalPercentPerAttempt": {
+        "gold": 65.7,
+        "silver": 9.4,
+        "bronze": 0.2
+      },
+      "averageWinningTurns": 14.08,
+      "medianWinningTurns": 14,
+      "winningTurnsP25": 13,
+      "winningTurnsP75": 15,
+      "winningTurnsP90": 17,
+      "averagePotionsPerAttempt": 0,
+      "averageSwitchesPerAttempt": 0,
+      "timeouts": 0,
+      "byOpponent": [
+        {
+          "variant": 0,
+          "runs": 334,
+          "wins": 300,
+          "winPercent": 89.82,
+          "medalCounts": {
+            "gold": 223,
+            "silver": 75,
+            "bronze": 2
+          },
+          "medalPercentPerAttempt": {
+            "gold": 66.77,
+            "silver": 22.46,
+            "bronze": 0.6
+          },
+          "averageWinningTurns": 14.98,
+          "medianWinningTurns": 15,
+          "winningTurnsP25": 13,
+          "winningTurnsP75": 17,
+          "winningTurnsP90": 18,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        },
+        {
+          "variant": 1,
+          "runs": 333,
+          "wins": 260,
+          "winPercent": 78.08,
+          "medalCounts": {
+            "gold": 247,
+            "silver": 13,
+            "bronze": 0
+          },
+          "medalPercentPerAttempt": {
+            "gold": 74.17,
+            "silver": 3.9,
+            "bronze": 0
+          },
+          "averageWinningTurns": 13.7,
+          "medianWinningTurns": 14,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 15,
+          "winningTurnsP90": 16,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        },
+        {
+          "variant": 2,
+          "runs": 333,
+          "wins": 193,
+          "winPercent": 57.96,
+          "medalCounts": {
+            "gold": 187,
+            "silver": 6,
+            "bronze": 0
+          },
+          "medalPercentPerAttempt": {
+            "gold": 56.16,
+            "silver": 1.8,
+            "bronze": 0
+          },
+          "averageWinningTurns": 13.19,
+          "medianWinningTurns": 13,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 15,
+          "winningTurnsP90": 16,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 0,
+          "timeouts": 0
+        }
+      ],
+      "winningTurnCounts": {
+        "9": 1,
+        "10": 27,
+        "11": 58,
+        "12": 95,
+        "13": 138,
+        "14": 144,
+        "15": 105,
+        "16": 89,
+        "17": 39,
+        "18": 33,
+        "19": 12,
+        "20": 6,
+        "21": 4,
+        "22": 1,
+        "24": 1
+      }
+    },
+    {
+      "scenario": "targeted-switch-no-potions",
+      "runs": 1000,
+      "wins": 908,
+      "winPercent": 90.8,
+      "medalCounts": {
+        "gold": 709,
+        "silver": 186,
+        "bronze": 13
+      },
+      "medalPercentPerAttempt": {
+        "gold": 70.9,
+        "silver": 18.6,
+        "bronze": 1.3
+      },
+      "averageWinningTurns": 14.27,
+      "medianWinningTurns": 14,
+      "winningTurnsP25": 12,
+      "winningTurnsP75": 16,
+      "winningTurnsP90": 18,
+      "averagePotionsPerAttempt": 0,
+      "averageSwitchesPerAttempt": 3.43,
+      "timeouts": 0,
+      "byOpponent": [
+        {
+          "variant": 0,
+          "runs": 334,
+          "wins": 326,
+          "winPercent": 97.6,
+          "medalCounts": {
+            "gold": 254,
+            "silver": 70,
+            "bronze": 2
+          },
+          "medalPercentPerAttempt": {
+            "gold": 76.05,
+            "silver": 20.96,
+            "bronze": 0.6
+          },
+          "averageWinningTurns": 14.32,
+          "medianWinningTurns": 14,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 16,
+          "winningTurnsP90": 18,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 3.54,
+          "timeouts": 0
+        },
+        {
+          "variant": 1,
+          "runs": 333,
+          "wins": 297,
+          "winPercent": 89.19,
+          "medalCounts": {
+            "gold": 237,
+            "silver": 57,
+            "bronze": 3
+          },
+          "medalPercentPerAttempt": {
+            "gold": 71.17,
+            "silver": 17.12,
+            "bronze": 0.9
+          },
+          "averageWinningTurns": 14,
+          "medianWinningTurns": 14,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 16,
+          "winningTurnsP90": 18,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 3.45,
+          "timeouts": 0
+        },
+        {
+          "variant": 2,
+          "runs": 333,
+          "wins": 285,
+          "winPercent": 85.59,
+          "medalCounts": {
+            "gold": 218,
+            "silver": 59,
+            "bronze": 8
+          },
+          "medalPercentPerAttempt": {
+            "gold": 65.47,
+            "silver": 17.72,
+            "bronze": 2.4
+          },
+          "averageWinningTurns": 14.49,
+          "medianWinningTurns": 14,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 16,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 0,
+          "averageSwitchesPerAttempt": 3.29,
+          "timeouts": 0
+        }
+      ],
+      "winningTurnCounts": {
+        "9": 20,
+        "10": 60,
+        "11": 99,
+        "12": 104,
+        "13": 123,
+        "14": 103,
+        "15": 98,
+        "16": 102,
+        "17": 63,
+        "18": 50,
+        "19": 39,
+        "20": 21,
+        "21": 13,
+        "22": 9,
+        "23": 3,
+        "25": 1
+      }
+    },
+    {
+      "scenario": "targeted-switch-one-max-potion",
+      "runs": 1000,
+      "wins": 918,
+      "winPercent": 91.8,
+      "medalCounts": {
+        "gold": 644,
+        "silver": 254,
+        "bronze": 20
+      },
+      "medalPercentPerAttempt": {
+        "gold": 64.4,
+        "silver": 25.4,
+        "bronze": 2
+      },
+      "averageWinningTurns": 14.89,
+      "medianWinningTurns": 15,
+      "winningTurnsP25": 12,
+      "winningTurnsP75": 17,
+      "winningTurnsP90": 19,
+      "averagePotionsPerAttempt": 0.72,
+      "averageSwitchesPerAttempt": 3.6,
+      "timeouts": 0,
+      "byOpponent": [
+        {
+          "variant": 0,
+          "runs": 334,
+          "wins": 325,
+          "winPercent": 97.31,
+          "medalCounts": {
+            "gold": 224,
+            "silver": 93,
+            "bronze": 8
+          },
+          "medalPercentPerAttempt": {
+            "gold": 67.07,
+            "silver": 27.84,
+            "bronze": 2.4
+          },
+          "averageWinningTurns": 14.88,
+          "medianWinningTurns": 15,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 17,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 0.53,
+          "averageSwitchesPerAttempt": 3.78,
+          "timeouts": 0
+        },
+        {
+          "variant": 1,
+          "runs": 333,
+          "wins": 308,
+          "winPercent": 92.49,
+          "medalCounts": {
+            "gold": 227,
+            "silver": 75,
+            "bronze": 6
+          },
+          "medalPercentPerAttempt": {
+            "gold": 68.17,
+            "silver": 22.52,
+            "bronze": 1.8
+          },
+          "averageWinningTurns": 14.62,
+          "medianWinningTurns": 14,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 17,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 0.78,
+          "averageSwitchesPerAttempt": 3.56,
+          "timeouts": 0
+        },
+        {
+          "variant": 2,
+          "runs": 333,
+          "wins": 285,
+          "winPercent": 85.59,
+          "medalCounts": {
+            "gold": 193,
+            "silver": 86,
+            "bronze": 6
+          },
+          "medalPercentPerAttempt": {
+            "gold": 57.96,
+            "silver": 25.83,
+            "bronze": 1.8
+          },
+          "averageWinningTurns": 15.19,
+          "medianWinningTurns": 15,
+          "winningTurnsP25": 13,
+          "winningTurnsP75": 17,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 0.84,
+          "averageSwitchesPerAttempt": 3.46,
+          "timeouts": 0
+        }
+      ],
+      "winningTurnCounts": {
+        "9": 15,
+        "10": 25,
+        "11": 95,
+        "12": 97,
+        "13": 113,
+        "14": 105,
+        "15": 89,
+        "16": 105,
+        "17": 79,
+        "18": 65,
+        "19": 59,
+        "20": 35,
+        "21": 16,
+        "22": 11,
+        "23": 7,
+        "24": 2
+      }
+    },
+    {
+      "scenario": "targeted-switch-two-max-potions",
+      "runs": 1000,
+      "wins": 929,
+      "winPercent": 92.9,
+      "medalCounts": {
+        "gold": 593,
+        "silver": 299,
+        "bronze": 37
+      },
+      "medalPercentPerAttempt": {
+        "gold": 59.3,
+        "silver": 29.9,
+        "bronze": 3.7
+      },
+      "averageWinningTurns": 15.38,
+      "medianWinningTurns": 15,
+      "winningTurnsP25": 13,
+      "winningTurnsP75": 18,
+      "winningTurnsP90": 20,
+      "averagePotionsPerAttempt": 1.19,
+      "averageSwitchesPerAttempt": 3.68,
+      "timeouts": 0,
+      "byOpponent": [
+        {
+          "variant": 0,
+          "runs": 334,
+          "wins": 330,
+          "winPercent": 98.8,
+          "medalCounts": {
+            "gold": 212,
+            "silver": 103,
+            "bronze": 15
+          },
+          "medalPercentPerAttempt": {
+            "gold": 63.47,
+            "silver": 30.84,
+            "bronze": 4.49
+          },
+          "averageWinningTurns": 15.22,
+          "medianWinningTurns": 15,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 18,
+          "winningTurnsP90": 20,
+          "averagePotionsPerAttempt": 0.8,
+          "averageSwitchesPerAttempt": 3.85,
+          "timeouts": 0
+        },
+        {
+          "variant": 1,
+          "runs": 333,
+          "wins": 314,
+          "winPercent": 94.29,
+          "medalCounts": {
+            "gold": 210,
+            "silver": 96,
+            "bronze": 8
+          },
+          "medalPercentPerAttempt": {
+            "gold": 63.06,
+            "silver": 28.83,
+            "bronze": 2.4
+          },
+          "averageWinningTurns": 15.07,
+          "medianWinningTurns": 15,
+          "winningTurnsP25": 12,
+          "winningTurnsP75": 17,
+          "winningTurnsP90": 19,
+          "averagePotionsPerAttempt": 1.24,
+          "averageSwitchesPerAttempt": 3.63,
+          "timeouts": 0
+        },
+        {
+          "variant": 2,
+          "runs": 333,
+          "wins": 285,
+          "winPercent": 85.59,
+          "medalCounts": {
+            "gold": 171,
+            "silver": 100,
+            "bronze": 14
+          },
+          "medalPercentPerAttempt": {
+            "gold": 51.35,
+            "silver": 30.03,
+            "bronze": 4.2
+          },
+          "averageWinningTurns": 15.92,
+          "medianWinningTurns": 16,
+          "winningTurnsP25": 14,
+          "winningTurnsP75": 18,
+          "winningTurnsP90": 20,
+          "averagePotionsPerAttempt": 1.53,
+          "averageSwitchesPerAttempt": 3.56,
+          "timeouts": 0
+        }
+      ],
+      "winningTurnCounts": {
+        "9": 15,
+        "10": 24,
+        "11": 83,
+        "12": 83,
+        "13": 104,
+        "14": 105,
+        "15": 72,
+        "16": 107,
+        "17": 81,
+        "18": 81,
+        "19": 59,
+        "20": 44,
+        "21": 34,
+        "22": 18,
+        "23": 13,
+        "24": 3,
+        "25": 2,
+        "26": 1
+      }
+    }
+  ],
+  "potionExample": {
+    "sample": 4,
+    "won": true,
+    "turns": 18,
+    "variant": 0,
+    "potionsUsed": 2,
+    "switches": 4,
+    "team": [
+      {
+        "id": 191,
+        "name": "波克基斯"
+      },
+      {
+        "id": 161,
+        "name": "穿山王"
+      },
+      {
+        "id": 60,
+        "name": "凯罗斯"
+      },
+      {
+        "id": 203,
+        "name": "水晶灯火灵"
+      },
+      {
+        "id": 86,
+        "name": "刺龙王"
+      },
+      {
+        "id": 143,
+        "name": "自爆磁怪"
+      }
+    ],
+    "timeout": false,
+    "trace": [
+      {
+        "turn": 1,
+        "player": "波克基斯",
+        "enemy": "怪力",
+        "hp": 226,
+        "action": "move",
+        "move": "月亮之力"
+      },
+      {
+        "turn": 2,
+        "player": "波克基斯",
+        "enemy": "大钢蛇",
+        "hp": 226,
+        "action": "switch",
+        "target": "水晶灯火灵"
+      },
+      {
+        "turn": 3,
+        "player": "水晶灯火灵",
+        "enemy": "大钢蛇",
+        "hp": 94,
+        "action": "move",
+        "move": "过热"
+      },
+      {
+        "turn": 4,
+        "player": "水晶灯火灵",
+        "enemy": "怪力",
+        "hp": 94,
+        "action": "move",
+        "move": "过热"
+      },
+      {
+        "turn": 5,
+        "player": "水晶灯火灵",
+        "enemy": "怪力",
+        "hp": 94,
+        "action": "move",
+        "move": "过热"
+      },
+      {
+        "turn": 6,
+        "player": "水晶灯火灵",
+        "enemy": "电击兽",
+        "hp": 94,
+        "action": "switch",
+        "target": "穿山王"
+      },
+      {
+        "turn": 7,
+        "player": "穿山王",
+        "enemy": "电击兽",
+        "hp": 105,
+        "action": "move",
+        "move": "地震"
+      },
+      {
+        "turn": 8,
+        "player": "穿山王",
+        "enemy": "椰蛋树",
+        "hp": 105,
+        "action": "move",
+        "move": "地震"
+      },
+      {
+        "turn": 9,
+        "player": "凯罗斯",
+        "enemy": "椰蛋树",
+        "hp": 194,
+        "action": "move",
+        "move": "十字剪"
+      },
+      {
+        "turn": 10,
+        "player": "凯罗斯",
+        "enemy": "电击兽",
+        "hp": 194,
+        "action": "move",
+        "move": "十字剪"
+      },
+      {
+        "turn": 11,
+        "player": "凯罗斯",
+        "enemy": "电击兽",
+        "hp": 77,
+        "action": "switch",
+        "target": "刺龙王"
+      },
+      {
+        "turn": 12,
+        "player": "刺龙王",
+        "enemy": "电击兽",
+        "hp": 108,
+        "action": "potion"
+      },
+      {
+        "turn": 13,
+        "player": "刺龙王",
+        "enemy": "电击兽",
+        "hp": 129,
+        "action": "move",
+        "move": "波动冲"
+      },
+      {
+        "turn": 14,
+        "player": "刺龙王",
+        "enemy": "九尾",
+        "hp": 21,
+        "action": "potion"
+      },
+      {
+        "turn": 15,
+        "player": "刺龙王",
+        "enemy": "宝石海星",
+        "hp": 210,
+        "action": "switch",
+        "target": "自爆磁怪"
+      },
+      {
+        "turn": 16,
+        "player": "自爆磁怪",
+        "enemy": "宝石海星",
+        "hp": 156,
+        "action": "move",
+        "move": "放电"
+      },
+      {
+        "turn": 17,
+        "player": "自爆磁怪",
+        "enemy": "九尾",
+        "hp": 88,
+        "action": "move",
+        "move": "放电"
+      },
+      {
+        "turn": 18,
+        "player": "刺龙王",
+        "enemy": "九尾",
+        "hp": 210,
+        "action": "move",
+        "move": "波动冲"
+      }
+    ]
+  }
+}

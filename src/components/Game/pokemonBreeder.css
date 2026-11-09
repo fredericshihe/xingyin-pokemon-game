@@ -1,0 +1,185 @@
+.breeder-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breeder-page .game-page-header {
+  flex-wrap: wrap;
+}
+
+.breeder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.breeder-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.breeder-refresh-button {
+  flex: 0 0 auto;
+}
+
+.breeder-rule {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.breeder-rule i {
+  margin-right: 4px;
+  color: #16804a;
+}
+
+.breeder-refresh-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-block: 1px solid #ead29a;
+  color: #80530b;
+  font-size: 14px;
+}
+
+.breeder-refresh-confirm > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.breeder-offers {
+  display: grid;
+  gap: 10px;
+}
+
+.breeder-loading {
+  padding: 28px 12px;
+  color: #475569;
+  text-align: center;
+}
+
+.breeder-offer {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 40px minmax(130px, auto);
+  align-items: center;
+  gap: 16px;
+  min-height: 112px;
+  padding: 12px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.breeder-offer--sold {
+  opacity: .65;
+}
+
+.breeder-offer--locked {
+  border-color: #62a581;
+}
+
+.breeder-lock-button {
+  width: 40px;
+  height: 40px;
+}
+
+.breeder-lock-button[aria-pressed="true"] {
+  color: #147342;
+  border-color: #62a581;
+  background: #e8f4ee;
+}
+
+.breeder-offer-info .breeder-lock-status {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.breeder-offer-info .breeder-lock-status--locked {
+  color: #147342;
+}
+
+.breeder-offer-image {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 6px;
+  background: #e8f4ee;
+}
+
+.breeder-offer-image img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.breeder-offer-info h3 {
+  margin: 0;
+  color: #17233b;
+  font-size: 18px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.breeder-offer-info span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.breeder-offer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  text-align: right;
+}
+
+.breeder-offer-actions strong {
+  color: #9a5b0a;
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .breeder-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .breeder-refresh-confirm {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .breeder-offer {
+    grid-template-columns: 70px minmax(0, 1fr) 40px;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .breeder-offer-image {
+    width: 70px;
+    height: 70px;
+  }
+
+  .breeder-offer-image img {
+    width: 64px;
+    height: 64px;
+  }
+
+  .breeder-offer-actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}

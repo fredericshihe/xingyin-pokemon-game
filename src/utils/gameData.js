@@ -948,16 +948,16 @@ export const getWildMovesForPokemonLevel = (monster, level = 1) => {
 
 // ─── 精灵球 ──────────────────────────────────────────────────────────────────
 export const POKEBALLS = {
-  pokeball_basic: { name: '精灵球', price: 150,  catchRateMultiplier: 1.0, sprite: itemSprite('poke-ball.png'), description: '同级普通目标黄血时约30%成功' },
-  pokeball_great: { name: '超级球', price: 600,  catchRateMultiplier: 1.5, sprite: itemSprite('great-ball.png'), description: '同级普通目标黄血时约46%成功' },
-  pokeball_ultra: { name: '高级球', price: 1200, catchRateMultiplier: 2.0, sprite: itemSprite('ultra-ball.png'), description: '同级普通目标黄血时约61%成功' },
-  pokeball_master: { name: '大师球', price: 5200, catchRateMultiplier: 255, sprite: itemSprite('master-ball.png'), randomDropDisabled: true, description: '必定捕获，成功率100%' },
+  pokeball_basic: { name: '精灵球', englishName: 'Poké Ball', price: 150,  catchRateMultiplier: 1.0, sprite: itemSprite('poke-ball.png'), description: '同级普通目标黄血时约30%成功' },
+  pokeball_great: { name: '超级球', englishName: 'Great Ball', price: 600,  catchRateMultiplier: 1.5, sprite: itemSprite('great-ball.png'), description: '同级普通目标黄血时约46%成功' },
+  pokeball_ultra: { name: '高级球', englishName: 'Ultra Ball', price: 1200, catchRateMultiplier: 2.0, sprite: itemSprite('ultra-ball.png'), description: '同级普通目标黄血时约61%成功' },
+  pokeball_master: { name: '大师球', englishName: 'Master Ball', price: 5200, catchRateMultiplier: 255, sprite: itemSprite('master-ball.png'), randomDropDisabled: true, description: '必定捕获，成功率100%' },
 }
 
 // ─── 回复药水 ────────────────────────────────────────────────────────────────
 export const POTIONS = {
   potion: {
-    name: '伤药',
+    name: '伤药', englishName: 'Potion',
     price: 100,
     healAmount: 20,
     mpRestoreAmount: 12,
@@ -965,7 +965,7 @@ export const POTIONS = {
     description: '恢复 HP 20 / MP 12 / 解除异常',
   },
   super_potion: {
-    name: '好伤药',
+    name: '好伤药', englishName: 'Super Potion',
     price: 250,
     healAmount: 50,
     mpRestoreAmount: 30,
@@ -973,7 +973,7 @@ export const POTIONS = {
     description: '恢复 HP 50 / MP 30 / 解除异常',
   },
   hyper_potion: {
-    name: '厉害伤药',
+    name: '厉害伤药', englishName: 'Hyper Potion',
     price: 600,
     healAmount: 120,
     mpRestoreAmount: 70,
@@ -981,7 +981,7 @@ export const POTIONS = {
     description: '恢复 HP 120 / MP 70 / 解除异常',
   },
   max_potion: {
-    name: '超级伤药',
+    name: '超级伤药', englishName: 'Max Potion',
     price: 1000,
     fullRestore: true,
     sprite: itemSprite('max-potion.png'),
@@ -992,39 +992,39 @@ export const POTIONS = {
 
 // ─── 经验药水（战斗之外的可控加速成长来源）───────────────────────────────────
 export const EXP_POTIONS = {
-  exp_potion_small:  { name: '小经验药水', price: 120, expAmount: 90,  sprite: itemSprite('exp-potion-small.png') },
-  exp_potion_medium: { name: '中经验药水', price: 360, expAmount: 300, sprite: itemSprite('exp-potion-medium.png') },
-  exp_potion_large:  { name: '大经验药水', price: 900, expAmount: 840, sprite: itemSprite('exp-potion-large.png') },
-  exp_potion_super:  { name: '超级经验药水', price: 2100, expAmount: 2100, sprite: itemSprite('rare-candy.png'), description: '大量提升一只宝可梦的经验' },
+  exp_potion_small:  { name: '小经验药水', englishName: 'Small EXP Potion', price: 120, expAmount: 90,  sprite: itemSprite('exp-potion-small.png') },
+  exp_potion_medium: { name: '中经验药水', englishName: 'Medium EXP Potion', price: 300, expAmount: 300, sprite: itemSprite('exp-potion-medium.png') },
+  exp_potion_large:  { name: '大经验药水', englishName: 'Large EXP Potion', price: 700, expAmount: 840, sprite: itemSprite('exp-potion-large.png') },
+  exp_potion_super:  { name: '超级经验药水', englishName: 'Super EXP Potion', price: 2000, trainingVoucherCost: 1, levelGain: 1, sprite: itemSprite('rare-candy.png'), shortEffect: '直接升1级，最高100级', description: '花2000金币和1张训练凭证，让宝可梦直接升1级。最高100级，只能在战斗外使用。' },
 }
 
 // ─── 进化道具（仅保留历史库存/后台白名单兼容；现行进化不再消耗它们）───────────
 export const EVOLUTION_ITEMS = {
-  water_stone:      { name: '水之石',     price: 1800, sprite: itemSprite('water-stone.png') },
-  thunder_stone:    { name: '雷之石',     price: 1800, sprite: itemSprite('thunder-stone.png') },
-  fire_stone:       { name: '火之石',     price: 1800, sprite: itemSprite('fire-stone.png') },
-  leaf_stone:       { name: '叶之石',     price: 1800, sprite: itemSprite('leaf-stone.png') },
-  ice_stone:        { name: '冰之石',     price: 1800, sprite: itemSprite('ice-stone.png') },
-  moon_stone:       { name: '月之石',     price: 1800, sprite: itemSprite('moon-stone.png') },
-  black_augurite:   { name: '黑奇石',     price: 2200, sprite: itemSprite('black-augurite.png') },
-  dragon_scale:     { name: '龙之鳞片',   price: 2200, sprite: itemSprite('dragon-scale.png') },
-  magmarizer:       { name: '熔岩增幅器', price: 2400, sprite: itemSprite('magmarizer.png') },
-  electirizer:      { name: '电力增幅器', price: 2400, sprite: itemSprite('electirizer.png') },
-  protector:        { name: '护具',       price: 2200, sprite: itemSprite('protector.png') },
-  upgrade:          { name: '升级数据',   price: 2200, sprite: itemSprite('up-grade.png') },
-  dubious_disc:     { name: '可疑补丁',   price: 2600, sprite: itemSprite('dubious-disc.png') },
-  oval_stone:       { name: '浑圆之石',   price: 1600, sprite: itemSprite('oval-stone.png') },
+  water_stone:      { name: '水之石', englishName: 'Water Stone',     price: 1800, sprite: itemSprite('water-stone.png') },
+  thunder_stone:    { name: '雷之石', englishName: 'Thunder Stone',     price: 1800, sprite: itemSprite('thunder-stone.png') },
+  fire_stone:       { name: '火之石', englishName: 'Fire Stone',     price: 1800, sprite: itemSprite('fire-stone.png') },
+  leaf_stone:       { name: '叶之石', englishName: 'Leaf Stone',     price: 1800, sprite: itemSprite('leaf-stone.png') },
+  ice_stone:        { name: '冰之石', englishName: 'Ice Stone',     price: 1800, sprite: itemSprite('ice-stone.png') },
+  moon_stone:       { name: '月之石', englishName: 'Moon Stone',     price: 1800, sprite: itemSprite('moon-stone.png') },
+  black_augurite:   { name: '黑奇石', englishName: 'Black Augurite',     price: 2200, sprite: itemSprite('black-augurite.png') },
+  dragon_scale:     { name: '龙之鳞片', englishName: 'Dragon Scale',   price: 2200, sprite: itemSprite('dragon-scale.png') },
+  magmarizer:       { name: '熔岩增幅器', englishName: 'Magmarizer', price: 2400, sprite: itemSprite('magmarizer.png') },
+  electirizer:      { name: '电力增幅器', englishName: 'Electirizer', price: 2400, sprite: itemSprite('electirizer.png') },
+  protector:        { name: '护具', englishName: 'Protector',       price: 2200, sprite: itemSprite('protector.png') },
+  upgrade:          { name: '升级数据', englishName: 'Upgrade',   price: 2200, sprite: itemSprite('up-grade.png') },
+  dubious_disc:     { name: '可疑补丁', englishName: 'Dubious Disc',   price: 2600, sprite: itemSprite('dubious-disc.png') },
+  oval_stone:       { name: '浑圆之石', englishName: 'Oval Stone',   price: 1600, sprite: itemSprite('oval-stone.png') },
 }
 
-// ─── 属性提升石（永久提升宝可梦基础属性，不可购买）─────────────────────────
+// ─── 属性宝石（永久提升宝可梦单项基础属性；高价、仅战斗外使用）────────────
 export const STAT_BOOST_ITEMS = {
-  hp_stone:         { name: 'HP之石',     price: 0, notForSale: true, effect: 'stat_boost', stat: 'hp',        boostAmount: 10, sprite: itemSprite('hp-stone.png'), description: '永久提升宝可梦的HP基础值+10' },
-  attack_stone:     { name: '攻击之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'attack',    boostAmount: 10, sprite: itemSprite('attack-stone.png'), description: '永久提升宝可梦的攻击基础值+10' },
-  defense_stone:    { name: '防御之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'defense',   boostAmount: 10, sprite: itemSprite('defense-stone.png'), description: '永久提升宝可梦的防御基础值+10' },
-  sp_attack_stone:  { name: '特攻之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'spAttack',  boostAmount: 10, sprite: itemSprite('sp-attack-stone.png'), description: '永久提升宝可梦的特攻基础值+10' },
-  sp_defense_stone: { name: '特防之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'spDefense', boostAmount: 10, sprite: itemSprite('sp-defense-stone.png'), description: '永久提升宝可梦的特防基础值+10' },
-  speed_stone:      { name: '速度之石',   price: 0, notForSale: true, effect: 'stat_boost', stat: 'speed',     boostAmount: 10, sprite: itemSprite('speed-stone.png'), description: '永久提升宝可梦的速度基础值+10' },
-  rare_candy:       { name: '神奇糖果',   price: 0, notForSale: true, effect: 'stat_boost_all', boostAmount: 5, sprite: itemSprite('rare-candy.png'), description: '永久提升宝可梦所有基础属性+5' },
+  hp_stone:         { name: 'HP之石', englishName: 'HP Stone',     price: 20000, effect: 'stat_boost', stat: 'hp',        boostAmount: 5, sprite: itemSprite('hp-stone.png'), description: '永久提升HP基础值+5。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  attack_stone:     { name: '攻击之石', englishName: 'Attack Stone',   price: 20000, effect: 'stat_boost', stat: 'attack',    boostAmount: 3, sprite: itemSprite('attack-stone.png'), description: '永久提升攻击基础值+3。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  defense_stone:    { name: '防御之石', englishName: 'Defense Stone',   price: 20000, effect: 'stat_boost', stat: 'defense',   boostAmount: 3, sprite: itemSprite('defense-stone.png'), description: '永久提升防御基础值+3。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  sp_attack_stone:  { name: '特攻之石', englishName: 'Sp. Attack Stone',   price: 20000, effect: 'stat_boost', stat: 'spAttack',  boostAmount: 3, sprite: itemSprite('sp-attack-stone.png'), description: '永久提升特攻基础值+3。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  sp_defense_stone: { name: '特防之石', englishName: 'Sp. Defense Stone',   price: 20000, effect: 'stat_boost', stat: 'spDefense', boostAmount: 3, sprite: itemSprite('sp-defense-stone.png'), description: '永久提升特防基础值+3。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  speed_stone:      { name: '速度之石', englishName: 'Speed Stone',   price: 25000, effect: 'stat_boost', stat: 'speed',     boostAmount: 2, sprite: itemSprite('speed-stone.png'), description: '永久提升速度基础值+2。每只最多10颗宝石，同一项最多4颗，战斗外使用。' },
+  rare_candy:       { name: '神奇糖果', englishName: 'Rare Candy',   price: 0, notForSale: true, effect: 'stat_boost_all', boostAmount: 5, sprite: itemSprite('rare-candy.png'), description: '永久提升宝可梦所有基础属性+5' },
 }
 
 // ─── 宝可梦数据库 ─────────────────────────────────────────────────────────────

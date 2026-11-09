@@ -19,6 +19,11 @@ const defeatRecoverySource = originalGame.slice(
   originalGame.indexOf('async function handleRecoverFromDefeat'),
   originalGame.indexOf('const handlePlayerDefeatCheck = useCallback')
 )
+const enemyTurnEffectSource = originalGame.slice(
+  originalGame.indexOf('useLayoutEffect(() => {\n    resolveEnemyTurnRef.current = resolveEnemyTurn;'),
+  originalGame.indexOf('const handleSwitch = useCallback')
+)
+const enemyTurnTimerSource = enemyTurnEffectSource.slice(enemyTurnEffectSource.indexOf('useEffect(() => {'))
 
 const checks = [
   {
@@ -61,20 +66,21 @@ const checks = [
   {
     name: 'enemy_turn_effect_delegates_to_shared_resolution',
     scenario: '刷新/读档后若存档停在 enemy，由 effect 启动同一个敌方回合 resolver',
-    passed: /if \(turn !== 'enemy' \|\| isThrowingPokeball \|\| battleModalScreenOpen \|\| cloudBlocked \|\| playtimeExpired\) return undefined;[\s\S]*?const enemyActionDelayMs = getEnemyTurnDelayMs\(logsRef\.current\);[\s\S]*?const timer = window\.setTimeout\(\(\) => \{[\s\S]*?resolveEnemyTurnRef\.current\?\.\(\);/.test(originalGame),
+    passed: /turn !== 'enemy'[\s\S]*?const enemyActionDelayMs = getEnemyTurnDelayMs\(logsRef\.current\);[\s\S]*?const timer = window\.setTimeout\(\(\) => \{[\s\S]*?resolveEnemyTurnRef\.current\?\.\(\);/.test(originalGame),
   },
   {
     name: 'enemy_turn_timer_survives_unrelated_rerenders',
     scenario: '每秒游玩倒计时重渲染不能反复取消 1.5 秒的敌方行动定时器',
-    passed: /const resolveEnemyTurnRef = useRef\(null\);[\s\S]*?useLayoutEffect\(\(\) => \{[\s\S]*?resolveEnemyTurnRef\.current = resolveEnemyTurn;[\s\S]*?\}, \[resolveEnemyTurn\]\);/.test(originalGame) &&
-      /useEffect\(\(\) => \{[\s\S]*?const enemyActionDelayMs = getEnemyTurnDelayMs\(logsRef\.current\);[\s\S]*?resolveEnemyTurnRef\.current\?\.\(\);[\s\S]*?\}, \[[\s\S]*?activeEnemyId,[\s\S]*?battleModalScreenOpen,[\s\S]*?battlePhase,[\s\S]*?turn,[\s\S]*?view[\s\S]*?\]\);/.test(originalGame) &&
-      !/const enemyActionDelayMs = getEnemyTurnDelayMs\(logsRef\.current\);[\s\S]*?\}, \[[\s\S]*?resolveEnemyTurn,[\s\S]*?turn,/.test(originalGame),
+    passed: /const resolveEnemyTurnRef = useRef\(null\);/.test(originalGame) &&
+      /useLayoutEffect\(\(\) => \{\s*resolveEnemyTurnRef\.current = resolveEnemyTurn;\s*\}, \[resolveEnemyTurn\]\);/.test(enemyTurnEffectSource) &&
+      /useEffect\(\(\) => \{[\s\S]*?const enemyActionDelayMs = getEnemyTurnDelayMs\(logsRef\.current\);[\s\S]*?resolveEnemyTurnRef\.current\?\.\(\);[\s\S]*?\}, \[[\s\S]*?activeEnemyId,[\s\S]*?battleModalScreenOpen,[\s\S]*?battlePhase,[\s\S]*?turn,[\s\S]*?view[\s\S]*?\]\);/.test(enemyTurnTimerSource) &&
+      !/\}, \[[^\]]*\bresolveEnemyTurn\b[^\]]*\]\);/.test(enemyTurnTimerSource),
   },
   {
     name: 'potion_animation_owns_enemy_turn_handoff',
     scenario: '伤药提交为 enemy 后，背包和治疗动画关闭前不得启动敌方行动',
     passed: /onModalScreenChange\?\.\(showBag \|\| showTeam \|\| showSurrenderConfirm\)/.test(originalGame) &&
-      /if \(turn !== 'enemy' \|\| isThrowingPokeball \|\| battleModalScreenOpen \|\| cloudBlocked \|\| playtimeExpired\) return undefined;/.test(originalGame) &&
+      /turn !== 'enemy'[\s\S]*?playtimeReady[\s\S]*?fullPlayableScreenReady/.test(originalGame) &&
       /onBattleItemConsumed=\{\(\{ itemType \}\) => \{[\s\S]*?setShowBag\(false\);[\s\S]*?setIsBusy\(true\);/.test(originalGame),
   },
   {
@@ -109,6 +115,29 @@ const checks = [
     name: 'battle_load_repairs_missing_active_enemy_reference',
     scenario: '刷新后继续战斗 / activeEnemyId 残缺坏档',
     passed: /const resolveActiveEnemyId = \(enemyTeam = \[\], fallbackId = null\) => \{[\s\S]*?if \(team\.some\(\(mon\) => mon\?\.id === fallbackId\)\) return fallbackId;[\s\S]*?return team\.find\(hasBattleHp\)\?\.id \?\? team\[0\]\?\.id \?\? null;[\s\S]*?const isBattleContext = view === 'battle' \|\| Boolean\(gameData\.activeEnemyId\);[\s\S]*?const activeEnemyId = isBattleContext \? resolveActiveEnemyId\(enemyTeam, gameData\.activeEnemyId\) : null;/.test(originalGame),
+  },
+  {
+    name: 'battle_load_repairs_interrupted_resolving_turn',
+    scenario: '刷新或断网后没有未完成动作时，resolving 必须恢复为玩家可操作回合',
+    passed: /const recoverInterruptedBattleTurn = \(gameData, \{ preserveResolving = false \} = \{\}\) => \{[\s\S]*?normalizedTurn === 'resolving'[\s\S]*?!pendingBattleSwitch[\s\S]*?!isBattleMonFainted\(activePlayer\)[\s\S]*?!isBattleMonFainted\(activeEnemy\)[\s\S]*?turn: 'player'[\s\S]*?战斗状态已恢复/.test(originalGame),
+  },
+  {
+    name: 'cloud_snapshot_recovery_is_shared_and_live_safe',
+    scenario: '首次读档与后续云端快照共用恢复器，真实进行中的回合不被抢修',
+    passed: /const recoveredBattleSnapshot = recoverInterruptedBattleTurn\(normalized\)/.test(originalGame) &&
+      /const gameData = recoverInterruptedBattleTurn\(rawGameData, \{ preserveResolving: preserveLiveResolving \}\);/.test(originalGame) &&
+      /battleTurnInFlightRef\.current \|\|[\s\S]*?enemyTurnInFlightRef\.current/.test(originalGame),
+  },
+  {
+    name: 'enemy_sendout_completion_returns_player_turn',
+    scenario: '敌方宝可梦倒下后发送下一只，出场动画完成必须提交 active/player',
+    passed: /const handleBattleSendOutComplete = useCallback\(async \(\) => \{[\s\S]*?battlePhase: 'active'[\s\S]*?battlePhaseData: null[\s\S]*?turn: 'player'/.test(originalGame),
+  },
+  {
+    name: 'enemy_turn_waits_for_playtime_lease_and_retries',
+    scenario: '换人后处于 enemy 回合时，游玩租约未就绪不能丢失敌方行动交接',
+    passed: /turn !== 'enemy'[\s\S]*?!playtimeReady[\s\S]*?!fullPlayableScreenReady/.test(originalGame) &&
+      /fullPlayableScreenReady,[\s\S]*?playtimeExpired,[\s\S]*?playtimeReady,[\s\S]*?turn/.test(originalGame),
   },
   {
     name: 'battle_checkpoint_can_preserve_escape_refund_for_player_teleport',

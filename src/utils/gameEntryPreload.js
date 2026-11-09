@@ -305,7 +305,7 @@ async function runEarlyAssetPreload(onProgress, shouldContinue = () => true) {
   tracker.totals.audio = 0
   tracker.totals.models = 0
 
-  const mapModulePromise = import('../game/threeLowPolyMap')
+  const mapModulePromise = import('../game/ThreeLowPolyMap')
 
   await loadImagePhaseUntilComplete(
     p0Urls,

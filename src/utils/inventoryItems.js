@@ -1,7 +1,10 @@
+import { BATTLE_ITEMS, KEY_ITEMS } from './adventureItems'
 import { EVOLUTION_ITEMS, EXP_POTIONS, POKEBALLS, POTIONS, STAT_BOOST_ITEMS } from './gameData.js'
 import { getSimpleCatchChancePercent } from './gameBalance.js'
 
 const INVENTORY_ITEM_DEFINITIONS = {
+  battleItem: BATTLE_ITEMS,
+  keyItem: KEY_ITEMS,
   pokeball: POKEBALLS,
   potion: POTIONS,
   expPotion: EXP_POTIONS,
@@ -9,11 +12,11 @@ const INVENTORY_ITEM_DEFINITIONS = {
   evolutionItem: EVOLUTION_ITEMS,
 }
 
-const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion', 'statBoost'])
+const ACTIVE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion', 'statBoost', 'battleItem', 'keyItem'])
 const LEGACY_INVENTORY_ITEM_TYPES = new Set(['evolutionItem'])
 const SELLABLE_INVENTORY_ITEM_TYPES = new Set(['pokeball', 'potion', 'expPotion'])
 const DEFAULT_ITEM_SELL_PRICE_DIVISOR = 6
-const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'statBoost', 'evolutionItem']
+const INVENTORY_TYPE_SORT_ORDER = ['pokeball', 'potion', 'expPotion', 'battleItem', 'keyItem', 'statBoost', 'evolutionItem']
 const INVENTORY_ITEM_TYPE_ALIASES = {
   ball: 'pokeball',
   balls: 'pokeball',
@@ -35,7 +38,9 @@ const normalizeExplicitInventoryItemType = (itemType, itemKey) => {
 }
 
 const inferInventoryItemType = (itemKey) => (
-  POKEBALLS[itemKey] ? 'pokeball' :
+  BATTLE_ITEMS[itemKey] ? 'battleItem' :
+    KEY_ITEMS[itemKey] ? 'keyItem' :
+    POKEBALLS[itemKey] ? 'pokeball' :
     POTIONS[itemKey] ? 'potion' :
       EXP_POTIONS[itemKey] ? 'expPotion' :
         STAT_BOOST_ITEMS[itemKey] ? 'statBoost' :
@@ -57,6 +62,8 @@ export const resolveInventoryItemType = (slot = {}) => {
 
 export const resolveInventoryItemDetails = (itemType, itemKey) => (
   INVENTORY_ITEM_DEFINITIONS[itemType]?.[itemKey] ||
+  BATTLE_ITEMS[itemKey] ||
+  KEY_ITEMS[itemKey] ||
   POKEBALLS[itemKey] ||
   POTIONS[itemKey] ||
   EXP_POTIONS[itemKey] ||
@@ -148,6 +155,10 @@ export const getPotionEffectParts = (potion = {}) => {
 
 export const getPotionEffectText = (potion) => getPotionEffectParts(potion).join(' / ') || '恢复'
 
+export const getExpPotionEffectText = (potion = {}) => (
+  potion?.levelGain === 1 ? '直接升1级' : `经验 +${Math.max(0, Number(potion?.expAmount) || 0)}`
+)
+
 export const getPokeballEffectText = (ball = {}) => {
   const percent = getSimpleCatchChancePercent(ball?.catchRateMultiplier)
   if (percent >= 100) return '成功率100%（必定成功）'
@@ -174,7 +185,7 @@ export const getStatBoostEffectText = (item = {}) => {
   const amount = Math.max(0, Math.trunc(Number(item?.boostAmount) || 0))
   if (item?.effect === 'stat_boost_all') return `全基础属性 +${amount}`
   const statLabel = STAT_BOOST_STAT_LABELS[item?.stat] || '基础属性'
-  return `${statLabel} +${amount}`
+  return `${statLabel}基础值 +${amount}`
 }
 
 const collapseInventorySlots = (inventory) => {

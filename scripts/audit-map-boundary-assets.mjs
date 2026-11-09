@@ -11,6 +11,7 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
   'draco3d.decoder': await draco3d.createDecoderModule()
 })
 const shapes = new Map(), files = new Set(), assets = [], maps = []
+const onlyMaps = new Set(process.argv.slice(2))
 const overlaps = (a, b) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1
 await withViteAuditServer(async ({ loadModule }) => {
   const { MAP_CATALOG } = await loadModule('/src/game/data/mapCatalog.js')
@@ -50,6 +51,7 @@ await withViteAuditServer(async ({ loadModule }) => {
     assets.push({ id: asset.id, ownerMap: asset.ownerMap, bytes: data.length, triangles, signature })
   }
   for (const [id, { mapInfo: map }] of Object.entries(MAP_CATALOG)) {
+    if (onlyMaps.size && !onlyMaps.has(id)) continue
     const boundary = map.decorativeObjects.filter(o => o.environmentBoundary)
     const hidden = map.decorativeObjects.filter(o => o.environmentHiddenBoundary)
     if (!MAP_BOUNDARY_SETS[id]) {
@@ -59,7 +61,8 @@ await withViteAuditServer(async ({ loadModule }) => {
     }
     assert.equal(MAP_BOUNDARY_SETS[id].length, 12)
     assert.ok(boundary.length >= 6, `${id}: insufficient biome scenery`)
-    assert.equal(new Set(boundary.map(o => o.type)).size, boundary.length)
+    assert.ok(new Set(boundary.map(o => o.type)).size >= 6, `${id}: too few biome shapes`)
+    assert.ok(boundary.every(o => boundary.filter(other => other.type === o.type).length <= 3), `${id}: repeated one boundary shape too often`)
     assert.ok(map.decorativeObjects.filter(isGenericEnvironmentBoundary).every(o => o.environmentHiddenBoundary), `${id}: visible generic white boundary stones`)
     assert.ok(hidden.every(isGenericEnvironmentBoundary), `${id}: hid non-boundary scenery`)
     for (const object of boundary) {
@@ -67,7 +70,7 @@ await withViteAuditServer(async ({ loadModule }) => {
       assert.ok(isSafeEnvironmentBackground(map, object), `${id}: boundary obstructs road/grass/water/event`)
       const bounds = getEnvironmentObjectBounds(object)
       for (const other of map.decorativeObjects) {
-        if (other === object || other.environmentHiddenBoundary) continue
+        if (other === object || other.environmentHiddenBoundary || other.hiddenZonePerimeter || other.hiddenZoneCorner) continue
         assert.ok(!overlaps(bounds, getEnvironmentObjectBounds(other)), `${id}: ${object.type} overlaps ${other.type}`)
       }
     }

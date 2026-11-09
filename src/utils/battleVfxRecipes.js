@@ -1,3 +1,5 @@
+import { MOVE_VFX_CHOREOGRAPHY } from './battleVfxChoreography.js'
+
 // Authored move choreography: key | technique | material | count | spread | bend | rotation.
 // Count describes visible strands/debris, never simulated damage or extra hits.
 // No hash selects a move's technique. Fine particle noise is deterministic in the renderer.
@@ -373,6 +375,25 @@ const POSE_GROUPS = {
 }
 const POSE_BY_KEY = Object.fromEntries(Object.entries(POSE_GROUPS).flatMap(([gesture, keys]) => keys.split(' ').map(key => [key, gesture])))
 
+const SUBJECT_GROUPS = {
+  sole: 'double_kick triple_kick low_kick low_sweep mega_kick blaze_kick axe_kick bounce',
+  knee: 'high_jump_kick', hoof: 'stomp stomping_tantrum bulldoze high_horsepower',
+  fist: 'bullet_punch drain_punch dynamic_punch fire_punch focus_punch ice_punch mach_punch mega_punch meteor_mash rage_fist shadow_punch sucker_punch payback hammer_arm thunder_punch rock_smash',
+  palm: 'karate_chop brick_break cross_chop force_palm fake_out pound poison_jab knock_off covet strength superpower double_hit',
+  wing: 'wing_attack dual_wingbeat fly brave_bird sky_attack',
+  beak: 'peck drill_peck pluck', horn: 'horn_attack megahorn raging_bull',
+  tail: 'iron_tail aqua_tail dragon_tail slam tail_whip',
+  head: 'headbutt head_smash iron_head zen_headbutt nuzzle',
+  kiss: 'draining_kiss sweet_kiss lovely_kiss',
+  axe: 'stone_axe', blade: 'sacred_sword', leaf: 'leaf_blade', shell: 'razor_shell',
+}
+const SUBJECT_BY_KEY = Object.fromEntries(Object.entries(SUBJECT_GROUPS).flatMap(([subject, keys]) => keys.split(' ').map(key => [key, subject])))
+const CONCRETE_ACTIONS = {
+  vine: 'vinewhip power_whip', tongue: 'lick', frenzy: 'fury_attack fury_swipes close_combat play_rough thrash outrage brutal_swing',
+  armor: 'harden iron_defense withdraw defense_curl acid_armor coil',
+}
+const CONCRETE_BY_KEY = Object.fromEntries(Object.entries(CONCRETE_ACTIONS).flatMap(([technique, keys]) => keys.split(' ').map(key => [key, technique])))
+
 export const BATTLE_VFX_ACTION_NOTES = {
   strike: '蓄势贴身发力，命中局部压缩、冲击碎屑；不发射光棍',
   dash: '快速贴身冲刺，短残影随身体移动，碰撞后散开',
@@ -453,16 +474,28 @@ export function getMoveVfxRecipe(moveKey, move = {}, config = {}) {
   const authored = MOVE_VFX_RECIPES[moveKey]
   const base = authored || { technique: move.category === 'status' ? 'aura' : 'strike', material: 'light', count: 6, spread: .7, bend: .2, rotation: 0 }
   const recipe = { ...base, technique: ACTION_BY_KEY[moveKey] || base.technique, material: MATERIAL_BY_KEY[moveKey] || base.material }
+  const subject = SUBJECT_BY_KEY[moveKey]
+  if (subject) recipe.technique = 'anatomy'
+  if (CONCRETE_BY_KEY[moveKey]) recipe.technique = CONCRETE_BY_KEY[moveKey]
+  if (moveKey === 'leech_life') { recipe.technique = 'fang'; recipe.material = 'tooth' }
+  if (moveKey === 'lava_plume') recipe.material = 'flame'
+  if (moveKey === 'rock_polish') recipe.material = 'dust'
+  if (moveKey === 'swift') recipe.material = 'gem'
+  if (moveKey === 'stun_spore') recipe.material = 'pollen'
+  if (moveKey === 'extremespeed') recipe.material = 'mist'
+  if (['last_resort','meteor_assault'].includes(moveKey)) recipe.material = 'dust'
+  const choreography = MOVE_VFX_CHOREOGRAPHY[moveKey]
   const power = Math.max(0, Number(move.power) || 0)
   const powerLevel = power >= 130 ? 4 : power >= 95 ? 3 : power >= 60 ? 2 : power > 0 ? 1 : 0
   const palette = PALETTE_OVERRIDES[moveKey] || VFX_TYPE_PALETTES[move.type] || VFX_TYPE_PALETTES.normal
   return {
     ...recipe, key: moveKey, authored: Boolean(authored), palette, power, powerLevel,
     gesture: POSE_BY_KEY[moveKey] || GESTURE_BY_KEY[moveKey] || 'body',
-    direction: BATTLE_VFX_ACTION_NOTES[recipe.technique],
+    subject, motion: choreography?.motion || 'thrust',
+    direction: choreography?.description || BATTLE_VFX_ACTION_NOTES[recipe.technique],
     selfOnly: move.effect === 'nothing',
     energy: power ? .56 + Math.min(200, power) / 150 : .7,
-    target: config.target || 'foe', drain: move.effect === 'drain',
-    signature: [recipe.technique, recipe.material, recipe.count, recipe.spread, recipe.bend, recipe.rotation, power, ...palette].join(':'),
+    target: power > 0 ? 'foe' : config.target || 'foe', drain: move.effect === 'drain',
+    signature: [recipe.technique, subject, choreography?.motion, recipe.material, recipe.count, recipe.spread, recipe.bend, recipe.rotation, power, ...palette].join(':'),
   }
 }
